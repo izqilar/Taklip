@@ -83,7 +83,7 @@ export default function TemplatePreviewModal({ template, onUse, onClose }: Templ
 
   const priceNode =
     template.price > 0 ? (
-      <span className="font-semibold text-[#c81e42]">{formatCents(template.price)}</span>
+      <span className="font-semibold text-[#D24830]">{formatCents(template.price)}</span>
     ) : (
       <span className="text-green-600">{t('templates:free')}</span>
     );

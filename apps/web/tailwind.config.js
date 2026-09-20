@@ -21,11 +21,11 @@ export default {
           400: '#FF7093',
           500: '#FF4D6D',
           600: '#F22E56',
-          700: '#C81E42',
+          700: '#D24830',
           800: '#A81637',
           900: '#8A1230',
           DEFAULT: '#FF4D6D',
-          dark: '#C81E42',
+          dark: '#D24830',
         },
       },
       // 等宽数字字体（对齐运营端 theme.ts T.fontNum：Bahnschrift / DIN Alternate）

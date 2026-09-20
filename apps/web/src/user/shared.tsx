@@ -25,7 +25,7 @@ export function maskPhone(phone?: string | null): string {
 /** 星级渲染：★ 4.7（对齐运营端 stars：主色数值字 + 朱砂星，等宽） */
 export const Stars = ({ rating }: { rating?: number | null }) =>
   rating ? (
-    <span style={{ fontVariantNumeric: 'tabular-nums', fontFamily: "'Bahnschrift','DIN Alternate',Arial,system-ui,sans-serif", color: '#c24b2e' }}>
+    <span style={{ fontVariantNumeric: 'tabular-nums', fontFamily: "'Bahnschrift','DIN Alternate',Arial,system-ui,sans-serif", color: '#D24830' }}>
       ★ {Number(rating).toFixed(1)}
     </span>
   ) : (
@@ -47,7 +47,7 @@ export function StatusBadge({
     ok: 'bg-[rgba(29,122,107,0.12)] text-[#0f5a4e]',
     warn: 'bg-[rgba(183,122,22,0.14)] text-[#7a4d07]',
     bad: 'bg-[rgba(192,43,51,0.12)] text-[#8f1d24]',
-    accent: 'bg-[rgba(194,75,46,0.10)] text-[#c24b2e]',
+    accent: 'bg-[rgba(210,72,48,0.10)] text-[#D24830]',
   };
   return (
     <span className={`inline-flex rounded-full px-[9px] py-0.5 text-xs font-medium ${map[tone]}`}>
@@ -135,7 +135,7 @@ export function ErrorState({ text, onRetry }: { text: string; onRetry?: () => vo
         <button
           type="button"
           onClick={onRetry}
-          className="rounded-lg border border-[rgba(74,60,42,0.16)] px-3 py-1.5 text-[13px] text-[#4c4236] transition hover:border-[#c24b2e]/40 hover:text-[#c24b2e]"
+          className="rounded-lg border border-[rgba(74,60,42,0.16)] px-3 py-1.5 text-[13px] text-[#4c4236] transition hover:border-[#D24830]/40 hover:text-[#D24830]"
         >
           {t('common:button.retry')}
         </button>
@@ -315,7 +315,7 @@ export const msgTypeText = (type?: string | null): string =>
 /* ══════════════════════════════════════════════════════════════
  * 以下 UI 原语镜像运营端用户视角（apps/admin 的 PageHead / Panel /
  * KpiCard / Pill / DataTable / GenericListPage），颜色令牌取自运营端
- * theme.ts：暖白底 #fffefb、朱砂 #c24b2e、青副 #14676b、三级字
+ * theme.ts：暖白底 #fffefb、朱砂 #D24830、青副 #14676b、三级字
  * #2a2118/#4c4236/#6e5f4a，圆角 10/6。「B 端靠线不靠阴影」。
  * ══════════════════════════════════════════════════════════════ */
 
@@ -380,14 +380,14 @@ export function KpiCard({
   return (
       <div
         className={`relative overflow-hidden rounded-[10px] border bg-[#fffefb] px-4 py-3.5 ${
-          main ? 'border-[#c24b2e]' : 'border-[rgba(74,60,42,0.10)]'
+          main ? 'border-[#D24830]' : 'border-[rgba(74,60,42,0.10)]'
         }`}
-        style={main ? { boxShadow: 'inset 0 2px 0 #c24b2e' } : undefined}
+        style={main ? { boxShadow: 'inset 0 2px 0 #D24830' } : undefined}
       >
         <div className="flex items-center gap-1.5 text-[12.5px] text-[#6e5f4a]">{label}</div>
         <div
           className={`mt-1.5 text-[27px] font-[750] tabular-nums tracking-[.01em] ${
-            main ? 'text-[#c24b2e]' : 'text-[#2a2118]'
+            main ? 'text-[#D24830]' : 'text-[#2a2118]'
           }`}
           style={{ fontFamily: "'Bahnschrift','DIN Alternate',Arial,system-ui,sans-serif" }}
         >
@@ -517,8 +517,8 @@ function FilterBar({
                 onClick={() => onFilter(on ? 'all' : f.value)}
                 className={`rounded-full border px-3 py-1 text-[12.5px] transition ${
                   on
-                    ? 'border-[#c24b2e] bg-[rgba(194,75,46,0.10)] font-semibold text-[#c24b2e]'
-                    : 'border-[rgba(74,60,42,0.10)] bg-transparent text-[#4c4236] hover:border-[#c24b2e]/40'
+                    ? 'border-[#D24830] bg-[rgba(210,72,48,0.10)] font-semibold text-[#D24830]'
+                    : 'border-[rgba(74,60,42,0.10)] bg-transparent text-[#4c4236] hover:border-[#D24830]/40'
                 }`}
               >
                 {f.label}
@@ -533,7 +533,7 @@ function FilterBar({
           value={searchValue}
           onChange={(e) => onSearch(e.target.value)}
           placeholder="搜索…"
-          className="h-[34px] w-56 rounded-md border border-[rgba(74,60,42,0.16)] px-3 text-sm outline-none focus:border-[#c24b2e]"
+          className="h-[34px] w-56 rounded-md border border-[rgba(74,60,42,0.16)] px-3 text-sm outline-none focus:border-[#D24830]"
         />
       )}
       {searchable && (
@@ -549,7 +549,7 @@ function FilterBar({
         <button
           type="button"
           onClick={onCreate}
-          className="rounded-lg bg-[#c24b2e] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[#b13e22]"
+          className="rounded-lg bg-[#D24830] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[#B23A22]"
         >
           {createLabel}
         </button>
@@ -692,7 +692,7 @@ export function UserListPage<T extends { id?: string }>({
                   <button
                     type="button"
                     onClick={() => openDetail(r)}
-                    className="text-[#c24b2e] hover:underline"
+                    className="text-[#D24830] hover:underline"
                   >
                     {t('common:button.detail')}
                   </button>
@@ -741,7 +741,7 @@ export function UserListPage<T extends { id?: string }>({
         title={title}
         hint={
           <>
-            共 <b className="text-[#c24b2e]">{shownTotal}</b> 条 · 数据隔离由后端强制
+            共 <b className="text-[#D24830]">{shownTotal}</b> 条 · 数据隔离由后端强制
           </>
         }
       >
@@ -846,7 +846,7 @@ export function ReviewEditor({
           onChange={(e) => setContent(e.target.value)}
           rows={4}
           placeholder={t('common:userCenter.feedback.contentPlaceholder')}
-          className="w-full rounded-lg border border-gray-200 p-3 text-sm outline-none focus:border-[#c24b2e]"
+          className="w-full rounded-lg border border-gray-200 p-3 text-sm outline-none focus:border-[#D24830]"
         />
         {err && <p className="mt-1 text-xs text-red-500">{err}</p>}
         <div className="mt-4 flex justify-end gap-2">
@@ -861,7 +861,7 @@ export function ReviewEditor({
             type="button"
             disabled={saving}
             onClick={submit}
-            className="rounded-lg bg-[#c24b2e] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-lg bg-[#D24830] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
             {saving ? t('common:userCenter.loading') : t('common:button.confirm')}
           </button>

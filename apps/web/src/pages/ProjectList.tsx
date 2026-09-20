@@ -340,7 +340,7 @@ export default function Dashboard() {
                 onClick={() => setFilter(f)}
                 className={`rounded-full px-3 py-1.5 text-[13.5px] transition ${
                   filter === f
-                    ? 'bg-[rgba(194,75,46,0.10)] font-semibold text-[#c24b2e]'
+                    ? 'bg-[rgba(210,72,48,0.10)] font-semibold text-[#D24830]'
                     : 'bg-[#f5f2ec] text-[#4c4236] hover:bg-[#ece5d8]'
                 }`}
               >
@@ -354,7 +354,7 @@ export default function Dashboard() {
           </div>
           <button
             onClick={handleCreate}
-            className="rounded-[8px] bg-[#c24b2e] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-[#a93a20]"
+            className="rounded-[8px] bg-[#D24830] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-[#B23A22]"
           >
             + {t('errors:dashboard.createNew')}
           </button>

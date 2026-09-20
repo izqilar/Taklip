@@ -50,7 +50,7 @@ export default function Messages() {
         <button
           type="button"
           onClick={() => setOpenId(r.id)}
-          className="text-[#c24b2e] hover:underline"
+          className="text-[#D24830] hover:underline"
         >
           {t('common:button.detail')}
         </button>

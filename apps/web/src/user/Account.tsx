@@ -32,7 +32,7 @@ const Field = ({ label, value, num }: { label: string; value: ReactNode; num?: b
 const Avatar32 = ({ src, initial }: { src?: string | null; initial: string }) => (
   <span
     className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-bold text-white"
-    style={{ background: 'linear-gradient(135deg,#c24b2e,#a93a20)' }}
+    style={{ background: 'linear-gradient(135deg,#D24830,#B23A22)' }}
   >
     {src ? <img src={src} alt="" className="h-8 w-8 rounded-full object-cover" /> : (initial || '?').slice(0, 1)}
   </span>
@@ -97,7 +97,7 @@ export default function Account() {
         <div className="flex flex-wrap items-center gap-4 px-5 py-[18px]">
           <div
             className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full text-2xl font-bold text-white"
-            style={{ background: 'linear-gradient(135deg,#c24b2e,#a93a20)' }}
+            style={{ background: 'linear-gradient(135deg,#D24830,#B23A22)' }}
           >
             {user?.avatar ? <img src={user.avatar} alt="" className="h-16 w-16 rounded-full object-cover" /> : (name ?? 'U').slice(0, 1)}
           </div>
@@ -117,7 +117,7 @@ export default function Account() {
                   type="button"
                   disabled={saving}
                   onClick={saveNickname}
-                  className="rounded-lg bg-[#c24b2e] px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                  className="rounded-lg bg-[#D24830] px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
                 >
                   {saving ? t('common:userCenter.loading') : t('common:userCenter.account.save')}
                 </button>
@@ -129,7 +129,7 @@ export default function Account() {
               <button
                 type="button"
                 onClick={() => { setNickname(prof.nickname || ''); setEditing(true); }}
-                className="rounded-lg border border-[#c24b2e] px-3 py-1.5 text-sm font-medium text-[#c24b2e]"
+                className="rounded-lg border border-[#D24830] px-3 py-1.5 text-sm font-medium text-[#D24830]"
               >
                 {t('common:userCenter.account.edit')}
               </button>
@@ -150,7 +150,7 @@ export default function Account() {
               <input
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                className="w-full rounded-lg border border-[rgba(74,60,42,0.16)] px-3 py-1.5 text-[13.5px] outline-none focus:border-[#c24b2e]"
+                className="w-full rounded-lg border border-[rgba(74,60,42,0.16)] px-3 py-1.5 text-[13.5px] outline-none focus:border-[#D24830]"
               />
             ) : (
               <span className="min-w-0 overflow-hidden text-ellipsis text-[13.5px] text-[#2a2118]">{prof.nickname || '—'}</span>

@@ -6,7 +6,7 @@
  *
  * 与运营端的唯一差异（本端有意为之）：
  *   1. 触发器（胶囊）改为「红底 + 白描边」，对齐站内「登录」按钮样式
- *      （参考 SiteHeader 未登录态的 `border-white/60 bg-[#c81e42] text-white`）。
+ *      （参考 SiteHeader 未登录态的 `border-white/60 bg-[#D24830] text-white`）。
  *   2. 面板内不含「返回Web端首页」按钮（web 自己就是终端用户的唯一入口）。
  *   3. 面板不做 portal：由 SiteHeader 内部绝对定位，故样式表不含定位规则。
  *
@@ -21,8 +21,8 @@
   --ink1: #2a2118;
   --ink2: #4c4236;
   --ink3: #6e5f4a;
-  --accent: #c24b2e;
-  --accent-soft: rgba(194, 75, 46, 0.1);
+  --accent: #D24830;
+  --accent-soft: rgba(210, 72, 48, 0.1);
   --panel-2: #f3eee7;
   --up: #1d7a6b;
   --up-ink: #0f5a4e;
@@ -33,7 +33,7 @@
   --down-ink: #8f1d24;
   --r-sm: 6px;
   --r-md: 10px;
-  --avatar-grad: linear-gradient(135deg, #c24b2e, #a93a20);
+  --avatar-grad: linear-gradient(135deg, #D24830, #B23A22);
   --head-grad: linear-gradient(135deg, #fdf8f5, #faf3ee);
   --logout-ink: #c0392b;
   --logout-soft: #fdf0ef;
@@ -56,7 +56,7 @@
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 999px;
   /* 红底与顶栏同色：视觉上融进导航条，只留白描边（对齐「登录」按钮） */
-  background: #c81e42;
+  background: #D24830;
   color: #fff;
   cursor: pointer;
   flex: none;
@@ -84,9 +84,9 @@
   height: 30px;
   border-radius: 50%;
   /* 红底胶囊内改用「白底 + 红字」的首字母头像（原为朱砂渐变底 + 白字，
-     与红底胶囊糊在一起），字色取顶栏同色 #c81e42 与胶囊呼应 */
+     与红底胶囊糊在一起），字色取顶栏同色 #D24830 与胶囊呼应 */
   background: #fff;
-  color: #c81e42;
+  color: #D24830;
   display: grid;
   place-items: center;
   font-size: 13px;

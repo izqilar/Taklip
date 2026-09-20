@@ -26,7 +26,7 @@ const INK1 = '#1f2329';
 const INK2 = '#4e5969';
 const INK3 = '#86909c';
 const BORDER = '#e5e6eb';
-const BRAND = '#c24b2e';
+const BRAND = '#D24830';
 
 export interface WorkPreviewWork {
   id?: string;

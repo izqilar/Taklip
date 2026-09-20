@@ -34,13 +34,13 @@ export default function UserCenterLayout() {
         to={item.to}
         className={`relative flex items-center gap-2.5 rounded-md px-[11px] py-2 transition ${
           active
-            ? 'bg-[rgba(194,75,46,0.10)] text-[#c24b2e]'
+            ? 'bg-[rgba(210,72,48,0.10)] text-[#D24830]'
             : 'text-[#4c4236] hover:bg-[#f3eee7]'
         }`}
         style={{ fontWeight: active ? 600 : 400 }}
       >
         {active && (
-          <span className="absolute start-[-10px] top-[7px] bottom-[7px] w-[3px] rounded-[3px] bg-[#c24b2e]" />
+          <span className="absolute start-[-10px] top-[7px] bottom-[7px] w-[3px] rounded-[3px] bg-[#D24830]" />
         )}
         <span className="flex h-[18px] w-[18px] items-center justify-center opacity-85">{item.icon}</span>
         <span className="min-w-0 flex-1 truncate text-[13.5px]">{t(item.labelKey)}</span>
@@ -96,7 +96,7 @@ export default function UserCenterLayout() {
         <div className="flex flex-none items-center gap-2.5 border-b border-[rgba(74,60,42,0.10)] px-[18px] py-[14px]">
           <span
             className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[9px] text-white"
-            style={{ background: 'linear-gradient(135deg,#d2603f,#a93a20)' }}
+            style={{ background: 'linear-gradient(135deg,#d2603f,#B23A22)' }}
           >
             <svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor">
               <path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48Zm-96,85.15L52.57,64H203.43ZM98.71,128,40,181.81V74.19Zm11.84,10.85,12,11.05a8,8,0,0,0,10.82,0l12-11.05,58,53.15H52.57ZM157.29,128,216,74.18V181.82Z" />
@@ -135,7 +135,7 @@ export default function UserCenterLayout() {
                   }}
                 >
                   {/* 左侧朱砂竖条：与选中菜单项的 3px 竖条同一语汇 */}
-                  <span className="h-[13px] w-[3px] flex-none rounded-[2px] bg-[#c24b2e]" />
+                  <span className="h-[13px] w-[3px] flex-none rounded-[2px] bg-[#D24830]" />
                   <span className="min-w-0 flex-1 truncate">{key}</span>
                   {/* 折叠角标：与运营端 DownOutlined / RightOutlined 同语义 */}
                   <span className="flex-none text-[11px] leading-none text-[#6e5f4a]">

@@ -112,12 +112,12 @@ export default function QuickMakeWizard() {
             <li key={key} className="flex items-center gap-2">
               <span
                 className={`flex h-7 w-7 items-center justify-center rounded-full font-semibold ${
-                  active ? 'bg-[#c81e42] text-white' : done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+                  active ? 'bg-[#D24830] text-white' : done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
                 }`}
               >
                 {done ? '✓' : n}
               </span>
-              <span className={active ? 'font-medium text-[#c81e42]' : 'text-gray-500'}>
+              <span className={active ? 'font-medium text-[#D24830]' : 'text-gray-500'}>
                 {t(`quickMake.steps.${key}`)}
               </span>
               {idx < STEP_TITLES.length - 1 && <span className="mx-1 h-px w-8 bg-gray-300" />}
@@ -140,7 +140,7 @@ export default function QuickMakeWizard() {
               key={tp.id}
               type="button"
               onClick={() => onPickType(tp)}
-              className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-[#c81e42] hover:shadow-md"
+              className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-[#D24830] hover:shadow-md"
             >
               <span className="text-4xl">{tp.icon}</span>
               <span className="text-sm font-medium text-gray-700">{t(`quickMake.types.${tp.id}`)}</span>
@@ -161,7 +161,7 @@ export default function QuickMakeWizard() {
                   key={tp.id}
                   type="button"
                   onClick={() => onPickTemplate(tp)}
-                  className="group overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#c81e42] hover:shadow-md"
+                  className="group overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#D24830] hover:shadow-md"
                 >
                   <div className="relative aspect-[375/667] w-full overflow-hidden bg-gray-50">
                     <SchemaThumbnail schema={tp.schema} />
@@ -213,7 +213,7 @@ export default function QuickMakeWizard() {
                     value={values[f.bind] || ''}
                     onChange={(e) => setValues((v) => ({ ...v, [f.bind]: e.target.value }))}
                     rows={3}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#c81e42]"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#D24830]"
                     placeholder={t(`quickMake.fields.${f.bind}`)}
                   />
                 ) : f.type === 'image' ? (
@@ -230,7 +230,7 @@ export default function QuickMakeWizard() {
                     type="text"
                     value={values[f.bind] || ''}
                     onChange={(e) => setValues((v) => ({ ...v, [f.bind]: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#c81e42]"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#D24830]"
                     placeholder={t(`quickMake.fields.${f.bind}`)}
                   />
                 )}
@@ -250,7 +250,7 @@ export default function QuickMakeWizard() {
               type="button"
               onClick={onFinish}
               disabled={!isRequiredOk() || submitting}
-              className="rounded-full bg-[#c81e42] px-6 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-[#a81838] disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full bg-[#D24830] px-6 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-[#B23A22] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? t('quickMake.messages.creating') : t('quickMake.buttons.finish')}
             </button>
@@ -289,7 +289,7 @@ function ImageField({
   return (
     <div>
       <div className="flex items-center gap-4">
-        <label className="relative flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-300 bg-gray-50 text-xs text-gray-600 hover:border-[#c81e42]">
+        <label className="relative flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-300 bg-gray-50 text-xs text-gray-600 hover:border-[#D24830]">
           {value ? (
             <img src={value} alt="cover" className="h-full w-full object-cover" />
           ) : uploading ? (

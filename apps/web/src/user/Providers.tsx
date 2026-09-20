@@ -69,7 +69,7 @@ export default function Providers() {
               content: r.reviewContent ?? null,
             })
           }
-          className="text-[#c24b2e] hover:underline"
+          className="text-[#D24830] hover:underline"
         >
           {r.reviewed ? t('common:userCenter.orders.appendReview') : t('common:userCenter.orders.addReview')}
         </button>

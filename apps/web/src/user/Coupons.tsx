@@ -80,7 +80,7 @@ export default function Coupons() {
         <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
           {(TIER_PERKS[tier] ?? []).map((pk) => (
             <div key={pk} className="flex items-center gap-2 rounded-[6px] bg-[#f3eee7] p-3 text-sm text-[#4c4236]">
-              <span className="h-1.5 w-1.5 flex-none rounded-full bg-[#c24b2e]" />
+              <span className="h-1.5 w-1.5 flex-none rounded-full bg-[#D24830]" />
               {pk}
             </div>
           ))}

@@ -84,7 +84,7 @@ export default function Home() {
   return (
     <div className="min-h-full bg-white text-gray-900">
       {/* 首屏：红色背景包裹导航 + 全屏宽横幅 + 引导 + 搜索 */}
-      <div className="relative bg-gradient-to-b from-[#c81e42] via-[#d32f4f] to-[#e75d6f]">
+      <div className="relative bg-gradient-to-b from-[#D24830] via-[#d32f4f] to-[#e75d6f]">
         {/* 装饰背景 */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-20">
           <div className="absolute -left-20 top-10 h-64 w-64 rounded-full bg-yellow-300 blur-3xl" />
@@ -114,7 +114,7 @@ export default function Home() {
                   <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
                     <Link
                       to="/templates"
-                      className="rounded-full bg-white px-6 py-2 text-sm font-bold text-[#c81e42] shadow-lg transition hover:bg-gray-100"
+                      className="rounded-full bg-white px-6 py-2 text-sm font-bold text-[#D24830] shadow-lg transition hover:bg-gray-100"
                     >
                       {t('common:button.browseTemplates')}
                     </Link>

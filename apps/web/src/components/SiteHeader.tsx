@@ -291,7 +291,7 @@ export default function SiteHeader() {
   }, []);
 
   return (
-    <header className="fixed start-0 end-0 top-0 z-50 bg-[#c81e42] text-white shadow-md">
+    <header className="fixed start-0 end-0 top-0 z-50 bg-[#D24830] text-white shadow-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-6">
         {/* Logo：庆柬（金）+ 云（白） */}
         <Link to="/" className="flex flex-shrink-0 items-center gap-0.5 text-2xl font-extrabold tracking-tight">
@@ -331,7 +331,7 @@ export default function SiteHeader() {
                     </svg>
                   </Link>
                   {/* 二级菜单：鼠标停靠弹出 */}
-                  <div className="absolute start-0 top-full hidden w-40 rounded-b-lg border border-white/10 bg-[#c81e42] py-2 shadow-xl group-hover:block">
+                  <div className="absolute start-0 top-full hidden w-40 rounded-b-lg border border-white/10 bg-[#D24830] py-2 shadow-xl group-hover:block">
                     {SERVICE_CLOUD_ITEMS.map((item) => (
                       <Link
                         key={item.key}
@@ -422,7 +422,7 @@ export default function SiteHeader() {
           {!isPlainUser && (
             <Link
               to="/find-services"
-              className="hidden rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 px-4 py-1.5 text-sm font-sans font-normal text-[#c81e42] shadow-sm transition hover:from-amber-500 hover:to-yellow-600 md:inline-flex"
+              className="hidden rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 px-4 py-1.5 text-sm font-sans font-normal text-[#D24830] shadow-sm transition hover:from-amber-500 hover:to-yellow-600 md:inline-flex"
             >
               {t('common:nav.providerEntry')}
             </Link>
@@ -540,7 +540,7 @@ export default function SiteHeader() {
               </Link>
               <Link
                 to="/register"
-                className="rounded-full bg-white px-4 py-1.5 text-sm font-bold text-[#c81e42] shadow-sm transition hover:bg-gray-100"
+                className="rounded-full bg-white px-4 py-1.5 text-sm font-bold text-[#D24830] shadow-sm transition hover:bg-gray-100"
               >
                 {t('common:nav.register')}
               </Link>
@@ -551,7 +551,7 @@ export default function SiteHeader() {
 
       {/* 移动端导航抽屉：<lg 时展开，竖向罗列主航入口；≥lg 隐藏 */}
       {mobileNavOpen && (
-        <div className="absolute inset-x-0 top-full border-t border-white/10 bg-[#c81e42] shadow-xl lg:hidden">
+        <div className="absolute inset-x-0 top-full border-t border-white/10 bg-[#D24830] shadow-xl lg:hidden">
           <div className="flex flex-col py-1">
             {MOBILE_NAV.map((item) => {
               if (item.type === 'action') {

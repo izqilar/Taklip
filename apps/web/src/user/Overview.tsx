@@ -140,7 +140,7 @@ export default function Overview() {
         <div className="flex items-center gap-3">
           <span
             className="flex h-[46px] w-[46px] flex-none items-center justify-center rounded-full text-[19px] font-bold text-white"
-            style={{ background: 'linear-gradient(135deg,#c24b2e,#a93a20)' }}
+            style={{ background: 'linear-gradient(135deg,#D24830,#B23A22)' }}
           >
             {(name ?? 'U').slice(0, 1)}
           </span>
@@ -186,7 +186,7 @@ export default function Overview() {
                 key={pk}
                 className="flex items-center gap-2 rounded-md bg-[#f3eee7] px-3 py-2 text-[13px] text-[#4c4236]"
               >
-                <span className="h-2 w-2 flex-none rounded-full bg-[#c24b2e]" />
+                <span className="h-2 w-2 flex-none rounded-full bg-[#D24830]" />
                 {pk}
               </div>
             ))}

@@ -59,14 +59,14 @@ export default function Orders() {
 
   const rowActions = (r: any) => (
     <>
-      <button type="button" onClick={() => setDetail(r)} className="text-[#c24b2e] hover:underline">
+      <button type="button" onClick={() => setDetail(r)} className="text-[#D24830] hover:underline">
         {t('common:button.detail')}
       </button>
       {r.serviceStatus === 'completed' && (
         <button
           type="button"
           onClick={() => setReviewFor(r)}
-          className="text-[#c24b2e] hover:underline"
+          className="text-[#D24830] hover:underline"
         >
           {r.reviewed ? t('common:userCenter.orders.appendReview') : t('common:userCenter.orders.addReview')}
         </button>

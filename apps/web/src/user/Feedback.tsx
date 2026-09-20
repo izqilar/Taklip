@@ -63,7 +63,7 @@ export default function Feedback() {
         <button
           type="button"
           onClick={() => setDetailId(r.id)}
-          className="text-[#c24b2e] hover:underline"
+          className="text-[#D24830] hover:underline"
         >
           {t('common:button.detail')}
         </button>
@@ -116,12 +116,12 @@ function NewFeedbackModal({ onClose, onSubmitted }: { onClose: () => void; onSub
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder={t('common:userCenter.feedback.titlePlaceholder')}
-          className="mb-3 w-full rounded-lg border border-[rgba(74,60,42,0.16)] p-2.5 text-sm outline-none focus:border-[#c24b2e]"
+          className="mb-3 w-full rounded-lg border border-[rgba(74,60,42,0.16)] p-2.5 text-sm outline-none focus:border-[#D24830]"
         />
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
-          className="mb-3 w-full rounded-lg border border-[rgba(74,60,42,0.16)] p-2.5 text-sm outline-none focus:border-[#c24b2e]"
+          className="mb-3 w-full rounded-lg border border-[rgba(74,60,42,0.16)] p-2.5 text-sm outline-none focus:border-[#D24830]"
         >
           {TYPES.map((tp) => (
             <option key={tp} value={tp}>{t(`common:userCenter.ticketType.${tp}`)}</option>
@@ -132,12 +132,12 @@ function NewFeedbackModal({ onClose, onSubmitted }: { onClose: () => void; onSub
           onChange={(e) => setContent(e.target.value)}
           rows={4}
           placeholder={t('common:userCenter.feedback.contentPlaceholder')}
-          className="w-full rounded-lg border border-[rgba(74,60,42,0.16)] p-3 text-sm outline-none focus:border-[#c24b2e]"
+          className="w-full rounded-lg border border-[rgba(74,60,42,0.16)] p-3 text-sm outline-none focus:border-[#D24830]"
         />
         {err && <p className="mt-1 text-xs text-red-500">{err}</p>}
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600">{t('common:button.cancel')}</button>
-          <button type="button" disabled={saving} onClick={submit} className="rounded-lg bg-[#c24b2e] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+          <button type="button" disabled={saving} onClick={submit} className="rounded-lg bg-[#D24830] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
             {saving ? t('common:userCenter.loading') : t('common:userCenter.feedback.submit')}
           </button>
         </div>
