@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GalleryElement } from '@h5design/core';
-import { resolveTransition, getTransitionTotalMs, default as GalleryTransitionLayer } from '../../elements/gallery/galleryTransitionLayer';
+import { resolveTransition, getTransitionTotalMs, GalleryTransitionLayer } from '@h5design/render';
 
 /**
  * 编辑态图集切换动画预览覆盖层。

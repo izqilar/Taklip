@@ -44,6 +44,8 @@ export {
   PUZZLE_LAYOUT_IDS,
 } from './elements/puzzle/puzzleLayouts';
 export { getFormCount, incFormCount, WIDGET_REGISTRY, getWidgetDefault } from './elements/widget/widgetModules';
+export { default as MusicPlayer } from './components/Preview/MusicPlayer';
+export type { WidgetDef, WidgetFieldDef, WidgetCommonField, WidgetDOMProps } from './elements/widget/types';
 
 // 把 core 的 schema 归一化工具一并 re-export，方便消费端「从 render 单点取用」
 export { normalizeSchema, CURRENT_SCHEMA_VERSION } from '@h5design/core';

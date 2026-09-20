@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { PuzzleElement } from '@h5design/core';
 import { services } from '../../services';
 import ColorField from '../../components/UI/ColorField';
-import { PUZZLE_LAYOUTS, getPuzzleLayout, getShapePathD } from './puzzleLayouts';
+import { PUZZLE_LAYOUTS, getPuzzleLayout, getShapePathD } from '@h5design/render';
 
 interface PropertyPuzzleProps {
   el: PuzzleElement;

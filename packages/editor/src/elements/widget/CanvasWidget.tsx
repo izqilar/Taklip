@@ -1,7 +1,7 @@
 import { Group, Rect, Text } from 'react-konva';
 import type { WidgetElement } from '@h5design/core';
 import { useTranslation } from 'react-i18next';
-import { WIDGET_REGISTRY } from './widgetModules';
+import { WIDGET_REGISTRY } from '@h5design/render';
 
 interface CanvasWidgetProps {
   el: WidgetElement;

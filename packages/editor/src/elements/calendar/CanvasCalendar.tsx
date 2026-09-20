@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Group, Rect, Text, Path, Line, RegularPolygon, Star } from 'react-konva';
 import Konva from 'konva';
 import type { CalendarElement, CalendarMarker } from '@h5design/core';
-import { getCalendarGrid, WEEKDAYS_EN, WEEKDAYS_ZH } from './calendarShared';
+import { getCalendarGrid, WEEKDAYS_EN, WEEKDAYS_ZH } from '@h5design/render';
 
 interface CanvasCalendarProps {
   el: CalendarElement;

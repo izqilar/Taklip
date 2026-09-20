@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import type { CountdownElement } from '@h5design/core';
-import { getRemaining, getUnitLabels, padDigits } from './countdownShared';
+import { getRemaining, getUnitLabels, padDigits } from '@h5design/render';
 
 interface CanvasCountdownProps {
   el: CountdownElement;

@@ -3,4 +3,4 @@ export {
   getWidgetDefault,
   getFormCount,
   incFormCount,
-} from './widgetModules';
+} from '@h5design/render';

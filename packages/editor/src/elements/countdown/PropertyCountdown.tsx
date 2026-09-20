@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { CountdownElement } from '@h5design/core';
 import ColorField from '../../components/UI/ColorField';
-import { isoToLocalInput, localInputToIso } from './countdownShared';
+import { isoToLocalInput, localInputToIso } from '@h5design/render';
 
 interface PropertyCountdownProps {
   el: CountdownElement;

@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Project } from '@h5design/core';
 import DOMRenderer from './DOMRenderer';
-import MusicPlayer from './MusicPlayer';
+import { MusicPlayer } from '@h5design/render';
 import WatermarkOverlay from '../Watermark';
 
 interface PreviewModalProps {

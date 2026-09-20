@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import type { WidgetElement } from '@h5design/core';
 import ColorField from '../../components/UI/ColorField';
-import { WIDGET_REGISTRY } from './widgetModules';
-import type { WidgetCommonField, WidgetFieldDef } from './types';
+import { WIDGET_REGISTRY } from '@h5design/render';
+import type { WidgetCommonField, WidgetFieldDef } from '@h5design/render';
 
 interface PropertyWidgetProps {
   el: WidgetElement;

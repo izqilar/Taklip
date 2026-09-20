@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Group, Rect, Image } from 'react-konva';
 import type { PuzzleElement } from '@h5design/core';
-import { getPuzzleLayout, drawShapeInClip } from './puzzleLayouts';
+import { getPuzzleLayout, drawShapeInClip } from '@h5design/render';
 
 interface CanvasPuzzleProps {
   el: PuzzleElement;

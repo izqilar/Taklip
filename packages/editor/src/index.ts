@@ -42,21 +42,3 @@ export * from './store/editorStore';
 
 // —— 元素注册 ——
 export * from './elements/registry';
-
-// —— 元素共享逻辑（编辑器 Canvas* 与 web 发布页 DOM* 共用，保单一事实源；
-//     长期应下沉到 @h5design/render，见文档 §0-D8）——
-export {
-  getCalendarGrid,
-  WEEKDAYS_EN,
-  WEEKDAYS_ZH,
-  CalendarMarkerSvg,
-  CALENDAR_PULSE_KEYFRAMES,
-} from './elements/calendar/calendarShared';
-export { getRemaining, getUnitLabels, padDigits } from './elements/countdown/countdownShared';
-export {
-  default as GalleryTransitionLayer,
-  resolveTransition,
-  getTransitionTotalMs,
-} from './elements/gallery/galleryTransitionLayer';
-export { getPuzzleLayout, getShapePathD } from './elements/puzzle/puzzleLayouts';
-export { WIDGET_REGISTRY } from './elements/widget/widgetModules';
