@@ -7,6 +7,7 @@ import { Panel } from '../../components/ui/Panel';
 import { Pill } from '../../components/ui/Pill';
 import { T } from '../../config/theme';
 import { t } from '../../i18n/t';
+import { TICKET_STATUS } from '../../config/status';
 
 const TICKET_TYPE: Record<string, string> = {
   COMPLAINT: 'pages.fb.complaint',
@@ -16,13 +17,6 @@ const TICKET_TYPE: Record<string, string> = {
   APPEAL: 'pages.status.tkTypeAppeal',
 };
 
-const TICKET_STATUS: Record<string, { key: string; tone: 'ok' | 'warn' | 'bad' | 'ac' | 'mut' }> = {
-  OPEN: { key: 'pages.status.tkOpenReply', tone: 'warn' },
-  NEGOTIATING: { key: 'pages.status.tkNegoProcess', tone: 'ac' },
-  ESCALATED: { key: 'pages.enum.escalated', tone: 'ac' },
-  ARBITRATING: { key: 'pages.msg.arbitrating', tone: 'ac' },
-  CLOSED: { key: 'pages.status.tkClosedReply', tone: 'ok' },
-};
 
 /** 处理流程痕迹（原型 fbTrace）：用户视角为服务商 → 代理商 → 平台逐层升级 */
 const TRACE_STEPS: [string, string][] = [

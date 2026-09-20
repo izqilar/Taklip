@@ -13,6 +13,7 @@ import { EmptyState } from '../components/common/EmptyState';
 import { T } from '../config/theme';
 import { useLayer } from '../providers/layerContext';
 import { t } from '../i18n/t';
+import { TICKET_STATUS } from '../config/status';
 
 const TICKET_TYPE: Record<string, string> = {
   COMPLAINT: t("pages.fb.complaint"),
@@ -22,14 +23,6 @@ const TICKET_TYPE: Record<string, string> = {
   APPEAL: t("pages.fb.appeal"),
 };
 
-/** 状态 → 原型双角色色板（升级仲裁=朱砂强调 / 协商中=琥珀 / 已关闭=绿） */
-const TICKET_STATUS: Record<string, { key: string; tone: PillTone }> = {
-  OPEN: { key: 'pages.enum.pendingProcess', tone: 'mut' },
-  NEGOTIATING: { key: 'pages.msg.negotiating', tone: 'warn' },
-  ESCALATED: { key: 'pages.enum.escalated', tone: 'ac' },
-  ARBITRATING: { key: 'pages.msg.arbitrating', tone: 'ac' },
-  CLOSED: { key: 'pages.enum.closed', tone: 'ok' },
-};
 
 const statusPill = (s: string) => {
   const m = TICKET_STATUS[s] ?? { key: s, tone: 'mut' as PillTone };

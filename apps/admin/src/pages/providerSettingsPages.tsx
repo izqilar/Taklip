@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Form, Input, InputNumber, Select, Switch, Button, message, Upload } from 'antd';
 import { T } from '../config/theme';
+import { TICKET_STATUS } from '../config/status';
 import { dataProvider } from '../providers/dataProvider';
 import { API_URL, getToken } from '../utility';
 import { SettingPage, PreviewCard, FlowSteps, Timeline } from '../components/provider/SettingPage';
@@ -38,10 +39,6 @@ const CLIENT_TAG_OPTS = ['重点客户', '普通客户', '潜力客户', 'VIP �
 
 const TICKET_TYPE: Record<string, string> = {
   COMPLAINT: 'pages.fb.complaint', PRAISE: 'pages.status.tkTypePraise', SUGGESTION: 'pages.fb.suggestion', CONSULT: 'pages.col.consult', APPEAL: 'pages.status.tkTypeAppeal', AFTERSALE: 'pages.status.tkTypeAftersale', OTHER: 'pages.status.tkTypeOther',
-};
-const TICKET_STATUS: Record<string, { key: string; tone: any }> = {
-  OPEN: { key: 'pages.status.tkOpenResp', tone: 'warn' }, NEGOTIATING: { key: 'pages.status.negotiating', tone: 'ac' }, ESCALATED: { key: 'pages.status.tkEscalated', tone: 'ac' },
-  ARBITRATING: { key: 'pages.status.tkArbitrating', tone: 'ac' }, CLOSED: { key: 'pages.status.tkClosed', tone: 'ok' },
 };
 const TICKET_TYPE_OPTS = Object.entries(TICKET_TYPE)
   .filter(([v]) => ['AFTERSALE', 'SUGGESTION', 'CONSULT', 'COMPLAINT', 'OTHER'].includes(v))

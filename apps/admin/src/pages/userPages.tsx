@@ -18,6 +18,7 @@ import { useLayer } from '../providers/layerContext';
 import { t } from '../i18n/t';
 import { GRID, T } from '../config/theme';
 import { serviceRolesText, msgTypeText, cleanCode } from '../config/labels';
+import { TICKET_STATUS, ORDER_STATUS } from '../config/status';
 import { formatCents, todayKey, API_URL, authHeaders, getStoredUser, WEB_BASE } from '../utility';
 import { SchemaThumbnail } from '@h5design/render';
 import { DesignGalleryCard, type DesignActionCaps } from '@h5design/ui';
@@ -69,11 +70,6 @@ const SERVICE_STATUS: Record<string, { key: string; tone: 'warn' | 'ac' | 'ok' |
   refunded: { key: 'status.REFUNDED', tone: 'bad' },
 };
 
-/** 订单支付态（老数据无 serviceStatus 时按支付态兜底命名） */
-const ORDER_STATUS: Record<string, { key: string; color: string }> = {
-  paid: { key: 'pages.status.svcCompleted', color: 'green' },
-  refunded: { key: 'status.REFUNDED', color: 'red' },
-};
 
 /** 反馈类型（原型：售后 / 建议 / 咨询 / 投诉 / 其他） */
 const TICKET_TYPE: Record<string, string> = {
@@ -86,14 +82,6 @@ const TICKET_TYPE: Record<string, string> = {
   OTHER: 'pages.status.tkTypeOther',
 };
 
-/** 反馈状态：CLOSED 视为已回复，其余为待回复 */
-const TICKET_STATUS: Record<string, { key: string; color: string }> = {
-  OPEN: { key: 'pages.status.tkOpenReply', color: 'gold' },
-  NEGOTIATING: { key: 'pages.status.tkNegoProcess', color: 'blue' },
-  ESCALATED: { key: 'pages.enum.escalated', color: 'volcano' },
-  ARBITRATING: { key: 'pages.msg.arbitrating', color: 'volcano' },
-  CLOSED: { key: 'pages.status.tkClosedReply', color: 'green' },
-};
 
 /** 星级渲染（原型 .num + ★ ，保留一位小数如 ★ 4.7） */
 const stars = (n?: number | null) =>

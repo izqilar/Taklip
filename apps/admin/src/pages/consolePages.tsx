@@ -18,6 +18,7 @@ import { StatusTag } from '../components/common/StatusTag';
 import { Pill, type PillTone } from '../components/ui/Pill';
 import { GRID, T } from '../config/theme';
 import { categoryText, serviceRolesText, roleText, cleanCode } from '../config/labels';
+import { ORDER_STATUS } from '../config/status';
 import { formatCents, todayKey, API_URL, authHeaders } from '../utility';
 import { dataProvider } from '../providers/dataProvider';
 import { t } from "../i18n/t";
@@ -86,13 +87,6 @@ const USER_STATUS: Record<string, { key: string; color: string }> = {
   DISABLED: { key: 'pages.enum.disabled', color: 'red' },
   INACTIVE: { key: 'pages.enum.inactive', color: 'default' },
   PENDING: { key: 'pages.enum.pending', color: 'gold' },
-};
-/** 订单状态 */
-const ORDER_STATUS: Record<string, { key: string; color: string }> = {
-  pending: { key: 'pages.enum.pendingPay', color: 'orange' },
-  paid: { key: 'pages.enum.paid', color: 'green' },
-  refunded: { key: 'pages.enum.refunded', color: 'red' },
-  cancelled: { key: 'pages.enum.cancelled', color: 'default' },
 };
 
 /* ===================== 代理商中心（AGENT 辖区视角） ===================== */

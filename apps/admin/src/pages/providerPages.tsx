@@ -27,6 +27,7 @@ import { SchemaThumbnail, isProjectLike } from '@h5design/render';
 import { formatCents, API_URL, authHeaders } from '../utility';
 import { dataProvider, withSubject } from '../providers/dataProvider';
 import { cleanCode, categoryText, msgTypeText, publisherText, msgScopeText } from '../config/labels';
+import { TICKET_STATUS } from '../config/status';
 import { t } from '../i18n/t';
 import { useLayer } from '../providers/layerContext';
 import { DesignGalleryCard, type DesignActionCaps } from '@h5design/ui';
@@ -145,13 +146,6 @@ const APPLY_FLOW = [
   { key: 'final', label: 'pages.status.consoleFinalReview' },
   { key: 'sign', label: 'pages.status.signOpen' },
 ];
-const TICKET_STATUS: Record<string, { key: string; tone: PillTone }> = {
-  OPEN: { key: 'pages.status.tkOpenResp', tone: 'warn' },
-  NEGOTIATING: { key: 'pages.status.negotiating', tone: 'ac' },
-  ESCALATED: { key: 'pages.status.tkEscalated', tone: 'ac' },
-  ARBITRATING: { key: 'pages.status.tkArbitrating', tone: 'ac' },
-  CLOSED: { key: 'pages.status.tkClosed', tone: 'ok' },
-};
 const TICKET_TYPE: Record<string, string> = {
   COMPLAINT: 'pages.fb.complaint',
   PRAISE: 'pages.status.tkTypePraise',
