@@ -14,9 +14,9 @@ import { ALL_TAB, TEMPLATE_CATEGORIES, categoryI18nKey } from '@/categories';
 // 轮播图的语言无关装饰信息（副标题为英文品牌标语，图标为 emoji）；eyebrow/title 取自 i18n
 // bg/fg/soft 为每帧独立的品牌色（用户指定三帧用三种不同底色），soft 用于浮层（胶囊/箭头/指示点）的半透明底色
 const SLIDE_META = [
-  { sub: 'YOU MUST MARRY ME TODAY', icon: '💒', bg: '#0066FF', fg: '#FFFFFF', soft: 'rgba(255,255,255,0.18)' },
-  { sub: 'PROFESSIONAL H5 MARKETING', icon: '🏢', bg: '#FFFF00', fg: '#1F2937', soft: 'rgba(31,41,55,0.15)' },
-  { sub: 'SMART EVENT INVITATION', icon: '📅', bg: '#10C41D', fg: '#FFFFFF', soft: 'rgba(255,255,255,0.18)' },
+  { sub: 'YOU MUST MARRY ME TODAY', icon: '💒', bg: '#df8e0c', fg: '#FFFFFF', soft: 'rgba(255,255,255,0.18)' },
+  { sub: 'PROFESSIONAL H5 MARKETING', icon: '🏢', bg: '#bcbc01', fg: '#1F2937', soft: 'rgba(31,41,55,0.15)' },
+  { sub: 'SMART EVENT INVITATION', icon: '📅', bg: '#01bc01', fg: '#FFFFFF', soft: 'rgba(255,255,255,0.18)' },
 ];
 
 const GUIDE_CARDS = [
@@ -103,7 +103,7 @@ export default function Home() {
               {SLIDES.map((slide) => (
                 <div
                   key={slide.eyebrow}
-                  className="relative flex w-full flex-shrink-0 flex-col items-center justify-center px-6 py-32 text-center md:py-34"
+                  className="relative flex w-full flex-shrink-0 flex-col items-center justify-center px-6 py-[118px] text-center md:py-[126px]"
                   style={{ backgroundColor: slide.bg, color: slide.fg }}
                 >
                   <div className="mb-4 text-4xl md:text-5xl">{slide.icon}</div>
@@ -171,8 +171,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 核心引导区 */}
-        <section className="relative mx-auto max-w-7xl px-4 pb-4">
+        {/* 核心引导区（banner 压缩出的 20px 以 pt-5 留白形式补在此处，位于引导卡上方） */}
+        <section className="relative mx-auto max-w-7xl pt-5 px-4 pb-4">
           <div className="grid gap-3 rounded-xl bg-white p-3 shadow-lg sm:grid-cols-2 lg:grid-cols-4">
             {GUIDE_CARDS.map((card) => (
               <div key={card.key} className="flex items-center gap-3 rounded-lg p-2 transition hover:bg-gray-50">
