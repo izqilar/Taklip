@@ -9,6 +9,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { api, type UserInfo } from '@/api/client';
+import { cleanCode } from '@h5design/core';
 // 只取 store（轻量）——切勿从 '@h5design/editor' 主入口导入，
 // 那会把整个画布内核（Konva/GSAP，约 4MB）拖进全站顶部导航的首屏依赖。
 import {useEditorStore} from '@h5design/editor/store';
@@ -101,19 +102,6 @@ const SERVICE_CLOUD_ITEMS = [
     ),
   },
 ] as const;
-
-// 账号 ID 展示前剥离已知英文前缀（与运营端 cleanCode 同口径，真实 cuid 原样返回）
-const ID_CODE_PREFIXES = ['e2e_order_', 'e2e_user_', 'e2e_', 'tpl_seed_', 'test_user_', 'test_', 'dev_', 'demo_', 'order_'];
-function cleanAccountId(v?: string | null): string {
-  if (!v) return '—';
-  let s = String(v);
-  for (let i = 0; i < 4; i++) {
-    const hit = ID_CODE_PREFIXES.find((p) => s.startsWith(p));
-    if (!hit) break;
-    s = s.slice(hit.length);
-  }
-  return s || '—';
-}
 
 /** 手机号脱敏：11 位手机号保留前 3 后 4，中间以 **** 遮蔽；其余原样返回。 */
 function maskPhone(phone?: string | null): string {
@@ -231,7 +219,7 @@ export default function SiteHeader() {
   const initial = (user?.nickname || user?.phone || 'U').toString().slice(0, 1);
   const displayName =
     user?.nickname || user?.realName || (user?.phone ? maskPhone(user.phone) : '未命名');
-  const accountId = cleanAccountId(user?.id);
+  const accountId = cleanCode(user?.id);
   const roleLabel = t(`common:role.${user?.role ?? 'USER'}`);
   const auth = authTag(user);
 

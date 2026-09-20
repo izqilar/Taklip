@@ -17,18 +17,8 @@ export const formatCents = (cents?: number | null): string => {
   })}`;
 };
 
-/** 账号 ID 展示前剥离已知英文前缀（与运营端 cleanCode / web SiteHeader.cleanAccountId 同口径） */
-const ID_CODE_PREFIXES = ['e2e_order_', 'e2e_user_', 'e2e_', 'tpl_seed_', 'test_user_', 'test_', 'dev_', 'demo_', 'order_'];
-export function cleanCode(v?: string | null): string {
-  if (!v) return '—';
-  let s = String(v);
-  for (let i = 0; i < 4; i++) {
-    const hit = ID_CODE_PREFIXES.find((p) => s.startsWith(p));
-    if (!hit) break;
-    s = s.slice(hit.length);
-  }
-  return s || '—';
-}
+// 统一真值源已收敛到 @h5design/core（见 packages/core/src/code.ts），此处仅 re-export 以兼容既有 import。
+export { cleanCode } from '@h5design/core';
 
 /** 手机号脱敏：11 位手机号保留前 3 后 4，中间以 **** 遮蔽；其余原样返回（与运营端 maskPhone 同口径） */
 export function maskPhone(phone?: string | null): string {

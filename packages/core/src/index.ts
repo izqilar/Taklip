@@ -5,6 +5,7 @@ export * from './publish';
 export * from './fonts';
 export * from './color';
 export * from './text';
+export * from './code';
 
 // 渲染管线归一化工具（与 @h5design/render 共享单点入口）
 export { normalizeSchema, CURRENT_SCHEMA_VERSION } from './schema';
