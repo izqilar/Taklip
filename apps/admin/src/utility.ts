@@ -16,34 +16,39 @@ export const USER_KEY = 'h5_admin_user';
 export const WEB_BASE =
   (import.meta.env.VITE_WEB_BASE as string | undefined) ?? 'http://localhost:5173';
 
-let __webBaseCache: { value: string; ts: number } | null = null;
+let __lanInfoCache: { value: { ip: string | null; ips: string[] }; ts: number } | null = null;
+
+/** 向 admin dev server 取本机 LAN 候选 IP（开发期）；生产无该接口时返回空。 */
+export async function fetchLanInfo(): Promise<{ ip: string | null; ips: string[] }> {
+  const now = Date.now();
+  if (__lanInfoCache && now - __lanInfoCache.ts < 30000) return __lanInfoCache.value;
+  let info: { ip: string | null; ips: string[] } = { ip: null, ips: [] };
+  try {
+    const res = await fetch('/__lan_info');
+    if (res.ok) {
+      const data = (await res.json()) as { ip?: string | null; ips?: string[] };
+      info = { ip: data?.ip ?? null, ips: data?.ips ?? (data?.ip ? [data.ip] : []) };
+    }
+  } catch {
+    /* 生产构建无该接口 */
+  }
+  __lanInfoCache = { value: info, ts: now };
+  return info;
+}
 
 /**
- * 解析 web 端基址，三层回退 + 30s 模块级缓存（多卡片/弹窗共享，避免重复打 /__lan_info）：
- *  1. VITE_WEB_BASE（手动覆盖 / 生产公网域名）；
- *  2. 开发期向 admin dev server 的 /__lan_info 探测本机 LAN IP（IP 变化自动跟随）；
- *  3. 兜底 http://localhost:5173。
+ * 解析 web 端基址。
+ *  - preferIp 指定时直接用该 IP（用户在多网卡时手动选）；
+ *  - 否则三层回退：VITE_WEB_BASE > /__lan_info 自动探测 > localhost。
+ * fetchLanInfo 带 30s 模块级缓存，避免多卡片/弹窗重复打接口。
  */
-export async function resolveWebBase(): Promise<string> {
-  const now = Date.now();
-  if (__webBaseCache && now - __webBaseCache.ts < 30000) return __webBaseCache.value;
+export async function resolveWebBase(preferIp?: string): Promise<string> {
+  if (preferIp) return `http://${preferIp}:5173`;
   const env = (import.meta.env.VITE_WEB_BASE as string | undefined)?.trim();
-  let base = WEB_BASE;
-  if (env) {
-    base = env;
-  } else {
-    try {
-      const res = await fetch('/__lan_info');
-      if (res.ok) {
-        const data = (await res.json()) as { ip?: string | null };
-        if (data?.ip) base = `http://${data.ip}:5173`;
-      }
-    } catch {
-      /* 生产构建无该接口，降级到兜底 */
-    }
-  }
-  __webBaseCache = { value: base, ts: now };
-  return base;
+  if (env) return env;
+  const { ip } = await fetchLanInfo();
+  if (ip) return `http://${ip}:5173`;
+  return WEB_BASE;
 }
 
 export function getToken(): string | null {

@@ -10,7 +10,7 @@
  */
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { resolveWebBase } from '../../utility';
+import { resolveWebBase, fetchLanInfo } from '../../utility';
 
 interface ShareQrPanelProps {
   publishCode: string;
@@ -23,13 +23,18 @@ export const ShareQrPanel = ({ publishCode, title, size = 200 }: ShareQrPanelPro
   const [url, setUrl] = useState('');
   const [qr, setQr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [ips, setIps] = useState<string[]>([]);
+  const [chosenIp, setChosenIp] = useState('');
 
-  // 动态解析 web 基址：优先 VITE_WEB_BASE（手动/公网覆盖），否则向 admin dev server
-  // 的 /__lan_info 探测本机 LAN IP（IP 变化自动跟随）。每 30s 重新探测一次。
+  // 动态解析 web 基址：开发期向 admin dev server 的 /__lan_info 取候选 LAN IP；
+  // 多网卡时让用户选（ips），否则自动跟随。每 30s 重新探测一次（IP 变化自动跟随）。
   useEffect(() => {
     let alive = true;
     const resolve = async () => {
-      const base = await resolveWebBase();
+      const info = await fetchLanInfo();
+      if (!alive) return;
+      setIps(info.ips);
+      const base = await resolveWebBase(chosenIp || undefined);
       if (alive) setUrl(`${base}/p/${publishCode}`);
     };
     resolve();
@@ -38,7 +43,7 @@ export const ShareQrPanel = ({ publishCode, title, size = 200 }: ShareQrPanelPro
       alive = false;
       clearInterval(timer);
     };
-  }, [publishCode]);
+  }, [publishCode, chosenIp]);
 
   useEffect(() => {
     if (!url) return;
@@ -104,6 +109,23 @@ export const ShareQrPanel = ({ publishCode, title, size = 200 }: ShareQrPanelPro
       <div style={{ fontSize: 12, color: '#6b7280' }}>
         {title ? `「${title}」已发布 · ` : ''}微信扫码在手机端查看最终效果
       </div>
+      {ips.length > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#6b7280' }}>
+          <span>本机网卡：</span>
+          <select
+            value={chosenIp || ips[0]}
+            onChange={(e) => setChosenIp(e.target.value)}
+            style={{ fontSize: 12, padding: '2px 6px', borderRadius: 4 }}
+          >
+            {ips.map((ip) => (
+              <option key={ip} value={ip}>
+                {ip}
+                {ip === ips[0] ? '（推荐）' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div
         style={{
           display: 'flex',

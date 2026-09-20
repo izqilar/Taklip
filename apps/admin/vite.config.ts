@@ -5,25 +5,32 @@ import os from 'node:os';
 
 // 探测本机用于局域网分享的 IPv4（排除回环 / 虚拟网卡 / 容器 / 隧道网段）。
 // 仅 dev server 生效；生产构建无此中间件，前端回退到 VITE_WEB_BASE。
-function pickLanIp(): string | null {
+function listLanIps(): string[] {
   const ifaces = os.networkInterfaces();
   const candidates: string[] = [];
-  for (const list of Object.values(ifaces)) {
+  for (const [name, list] of Object.entries(ifaces)) {
+    // 跳过虚拟/容器/隧道网卡：按接口名识别比枚举 IP 网段更稳
+    // （VMware/VirtualBox/Hyper-V/WSL/Docker/Tailscale/VPN-TAP 的网段千奇百怪，
+    //  例如 VMware VMnet8 常用 192.168.239.x，单靠网段枚举会漏）
+    if (/VMware|VirtualBox|Hyper-?V|vEthernet|WSL|docker|Tailscale|TAP/i.test(name)) continue;
     for (const ni of list ?? []) {
       if (ni.family !== 'IPv4' || ni.internal) continue;
       const ip = ni.address;
       if (/^169\.254\./.test(ip)) continue; // 链路本地
-      if (/^100\./.test(ip)) continue; // CGNAT / VPN 常见
-      if (/^172\.(1[6-9]|2\d|3[01])\./.test(ip)) continue; // Docker 桥接 172.16–31
-      if (/^192\.168\.(5[6-9]|6\d|7\d|8\d|9\d)\./.test(ip)) continue; // VirtualBox/VMware 56–99
+      if (/^100\./.test(ip)) continue; // CGNAT / VPN 常见（兜底）
+      if (/^172\.(1[6-9]|2\d|3[01])\./.test(ip)) continue; // Docker 桥接 172.16–31（兜底）
       candidates.push(ip);
     }
   }
-  // 优先 192.168.x（家用/办公最常见）
+  // 优先 192.168.x（家用/办公最常见），其余次之
   candidates.sort(
     (a, b) => (a.startsWith('192.168.') ? -1 : 1) - (b.startsWith('192.168.') ? -1 : 1),
   );
-  return candidates[0] ?? null;
+  return candidates;
+}
+
+function pickLanIp(): string | null {
+  return listLanIps()[0] ?? null;
 }
 
 // 管理后台独立工程，端口 5174 避免与 apps/web(5173) 冲突
@@ -58,7 +65,8 @@ export default defineConfig({
       configureServer(server) {
         server.middlewares.use('/__lan_info', (_req, res) => {
           res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ ip: pickLanIp(), webPort: 5173, adminPort: 5174 }));
+          const ips = listLanIps();
+          res.end(JSON.stringify({ ip: ips[0] ?? null, ips, webPort: 5173, adminPort: 5174 }));
         });
       },
     },
