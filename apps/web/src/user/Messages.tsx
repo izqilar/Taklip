@@ -64,6 +64,13 @@ export default function Messages() {
 
 function MessageDetail({ id, onClose }: { id: string; onClose: () => void }) {
   const { t } = useTranslation();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
   const [m, setM] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 

@@ -77,15 +77,16 @@ export default function TemplateCard({ template, onUse }: TemplateCardProps) {
           )}
         </div>
 
-        {/* hover 遮罩 */}
-        <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/40 opacity-0 transition group-hover:opacity-100">
+        {/* hover / 键盘聚焦 遮罩：group-hover 与 group-focus-within 均显示，
+            保证键盘 Tab 进入遮罩按钮时遮罩可见（否则 opacity-0 按钮不可见却可聚焦） */}
+        <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/40 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               setPreview(true);
             }}
-            className="rounded-lg border border-white/70 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
+            className="rounded-lg border border-white/70 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
           >
             {t('common:button.preview')}
           </button>
@@ -95,7 +96,7 @@ export default function TemplateCard({ template, onUse }: TemplateCardProps) {
               e.stopPropagation();
               onUse(template.id);
             }}
-            className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-600"
+            className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
           >
             {t('common:button.create')}
           </button>

@@ -78,6 +78,8 @@ export function WorkDetailModal({
       <div
         className="flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
       >
         {/* 头部 */}
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3">

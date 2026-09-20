@@ -39,7 +39,7 @@ export default function PageBar() {
                 );
                 if (name !== null) renamePage(i, name);
               }}
-              className="opacity-0 transition group-hover:opacity-60 hover:!opacity-100"
+              className="opacity-0 transition group-hover:opacity-60 hover:!opacity-100 focus:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white"
               title={t('editor:page.renamePage')}
             >
               ✎
@@ -47,7 +47,7 @@ export default function PageBar() {
             {pages.length > 1 && (
               <button
                 onClick={() => deletePage(i)}
-                className="opacity-0 transition group-hover:opacity-60 hover:!opacity-100"
+                className="opacity-0 transition group-hover:opacity-60 hover:!opacity-100 focus:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white"
                 title={t('editor:page.deletePage')}
               >
                 ✕

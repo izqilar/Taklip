@@ -425,6 +425,13 @@ export function DetailModal({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(30,24,16,0.45)] p-4"
@@ -433,6 +440,8 @@ export function DetailModal({
       <div
         className="w-full max-w-lg rounded-[14px] bg-[#fffefb] p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
       >
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -818,7 +827,7 @@ export function ReviewEditor({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(30,24,16,0.45)] p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-[14px] bg-[#fffefb] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-md rounded-[14px] bg-[#fffefb] p-5 shadow-xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <h3 className="mb-3 text-[14.5px] font-semibold text-[#2a2118]">{target.name || t('common:userCenter.orders.review')}</h3>
         <div className="mb-3 flex items-center gap-1">
           {[1, 2, 3, 4, 5].map((n) => (
