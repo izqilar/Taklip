@@ -16,10 +16,11 @@ export interface BarCompareProps {
 }
 
 /**
- * 条形对比图（文档 §8.5 总台经营总览「区域对比条形图」）。
+ * 纵向条形对比图（文档 §8.5 总台经营总览「区域对比条形图」）。
  * 轻量内联 SVG 还原原型手写条形图，避免引入重型图表依赖。
+ * 注意：与 ui/HorizontalBarList（横向双数值条形列表）是两种不同的图，切勿混淆。
  */
-export const BarCompare = ({ title, data, unit = '', color = BRAND.red, height = 200 }: BarCompareProps) => {
+export const VerticalBarChart = ({ title, data, unit = '', color = BRAND.red, height = 200 }: BarCompareProps) => {
   const max = Math.max(1, ...data.map((d) => d.value));
   const width = 520;
   const padB = 28;

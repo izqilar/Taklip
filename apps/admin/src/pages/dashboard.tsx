@@ -5,7 +5,7 @@ import { KpiCard } from '../components/ui/KpiCard';
 import { Panel } from '../components/ui/Panel';
 import { DealOrdersPanel } from '../components/ui/DealOrdersPanel';
 import { ChartCard } from '../components/ui/ChartCard';
-import { BarCompare } from '../components/ui/BarCompare';
+import { HorizontalBarList } from '../components/ui/HorizontalBarList';
 import { TrendArea } from '../components/ui/TrendArea';
 import { TodoList } from '../components/ui/TodoList';
 import { Pill } from '../components/ui/Pill';
@@ -162,7 +162,7 @@ export const Dashboard = () => {
       {/* ── duo：区域经营对比 + 资金流水趋势 ── */}
       <div style={GRID.duo}>
         <ChartCard title="区域经营对比" hint="近 30 日 · 按流水排序">
-          <BarCompare
+          <HorizontalBarList
             data={regionBars}
             legend={[useWan ? '平台流水（万元）' : '平台流水（元）', '订单量']}
           />

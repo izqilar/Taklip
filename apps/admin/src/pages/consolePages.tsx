@@ -10,7 +10,7 @@ import { KpiCard } from '../components/ui/KpiCard';
 import { Panel } from '../components/ui/Panel';
 import { DealOrdersPanel } from '../components/ui/DealOrdersPanel';
 import { ChartCard } from '../components/ui/ChartCard';
-import { BarCompare } from '../components/ui/BarCompare';
+import { HorizontalBarList } from '../components/ui/HorizontalBarList';
 import { TodoList } from '../components/ui/TodoList';
 import { DataTable } from '../components/ui/DataTable';
 import { HomeSkeleton } from '../components/ui/HomeSkeleton';
@@ -193,7 +193,7 @@ export const AgentDashboard = () => {
         </Panel>
 
         <ChartCard title="辖区服务商构成" hint="按服务类型">
-          <BarCompare
+          <HorizontalBarList
             data={(s.serviceCategoryShare ?? []).map((c) => ({
               name: categoryText(c.category),
               value: c.count,

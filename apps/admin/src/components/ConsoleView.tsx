@@ -6,7 +6,7 @@ import { StatusTag } from './common/StatusTag';
 import { EmptyState } from './common/EmptyState';
 import { ErrorState } from './common/ErrorState';
 import { DonutShare, type DonutDatum } from './charts/DonutShare';
-import { BarCompare, type BarDatum } from './charts/BarCompare';
+import { VerticalBarChart, type BarDatum } from './charts/VerticalBarChart';
 import { boolText, serviceRolesText, msgTypeText, msgScopeText, categoryText } from '../config/labels';
 import { t } from "../i18n/t";
 
@@ -122,7 +122,7 @@ export const ConsoleView = ({ title, url, cards, fields, charts }: ConsoleViewPr
     return c.type === 'donut' ? (
       <DonutShare title={c.title} data={mapped} />
     ) : (
-      <BarCompare title={c.title} data={mapped} unit={c.unit} color={c.color} />
+      <VerticalBarChart title={c.title} data={mapped} unit={c.unit} color={c.color} />
     );
   };
 

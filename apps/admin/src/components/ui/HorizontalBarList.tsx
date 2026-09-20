@@ -26,10 +26,11 @@ const fmt = (n: number, prefix = '', suffix = '') =>
   `${prefix}${n.toLocaleString('en-US')}${suffix}`;
 
 /**
- * 横向条形对比图（原型 .bars）：名称 | 轨道条 | 主数值 | 次数值。
+ * 横向条形对比列表（原型 .bars）：名称 | 轨道条 | 主数值 | 次数值。
  * 与原型一致用手写 DOM/SVG，不引入图表库。
+ * 注意：与 charts/VerticalBarChart（纵向单数值 SVG 条形图）是两种不同的图，切勿混淆。
  */
-export const BarCompare = ({
+export const HorizontalBarList = ({
   data,
   color = T.accent,
   color2 = T.accent2,
@@ -137,4 +138,4 @@ export const BarCompare = ({
   );
 };
 
-export default BarCompare;
+export default HorizontalBarList;
