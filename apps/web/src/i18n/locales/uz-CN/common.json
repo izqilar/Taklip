@@ -26,7 +26,8 @@
     "myOrders": "буюртмаларим",
     "myMessages": "хабарларим",
     "workbench": "иш столи",
-    "agentStudio": "Agent studiyasi"
+    "agentStudio": "Agent studiyasi",
+    "toggleMenu": "Menu"
   },
   "role": {
     "USER": "Oddiy foydalanuvchi",

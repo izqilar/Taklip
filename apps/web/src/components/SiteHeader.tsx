@@ -25,6 +25,16 @@ const NAV_LINKS = [
   { to: '/templates', key: 'designStudio' },
 ] as const;
 
+/** 移动端抽屉导航内容（与主航一致；窄屏时主航隐藏，由此提供入口） */
+const MOBILE_NAV: { type: 'link' | 'action'; to?: string; key: string }[] = [
+  { type: 'link', to: '/', key: 'home' },
+  { type: 'link', to: '/templates', key: 'templates' },
+  { type: 'link', to: '/find-services', key: 'findServices' },
+  { type: 'action', key: 'designStudio' },
+  { type: 'action', key: 'quickMake' },
+  { type: 'link', to: '/user/works', key: 'myWorks' },
+];
+
 const SERVICE_CLOUD_ITEMS = [
   {
     key: 'design',
@@ -213,6 +223,7 @@ export default function SiteHeader() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -268,6 +279,15 @@ export default function SiteHeader() {
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 切回桌面宽度（≥1024px）时自动收起移动抽屉，避免回到大屏后抽屉残留
+  useEffect(() => {
+    function onResize() {
+      if (window.innerWidth >= 1024) setMobileNavOpen(false);
+    }
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   return (
@@ -378,6 +398,26 @@ export default function SiteHeader() {
 
         {/* 右侧操作区 */}
         <div className="flex flex-shrink-0 items-center gap-3">
+          {/* 移动端汉堡菜单：主航在 <lg 隐藏，此处提供入口（lg 及以上隐藏） */}
+          <button
+            type="button"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-white transition hover:bg-white/10 lg:hidden"
+            aria-label={t('common:nav.toggleMenu')}
+            aria-expanded={mobileNavOpen}
+            onClick={() => setMobileNavOpen((o) => !o)}
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {mobileNavOpen ? (
+                <path d="M18 6 6 18M6 6l12 12" />
+              ) : (
+                <>
+                  <path d="M3 12h18" />
+                  <path d="M3 6h18" />
+                  <path d="M3 18h18" />
+                </>
+              )}
+            </svg>
+          </button>
           {/* 服务商入住（金色药丸按钮）：普通 USER 不显示 */}
           {!isPlainUser && (
             <Link
@@ -508,6 +548,44 @@ export default function SiteHeader() {
           )}
         </div>
       </div>
+
+      {/* 移动端导航抽屉：<lg 时展开，竖向罗列主航入口；≥lg 隐藏 */}
+      {mobileNavOpen && (
+        <div className="absolute inset-x-0 top-full border-t border-white/10 bg-[#c81e42] shadow-xl lg:hidden">
+          <div className="flex flex-col py-1">
+            {MOBILE_NAV.map((item) => {
+              if (item.type === 'action') {
+                const run = item.key === 'designStudio'
+                  ? handleDesignStudio
+                  : () => navigate('/quick-make');
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => {
+                      setMobileNavOpen(false);
+                      void run();
+                    }}
+                    className="px-6 py-3 text-start text-sm font-medium text-white transition hover:bg-white/10 hover:text-yellow-200"
+                  >
+                    {t(`common:nav.${item.key}`)}
+                  </button>
+                );
+              }
+              return (
+                <Link
+                  key={item.key}
+                  to={item.to ?? '/'}
+                  onClick={() => setMobileNavOpen(false)}
+                  className="px-6 py-3 text-sm font-medium text-white transition hover:bg-white/10 hover:text-yellow-200"
+                >
+                  {t(`common:nav.${item.key}`)}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

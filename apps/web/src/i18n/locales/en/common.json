@@ -28,7 +28,8 @@
     "myOrders": "My Orders",
     "myMessages": "My Messages",
     "workbench": "Workbench",
-    "agentStudio": "Agent Studio"
+    "agentStudio": "Agent Studio",
+    "toggleMenu": "Menu"
   },
   "role": {
     "USER": "Regular user",

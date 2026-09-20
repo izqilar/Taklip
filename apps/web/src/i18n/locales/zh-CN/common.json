@@ -28,7 +28,8 @@
     "myOrders": "我的订单",
     "myMessages": "我的消息",
     "workbench": "工作台",
-    "agentStudio": "代理商工作台"
+    "agentStudio": "代理商工作台",
+    "toggleMenu": "菜单"
   },
   "role": {
     "USER": "普通用户",

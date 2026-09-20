@@ -26,7 +26,8 @@
     "myOrders": "زاكازلىرىم",
     "myMessages": "ئۇچۇرلىرىم",
     "workbench": "خىزمەت ئۈستەل",
-    "agentStudio": "ۋاكالەتچى ستودىيەسى"
+    "agentStudio": "ۋاكالەتچى ستودىيەسى",
+    "toggleMenu": "Menu"
   },
   "role": {
     "USER": "ئادەتتىكى ئىشلەتكۈچى",
