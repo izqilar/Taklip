@@ -3,7 +3,7 @@
  * 资料卡 + 会员等级 + KPI 四联（主指标朱砂）+ duo（我的订单 / 会员权益）+ trio（关注的服务商 / 我的优惠券 / 我的评价）。
  * 数据：/api/user/dashboard + 各列表接口（pageSize=3）。
  */
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/api/client';
 import {
@@ -67,8 +67,11 @@ export default function Overview() {
     coupons: [],
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
+    setError(null);
     (async () => {
       try {
         const dash = await api.get<DashboardStats>('/api/user/dashboard');
@@ -80,15 +83,34 @@ export default function Overview() {
           api.get<{ items: any[] }>('/api/user/coupons', { pageSize: 3 }),
         ]);
         setRecent({ orders: o.items, providers: p.items, reviews: r.items, coupons: c.items });
-      } catch {
-        /* ignore */
+      } catch (e: any) {
+        setError(e?.message || '加载失败，请点击重试');
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  if (loading || !s) return <LoadingDots />;
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (loading) return <LoadingDots />;
+  if (error) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-20 text-center">
+        <p className="text-sm text-[#6e5f4a]">{error}</p>
+        <button
+          type="button"
+          onClick={load}
+          className="rounded-lg bg-[#D24830] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[#B23A22]"
+        >
+          {t('common:button.retry')}
+        </button>
+      </div>
+    );
+  }
+  if (!s) return <LoadingDots />;
   const p = s.profile;
   const tier = tierKeyOf(p.vipLevel);
   const name = p.nickname || p.realName || p.phone || t('common:userCenter.accountFallback');

@@ -3,7 +3,7 @@
  * Phase 2（2.4）：把运营端 user/* 模块的 UI 在 web 端以原生 Tailwind 形式复刻，
  * 数据全部来自后端 /api/user/*（USER 角色自动取本人，零后端改动）。
  */
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/api/client';
 import i18n from '@/i18n';
@@ -567,21 +567,31 @@ export function useUserPage<T>(
   const [rows, setRows] = useState<T[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // 请求序号：慢响应回来时若已有更新的请求，丢弃陈旧结果，避免覆盖新数据
+  const reqId = useRef(0);
   const load = (p: number, params: Record<string, unknown> = {}) => {
+    const id = ++reqId.current;
     setLoading(true);
+    setError(null);
     fetcher(p, pageSize, params)
       .then((r) => {
+        if (id !== reqId.current) return;
         setRows(r.items ?? []);
         setTotal(r.total ?? 0);
         setPage(p);
       })
-      .catch(() => {
+      .catch((e: any) => {
+        if (id !== reqId.current) return;
         setRows([]);
         setTotal(0);
+        setError(e?.message || '加载失败');
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (id === reqId.current) setLoading(false);
+      });
   };
-  return { page, rows, total, loading, load, setPage, reload: (params?: Record<string, unknown>) => load(page, params) };
+  return { page, rows, total, loading, error, load, setPage, reload: (params?: Record<string, unknown>) => load(page, params) };
 }
 
 /** 列表页详情字段（镜像 GenericListPage DetailFieldDef） */
@@ -649,7 +659,7 @@ export function UserListPage<T extends { id?: string }>({
     ...(searchServerField && keyword ? { [searchServerField]: keyword } : {}),
   };
 
-  const { page, rows, total, loading, load, setPage } = useUserPage<T>(fetcher, pageSize);
+  const { page, rows, total, loading, error, load, setPage } = useUserPage<T>(fetcher, pageSize);
 
   // 过滤条件变化 → 回到第 1 页重新取数
   useEffect(() => {
@@ -745,7 +755,20 @@ export function UserListPage<T extends { id?: string }>({
           </>
         }
       >
-        <UserTable columns={displayColumns} rows={dataSource} loading={loading} emptyText={emptyText ?? t('common:userCenter.empty')} />
+        {error && !loading ? (
+          <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
+            <p className="text-sm text-[#6e5f4a]">{error}</p>
+            <button
+              type="button"
+              onClick={() => load(1, serverParams)}
+              className="rounded-lg bg-[#D24830] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[#B23A22]"
+            >
+              {t('common:button.retry')}
+            </button>
+          </div>
+        ) : (
+          <UserTable columns={displayColumns} rows={dataSource} loading={loading} emptyText={emptyText ?? t('common:userCenter.empty')} />
+        )}
         <div className="flex items-center justify-end gap-1.5 border-t border-[rgba(74,60,42,0.10)] px-4 py-2.5 text-[12.5px] text-[#6e5f4a]">
           <span>
             共{' '}
