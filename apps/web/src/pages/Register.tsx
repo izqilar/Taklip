@@ -57,7 +57,7 @@ export default function Register() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm text-gray-400">{t('errors:register.phone')}</label>
+            <label className="mb-1 block text-sm text-gray-600">{t('errors:register.phone')}</label>
             <input
               type="tel"
               value={phone}
@@ -69,7 +69,7 @@ export default function Register() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-gray-400">{t('errors:register.nickname')}</label>
+            <label className="mb-1 block text-sm text-gray-600">{t('errors:register.nickname')}</label>
             <input
               type="text"
               value={nickname}
@@ -78,7 +78,7 @@ export default function Register() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-gray-400">{t('errors:register.password')}</label>
+            <label className="mb-1 block text-sm text-gray-600">{t('errors:register.password')}</label>
             <input
               type="password"
               value={password}
@@ -90,7 +90,7 @@ export default function Register() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-gray-400">{t('errors:register.confirmPassword')}</label>
+            <label className="mb-1 block text-sm text-gray-600">{t('errors:register.confirmPassword')}</label>
             <input
               type="password"
               value={confirmPassword}
@@ -109,7 +109,7 @@ export default function Register() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-400">
+        <p className="mt-6 text-center text-sm text-gray-600">
           {t('errors:register.hasAccount')}{' '}
           <Link to="/login" className="text-blue-400 hover:text-blue-300">
             {t('errors:register.login')}

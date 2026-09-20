@@ -85,12 +85,12 @@ export function WorkDetailModal({
             <div className="truncate text-[14.5px] font-semibold text-gray-900">
               {item.title || t('common:status.untitled')}
             </div>
-            <div className="mt-0.5 text-xs text-gray-400">{t('common:badge.work')}</div>
+            <div className="mt-0.5 text-xs text-gray-600">{t('common:badge.work')}</div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-full p-1 text-gray-600 transition hover:bg-gray-100 hover:text-gray-600"
             aria-label={t('common:button.close')}
           >
             ✕
@@ -112,11 +112,11 @@ export function WorkDetailModal({
           {/* 只读属性表 */}
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
             <div>
-              <dt className="text-xs text-gray-400">{t('common:detail.id')}</dt>
+              <dt className="text-xs text-gray-600">{t('common:detail.id')}</dt>
               <dd className="mt-0.5 break-all font-mono text-xs text-gray-700">{item.id}</dd>
             </div>
             <div>
-              <dt className="text-xs text-gray-400">{t('common:detail.status')}</dt>
+              <dt className="text-xs text-gray-600">{t('common:detail.status')}</dt>
               <dd className="mt-0.5">
                 <span
                   className={`rounded px-1.5 py-0.5 text-xs ${
@@ -130,11 +130,11 @@ export function WorkDetailModal({
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-gray-400">{t('common:detail.views')}</dt>
+              <dt className="text-xs text-gray-600">{t('common:detail.views')}</dt>
               <dd className="mt-0.5 text-gray-700">👁 {item.viewCount}</dd>
             </div>
             <div>
-              <dt className="text-xs text-gray-400">{t('common:detail.updatedAt')}</dt>
+              <dt className="text-xs text-gray-600">{t('common:detail.updatedAt')}</dt>
               <dd className="mt-0.5 text-gray-700">{new Date(item.updatedAt).toLocaleString()}</dd>
             </div>
           </dl>
@@ -160,7 +160,7 @@ export function WorkDetailModal({
                   >
                     {shareUrl}
                   </a>
-                  <div className="mt-1 text-[11px] text-gray-400">
+                  <div className="mt-1 text-[11px] text-gray-600">
                     {t('common:published.viewHint')}
                   </div>
                 </div>

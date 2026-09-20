@@ -153,7 +153,7 @@ export default function QuickMakeWizard() {
       {step === 2 && type && (
         <>
           {templates.length === 0 ? (
-            <div className="py-12 text-center text-gray-400">{t('status.loading')}</div>
+            <div className="py-12 text-center text-gray-600">{t('status.loading')}</div>
           ) : (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
               {templates.map((tp) => (
@@ -197,7 +197,7 @@ export default function QuickMakeWizard() {
             <h2 className="text-lg font-semibold text-gray-800">
               {t('quickMake.steps.fillForm')} · {t(`quickMake.types.${type.id}`)}
             </h2>
-            <span className="text-xs text-gray-400">{template?.name}</span>
+            <span className="text-xs text-gray-600">{template?.name}</span>
           </div>
 
           <div className="space-y-4">
@@ -257,13 +257,13 @@ export default function QuickMakeWizard() {
           </div>
 
           {!isAuthenticated && (
-            <p className="mt-3 text-center text-xs text-gray-400">{t('quickMake.messages.needLogin')}</p>
+            <p className="mt-3 text-center text-xs text-gray-600">{t('quickMake.messages.needLogin')}</p>
           )}
         </div>
       )}
 
       <div className="mt-8 text-center">
-        <Link to="/" className="text-sm text-gray-400 underline-offset-2 hover:text-gray-600 hover:underline">
+        <Link to="/" className="text-sm text-gray-600 underline-offset-2 hover:text-gray-600 hover:underline">
           {t('quickMake.buttons.backHome')}
         </Link>
       </div>
@@ -289,7 +289,7 @@ function ImageField({
   return (
     <div>
       <div className="flex items-center gap-4">
-        <label className="relative flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-300 bg-gray-50 text-xs text-gray-400 hover:border-[#c81e42]">
+        <label className="relative flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-300 bg-gray-50 text-xs text-gray-600 hover:border-[#c81e42]">
           {value ? (
             <img src={value} alt="cover" className="h-full w-full object-cover" />
           ) : uploading ? (
@@ -308,7 +308,7 @@ function ImageField({
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="text-xs text-gray-400 hover:text-red-500"
+            className="text-xs text-gray-600 hover:text-red-500"
           >
             {hint}
           </button>

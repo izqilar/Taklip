@@ -76,7 +76,7 @@ export function Section({
         <header className="mb-3 flex items-center justify-between gap-3">
           <div>
             {title && <h3 className="text-[14.5px] font-semibold text-gray-800">{title}</h3>}
-            {subtitle && <p className="mt-0.5 text-xs text-gray-400">{subtitle}</p>}
+            {subtitle && <p className="mt-0.5 text-xs text-gray-600">{subtitle}</p>}
           </div>
           {action}
         </header>
@@ -89,7 +89,7 @@ export function Section({
 /** 空态 */
 export function EmptyState({ text }: { text: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 py-12 text-sm text-gray-400">
+    <div className="flex flex-col items-center justify-center gap-2 py-12 text-sm text-gray-600">
       <svg className="h-10 w-10 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="3" y="4" width="18" height="16" rx="2" />
         <path d="M3 9h18" />
@@ -118,7 +118,7 @@ export function TableSkeleton({ rows = 4 }: { rows?: number }) {
 export function ErrorState({ text, onRetry }: { text: string; onRetry?: () => void }) {
   const { t } = useTranslation();
   return (
-    <div className="flex flex-col items-center justify-center gap-3 py-12 text-sm text-gray-400">
+    <div className="flex flex-col items-center justify-center gap-3 py-12 text-sm text-gray-600">
       <svg
         className="h-10 w-10 opacity-40"
         viewBox="0 0 24 24"
@@ -148,7 +148,7 @@ export function ErrorState({ text, onRetry }: { text: string; onRetry?: () => vo
 export function LoadingDots() {
   const { t } = useTranslation();
   return (
-    <div className="flex min-h-[40vh] items-center justify-center text-sm text-gray-400">
+    <div className="flex min-h-[40vh] items-center justify-center text-sm text-gray-600">
       {t('common:userCenter.loading')}
     </div>
   );

@@ -17,7 +17,7 @@ export default function AppLayout() {
       <SiteHeader />
       <main className="pt-16">
         <Suspense
-          fallback={<div className="flex min-h-[60vh] items-center justify-center text-sm text-gray-400">…</div>}
+          fallback={<div className="flex min-h-[60vh] items-center justify-center text-sm text-gray-600">…</div>}
         >
           <Outlet />
         </Suspense>

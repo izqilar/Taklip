@@ -62,7 +62,7 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm text-gray-400">{t('errors:login.phone')}</label>
+            <label className="mb-1 block text-sm text-gray-600">{t('errors:login.phone')}</label>
             <input
               type="tel"
               value={phone}
@@ -74,7 +74,7 @@ export default function Login() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-gray-400">{t('errors:login.password')}</label>
+            <label className="mb-1 block text-sm text-gray-600">{t('errors:login.password')}</label>
             <input
               type="password"
               value={password}
@@ -94,7 +94,7 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-400">
+        <p className="mt-6 text-center text-sm text-gray-600">
           {t('errors:login.noAccount')}{' '}
           <Link to="/register" className="text-blue-400 hover:text-blue-300">
             {t('errors:login.register')}

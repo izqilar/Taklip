@@ -424,10 +424,10 @@ export default function Dashboard() {
               {qrFor.dataUrl ? (
                 <img src={qrFor.dataUrl} alt="QR" className="h-full w-full" />
               ) : (
-                <span className="text-xs text-gray-400">...</span>
+                <span className="text-xs text-gray-600">...</span>
               )}
             </div>
-            <div className="mt-3 truncate text-xs text-gray-400">
+            <div className="mt-3 truncate text-xs text-gray-600">
               {buildShareUrl(qrFor.code)}
             </div>
             <div className="mt-4 flex gap-2">

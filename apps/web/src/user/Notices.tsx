@@ -106,10 +106,10 @@ function NoticeDetail({ id, onClose }: { id: string; onClose: () => void }) {
             <span className="rounded bg-[#14676b]/10 px-2 py-0.5 text-xs font-semibold text-[#14676b]">{t('common:userCenter.notices.title')}</span>
             <h3 className="text-[14.5px] font-semibold text-[#2a2118]">{n?.title ?? ''}</h3>
           </div>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+          <button type="button" onClick={onClose} className="text-gray-600 hover:text-gray-600">✕</button>
         </div>
         {loading || !n ? (
-          <div className="py-8 text-center text-sm text-gray-400">{t('common:userCenter.loading')}</div>
+          <div className="py-8 text-center text-sm text-gray-600">{t('common:userCenter.loading')}</div>
         ) : (
           <div className="space-y-2">
             <div className="text-sm text-[#6e5f4a]">{n.code} · {n.type} · {n.createdAt ? new Date(n.createdAt).toLocaleString('zh-CN', { hour12: false }) : '—'}</div>

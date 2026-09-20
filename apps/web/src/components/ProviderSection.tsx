@@ -65,7 +65,7 @@ export default function ProviderSection() {
         })}
       </div>
 
-      <p className="mt-4 text-center text-xs text-gray-400">{t('providers.comingSoon')}</p>
+      <p className="mt-4 text-center text-xs text-gray-600">{t('providers.comingSoon')}</p>
     </section>
   );
 }

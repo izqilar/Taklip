@@ -249,9 +249,9 @@ export default function Home() {
 
         {/* 模板网格 */}
         {loading ? (
-          <div className="py-20 text-center text-gray-400">{t('common:status.loading')}</div>
+          <div className="py-20 text-center text-gray-600">{t('common:status.loading')}</div>
         ) : filteredTemplates.length === 0 ? (
-          <div className="py-20 text-center text-gray-400">{t('common:status.noTemplates')}</div>
+          <div className="py-20 text-center text-gray-600">{t('common:status.noTemplates')}</div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {filteredTemplates.map((tpl) => (

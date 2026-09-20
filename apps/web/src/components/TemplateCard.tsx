@@ -68,7 +68,7 @@ export default function TemplateCard({ template, onUse }: TemplateCardProps) {
             </span>
           )}
         </div>
-        <div className="flex items-center justify-between px-3 pb-3 text-xs text-gray-400">
+        <div className="flex items-center justify-between px-3 pb-3 text-xs text-gray-600">
           <span>{template.useCount} {t('common:home.uses')}</span>
           {template.price > 0 ? (
             <span className="font-semibold text-[#c81e42]">{formatCents(template.price)}</span>

@@ -116,7 +116,7 @@ export default function TemplatePreviewModal({ template, onUse, onClose }: Templ
               ) : template.cover ? (
                 <img src={template.cover} alt={template.name} className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
+                <div className="flex h-full w-full items-center justify-center text-sm text-gray-600">
                   {t('templates:preview.noPages')}
                 </div>
               )}
@@ -192,7 +192,7 @@ export default function TemplatePreviewModal({ template, onUse, onClose }: Templ
               type="button"
               onClick={onClose}
               aria-label={t('common:button.close')}
-              className="shrink-0 rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+              className="shrink-0 rounded-full p-1 text-gray-600 transition hover:bg-gray-100 hover:text-gray-600"
             >
               ✕
             </button>
@@ -208,15 +208,15 @@ export default function TemplatePreviewModal({ template, onUse, onClose }: Templ
 
           <dl className="flex-1 space-y-4 overflow-y-auto p-4 text-sm">
             <div>
-              <dt className="mb-1 text-xs text-gray-400">{t('templates:preview.code')}</dt>
+              <dt className="mb-1 text-xs text-gray-600">{t('templates:preview.code')}</dt>
               <dd className="break-all font-mono text-xs text-gray-500">{template.id}</dd>
             </div>
             <div>
-              <dt className="mb-1 text-xs text-gray-400">{t('templates:preview.category')}</dt>
+              <dt className="mb-1 text-xs text-gray-600">{t('templates:preview.category')}</dt>
               <dd className="text-gray-800">{catLabel}</dd>
             </div>
             <div>
-              <dt className="mb-1 text-xs text-gray-400">{t('templates:preview.tags')}</dt>
+              <dt className="mb-1 text-xs text-gray-600">{t('templates:preview.tags')}</dt>
               <dd className="flex flex-wrap gap-1.5">
                 {template.tags.length > 0 ? (
                   template.tags.map((tag) => (
@@ -230,11 +230,11 @@ export default function TemplatePreviewModal({ template, onUse, onClose }: Templ
               </dd>
             </div>
             <div>
-              <dt className="mb-1 text-xs text-gray-400">{t('templates:preview.price')}</dt>
+              <dt className="mb-1 text-xs text-gray-600">{t('templates:preview.price')}</dt>
               <dd>{priceNode}</dd>
             </div>
             <div>
-              <dt className="mb-1 text-xs text-gray-400">{t('templates:preview.uses')}</dt>
+              <dt className="mb-1 text-xs text-gray-600">{t('templates:preview.uses')}</dt>
               <dd className="text-gray-800">{t('templates:useCount', { count: template.useCount })}</dd>
             </div>
           </dl>
