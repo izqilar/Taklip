@@ -541,7 +541,7 @@ const SERVICE_BADGE_OPTS = [
 const SERVICE_RESP_OPTS = [
   { value: '<1h', label: '1 小时内' }, { value: '<3h', label: '3 小时内' }, { value: '<12h', label: '12 小时内' }, { value: '1d', label: '1 天内' },
 ];
-const SERVICE_AVATAR_COLORS = ['#c24b2e', '#1f3a5f', '#2e7d52', '#8a5a00', '#6a1b4d', '#37474f'];
+const SERVICE_AVATAR_COLORS = ['#D24830', '#1f3a5f', '#2e7d52', '#8a5a00', '#6a1b4d', '#37474f'];
 const SOON = <span style={{ fontSize: 11, color: T.ink3, marginLeft: 6, fontWeight: 400 }}>即将上线</span>;
 
 export const SPServiceDetail = () => {

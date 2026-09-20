@@ -143,7 +143,7 @@ export const ShareQrPanel = ({ publishCode, title, size = 200 }: ShareQrPanelPro
         {url || '探测本机地址中…'}
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button type="button" onClick={handleCopy} style={btn('#c24b2e')}>
+        <button type="button" onClick={handleCopy} style={btn('#D24830')}>
           {copied ? '已复制' : '复制链接'}
         </button>
         <button type="button" onClick={handleDownload} style={btn('#374151')}>
@@ -177,7 +177,7 @@ export const ShareQrPanel = ({ publishCode, title, size = 200 }: ShareQrPanelPro
           </div>
         )}
       </div>
-      <a href={url || '#'} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: '#c24b2e', textAlign: 'center' }}>
+      <a href={url || '#'} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: '#D24830', textAlign: 'center' }}>
         在浏览器打开 H5 →
       </a>
     </div>

@@ -11,9 +11,9 @@ import type { CSSProperties } from 'react';
  * 所有组件一律从这里取值，禁止在页面里硬编码颜色。
  */
 /** 朱砂主色（T.accent）——头像渐变起点，先声明以便在 T 内复用 */
-const ACCENT = '#c24b2e';
-/** 头像渐变终点（= BRAND.markTo，原型 .acc-av 的 #a93a20） */
-const MARK_TO = '#a93a20';
+const ACCENT = '#D24830';
+/** 头像渐变终点（= BRAND.markTo，#D24830 的派生深色 hover #B23A22） */
+const MARK_TO = '#B23A22';
 
 export const T = {
   /* ── 面 ── */
@@ -35,9 +35,9 @@ export const T = {
   /* ── 强调 ── */
   // 注意：这里必须写字面量 —— apps/admin/temp/verify-ui-tokens.mjs 直接扫源码比对色值，
   // 写成常量引用会让它读到「ACCENT」而误报不一致。下面的渐变可复用常量。
-  accent: '#c24b2e', // 朱砂（品牌主色）
-  accentHover: '#b13e22',
-  accentSoft: 'rgba(194,75,46,.10)',
+  accent: '#D24830', // 品牌主色（#D24830，与 web 端统一）
+  accentHover: '#B23A22',
+  accentSoft: 'rgba(210,72,48,.10)',
   accent2: '#14676b', // 青（副色）
   accent2Soft: 'rgba(20,103,107,.10)',
   onAccent: '#fff',

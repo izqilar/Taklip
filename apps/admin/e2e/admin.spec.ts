@@ -141,10 +141,10 @@ test.describe('M5 · 运营端验收 (§14)', () => {
     await expect(page.getByText('流水').first()).toBeVisible(); // KPI 卡
   });
 
-  test('⑩ 设计令牌一致（朱砂 #c24b2e 主色）', async ({ page }) => {
+  test('⑩ 设计令牌一致（品牌红 #D24830 主色）', async ({ page }) => {
     await login(page, ADMIN.phone, ADMIN.pwd);
     const brand = page.getByText('庆');
-    await expect(brand).toHaveCSS('color', 'rgb(194, 75, 46)');
+    await expect(brand).toHaveCSS('color', 'rgb(210, 72, 48)');
   });
 
   test('RTL：切换维吾尔语后 direction=rtl', async ({ page }) => {

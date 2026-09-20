@@ -74,11 +74,11 @@ export const TEMPLATE_CAT_OPTS = TEMPLATE_CAT_SLUGS.map((c) => ({ value: c, labe
 export const TEMPLATE_TAG_OPTS = ['中式', '国潮', '喜庆', '简约', '手绘', '浪漫', '复古', '森系', '商务', '科技', '童趣', '实景', 'H5互动', '电子请柬'].map((v) => ({ value: v, label: v }));
 
 /** 封面底色色板（10 色） */
-export const COVER_COLORS = ['#c24b2e', '#1f3a5f', '#2e7d52', '#8a5a00', '#6a1b4d', '#37474f', '#b71c1c', '#00695c', '#4527a0', '#f3f4f6'];
+export const COVER_COLORS = ['#D24830', '#1f3a5f', '#2e7d52', '#8a5a00', '#6a1b4d', '#37474f', '#b71c1c', '#00695c', '#4527a0', '#f3f4f6'];
 
 /** 标题色（4 色） */
 export const TITLE_COLORS = [
-  { value: '#c24b2e', label: '品牌红' },
+  { value: '#D24830', label: '品牌红' },
   { value: '#ffffff', label: '纯白' },
   { value: '#d4af37', label: '香槟金' },
   { value: '#1f3a5f', label: '深藏蓝' },

@@ -226,7 +226,7 @@ const TemplateCard = ({
   const { readonly } = useLayer();
   const canWrite = !readonly;
   const meta = (r.schema && r.schema.meta) || {};
-  const coverColor = meta.coverColor || (isWork ? '#6a1b4d' : '#c24b2e');
+  const coverColor = meta.coverColor || (isWork ? '#6a1b4d' : '#D24830');
   const statusMap = isWork ? WORK_STATUS : TEMPLATE_STATUS;
   const st: { key: string; tone: PillTone; text?: string } =
     statusMap[r.status] ?? { key: String(r.status ?? '—'), tone: 'mut' as PillTone };
