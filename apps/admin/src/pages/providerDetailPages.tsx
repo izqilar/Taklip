@@ -7,71 +7,17 @@ import { dataProvider } from '../providers/dataProvider';
 import { getStoredUser } from '../utility';
 import { SettingPage, PreviewCard, FlowSteps, Timeline, MemberCard, TemplatePreviewCard, ServicePreviewCard, WorkPreviewCard } from '../components/provider/SettingPage';
 import { Pill } from '../components/ui/Pill';
+import { TEMPLATE_CAT_OPTS, TEMPLATE_TAG_OPTS, COVER_COLORS, TITLE_COLORS, CONTRACT_TYPE, CONTRACT_STAGE, CONTRACT_MODE, SETTLE, SVC_OPTIONS, REGION_OPTIONS, TEAM_STATUS } from '../config/providerConstants';
 
 /* ════════════ 模板发布常量（与 providerPages 同源口径，避免跨文件耦合） ════════════ */
-const TEMPLATE_CAT_OPTS = [
-  { value: 'wedding', label: '婚礼' },
-  { value: 'birth_celebration', label: '生日庆典' },
-  { value: 'birthday', label: '生日' },
-  { value: 'festival', label: '节庆' },
-  { value: 'housewarming', label: '乔迁' },
-  { value: 'school_promotion', label: '校园推广' },
-  { value: 'social_gathering', label: '社交聚会' },
-  { value: 'memorial', label: '纪念' },
-  { value: 'brand', label: '品牌' },
-  { value: 'recruitment', label: '招聘' },
-  { value: 'conference', label: '会议' },
-  { value: 'opening', label: '开业' },
-  { value: 'education', label: '教育' },
-  { value: 'biz_social', label: '商务社交' },
-  { value: 'marketing', label: '营销' },
-];
-const TEMPLATE_TAG_OPTS = ['中式', '国潮', '喜庆', '简约', '手绘', '浪漫', '复古', '森系', '商务', '科技', '童趣', '实景', 'H5互动', '电子请柬'].map((v) => ({ value: v, label: v }));
-const COVER_COLORS = ['#c24b2e', '#1f3a5f', '#2e7d52', '#8a5a00', '#6a1b4d', '#37474f', '#b71c1c', '#00695c', '#4527a0', '#f3f4f6'];
-const TITLE_COLORS = [
-  { value: '#c24b2e', label: '品牌红' },
-  { value: '#ffffff', label: '纯白' },
-  { value: '#d4af37', label: '香槟金' },
-  { value: '#1f3a5f', label: '深藏蓝' },
-];
-const TEMPLATE_STATUS_OPTS = [
+/* ════════════ 模板发布状态（本地发布态，区别于 providerPages 的审核态） ════════════ */
+const TEMPLATE_PUBLISH_STATUS_OPTS = [
   { value: 'DRAFT', label: '草稿' },
   { value: 'PENDING', label: '待审核' },
   { value: 'APPROVED', label: '已发布' },
   { value: 'REJECTED', label: '已驳回' },
   { value: 'TAKEN_DOWN', label: '已下架' },
 ];
-
-/* ════════════ 常量（与 providerPages.tsx 同源口径，避免跨文件耦合） ════════════ */
-const CONTRACT_TYPE: Record<string, string> = {
-  MAIN: 'pages.status.contractMain',
-  SUPPLEMENT: 'pages.status.contractSupplement',
-  RENEW: 'pages.status.contractRenew',
-  TERMINATE: 'pages.status.contractTerminate',
-};
-const CONTRACT_STAGE: Record<string, { key: string; tone: 'warn' | 'ac' | 'ok' | 'mut' | 'bad' }> = {
-  NEGOTIATING: { key: 'pages.status.contractStageNegotiating', tone: 'warn' },
-  AWAIT_PROVIDER_SIGN: { key: 'pages.status.contractStageAwaitProvider', tone: 'warn' },
-  AWAIT_SENIOR_SIGN: { key: 'pages.status.contractStageAwaitSenior', tone: 'warn' },
-  APPROVING: { key: 'pages.status.contractStageApproving', tone: 'ac' },
-  EFFECTIVE: { key: 'pages.status.contractStageEffective', tone: 'ok' },
-  EXPIRED: { key: 'pages.status.contractStageExpired', tone: 'mut' },
-  TERMINATED: { key: 'pages.status.contractStageTerminated', tone: 'bad' },
-};
-const CONTRACT_MODE: Record<string, string> = {
-  REGION_EXCLUSIVE: 'pages.status.contractModeRegionExclusive',
-  ONLINE: 'pages.status.contractModeOnline',
-  ON_SITE: 'pages.status.contractModeOnSite',
-  JOINT: 'pages.status.contractModeJoint',
-};
-const SETTLE: Record<string, string> = { MONTH: 'pages.status.settleMonth', HALF_MONTH: 'pages.status.settleHalfMonth', WEEK: 'pages.status.settleWeek' };
-const SVC_OPTIONS = ['摄影摄像', '插花礼仪', '乐队演出', '礼仪执事', '主持人', '婚庆主持', '宴会设计', '花艺布置', '化妆造型', '司仪培训', '婚礼策划', '特约设计', '光影纪录', '司仪主持', '灯光音响'].map((s) => ({ value: s, label: s }));
-const REGION_OPTIONS = ['乌鲁木齐市', '喀什市', '伊宁市', '昌吉市', '库尔勒市', '克拉玛依市', '石河子市', '阿克苏市', '和田市', '吐鲁番市'].map((s) => ({ value: s, label: s }));
-const TEAM_STATUS: Record<string, { key: string; tone: 'ok' | 'warn' | 'bad' }> = {
-  ACTIVE: { key: 'status.ACTIVE', tone: 'ok' },
-  PENDING: { key: 'pages.status.teamPending', tone: 'warn' },
-  DISABLED: { key: 'status.DISABLED', tone: 'bad' },
-};
 
 const fieldStyle = { marginBottom: 14 } as const;
 const labelStyle = { fontSize: 12.5, color: T.ink2, fontWeight: 600, marginBottom: 6 } as const;
@@ -548,7 +494,7 @@ export const SPTemplateDetail = () => {
             </div>
             {isAdmin && (
               <div style={{ gridColumn: '1 / -1' }}>
-                <Field label="状态（管理员可直设）"><Form.Item name="status" noStyle><Select options={TEMPLATE_STATUS_OPTS} style={{ width: '100%' }} /></Form.Item></Field>
+                <Field label="状态（管理员可直设）"><Form.Item name="status" noStyle><Select options={TEMPLATE_PUBLISH_STATUS_OPTS} style={{ width: '100%' }} /></Form.Item></Field>
               </div>
             )}
           </div>

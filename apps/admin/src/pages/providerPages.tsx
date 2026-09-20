@@ -28,6 +28,7 @@ import { formatCents, API_URL, authHeaders } from '../utility';
 import { dataProvider, withSubject } from '../providers/dataProvider';
 import { cleanCode, categoryText, msgTypeText, publisherText, msgScopeText } from '../config/labels';
 import { TICKET_STATUS } from '../config/status';
+import { PERIOD, SCHEDULE_STATUS, CONTRACT_TYPE, CONTRACT_STAGE, TEAM_STATUS, TICKET_TYPE, APPLY_STATUS } from '../config/providerConstants';
 import { t } from '../i18n/t';
 import { useLayer } from '../providers/layerContext';
 import { DesignGalleryCard, type DesignActionCaps } from '@h5design/ui';
@@ -50,20 +51,7 @@ const dt = (v: any) => (v ? new Date(v).toLocaleString('zh-CN', { hour12: false 
 const money = (v: any) => formatCents(v ?? 0);
 const arr = (v: any) => (Array.isArray(v) && v.length ? v.join('、') : '—');
 
-/** 档期时段 */
-const PERIOD: Record<string, string> = {
-  FULL: '全天',
-  AM: '09:00-12:00',
-  PM1: '12:00-15:00',
-  PM2: '15:00-18:00',
-  PM3: '18:00-21:00',
-  NIGHT: '晚间21:00-23:00',
-};
-const SCHEDULE_STATUS: Record<string, { key: string; tone: PillTone }> = {
-  available: { key: 'pages.status.schAvailable', tone: 'ok' },
-  locked: { key: 'pages.status.schLocked', tone: 'ac' },
-  done: { key: 'pages.status.svcCompleted', tone: 'mut' },
-};
+/** 模板审核态（PP 本地，独立于 providerDetailPages 的发布态） */
 const TEMPLATE_STATUS: Record<string, { key: string; tone: PillTone }> = {
   PENDING: { key: 'status.draft', tone: 'mut' },
   APPROVED: { key: 'status.PUBLISHED', tone: 'ok' },
@@ -75,37 +63,6 @@ const WORK_STATUS: Record<string, { key: string; tone: PillTone }> = {
   draft: { key: 'status.draft', tone: 'mut' },
   published: { key: 'status.PUBLISHED', tone: 'ok' },
 };
-const CONTRACT_TYPE: Record<string, string> = {
-  MAIN: 'pages.status.contractMain',
-  SUPPLEMENT: 'pages.status.contractSupplement',
-  RENEW: 'pages.status.contractRenew',
-  TERMINATE: 'pages.status.contractTerminate',
-};
-const CONTRACT_STAGE: Record<string, { key: string; tone: PillTone }> = {
-  NEGOTIATING: { key: 'pages.status.contractStageNegotiating', tone: 'warn' },
-  AWAIT_PROVIDER_SIGN: { key: 'pages.status.contractStageAwaitProvider', tone: 'warn' },
-  AWAIT_SENIOR_SIGN: { key: 'pages.status.contractStageAwaitSenior', tone: 'warn' },
-  APPROVING: { key: 'pages.status.contractStageApproving', tone: 'ac' },
-  EFFECTIVE: { key: 'pages.status.contractStageEffective', tone: 'ok' },
-  EXPIRED: { key: 'pages.status.contractStageExpired', tone: 'mut' },
-  TERMINATED: { key: 'pages.status.contractStageTerminated', tone: 'bad' },
-};
-const CONTRACT_MODE: Record<string, string> = {
-  REGION_EXCLUSIVE: 'pages.status.contractModeRegionExclusive',
-  ONLINE: 'pages.status.contractModeOnline',
-  ON_SITE: 'pages.status.contractModeOnSite',
-  JOINT: 'pages.status.contractModeJoint',
-};
-const SETTLE: Record<string, string> = {
-  MONTH: 'pages.status.settleMonth',
-  HALF_MONTH: 'pages.status.settleHalfMonth',
-  WEEK: 'pages.status.settleWeek',
-};
-const TEAM_STATUS: Record<string, { key: string; tone: PillTone }> = {
-  ACTIVE: { key: 'status.ACTIVE', tone: 'ok' },
-  PENDING: { key: 'pages.status.teamPending', tone: 'warn' },
-  DISABLED: { key: 'status.DISABLED', tone: 'bad' },
-};
 const TEAM_SCOPE: Record<string, string> = {
   self: 'pages.status.scopeSelf',
   service: 'pages.status.scopeService',
@@ -113,62 +70,6 @@ const TEAM_SCOPE: Record<string, string> = {
 };
 const TEAM_STATUS_OPTS = (Object.entries(TEAM_STATUS) as [string, { key: string }][]).map(([v, m]) => ({ value: v, label: t(m.key) }));
 const TEAM_SCOPE_OPTS = (Object.entries(TEAM_SCOPE) as [string, string][]).map(([v, l]) => ({ value: v, label: t(l) }));
-const CLIENT_TAG_OPTS = ['重点客户', '普通客户', '潜力客户', 'VIP 客户'].map((v) => ({ value: v, label: v }));
-
-/** 模板分类（15 类，slug 与后端/原型口径一致；label 走 categoryText 中文映射） */
-const TEMPLATE_CAT_SLUGS = [
-  'wedding', 'birth_celebration', 'birthday', 'festival', 'housewarming',
-  'school_promotion', 'social_gathering', 'memorial', 'brand', 'recruitment',
-  'conference', 'opening', 'education', 'biz_social', 'marketing',
-];
-const TEMPLATE_CAT_OPTS = TEMPLATE_CAT_SLUGS.map((c) => ({ value: c, label: categoryText(c) }));
-/** 模板标签（14 项，doc §8.4） */
-const TEMPLATE_TAG_OPTS = ['中式', '国潮', '喜庆', '简约', '手绘', '浪漫', '复古', '森系', '商务', '科技', '童趣', '实景', 'H5互动', '电子请柬'].map((v) => ({ value: v, label: v }));
-/** 封面底色色板（10 色） */
-const COVER_COLORS = ['#c24b2e', '#1f3a5f', '#2e7d52', '#8a5a00', '#6a1b4d', '#37474f', '#b71c1c', '#00695c', '#4527a0', '#f3f4f6'];
-/** 标题色（4 色） */
-const TITLE_COLORS = [
-  { value: '#c24b2e', label: '品牌红' },
-  { value: '#ffffff', label: '纯白' },
-  { value: '#d4af37', label: '香槟金' },
-  { value: '#1f3a5f', label: '深藏蓝' },
-];
-const TEMPLATE_STATUS_OPTS = (Object.entries(TEMPLATE_STATUS) as [string, { key: string }][]).map(([v, m]) => ({ value: v, label: t(m.key) }));
-
-/** 资质类型（6 类，doc §8.7） */
-const CERT_TYPES = ['营业执照', '经营许可证', '居民身份证', '演出许可', '资质证书', '其他'].map((v) => ({ value: v, label: v }));
-/** 业务申请 6 步流程（doc §8.7 右侧时间轴） */
-const APPLY_FLOW = [
-  { key: 'fill', label: 'pages.status.fillData' },
-  { key: 'upload', label: 'pages.status.uploadCert' },
-  { key: 'submit', label: 'pages.status.submitReview' },
-  { key: 'first', label: 'pages.status.regionFirstReview' },
-  { key: 'final', label: 'pages.status.consoleFinalReview' },
-  { key: 'sign', label: 'pages.status.signOpen' },
-];
-const TICKET_TYPE: Record<string, string> = {
-  COMPLAINT: 'pages.fb.complaint',
-  PRAISE: 'pages.status.tkTypePraise',
-  SUGGESTION: 'pages.fb.suggestion',
-  CONSULT: 'pages.col.consult',
-  APPEAL: 'pages.status.tkTypeAppeal',
-  AFTERSALE: 'pages.status.tkTypeAftersale',
-  OTHER: 'pages.status.tkTypeOther',
-};
-const TICKET_TYPE_OPTS = (Object.entries(TICKET_TYPE) as [string, string][])
-  .filter(([v]) => ['AFTERSALE', 'SUGGESTION', 'CONSULT', 'COMPLAINT', 'OTHER'].includes(v))
-  .map(([v, l]) => ({ value: v, label: t(l) }));
-const DEPT_OPTS = [
-  { value: 'AGENT', label: 'pages.status.deptAgent' },
-  { value: 'ADMIN', label: 'pages.status.deptAdmin' },
-];
-const APPLY_STATUS: Record<string, { key: string; tone: PillTone }> = {
-  FIRST_PENDING: { key: 'pages.status.applyFirstPending', tone: 'warn' },
-  FIRST_PASSED: { key: 'pages.status.applyFirstPassed', tone: 'ac' },
-  FINAL_PENDING: { key: 'pages.status.applyFinalPending', tone: 'warn' },
-  APPROVED: { key: 'status.APPROVED', tone: 'ok' },
-  REJECTED: { key: 'status.REJECTED', tone: 'bad' },
-};
 const MSG_TYPE: Record<string, string> = {
   ANNOUNCEMENT: 'pages.status.msgAnnouncement',
   NOTICE: 'pages.status.msgGeneral',
@@ -182,18 +83,6 @@ const WD_STATUS: Record<string, { key: string; tone: PillTone }> = {
 
 const CHIP = '服务商 · 自身作用域';
 
-/** 服务类型字典（SVC_DICT · 与后端/原型口径一致） */
-const SVC_OPTIONS: { value: string; label: string }[] = [
-  '摄影摄像', '插花礼仪', '乐队演出', '礼仪执事', '主持人', '婚庆主持',
-  '宴会设计', '花艺布置', '化妆造型', '司仪培训', '婚礼策划', '特约设计',
-  '光影纪录', '司仪主持', '灯光音响',
-].map((s) => ({ value: s, label: s }));
-
-/** 签约区域（新疆 10 城市，与业务辖区口径一致） */
-const REGION_OPTIONS: { value: string; label: string }[] = [
-  '乌鲁木齐市', '喀什市', '伊宁市', '昌吉市', '库尔勒市',
-  '克拉玛依市', '石河子市', '阿克苏市', '和田市', '吐鲁番市',
-].map((s) => ({ value: s, label: s }));
 
 /** 合同签署流程 5 步（doc §10.6） */
 const SIGN_STEPS = [
@@ -277,8 +166,6 @@ const ListWithDetail = (props: {
 };
 
 /* ===================== 档期管理（可编辑 + 冲突检测） ===================== */
-const PERIOD_OPTS = Object.entries(PERIOD).map(([v, l]) => ({ value: v, label: l }));
-const STATUS_OPTS = Object.entries(SCHEDULE_STATUS).map(([v, m]) => ({ value: v, label: t(m.key) }));
 
 export const ScheduleList = () => {
   const nav = useNavigate();
@@ -304,7 +191,7 @@ export const ScheduleList = () => {
       columns={[
         { title: '编号', dataIndex: 'id', width: 130, render: (v: any) => cleanCode(v) },
         { title: '日期', dataIndex: 'date', width: 120, render: (v: any) => (v ? String(v).replace(/^\d{4}-/, '') : '—') },
-        { title: '时段', dataIndex: 'period', width: 130, render: (v: any) => PERIOD[v] ?? v },
+        { title: '时段', dataIndex: 'period', width: 130, render: (v: any) => t(PERIOD[v]) ?? v },
         { title: '服务', dataIndex: 'serviceType', ellipsis: true },
         { title: '客户', dataIndex: 'customer', width: 110 },
         { title: '状态', dataIndex: 'status', width: 100, render: (v: any) => stPill(v, SCHEDULE_STATUS) },
@@ -912,18 +799,6 @@ export const SPTeam = () => {
 };
 
 /* ===================== 我的客户 ===================== */
-const REACH_TYPE: Record<string, { key: string }> = {
-  SERVICE_MSG: { key: 'pages.status.reachServiceMsg' },
-  COUPON: { key: 'pages.status.reachCoupon' },
-  ACTIVITY: { key: 'pages.status.reachActivity' },
-  REWARD: { key: 'pages.status.reachReward' },
-};
-const REACH_CHANNEL: Record<string, string> = {
-  INNER_SMS: 'pages.status.reachInnerSms',
-  SMS: 'pages.status.reachSms',
-  WECHAT: 'pages.status.reachWechat',
-  PHONE: 'pages.status.reachPhone',
-};
 
 type ReachRecord = {
   id: string;

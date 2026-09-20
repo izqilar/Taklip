@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Form, Input, InputNumber, Select, Switch, Button, message, Upload } from 'antd';
 import { T } from '../config/theme';
 import { TICKET_STATUS } from '../config/status';
+import { PERIOD, SCHEDULE_STATUS, PERIOD_OPTS, STATUS_OPTS, SVC_OPTIONS, CLIENT_TAG_OPTS, TICKET_TYPE, TICKET_TYPE_OPTS, DEPT_OPTS, CERT_TYPES, APPLY_FLOW, APPLY_STATUS, REGION_OPTIONS, REACH_TYPE, REACH_CHANNEL } from '../config/providerConstants';
 import { dataProvider } from '../providers/dataProvider';
 import { API_URL, getToken } from '../utility';
 import { SettingPage, PreviewCard, FlowSteps, Timeline } from '../components/provider/SettingPage';
@@ -21,48 +22,6 @@ const maskCert = (no: string) => (!no ? '—' : no.length <= 8 ? no : no.slice(0
 const licenseStatusTone = (s: string): any =>
   s === '有效' ? 'ok' : s === '待审核' ? 'ac' : s === '已过期' ? 'warn' : 'bad';
 
-const PERIOD: Record<string, string> = {
-  FULL: 'pages.status.periodFull', AM: '09:00-12:00', PM1: '12:00-15:00', PM2: '15:00-18:00', PM3: '18:00-21:00', NIGHT: '晚间21:00-23:00',
-};
-const SCHEDULE_STATUS: Record<string, { key: string; tone: any }> = {
-  available: { key: 'pages.status.schAvailable', tone: 'ok' }, locked: { key: 'pages.status.schLocked', tone: 'ac' }, done: { key: 'pages.status.svcCompleted', tone: 'mut' },
-};
-const PERIOD_OPTS = Object.entries(PERIOD).map(([v, l]) => ({ value: v, label: t(l) }));
-const STATUS_OPTS = Object.entries(SCHEDULE_STATUS).map(([v, m]) => ({ value: v, label: t(m.key) }));
-
-const SVC_OPTIONS: { value: string; label: string }[] = [
-  '摄影摄像', '插花礼仪', '乐队演出', '礼仪执事', '主持人', '婚庆主持', '宴会设计', '花艺布置',
-  '化妆造型', '司仪培训', '婚礼策划', '特约设计', '光影纪录', '司仪主持', '灯光音响',
-].map((s) => ({ value: s, label: s }));
-
-const CLIENT_TAG_OPTS = ['重点客户', '普通客户', '潜力客户', 'VIP 客户'].map((v) => ({ value: v, label: v }));
-
-const TICKET_TYPE: Record<string, string> = {
-  COMPLAINT: 'pages.fb.complaint', PRAISE: 'pages.status.tkTypePraise', SUGGESTION: 'pages.fb.suggestion', CONSULT: 'pages.col.consult', APPEAL: 'pages.status.tkTypeAppeal', AFTERSALE: 'pages.status.tkTypeAftersale', OTHER: 'pages.status.tkTypeOther',
-};
-const TICKET_TYPE_OPTS = Object.entries(TICKET_TYPE)
-  .filter(([v]) => ['AFTERSALE', 'SUGGESTION', 'CONSULT', 'COMPLAINT', 'OTHER'].includes(v))
-  .map(([v, l]) => ({ value: v, label: t(l) }));
-const DEPT_OPTS = [
-  { value: 'AGENT', label: 'pages.status.deptAgent' },
-  { value: 'ADMIN', label: 'pages.status.deptAdmin' },
-];
-
-const CERT_TYPES = ['营业执照', '经营许可证', '居民身份证', '演出许可', '资质证书', '其他'].map((v) => ({ value: v, label: v }));
-const APPLY_FLOW = [
-  { key: 'fill', label: 'pages.status.fillData' }, { key: 'upload', label: 'pages.status.uploadCert' }, { key: 'submit', label: 'pages.status.submitReview' },
-  { key: 'first', label: 'pages.status.regionFirstReview' }, { key: 'final', label: 'pages.status.consoleFinalReview' }, { key: 'sign', label: 'pages.status.signOpen' },
-];
-const APPLY_STATUS: Record<string, { key: string; tone: any }> = {
-  FIRST_PENDING: { key: 'pages.status.applyFirstPending', tone: 'warn' }, FIRST_PASSED: { key: 'pages.status.applyFirstPassed', tone: 'ac' },
-  FINAL_PENDING: { key: 'pages.status.applyFinalPending', tone: 'warn' }, APPROVED: { key: 'status.APPROVED', tone: 'ok' }, REJECTED: { key: 'status.REJECTED', tone: 'bad' },
-};
-const REGION_OPTIONS: { value: string; label: string }[] = [
-  '乌鲁木齐市', '喀什市', '伊宁市', '昌吉市', '库尔勒市', '克拉玛依市', '石河子市', '阿克苏市', '和田市', '吐鲁番市',
-].map((s) => ({ value: s, label: s }));
-
-const REACH_TYPE: Record<string, string> = { SERVICE_MSG: 'pages.status.reachServiceMsg', COUPON: 'pages.status.reachCoupon', ACTIVITY: 'pages.status.reachActivity', REWARD: 'pages.status.reachReward' };
-const REACH_CHANNEL: Record<string, string> = { INNER_SMS: 'pages.status.reachInnerSms', SMS: 'pages.status.reachSms', WECHAT: 'pages.status.reachWechat', PHONE: 'pages.status.reachPhone' };
 const money = (v: any) => (typeof v === 'number' ? `¥${(v / 100).toFixed(2)}` : '¥0.00');
 const dt = (v: any) => (v ? String(v).replace('T', ' ').slice(0, 16) : '—');
 const arr = (v: any) => (Array.isArray(v) && v.length ? v.join('、') : '—');
