@@ -12,10 +12,11 @@ import ProviderSection from '@/components/ProviderSection';
 import { ALL_TAB, TEMPLATE_CATEGORIES, categoryI18nKey } from '@/categories';
 
 // 轮播图的语言无关装饰信息（副标题为英文品牌标语，图标为 emoji）；eyebrow/title 取自 i18n
+// bg/fg/soft 为每帧独立的品牌色（用户指定三帧用三种不同底色），soft 用于浮层（胶囊/箭头/指示点）的半透明底色
 const SLIDE_META = [
-  { sub: 'YOU MUST MARRY ME TODAY', icon: '💒' },
-  { sub: 'PROFESSIONAL H5 MARKETING', icon: '🏢' },
-  { sub: 'SMART EVENT INVITATION', icon: '📅' },
+  { sub: 'YOU MUST MARRY ME TODAY', icon: '💒', bg: '#0066FF', fg: '#FFFFFF', soft: 'rgba(255,255,255,0.18)' },
+  { sub: 'PROFESSIONAL H5 MARKETING', icon: '🏢', bg: '#FFFF00', fg: '#1F2937', soft: 'rgba(31,41,55,0.15)' },
+  { sub: 'SMART EVENT INVITATION', icon: '📅', bg: '#10C41D', fg: '#FFFFFF', soft: 'rgba(255,255,255,0.18)' },
 ];
 
 const GUIDE_CARDS = [
@@ -94,7 +95,7 @@ export default function Home() {
 
         {/* 全屏宽横幅（Banner）：突破 max-w 容器，铺满视口宽度；高度压缩以完整展示首屏 */}
         <section className="relative w-full">
-          <div className="relative overflow-hidden bg-black/10 shadow-2xl">
+          <div className="relative overflow-hidden bg-black/10">
             <div
               className="flex transition-transform duration-700 ease-out"
               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
@@ -102,14 +103,18 @@ export default function Home() {
               {SLIDES.map((slide) => (
                 <div
                   key={slide.eyebrow}
-                  className="relative flex w-full flex-shrink-0 flex-col items-center justify-center bg-[#D24830] px-6 py-32 text-center text-white md:py-34"
+                  className="relative flex w-full flex-shrink-0 flex-col items-center justify-center px-6 py-32 text-center md:py-34"
+                  style={{ backgroundColor: slide.bg, color: slide.fg }}
                 >
                   <div className="mb-4 text-4xl md:text-5xl">{slide.icon}</div>
-                  <div className="mb-4 rounded-full border border-white/30 bg-white/10 px-3 py-0.5 text-xs font-medium backdrop-blur">
+                  <div
+                    className="mb-4 rounded-full border px-3 py-0.5 text-xs font-medium backdrop-blur"
+                    style={{ background: slide.soft, borderColor: slide.soft }}
+                  >
                     {slide.eyebrow}
                   </div>
                   <h1 className="mb-1 text-3xl font-extrabold tracking-wide md:text-4xl">{slide.title}</h1>
-                  <p className="text-sm tracking-wider text-white/80">{slide.sub}</p>
+                  <p className="text-sm tracking-wider opacity-80">{slide.sub}</p>
                   {/* CTA（参照 PC mockup 双按钮） */}
                   <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
                     <Link
@@ -120,7 +125,8 @@ export default function Home() {
                     </Link>
                     <Link
                       to="/find-services"
-                      className="rounded-full border border-white/50 bg-white/10 px-6 py-2 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20"
+                      className="rounded-full border px-6 py-2 text-sm font-bold backdrop-blur transition hover:opacity-90"
+                      style={{ background: slide.soft, borderColor: slide.soft }}
                     >
                       {t('common:nav.findServices')}
                     </Link>
@@ -133,7 +139,8 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setCurrentSlide((i) => (i - 1 + SLIDES.length) % SLIDES.length)}
-              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white backdrop-blur transition hover:bg-white/20"
+              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full p-2 backdrop-blur transition hover:opacity-90"
+              style={{ background: SLIDES[currentSlide].soft, color: SLIDES[currentSlide].fg }}
               aria-label={t('common:button.back')}
             >
               ‹
@@ -141,7 +148,8 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setCurrentSlide((i) => (i + 1) % SLIDES.length)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white backdrop-blur transition hover:bg-white/20"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 backdrop-blur transition hover:opacity-90"
+              style={{ background: SLIDES[currentSlide].soft, color: SLIDES[currentSlide].fg }}
               aria-label={t('common:button.close')}
             >
               ›
@@ -154,9 +162,8 @@ export default function Home() {
                   key={i}
                   type="button"
                   onClick={() => setCurrentSlide(i)}
-                  className={`h-2 rounded-full transition-all ${
-                    i === currentSlide ? 'w-6 bg-white' : 'w-2 bg-white/40'
-                  }`}
+                  className="h-2 rounded-full transition-all"
+                  style={{ background: i === currentSlide ? SLIDES[currentSlide].fg : SLIDES[currentSlide].soft, width: i === currentSlide ? 24 : 8 }}
                   aria-label={`slide ${i + 1}`}
                 />
               ))}
