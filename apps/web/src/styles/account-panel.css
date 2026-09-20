@@ -1,0 +1,367 @@
+/**
+ * web 端顶栏「账号胶囊 + 账号下拉面板」。
+ *
+ * 真值来源：apps/admin/src/styles/account-panel.css + apps/admin/src/config/theme.ts
+ *   —— 面板（.accpanel / .ap-*）逐条复刻运营端，保证两端弹出的菜单视觉一致。
+ *
+ * 与运营端的唯一差异（本端有意为之）：
+ *   1. 触发器（胶囊）改为「红底 + 白描边」，对齐站内「登录」按钮样式
+ *      （参考 SiteHeader 未登录态的 `border-white/60 bg-[#c81e42] text-white`）。
+ *   2. 面板内不含「返回Web端首页」按钮（web 自己就是终端用户的唯一入口）。
+ *   3. 面板不做 portal：由 SiteHeader 内部绝对定位，故样式表不含定位规则。
+ *
+ * 令牌镜像自 apps/admin/src/config/theme.ts，改色请两端同步。
+ * 所有类名与运营端保持一致，便于两端对照排查。
+ */
+
+/* ── 令牌（作用域限定，不外泄；对应 theme.ts 的 T.*） ── */
+.h5-acc-scope {
+  --bg: #fffefb;
+  --line: rgba(74, 60, 42, 0.1);
+  --ink1: #2a2118;
+  --ink2: #4c4236;
+  --ink3: #6e5f4a;
+  --accent: #c24b2e;
+  --accent-soft: rgba(194, 75, 46, 0.1);
+  --panel-2: #f3eee7;
+  --up: #1d7a6b;
+  --up-ink: #0f5a4e;
+  --up-bg: rgba(29, 122, 107, 0.12);
+  --warn-bg: rgba(183, 122, 22, 0.14);
+  --warn-ink: #7a4d07;
+  --down-bg: rgba(192, 43, 51, 0.12);
+  --down-ink: #8f1d24;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --avatar-grad: linear-gradient(135deg, #c24b2e, #a93a20);
+  --head-grad: linear-gradient(135deg, #fdf8f5, #faf3ee);
+  --logout-ink: #c0392b;
+  --logout-soft: #fdf0ef;
+  --shadow-pop: 0 16px 48px rgba(42, 33, 24, 0.18);
+  --font: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+/* 原型全局 `*{box-sizing:border-box}` 兜底 */
+.h5-acc-scope,
+.h5-acc-scope * {
+  box-sizing: border-box;
+}
+
+/* ── 触发器（原型 .acc；本端改为红底白描边） ───────────── */
+.h5-acc-scope .acc {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 4px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  /* 红底与顶栏同色：视觉上融进导航条，只留白描边（对齐「登录」按钮） */
+  background: #c81e42;
+  color: #fff;
+  cursor: pointer;
+  flex: none;
+  user-select: none;
+  font-family: inherit;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.h5-acc-scope .acc:hover {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+.h5-acc-scope .acc.on {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+.h5-acc-scope .acc-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.h5-acc-scope .acc-av {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  /* 红底胶囊内改用「白底 + 红字」的首字母头像（原为朱砂渐变底 + 白字，
+     与红底胶囊糊在一起），字色取顶栏同色 #c81e42 与胶囊呼应 */
+  background: #fff;
+  color: #c81e42;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex: none;
+  overflow: hidden;
+}
+.h5-acc-scope .acc-av img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.h5-acc-scope .acc-tinfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.h5-acc-scope .acc-tinfo > span:first-child {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.h5-acc-scope .acc .tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+/* 红底上的角色标签：半透明白底 + 白字（运营端是浅朱砂底朱砂字） */
+.h5-acc-scope .acc .tag.write {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.h5-acc-scope .acc .tag.ro {
+  background: rgba(0, 0, 0, 0.18);
+  color: rgba(255, 255, 255, 0.85);
+}
+.h5-acc-scope .acc .dd {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: #fff;
+  flex: none;
+  transition: transform 0.15s;
+}
+.h5-acc-scope .acc.on .dd {
+  transform: rotate(180deg);
+}
+
+/* ── 下拉面板（原型 .accpanel，与运营端完全一致） ───────── */
+.h5-acc-scope .accpanel {
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 96px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  font-family: var(--font);
+  color: var(--ink1);
+  text-align: start;
+}
+
+/* ① 账号头部 */
+.h5-acc-scope .ap-head {
+  display: flex;
+  gap: 14px;
+  padding: 18px 18px 16px;
+  background: var(--head-grad);
+  border-bottom: 1px solid var(--line);
+}
+.h5-acc-scope .ap-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--avatar-grad);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 700;
+  flex: none;
+  overflow: hidden;
+}
+.h5-acc-scope .ap-avatar img {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.h5-acc-scope .ap-user {
+  flex: 1;
+  min-width: 0;
+}
+.h5-acc-scope .ap-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink1);
+  margin-bottom: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.h5-acc-scope .ap-id {
+  font-size: 12px;
+  color: var(--ink3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.h5-acc-scope .ap-copy {
+  cursor: pointer;
+  opacity: 0.5;
+  transition:
+    opacity 0.15s,
+    color 0.15s;
+  font-size: 13px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font-family: inherit;
+}
+.h5-acc-scope .ap-copy:hover {
+  opacity: 1;
+  color: var(--accent);
+}
+.h5-acc-scope .ap-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.h5-acc-scope .ap-tags .tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.h5-acc-scope .tag.ac {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.h5-acc-scope .tag.ok {
+  background: var(--up-bg);
+  color: var(--up-ink);
+}
+.h5-acc-scope .tag.warn {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+.h5-acc-scope .tag.bad {
+  background: var(--down-bg);
+  color: var(--down-ink);
+}
+.h5-acc-scope .tag.mut {
+  background: var(--panel-2);
+  color: var(--ink3);
+}
+
+/* 分区通用 */
+.h5-acc-scope .ap-section {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.h5-acc-scope .ap-sec-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink3);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* ④ 快捷入口（原型 .ap-links / .ap-link） */
+.h5-acc-scope .ap-links {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.h5-acc-scope .ap-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink2);
+  transition:
+    background 0.15s,
+    color 0.15s;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: start;
+  text-decoration: none;
+  min-width: 0;
+  width: 100%;
+}
+.h5-acc-scope .ap-link:hover {
+  background: var(--panel-2);
+  color: var(--accent);
+}
+.h5-acc-scope .ap-link .ic {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  opacity: 0.6;
+  display: grid;
+  place-items: center;
+}
+.h5-acc-scope .ap-link .ic svg {
+  width: 16px;
+  height: 16px;
+}
+.h5-acc-scope .ap-link > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ⑤ 底部工具 + 退出登录 */
+.h5-acc-scope .ap-footer {
+  padding: 10px 18px 14px;
+}
+.h5-acc-scope .ap-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-bottom: 10px;
+}
+.h5-acc-scope .ap-tool {
+  font-size: 12.5px;
+  color: var(--ink2);
+  cursor: pointer;
+  transition: color 0.15s;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-family: inherit;
+  text-decoration: none;
+}
+.h5-acc-scope .ap-tool:hover {
+  color: var(--accent);
+}
+.h5-acc-scope .ap-logout {
+  text-align: center;
+  padding: 9px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--logout-ink);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s;
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  /* 抵消 .ap-footer 的左右下内边距，让退出条铺满面板底部（原型同款负 margin） */
+  margin: 0 -18px -14px;
+  display: block;
+  width: calc(100% + 36px);
+  font-family: inherit;
+}
+.h5-acc-scope .ap-logout:hover {
+  background: var(--logout-soft);
+}

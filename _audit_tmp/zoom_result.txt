@@ -1,0 +1,6 @@
+zh-CN: inserted=适应 keys=out,reset,in,fit,fitShort dups=0
+en: inserted=Fit keys=out,reset,in,fit,fitShort dups=0
+ug: inserted=ماسلاش keys=out,reset,in,fit,fitShort dups=0
+kk-CN: inserted=Сыйдыру keys=out,reset,in,fit,fitShort dups=0
+ky-CN: inserted=Ылайыкта keys=out,reset,in,fit,fitShort dups=0
+uz-CN: inserted=Moslash keys=out,reset,in,fit,fitShort dups=0

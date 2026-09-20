@@ -1,0 +1,1 @@
+{"audience":"前后端开发团队、技术负责人","reader_task":"按真实技术栈（React 18 + Refine + AntD 5 + NestJS/Prisma/PG/Redis）实现运营端 UI 及配套数据与接口契约","genre_contract":"workplace.technical_doc","adapter":null,"presentation_mode":"normal","visual_plan":{"reason":"文档以工程结构、Prisma 模型、页面组件规格、API 契约与验收为主，全部用代码块与表格表达；无必须的图片/画板/HTML 组件","blocks":[]}}

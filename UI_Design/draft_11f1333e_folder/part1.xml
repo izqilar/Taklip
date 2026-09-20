@@ -1,0 +1,67 @@
+<title>庆柬云 · 运营端开发文档（React + Refine + Ant Design 5）</title>
+
+<blockquote><p>版本：v2.0（2026-08-28）｜依据：已验收 UI 原型 index.html + 真实项目技术栈｜状态：技术实现契约，供运营端（apps/admin）开发落地</p></blockquote>
+
+<h1 seq="auto">文档说明</h1>
+<p>本文档将已验收的「庆柬云 · 分层管理后台」UI 原型，按真实项目技术栈（React 18 + Refine + Ant Design 5 + NestJS/Prisma/PostgreSQL/Redis）翻译为可直接执行的开发契约。读者：运营端前端工程师、服务端工程师、技术负责人。范围：工程结构、Refine 装配、角色权限、Prisma 数据模型、页面与对话框实现规格、设计系统、API 契约与验收清单。</p>
+<p>术语：与原型一致——总台（ADMIN 管理总台）、代理商（AGENT）、服务商（SERVICE_PROVIDER）、用户（USER）；「视角」指页头切换进入某角色层的工作界面；「对象视角」指在角色层内检索并切换到具体对象，查看其名下数据。</p>
+<p>约定：本文档所有代码为 TypeScript；路径相对 monorepo 根；接口前缀统一 <code>/api</code>；品牌名沿用原型「庆柬云」。</p>
+
+<h1 seq="auto">技术栈与工程结构</h1>
+<h2 seq="auto">技术栈总览</h2>
+<table>
+<thead><tr><th><p>端</p></th><th><p>技术</p></th><th><p>版本</p></th><th><p>职责</p></th></tr></thead>
+<tbody>
+<tr><td><p>服务端 apps/server</p></td><td><p>NestJS + Prisma</p></td><td><p>NestJS 10 / Prisma 5</p></td><td><p>REST API、鉴权、RBAC/ABAC、审核、财务、消息</p></td></tr>
+<tr><td><p>数据库</p></td><td><p>PostgreSQL（Docker h5design-postgres）</p></td><td><p>PG 15+</p></td><td><p>业务与权限数据持久化</p></td></tr>
+<tr><td><p>缓存/队列</p></td><td><p>Redis（Docker h5design-redis）</p></td><td><p>Redis 7</p></td><td><p>会话缓存、计数、消息队列、幂等键</p></td></tr>
+<tr><td><p>运营端 apps/admin</p></td><td><p>React + Refine + AntD</p></td><td><p>React 18 / Refine 4 / AntD 5</p></td><td><p>四层管理后台 UI（本文档主体）</p></td></tr>
+<tr><td><p>用户端 apps/web</p></td><td><p>React 18 + Vite 5 + Konva 9</p></td><td><p>—</p></td><td><p>用户端 / H5 编辑器（本文档不展开）</p></td></tr>
+<tr><td><p>共享包 packages/core</p></td><td><p>类型与工厂函数</p></td><td><p>—</p></td><td><p>跨端共享 TS 类型、枚举、状态标签映射、工厂</p></td></tr>
+</tbody>
+</table>
+<h2 seq="auto">Monorepo 结构</h2>
+<pre lang="text" caption="pnpm monorepo 目录"><code>h5design/
+├─ apps/
+│  ├─ server/                # NestJS：/api
+│  │  ├─ src/modules/        # auth / users / regions / agents / providers /
+│  │  │                      # templates / orders / wallet / feedback / messages / roles / settings
+│  │  └─ prisma/             # schema.prisma、migrations、seed
+│  ├─ web/                   # 用户端 / H5 编辑器（端口 5173）
+│  └─ admin/                 # 运营端（端口 5174）—— 本文档主体
+│     ├─ src/
+│     │  ├─ providers/       # dataProvider / authProvider / accessControlProvider / i18n
+│     │  ├─ pages/           # console/ agent/ provider/ user 四层页面
+│     │  ├─ components/      # 通用列表、详情抽屉、状态标签、对象选择器
+│     │  ├─ config/          # resources、主题 token、常量
+│     │  └─ App.tsx          # Refine 装配入口
+│     └─ vite.config.ts
+├─ packages/
+│  └─ core/                  # src/types.ts、src/enums.ts、src/factory.ts、src/status.ts
+├─ pnpm-workspace.yaml
+├─ docker-compose.yml        # h5design-postgres / h5design-redis
+└─ package.json</code></pre>
+<h2 seq="auto">pnpm 与依赖</h2>
+<pre lang="yaml" caption="pnpm-workspace.yaml"><code>packages:
+  - 'apps/*'
+  - 'packages/*'</code></pre>
+<p>运营端核心依赖：<code>@refinedev/core</code>、<code>@refinedev/antd</code>、<code>@refinedev/react-router-v6</code>、<code>antd</code>、<code>react</code>、<code>react-router-dom</code>、<code>@tanstack/react-query</code>、<code>dayjs</code>、<code>react-i18next</code>、<code>i18next</code>、<code>@h5design/core</code>（workspace 依赖）。</p>
+
+<h1 seq="auto">总体架构</h1>
+<h2 seq="auto">分层登录模型</h2>
+<table>
+<thead><tr><th><p>层</p></th><th><p>角色枚举</p></th><th><p>菜单数</p></th><th><p>数据作用域</p></th><th><p>首页</p></th></tr></thead>
+<tbody>
+<tr><td><p>管理总台</p></td><td><p>ADMIN</p></td><td><p>13（超集）</p></td><td><p>ALL（全平台）</p></td><td><p>经营总览</p></td></tr>
+<tr><td><p>代理商中心</p></td><td><p>AGENT</p></td><td><p>8</p></td><td><p>REGION（本辖区，regionPath 前缀）</p></td><td><p>辖区概览</p></td></tr>
+<tr><td><p>服务商中心</p></td><td><p>SERVICE_PROVIDER</p></td><td><p>8</p></td><td><p>SELF（自身）</p></td><td><p>我的工作台</p></td></tr>
+<tr><td><p>用户视角</p></td><td><p>USER</p></td><td><p>7</p></td><td><p>SELF（单用户）</p></td><td><p>用户工作台</p></td></tr>
+</tbody>
+</table>
+<p>登录即定层：JWT 携带 <code>role</code> 与 <code>scope</code>（regionPath / selfId），前端按层投影菜单，后端按层强制隔离数据。</p>
+<h2 seq="auto">视角切换</h2>
+<p>总台账号可在「总台 / 代理商 / 服务商 / 用户」四视角间切换（页头 segmented）。切换后侧栏菜单、面包屑、首页、数据作用域、列表接口参数整体联动；三层各有独立首页。总台管理员可进入对象视角：在角色层内按 ID / 用户名 / 昵称 / 手机号 / 区域检索具体对象，整页数据切换到该对象名下（后端聚合接口返回对象 KPI + 列表）。</p>
+<h2 seq="auto">可写 / 只读模型</h2>
+<p>页头账号菜单在「超级管理员（可写 · 可代操作）」与「运维管理员（只读 · 默认只读，单独授权可写）」间切换。只读态：黄色提示条、主操作禁用、行内通过 / 驳回 / 编辑锁定，仅保留查看与导出。后端对只读会话拒绝非 GET 写请求（<code>403</code>）。</p>
+<h2 seq="auto">数据隔离（regionPath 注入）</h2>
+<p>区域表维护 <code>regionPath</code>（如 <code>乌鲁木齐/天山区</code>）；代理商绑定辖区；服务商挂所属区域与服务类型；订单 / 反馈 / 消息关联主体。后端以当前登录主体推导可见域，所有列表接口注入 <code>where</code> 过滤，杜绝越层取数；前端仅负责展示。</p>

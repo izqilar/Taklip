@@ -1,0 +1,59 @@
+# 请柬云在线设计平台 — 开发环境 Docker Compose
+# 对照 standard-dev-doc.md 技术栈要求：PostgreSQL 15 + Redis 7
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: h5design-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: h5design
+      POSTGRES_PASSWORD: h5design_dev_2026
+      POSTGRES_DB: h5design_platform
+      TZ: Asia/Shanghai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U h5design -d h5design_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - h5design-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: h5design-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - h5design-net
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: D:/docker-volumes/h5design/postgres
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: D:/docker-volumes/h5design/redis
+
+networks:
+  h5design-net:
+    driver: bridge

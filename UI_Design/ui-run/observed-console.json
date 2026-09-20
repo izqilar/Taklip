@@ -1,0 +1,53 @@
+[
+  {
+    "where": "服务商管理 / 全部列表页表头",
+    "selector": "#listTable thead th",
+    "what": "数据里把「操作」写进了列头数组，而渲染代码又会自动追加一列操作，导致表头重复、行内出现 undefined",
+    "measure": {"text": "操作 ×2 + undefined"},
+    "fix": "从 PAGES 数据移除所有 {t:'操作'} 列头（共 17 处），由代码按 acts 自动追加",
+    "resolved": true
+  },
+  {
+    "where": "整页（拼接环节）",
+    "selector": "html",
+    "what": "PowerShell 按 GBK 误读 UTF-8 分片，导致中文乱码、CSS 注释未闭合、布局塌陷（首次浏览器验证失败）",
+    "measure": {"text": "标题乱码 / 布局塌陷"},
+    "fix": "改用 Python utf-8 拼接重建 index.html，浏览器验证中文与布局恢复正常",
+    "resolved": true
+  },
+  {
+    "where": "总台首页 KPI 条",
+    "selector": ".kpi.main",
+    "what": "主指标（平台总流水）用朱砂强调 + 顶部内嵌色条，其余三个次指标弱化；主次分明，非四张一样大",
+    "measure": {"css": "box-shadow: inset 0 2px 0 var(--accent)"},
+    "fix": "保留该层级设计"
+  },
+  {
+    "where": "页头视角切换",
+    "selector": "#viewswitch",
+    "what": "总台/代理商/服务商三视角 segmented 切换，切换后侧栏菜单与面包屑联动，当前路由高亮",
+    "measure": {"behavior": "switchView 联动 renderNav + goPage"},
+    "fix": "已验证三视角均正常"
+  },
+  {
+    "where": "运维管理员只读态",
+    "selector": "#roBanner + .acc",
+    "what": "运维管理员（只读）时：黄色提示条 + 主操作按钮禁用 + 行内通过/驳回/编辑链接带 data-ro 锁定",
+    "measure": {"behavior": "setMode('ops') → RO=true"},
+    "fix": "已验证；默认只读 + 单独授权可写（决策②）"
+  },
+  {
+    "where": "待办与预警",
+    "selector": ".todo .it",
+    "what": "全部为可点击跳转的动作项（提现/入驻/仲裁/公告），与统计卡不再重复（修正用户指出的数据问题）",
+    "measure": {"behavior": "data-goto 直达对应列表"},
+    "fix": "保留"
+  },
+  {
+    "where": "审核弹窗",
+    "selector": "#modal",
+    "what": "打开弹窗按行填充申请人/服务类型/所属区域/资质/提交时间，驳回/通过按钮在只读态下禁用",
+    "measure": {"behavior": "openModal(key,i,act)"},
+    "fix": "已验证数据填充正确"
+  }
+]

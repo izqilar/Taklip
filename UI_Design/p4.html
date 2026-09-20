@@ -1,0 +1,181 @@
+<body>
+<div class="app">
+  <!-- ══ 侧栏：菜单由 JS 按当前视角渲染（总台13项 / 代理商7项 / 服务商7项） ══ -->
+  <aside class="side">
+    <div class="brand">
+      <span class="mark">
+        <svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48Zm-96,85.15L52.57,64H203.43ZM98.71,128,40,181.81V74.19Zm11.84,10.85,12,11.05a8,8,0,0,0,10.82,0l12-11.05,58,53.15H52.57ZM157.29,128,216,74.18V181.82Z"/></svg>
+      </span>
+      <span><b>庆柬云</b><small>管理后台</small></span>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidefoot">
+      <span class="av" id="sideAv">超</span>
+      <div class="who"><b id="sideName">超级管理员</b><span id="sideRole">总台 · 可写</span></div>
+      <button class="dd" style="width:26px;height:26px;border-radius:50%;background:var(--panel-2);display:grid;place-items:center;font-size:13px" title="退出登录">⏻</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- ══ 顶栏：面包屑 + 角色视角切换 + 账号权限 ══ -->
+    <header class="top">
+      <div class="crumb"><span id="crumbView">管理总台</span><span class="at">/</span><span id="crumbPage">经营总览</span></div>
+      <div class="viewswitch" id="viewswitch">
+        <button data-view="console" class="on">总台视角</button>
+        <button data-view="agent">代理商视角</button>
+        <button data-view="provider">服务商视角</button>
+        <button data-view="user">用户视角</button>
+      </div>
+      <span class="sp"></span>
+      <div class="topacts" id="topActs"></div>
+      <div class="acc" id="acc">
+        <div class="acc-trigger">
+          <span class="acc-av" id="accAvTop">超</span>
+          <div class="acc-tinfo">
+            <span id="accNameTop">张敏</span>
+          </div>
+          <span class="dd">⌄</span>
+        </div>
+        <div class="accpanel" id="accpanel">
+          <!-- ① 账号头部 -->
+          <div class="ap-head">
+            <div class="ap-avatar" id="apAvatar">超</div>
+            <div class="ap-user">
+              <div class="ap-name" id="apName">张敏</div>
+              <div class="ap-id">账号 ID：<span id="apId">ADMIN001</span><span class="ap-copy" title="复制">⧉</span></div>
+              <div class="ap-tags">
+                <span class="tag ac" id="apRole">超级管理员</span>
+                <span class="tag ok" id="apAuth">已实名</span>
+              </div>
+            </div>
+          </div>
+          <!-- ② 权限模式（仅总台管理员显示） -->
+          <div class="ap-section" id="apModeSec">
+            <div class="ap-sec-title">权限模式</div>
+            <div class="ap-modes" id="apModes">
+              <div class="ap-mode on" data-mode="super"><b>超级管理员</b><span>全量权限 · 可代操作</span></div>
+              <div class="ap-mode" data-mode="ops"><b>运维管理员</b><span>部分权限 · 默认只读</span></div>
+            </div>
+          </div>
+          <!-- ③ 待办事项 -->
+          <div class="ap-section">
+            <div class="ap-sec-title">待办事项</div>
+            <div class="ap-todos" id="apTodos"></div>
+          </div>
+          <!-- ④ 快捷入口 -->
+          <div class="ap-section">
+            <div class="ap-sec-title">快捷入口</div>
+            <div class="ap-links" id="apLinks"></div>
+          </div>
+          <!-- ⑤ 底部工具 + 退出 -->
+          <div class="ap-footer">
+            <div class="ap-tools" id="apTools"></div>
+            <div class="ap-logout" id="apLogout">退出登录</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ══ 对象视角工具栏：管理员在代理商/服务商视角下，按 ID/昵称/手机号选择具体对象查看其名下数据 ══ -->
+    <div class="objpick" id="objPick" style="display:none">
+      <span class="op-t">搜索</span>
+      <div class="combobox">
+        <input class="field" id="objQ" placeholder="搜索 ID / 用户名 / 昵称 / 手机号…" autocomplete="off">
+        <div class="objlist" id="objList"></div>
+      </div>
+      <button class="btn" id="objGo" style="white-space:nowrap">搜索</button>
+      <span class="rolechip ro" id="objTag">—</span>
+      <span class="sp"></span>
+      <button class="btn" id="objExit">返回总台</button>
+    </div>
+
+    <!-- ══ 主区 ══ -->
+    <div class="body">
+      <!-- 当前是只读时的横幅 -->
+      <div class="notice ro" id="roBanner" style="display:none">
+        <svg class="ic" viewBox="0 0 256 256" fill="currentColor"><path d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM96,56a32,32,0,0,1,64,0V80H96ZM208,208H48V96H208V208Zm-68-56a12,12,0,1,1-12-12A12,12,0,0,1,140,152Z"/></svg>
+        <span>当前为 <b>运维管理员（只读）</b> 视角：可查看全部数据，操作（通过/驳回/编辑）已锁定；如须代操作，请切换为超级管理员或由管理员单独授权。</span>
+      </div>
+
+      <!-- ════════════ 总台 · 经营总览 ════════════ -->
+      <section class="page" id="pg-console-home">
+        <div class="pghead">
+          <div>
+            <h2>经营总览</h2>
+            <div class="sub">平台运营核心指标 · 截至今日 08-27</div>
+          </div>
+          <span class="sp"></span>
+          <span class="rolechip">总台 · 全盘治理</span>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi main">
+            <div class="k">平台总流水</div>
+            <div class="v num">¥128,640</div>
+            <div class="d up"><svg class="ic" viewBox="0 0 256 256" fill="currentColor"><path d="M205.66,117.66a8,8,0,0,1-11.32,0L136,59.31V216a8,8,0,0,1-16,0V59.31L61.66,117.66a8,8,0,0,1-11.32-11.32l72-72a8,8,0,0,1,11.32,0l72,72A8,8,0,0,1,205.66,117.66Z"/></svg>▲ 12.4% 较上周</div>
+            <div class="f">抽成 ¥12,864（10%）</div>
+          </div>
+          <div class="kpi">
+            <div class="k">注册用户</div>
+            <div class="v num">8,432</div>
+            <div class="d up"><svg class="ic" viewBox="0 0 256 256" fill="currentColor"><path d="M205.66,117.66a8,8,0,0,1-11.32,0L136,59.31V216a8,8,0,0,1-16,0V59.31L61.66,117.66a8,8,0,0,1-11.32-11.32l72-72a8,8,0,0,1,11.32,0l72,72A8,8,0,0,1,205.66,117.66Z"/></svg>▲ 6.1%</div>
+          </div>
+          <div class="kpi">
+            <div class="k">在营服务商</div>
+            <div class="v num">326</div>
+            <div class="d up">▲ 3.2%</div>
+            <div class="f">待入驻审核 <b style="color:var(--accent)">12</b> 家</div>
+          </div>
+          <div class="kpi">
+            <div class="k">成交订单</div>
+            <div class="v num">1,926</div>
+            <div class="d up">▲ 9.7%</div>
+            <div class="f">退款率 2.1%</div>
+          </div>
+        </div>
+
+        <div class="duo">
+          <div class="chart">
+            <h4>区域经营对比<span class="hint">近 30 日 · 按流水排序</span></h4>
+            <div class="bars" id="regionBars"></div>
+            <div class="legend"><span><i style="background:var(--accent)"></i>平台流水</span><span><i style="background:var(--accent-2)"></i>订单量</span></div>
+          </div>
+          <div class="chart">
+            <h4>资金流水趋势<span class="hint">近 14 日</span></h4>
+            <svg viewBox="0 0 400 170" style="width:100%;height:auto;margin-top:12px" aria-label="流水趋势">
+              <defs><linearGradient id="lg1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#c24b2e" stop-opacity=".25"/><stop offset="1" stop-color="#c24b2e" stop-opacity="0"/></linearGradient></defs>
+              <path d="M0,128 L31,120 L62,124 L93,106 L124,112 L155,90 L186,96 L217,74 L248,82 L279,58 L310,66 L341,44 L372,52 L400,34 L400,170 L0,170 Z" fill="url(#lg1)"/>
+              <polyline points="0,128 31,120 62,124 93,106 124,112 155,90 186,96 217,74 248,82 279,58 310,66 341,44 372,52 400,34" fill="none" stroke="#c24b2e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="0" y1="150" x2="400" y2="150" stroke="rgba(74,60,42,.12)"/>
+            </svg>
+            <div class="legend"><span><i style="background:var(--accent)"></i>总流水（万元）</span><span style="margin-left:auto">峰值 ¥1.42w</span></div>
+          </div>
+        </div>
+
+        <div class="trio">
+          <div class="panel">
+            <header>代理商绩效 TOP5<span class="hint">按月流水</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>代理商</th><th>辖区</th><th class="n">流水</th><th class="n">订单</th></tr></thead>
+              <tbody id="agentTop"></tbody>
+            </table></div>
+          </div>
+          <div class="panel">
+            <header>待办与预警<span class="hint">点按直达</span></header>
+            <div class="todo">
+              <div class="it" data-goto="withdrawals"><span class="icn a">¥</span><div class="tx"><b>待审核提现</b><span>提现审核队列</span></div><span class="cnt num">3</span></div>
+              <div class="it" data-goto="review"><span class="icn b">审</span><div class="tx"><b>服务商入驻待审</b><span>服务商管理 · 入驻审核队列</span></div><span class="cnt num">12</span></div>
+              <div class="it" data-goto="feedback"><span class="icn c">⭐</span><div class="tx"><b>升级反馈待仲裁</b><span>评价与反馈中心</span></div><span class="cnt num">2</span></div>
+              <div class="it" data-goto="messages"><span class="icn a">✉</span><div class="tx"><b>权威公告待审</b><span>消息中心 · 公告审核</span></div><span class="cnt num">1</span></div>
+            </div>
+          </div>
+          <div class="panel">
+            <header>服务商入驻审核<span class="hint">待审 <b>12</b> · 点按处理</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>申请人</th><th>类型</th><th>区域</th><th>状态</th><th></th></tr></thead>
+              <tbody id="reviewMini"></tbody>
+            </table></div>
+          </div>
+        </div>
+      </section>

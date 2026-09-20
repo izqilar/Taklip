@@ -1,0 +1,716 @@
+// Prisma 数据模型 — TAKLIP 设计平台
+// 文档来源：docs/standard-dev-doc.md 第 5 章「数据接口定义」
+
+generator client {
+  provider = "prisma-client-js"
+  // 生成为独立目录，规避默认 .prisma/client 被外部进程持锁导致 generate 失败
+  output   = "./prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户决策层：普通用户 / 服务商(供给方) / 代理商(区域管辖) / 管理员
+enum Role {
+  USER
+  SERVICE_PROVIDER
+  AGENT
+  ADMIN
+}
+
+// 用户账户状态（启停闸门，管理员可禁用违规账户；代理商额外支持「待复核」）
+enum UserStatus {
+  ACTIVE
+  PENDING_RECHECK
+  DISABLED
+}
+
+// 服务商子角色（复合能力）：一个服务商可同时具备多种服务类型
+enum ServiceRole {
+  DESIGN // 特约设计
+  PHOTO  // 光影记录
+  VENUE  // 宴会场地
+  FLORAL // 花艺礼赠
+  STEWARD // 仪式执事
+  PERFORM // 演艺星团
+}
+
+// 服务商资质审核状态（混合审核模型）：
+// 普通用户申请入驻即成为 SERVICE_PROVIDER（可发免费供给），
+// 但上架付费供给前需先通过一次资质/实名审核 PENDING → APPROVED
+enum ProviderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// 实名认证状态：用户自助提交证件后进入待审 PENDING，由管理员裁定 APPROVED/REJECTED
+enum RealNameStatus {
+  UNVERIFIED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// 行政区域（国标 GB/T 2260 省/市/区三级自引用树）
+// level: 1=省 2=地级市 3=区/县；regionPath 为 "省ID/市ID/区ID" 前缀链，用于代理辖区作用域匹配
+model Region {
+  id        String  @id @default(cuid())
+  code      String  @unique              // 6 位国标行政区划代码
+  name      String
+  level     Int                         // 1 省 / 2 市 / 3 区(县)
+  regionPath String? @map("region_path") // "省code/市code/区code" 前缀链，做代理辖区作用域匹配
+  parentId  String? @map("parent_id")
+  parent    Region?  @relation("RegionTree", fields: [parentId], references: [id])
+  children  Region[] @relation("RegionTree")
+  users     User[]
+
+  @@index([parentId])
+  @@index([level])
+  @@index([code])
+}
+
+// 模板审核状态：草稿(升级后待补属性) / 待审 / 已通过 / 已驳回 / 已下架(违规)
+// DRAFT 为「作品升级为服务」落地态：先存草稿 → 在标准化属性页补全 → 提交审核(PENDING)
+enum TemplateStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  TAKEN_DOWN
+}
+
+model User {
+  id        String   @id @default(cuid())
+  phone     String?  @unique
+  wxOpenid  String?  @unique
+  password  String?  // 密码登录时使用（bcrypt 哈希）
+  nickname  String?
+  avatar    String?
+  // 扩展资料字段（C2 账户绑定增强；PATCH /api/auth/me 可写）
+  realName  String?  @map("real_name")
+  // —— 实名认证（扩充内容）：用户自助提交证件号 → PENDING，管理员裁定 APPROVED/REJECTED ——
+  idCard             String?        @map("id_card")            // 证件号（加密存储，仅管理员可见明文）
+  realNameStatus     RealNameStatus @default(UNVERIFIED)        // 实名认证状态
+  realNameVerifiedAt DateTime?      @map("real_name_verified_at") // 认证通过时间
+  bio       String?
+  email     String?
+  vipLevel  Int      @default(0) // 0=免费用户 1=会员
+  locale    String   @default("zh-CN")
+  role      Role     @default(USER)
+  // 账户审计与资产（账户详情页展示）
+  lastLoginAt DateTime? @map("last_login_at")
+  points    Int      @default(0)   // 积分
+  totalSpent  Int    @default(0) @map("total_spent") // 累计消费（分）
+  userBalance Int    @default(0) @map("user_balance") // 用户钱包余额（分）
+  followingProviderCount Int @default(0) @map("following_provider_count") // 关注服务商数
+  // 服务商子角色（仅 role=SERVICE_PROVIDER 时 1..n；其余空）
+  serviceRoles ServiceRole[]
+  // 服务商申请的额外子角色（已入驻并审核通过后，申请扩展业务时使用；未审核通过前显示为审核中）
+  pendingServiceRoles ServiceRole[] @default([])
+  // 服务商资质审核状态（仅 role=SERVICE_PROVIDER 时有效）
+  providerStatus ProviderStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projects      Project[]
+  assets        Asset[]
+  templates     Template[]
+  orders        TemplateOrder[]
+  providerWallet ProviderWallet?
+  withdrawals   Withdrawal[]
+  appeals       TemplateAppeal[]
+
+  // —— 角色管理管线（P0）：区域与代理 ——
+  regionId   String?   @map("region_id")   // 本人所属区/县
+  region     Region?    @relation(fields: [regionId], references: [id])
+  agentId    String?    @map("agent_id")    // 受管于某代理商 User.id（role=AGENT）
+  agent      User?      @relation("UserAgent", fields: [agentId], references: [id])
+  agentOf    User[]     @relation("UserAgent") // 该代理商管辖的用户（反向）
+  regionPath String?    @map("region_path") // "省ID/市ID/区ID" 前缀匹配做辖区作用域
+  status     UserStatus @default(ACTIVE)    // 账户启停闸门
+
+  // —— 评价与反馈 / 消息（P3/P4）回向关系 ——
+  ticketsReporter Ticket[] @relation("TicketReporter")
+  ticketsTarget   Ticket[] @relation("TicketTarget")
+  ticketsAssignee Ticket[] @relation("TicketAssignee")
+  messagesAuthor  Message[] @relation("MessageAuthor")
+  // —— 用户评价（我的评价 / 订单评价与追评）——
+  reviews         Review[] @relation("ReviewUser")
+  reviewsReceived Review[] @relation("ReviewProvider")
+  messageReads    MessageRead[] @relation("MessageReadUser")
+  qualifications  QualificationApplication[] @relation("QualificationUser")
+  walletLogs      WalletLog[] @relation("WalletLogUser")
+  coupons         UserCoupon[] @relation("UserCouponUser")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String   @default("未命名作品")
+  cover       String?
+  status      String   @default("draft") // draft | published
+  publishCode String?  @unique          // 发布后生成，用于公开访问 /p/:publishCode
+  // 完整 Schema，对应文档中的 Project JSON（Project -> Page[] -> Element[]）
+  schema      Json
+  // 草稿 Schema（方案 A draft/live）：保存只写草稿，发布才原子替换线上 schema
+  draftSchema Json?    @map("draft_schema")
+  version     Int      @default(1)
+  // 已发布 H5 的总访问量（每次公开访问 /p/:publishCode 自增）
+  viewCount   Int      @default(0)
+  // 来源模板（字体授权溯源）：从付费模板创建的作品才可使用其中的付费字体
+  templateId String?  @map("template_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template Template?         @relation("ProjectTemplate", fields: [templateId], references: [id])
+  versions ProjectVersion[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([templateId])
+}
+
+model Template {
+  id         String         @id @default(cuid())
+  name       String
+  category   String
+  tags       String[]
+  cover      String?
+  // 预制 Schema，用户「使用模板」时深拷贝为独立 Project
+  schema     Json
+  // 草稿 Schema（方案 A draft/live）：编辑已发布 Template 时保存只写草稿，发布才原子替换线上 schema
+  draftSchema    Json?    @map("draft_schema")
+  draftUpdatedAt DateTime? @map("draft_updated_at")
+  liveVersion    Int      @default(1) @map("live_version")
+  isOfficial Boolean        @default(false)
+  useCount   Int            @default(0)
+
+  // 三层权限 / 审核 / 变现（P0 引入）
+  authorId   String?
+  author     User?          @relation(fields: [authorId], references: [id])
+  status     TemplateStatus @default(PENDING)
+  reviewNote String? // 驳回原因，展示给服务商
+  reviewedBy String? // 审核管理员 id
+  reviewedAt DateTime?
+  price      Int            @default(0) // 价格（分），0=免费
+  currency   String         @default("CNY")
+  // 该模板使用的付费字体 family 列表（发布时从 schema 自动解析冗余存储，便于授权校验）
+  paidFonts  String[]       @default([]) @map("paid_fonts")
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  orders    TemplateOrder[]
+  appeals   TemplateAppeal[]
+  projects  Project[]       @relation("ProjectTemplate")
+
+  @@index([category])
+  @@index([authorId])
+  @@index([status])
+}
+
+// 字体目录（仅元数据 + 文件托管，不单独售卖；授权绑定在付费模板上）
+model Font {
+  id          String   @id @default(cuid())
+  family      String   @unique               // 对应 schema 元素 fontFamily
+  displayName String
+  files       Json                        // { woff2?, woff?, ttf? } URL
+  isPaid      Boolean  @default(false)
+  category    String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model ProjectVersion {
+  id        String   @id @default(cuid())
+  projectId String
+  // 版本快照
+  schema    Json
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model Asset {
+  id         String   @id @default(cuid())
+  userId     String
+  url        String
+  type       String // image | video | audio
+  size       Int
+  width      Int?
+  height     Int?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// 付费模板购买订单（服务商变现）
+model TemplateOrder {
+  id            String   @id @default(cuid())
+  // 业务单号（原型 QD…0316 展示形态）：形如 QD202608270316
+  orderNo       String?  @unique @map("order_no")
+  buyerId       String
+  templateId    String
+  amount        Int // 实付金额（分）
+  platformFee   Int      @default(0) // 平台抽成（分）
+  designerIncome Int     @default(0) // 服务商实得（分）
+  status        String   @default("paid") // paid | refunded（支付态）
+  // 履约态（用户视角「待服务 / 履约中 / 已完成 / 已退款」）
+  serviceStatus String   @default("completed") @map("service_status")
+  createdAt     DateTime @default(now())
+
+  buyer    User     @relation(fields: [buyerId], references: [id])
+  template Template @relation(fields: [templateId], references: [id])
+
+  @@index([templateId])
+  @@index([buyerId])
+  @@index([serviceStatus])
+}
+
+// 服务商钱包 / 收益
+model ProviderWallet {
+  id          String   @id @default(cuid())
+  providerId  String   @unique
+  balance     Int      @default(0) // 可提现余额（分）
+  frozen      Int      @default(0) // 冻结金额（分）
+  totalIncome Int      @default(0) // 累计收入（分）
+  withdrawn   Int      @default(0) // 已提现（分）
+  updatedAt   DateTime @updatedAt
+
+  provider    User          @relation(fields: [providerId], references: [id])
+  withdrawals Withdrawal[]
+}
+
+// 提现记录
+model Withdrawal {
+  id          String   @id @default(cuid())
+  providerId  String
+  walletId    String
+  amount      Int      // 提现金额（分）
+  currency    String   @default("CNY")
+  status      String   @default("pending") // pending | paid | failed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  provider    User          @relation(fields: [providerId], references: [id])
+  wallet      ProviderWallet @relation(fields: [walletId], references: [id])
+
+  @@index([providerId])
+  @@index([walletId])
+}
+
+// 模板违规申诉（服务商对下架/驳回决定提出申诉）
+model TemplateAppeal {
+  id          String   @id @default(cuid())
+  templateId  String
+  providerId  String
+  reason      String   // 申诉理由
+  status      String   @default("pending") // pending | approved | rejected
+  adminNote   String?  // 管理员处理备注
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  template  Template @relation(fields: [templateId], references: [id])
+  provider  User     @relation(fields: [providerId], references: [id])
+
+  @@index([templateId])
+  @@index([providerId])
+  @@index([status])
+}
+
+// ————————————————————————————————————————————————
+// 评价与反馈中心（四层架构：用户↔服务商纠纷经代理商协商、协商不成升级总台仲裁）
+// ————————————————————————————————————————————————
+enum TicketType {
+  COMPLAINT    // 投诉
+  PRAISE       // 好评感谢
+  SUGGESTION   // 建议
+  CONSULT      // 咨询
+  APPEAL       // 申诉
+  AFTERSALE    // 售后（用户视角「我的反馈」主类型）
+  OTHER        // 其他
+}
+
+enum TicketStatus {
+  OPEN         // 待处理（刚发起）
+  NEGOTIATING  // 代理商协商中
+  ESCALATED    // 已升级转总台
+  ARBITRATING  // 总台仲裁中
+  CLOSED       // 已关闭
+}
+
+model Ticket {
+  id           String      @id @default(cuid())
+  type         TicketType
+  title        String
+  content      String
+  status       TicketStatus @default(OPEN)
+  // 辖区路径（取发起人的 regionPath），供代理商按 regionPath 前缀匹配作用域
+  regionPath   String?     @map("region_path")
+  reporterId   String      @map("reporter_id")
+  reporter     User        @relation("TicketReporter", fields: [reporterId], references: [id])
+  reporterRole Role        @map("reporter_role")
+  // 被反馈对象（服务商），仅投诉/评价类有意义
+  targetId     String?     @map("target_id")
+  target       User?       @relation("TicketTarget", fields: [targetId], references: [id])
+  // 当前处理人
+  assigneeId   String?     @map("assignee_id")
+  assignee     User?       @relation("TicketAssignee", fields: [assigneeId], references: [id])
+  assigneeRole Role?       @map("assignee_role")
+  // 升级去向：AGENT 协商不成 → ADMIN
+  escalatedTo  Role?       @map("escalated_to")
+  escalatedAt  DateTime?   @map("escalated_at")
+  resolvedAt   DateTime?   @map("resolved_at")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([reporterId])
+  @@index([targetId])
+  @@index([assigneeId])
+  @@index([status])
+  @@index([regionPath])
+}
+
+// ————————————————————————————————————————————————
+// 消息中心（分层发布：总台全局/区域权威公告；代理商辖区；服务商一般消息；用户诉求）
+// ————————————————————————————————————————————————
+enum MessageType {
+  ANNOUNCEMENT // 权威公告（代理商发需总台审核）
+  NOTICE       // 一般消息（直发）
+  APPEAL       // 诉求
+}
+
+enum MessageScope {
+  GLOBAL // 全局
+  REGION // 指定区域（regionPath）
+  OWN    // 指定接收角色（targetRole）
+}
+
+enum MessageStatus {
+  DRAFT      // 草稿
+  PENDING    // 待审核（代理商发的权威公告）
+  PUBLISHED  // 已发布
+  REJECTED   // 已驳回
+}
+
+model Message {
+  id          String       @id @default(cuid())
+  type        MessageType
+  scope       MessageScope
+  title       String
+  content     String
+  status      MessageStatus @default(DRAFT)
+  authorId    String       @map("author_id")
+  author      User         @relation("MessageAuthor", fields: [authorId], references: [id])
+  authorRole  Role         @map("author_role")
+  // scope=REGION 时的发布区域（代理商强制为自身辖区，总台可指定）
+  regionPath  String?      @map("region_path")
+  // scope=OWN 时的接收角色（如 SP 发 NOTICE 给 USER 或上级 AGENT/ADMIN）
+  targetRole  Role?        @map("target_role")
+  approvedBy  String?      @map("approved_by")
+  approvedAt  DateTime?    @map("approved_at")
+  rejectNote  String?      @map("reject_note")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  reads       MessageRead[]
+
+  @@index([authorId])
+  @@index([status])
+  @@index([regionPath])
+}
+
+// ————————————————————————————————————————————————
+// 用户评价（「我的评价」列表 + 订单/服务商评价与追评）
+// ————————————————————————————————————————————————
+model Review {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  // 订单评价时必填；服务商评价时留空
+  orderId    String?  @map("order_id")
+  providerId String?  @map("provider_id")
+  // 1..5 星，允许 4.7 这类一位小数（原型服务商/订单评分均带小数）
+  rating     Float
+  content    String
+  // —— 服务商回评（互评）——
+  reply       String?  @map("reply") // 服务商回评内容
+  replyRating Float?   @map("reply_rating") // 回评星级 1..5
+  replyAt     DateTime? @map("reply_at") // 回评时间
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User  @relation("ReviewUser", fields: [userId], references: [id])
+  provider User? @relation("ReviewProvider", fields: [providerId], references: [id])
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([providerId])
+}
+
+// ————————————————————————————————————————————————
+// 消息已读回执（通知公告 / 业务消息的「未读 / 已读」状态真相源）
+// ————————————————————————————————————————————————
+model MessageRead {
+  id        String   @id @default(cuid())
+  messageId String   @map("message_id")
+  userId    String   @map("user_id")
+  readAt    DateTime @default(now()) @map("read_at")
+
+  message Message @relation(fields: [messageId], references: [id])
+  user    User    @relation("MessageReadUser", fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@index([userId])
+}
+
+// ————————————————————————————————————————————————
+// 入驻申请（用户视角「成为代理商 / 成为服务商」→ 初审通过 → 填写资料 → 终审）
+// status: FIRST_PENDING 待初审 / FIRST_PASSED 初审通过（待补资料）/
+//         FINAL_PENDING 待终审 / APPROVED 已通过 / REJECTED 已驳回
+// ————————————————————————————————————————————————
+model QualificationApplication {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  kind        String // provider（服务商） | agent（代理商）
+  status      String   @default("FIRST_PENDING")
+  reason      String
+  // 服务商：勾选的服务类型；代理商：空
+  serviceScopes String[] @default([]) @map("service_scopes")
+  // 计划代理区域 / 开展服务区域（regionPath 前缀链）
+  regionPath  String?  @map("region_path")
+  regionLabel String?  @map("region_label")
+  // —— 填写资料阶段（初审通过后补充）——
+  applicantName String? @map("applicant_name")
+  phone         String?
+  certType      String? @map("cert_type")
+  certNo        String? @map("cert_no")
+  certExpire    String? @map("cert_expire")
+  certLongTerm  Boolean @default(false) @map("cert_long_term")
+  issuer        String?
+  attachments   String[] @default([])
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation("QualificationUser", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ————————————————————————————————————————————————
+// 用户钱包流水（用户视角「我的钱包」流水号 W-1001 递增）
+// type: RECHARGE 充值 / CONSUME 消费 / REFUND 退款 / GIFT 权益赠送
+// ————————————————————————————————————————————————
+model WalletLog {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  type         String // RECHARGE | CONSUME | REFUND | GIFT
+  // 正=入账 负=出账（分）
+  amount       Int
+  balanceAfter Int      @map("balance_after") // 变动后余额（分）
+  status       String   @default("SUCCESS") // SUCCESS | PENDING | FAILED
+  note         String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation("WalletLogUser", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ————————————————————————————————————————————————
+// 平台券种（编号 CP-2001…）+ 用户持券
+// ————————————————————————————————————————————————
+model Coupon {
+  id         String   @id @default(cuid())
+  code       String   @unique // CP-2001
+  name       String // 新人礼包 / 金卡优先券 …
+  // 面额（分）；免排期类权益用 amount=0 + benefit 描述
+  amount     Int      @default(0)
+  benefit    String? // 权益描述（如「免排期」）
+  // 使用条件：满 X 分可用（0=无门槛）
+  minSpend   Int      @default(0) @map("min_spend")
+  condition  String? // 展示用条件文案（如「金卡专享」）
+  // 限定的会员等级（0=普通用户 … 3=黑金；null=不限）
+  tier       Int?
+  validFrom  DateTime @map("valid_from")
+  validUntil DateTime @map("valid_until")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  holders UserCoupon[]
+
+  @@index([tier])
+}
+
+model UserCoupon {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  couponId   String    @map("coupon_id")
+  status     String    @default("UNUSED") // UNUSED 未使用 | USED 已使用 | EXPIRED 已过期
+  receivedAt DateTime  @default(now()) @map("received_at")
+  usedAt     DateTime? @map("used_at")
+
+  user   User   @relation("UserCouponUser", fields: [userId], references: [id])
+  coupon Coupon @relation(fields: [couponId], references: [id])
+
+  @@unique([userId, couponId])
+  @@index([userId])
+  @@index([status])
+}
+
+// ————————————————————————————————————————————————
+// 服务商视角专属模型（SELF 作用域，providerId 即当前登录 User.id）
+// ————————————————————————————————————————————————
+
+// 档期管理：服务商服务排期，接单自动锁定、交付完成释放
+model ProviderSchedule {
+  id          String   @id @default(cuid())
+  providerId  String   @map("provider_id")
+  date        String // YYYY-MM-DD
+  period      String   @default("FULL") // FULL 全天 | AM 09-12 | PM1 12-15 | PM2 15-18 | PM3 18-21 | NIGHT 21-23
+  serviceType String
+  status      String   @default("available") // available 可接单 | locked 已锁定 | done 已完成
+  orderId     String?  @map("order_id")
+  customer    String?
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([providerId])
+  @@index([date])
+}
+
+// 合同管理：主合同 / 补充协议 / 续签 / 终止 + 在线协商签署流程
+model ProviderContract {
+  id           String   @id @default(cuid())
+  providerId   String   @map("provider_id")
+  contractNo   String   @unique @map("contract_no") // HT-YYYY-SPXXX
+  type         String   @default("MAIN") // MAIN 主合同 | SUPPLEMENT 补充协议 | RENEW 续签 | TERMINATE 终止协议
+  name         String
+  partyA       String // 甲方（管理总台 / 辖区代理商）
+  serviceType  String
+  businessMode String   @default("ONLINE") // REGION_EXCLUSIVE 区域独家 | ONLINE 线上接单 | ON_SITE 线下驻场 | JOINT 联合运营
+  region       String?
+  exclusive    Boolean  @default(false) // 区域独家保护
+  platformRate Int      @default(10) // 平台抽成（百分比）
+  deposit      Int      @default(0) // 服务保证金（分）
+  settlePeriod String   @default("MONTH") // MONTH 月结 | HALF_MONTH 半月结 | WEEK 周结
+  signStage    String   @default("NEGOTIATING") // NEGOTIATING 协商中 | AWAIT_PROVIDER_SIGN 待服务商签署 | AWAIT_SENIOR_SIGN 待上级签署 | APPROVING 审批中 | EFFECTIVE 已生效 | EXPIRED 已到期 | TERMINATED 已终止
+  signDate     DateTime? @map("sign_date")
+  expireDate   DateTime? @map("expire_date")
+  negotiation  String[]  @default([]) // 按轮次留痕的协商记录
+  attachments  String[]  @default([])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([providerId])
+}
+
+// 我的团队：按服务类型差异化角色的成员
+model ProviderTeamMember {
+  id            String   @id @default(cuid())
+  providerId    String   @map("provider_id")
+  memberNo      String   @unique @map("member_no") // MT-XXXX
+  name          String
+  phone         String
+  accountStatus String   @default("ACTIVE") // ACTIVE 正常 | PENDING 待激活 | DISABLED 停用
+  serviceType   String
+  teamRole      String
+  duties        String[] @default([])
+  personality   String?
+  dataScope     String   @default("self") // self 自身 | service 自身（服务域） | provider 本服务商
+  funcPerms     String[] @default([]) // 功能权限 8 项
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([providerId])
+}
+
+// 我的客户：客户档案与精准维护触达
+model ProviderClient {
+  id            String   @id @default(cuid())
+  providerId    String   @map("provider_id")
+  clientNo      String   @unique @map("client_no") // PC-XXXX
+  name          String
+  phone         String
+  totalSpend    Int      @default(0) @map("total_spend") // 累计消费（分）
+  lastService   String?  @map("last_service")
+  tags          String[] @default([]) // 重点客户 / 普通客户 / 潜力客户 / VIP 客户
+  prefs         String[] @default([]) // 服务偏好
+  channels      String[] @default([]) // 首选渠道
+  interactions  Int      @default(0) // 互动次数
+  lastMaintain  DateTime? @map("last_maintain")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([providerId])
+}
+
+// 客户精准维护 / 触达记录：服务商对名下客户发起的维护任务（服务消息 / 优惠券 / 优惠活动 / 答谢奖励），
+// 按渠道（站内信 / 短信 / 微信 / 电话）触达，每次维护留痕，形成客户 360° 触达时间轴。
+model ProviderClientReach {
+  id         String    @id @default(cuid())
+  providerId String    @map("provider_id")
+  clientId   String    @map("client_id")
+  clientNo   String    @map("client_no") // PC-XXXX
+  type       String // SERVICE_MSG | COUPON | ACTIVITY | REWARD
+  channel    String // INNER_SMS | SMS | WECHAT | PHONE
+  amount     Int?      @map("amount") // 权益面额（分），仅 COUPON / REWARD
+  validTo    DateTime? @map("valid_to") // 权益有效期，仅 COUPON / REWARD
+  subject    String // 维护主题
+  content    String // 维护内容
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([providerId])
+  @@index([clientId])
+}
+
+// 审计留痕：所有审核类操作（服务商资质审批 / 资料编辑 / 提现审批等）统一写入，
+// 解决此前「审核意见仅在服务端 stdout 打印或被 void 丢弃」的留痕空转问题。
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String   @map("actor_id") // 操作者用户 id
+  actorRole  String?  @map("actor_role") // 操作者角色（ADMIN/AGENT）
+  action     String // 动作：PROVIDER_APPROVE / PROVIDER_REJECT / PROVIDER_EDIT / WITHDRAWAL_APPROVE / WITHDRAWAL_REJECT
+  targetType String   @map("target_type") // 被操作对象类型：USER / WITHDRAWAL
+  targetId   String   @map("target_id") // 被操作对象 id
+  reason     String? // 审核意见 / 编辑理由
+  before     Json? // 操作前快照（按需，如 providerStatus/serviceRoles/status）
+  after      Json? // 操作后快照
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([targetType, targetId])
+  @@index([actorId])
+}
+
+// 服务商资质项（证照）管理：营业执照 / 经营许可证 / 演出许可证 / 卫生许可证 / 实名认证 等
+model ProviderLicense {
+  id           String   @id @default(cuid())
+  providerId   String   @map("provider_id")
+  licNo        String   @map("lic_no") // ZZ-XXXX（本服务商内自增，非全局唯一）
+  name         String // 资质名称*
+  type         String // 资质类型*（6 类：营业执照/经营许可证/居民身份证/演出许可/资质证书/其他）
+  certNo       String // 证件编号*
+  issuer       String?  @map("issuer") // 发证机关
+  validFrom    DateTime? @map("valid_from")
+  validTo      DateTime? @map("valid_to")
+  longTerm     Boolean  @default(false) @map("long_term") // 长期有效
+  expireRemind String?  @map("expire_remind") // 提前30天 / 提前90天 / 不提醒
+  status       String   @default("待审核") // 待审核 | 有效 | 已过期 | 已驳回
+  description  String? // 资质说明
+  attachments  Json? // [{ name, url }]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([providerId])
+}

@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>庆柬云 · 资质审核资料提交原型</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --page:#f5f2ec;--bg:#fffefb;--panel:#fffefb;--panel-2:#f3eee7;
+  --border:rgba(74,60,42,.12);
+  --ink-1:#2a2118;--ink-2:#4c4236;--ink-3:#86765f;--ink-4:#b5a890;
+  --accent:#c24b2e;--accent-2:#14676b;--accent-soft:rgba(194,75,46,.10);--accent-2-soft:rgba(20,103,107,.10);
+  --ok:#1d7a6b;--ok-soft:rgba(29,122,107,.10);
+  --warn:#b77a16;--warn-soft:rgba(183,122,22,.10);
+  --bad:#c02b33;--bad-soft:rgba(192,43,51,.10);
+  --info:#14676b;--info-soft:rgba(20,103,107,.10);
+  --radius:10px;--shadow:0 1px 4px rgba(74,60,42,.06);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--page);color:var(--ink-1);font-size:14px;line-height:1.6}
+
+/* ── 顶部导航 ── */
+.topbar{height:56px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+.topbar .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;color:var(--accent)}
+.topbar .logo .dot{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:grid;place-items:center;color:#fff;font-size:14px}
+.topbar .title{margin-left:16px;font-size:15px;color:var(--ink-2);border-left:1px solid var(--border);padding-left:16px}
+.topbar .spacer{flex:1}
+.topbar .user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
+.topbar .user .avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:600;font-size:13px}
+
+/* ── Tab 切换 ── */
+.tabbar{background:var(--bg);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:4px}
+.tab{padding:14px 20px;font-size:14px;color:var(--ink-3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;user-select:none}
+.tab:hover{color:var(--ink-2)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.tab .num{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:600}
+
+/* ── 页面容器 ── */
+.page{display:none;padding:24px;max-width:1400px;margin:0 auto}
+.page.on{display:block}
+
+/* ── 通用卡片 ── */
+.card{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:20px}
+.card-h{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.card-h h3{font-size:15px;font-weight:600;color:var(--ink-1)}
+.card-h .tag{padding:2px 10px;border-radius:4px;font-size:12px;font-weight:500}
+.card-h .tag.readonly{background:var(--panel-2);color:var(--ink-3)}
+.card-h .tag.editable{background:var(--accent-soft);color:var(--accent)}
+.card-b{padding:20px}
+
+/* ── 信息网格 ── */
+.info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.info-item{display:flex;flex-direction:column;gap:4px}
+.info-item .lbl{font-size:12px;color:var(--ink-3)}
+.info-item .val{font-size:14px;color:var(--ink-1);font-weight:500}
+.info-item .val.muted{color:var(--ink-3)}
+
+/* ── 表单 ── */
+.form-row{display:flex;gap:16px;margin-bottom:18px}
+.form-group{flex:1;display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:13px;color:var(--ink-2);font-weight:500}
+.form-group label .req{color:var(--bad);margin-left:2px}
+.form-group input,.form-group select,.form-group textarea{
+  padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;color:var(--ink-1);
+  background:var(--panel);transition:border-color .2s;outline:none;font-family:inherit
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.form-group input:disabled,.form-group select:disabled{background:var(--panel-2);color:var(--ink-3);cursor:not-allowed}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-group .hint{font-size:11px;color:var(--ink-3)}
+.form-group .char-count{font-size:11px;color:var(--ink-4);text-align:right}
+
+/* 资质类型单选组 */
+.type-group{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.type-item{padding:12px;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px}
+.type-item:hover{border-color:var(--accent-2);background:var(--accent-soft)}
+.type-item.on{border-color:var(--accent);background:var(--accent-soft)}
+.type-item .icon{width:32px;height:32px;border-radius:6px;background:var(--panel-2);display:grid;place-items:center;font-size:16px}
+.type-item.on .icon{background:var(--accent);color:#fff}
+.type-item .name{font-size:13px;font-weight:500;color:var(--ink-1)}
+.type-item .desc{font-size:11px;color:var(--ink-3)}
+
+/* 长期有效复选框 */
+.check-row{display:flex;align-items:center;gap:8px;margin-top:4px}
+.check-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+.check-row label{font-size:13px;color:var(--ink-2);cursor:pointer}
+
+/* ── 附件上传区 ── */
+.upload-zone{border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;background:var(--panel-2)}
+.upload-zone:hover{border-color:var(--accent);background:var(--accent-soft)}
+.upload-zone.drag{border-color:var(--accent);background:var(--accent-soft);transform:scale(1.01)}
+.upload-zone .icon{font-size:36px;margin-bottom:8px}
+.upload-zone .text{font-size:14px;color:var(--ink-2);font-weight:500}
+.upload-zone .sub{font-size:12px;color:var(--ink-3);margin-top:4px}
+.upload-zone .btn{display:inline-block;margin-top:12px;padding:8px 20px;background:var(--accent);color:#fff;border-radius:6px;font-size:13px;font-weight:500}
+
+.file-list{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+.file-item{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--panel)}
+.file-item .thumb{width:48px;height:48px;border-radius:6px;background:var(--panel-2);display:grid;place-items:center;font-size:20px;flex-shrink:0}
+.file-item .thumb.img{background:linear-gradient(135deg,#e8d5c4,#d4a574);color:#fff}
+.file-item .thumb.doc{background:linear-gradient(135deg,#d0d0d0,#a0a0a0);color:#fff}
+.file-item .info{flex:1;min-width:0}
+.file-item .info .name{font-size:13px;font-weight:500;color:var(--ink-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-item .info .meta{font-size:11px;color:var(--ink-3);margin-top:2px}
+.file-item .progress{width:100%;height:4px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden}
+.file-item .progress .bar{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
+.file-item .actions{display:flex;gap:8px}
+.file-item .actions button{padding:5px 12px;border:1px solid var(--border);border-radius:5px;background:var(--panel);font-size:12px;color:var(--ink-2);cursor:pointer;transition:all .2s}
+.file-item .actions button:hover{border-color:var(--accent);color:var(--accent)}
+.file-item .actions button.del:hover{border-color:var(--bad);color:var(--bad)}
+
+.format-hint{margin-top:12px;padding:10px 14px;background:var(--info-soft);border-radius:6px;font-size:12px;color:var(--info);display:flex;align-items:center;gap:8px}
+
+/* ── 底部操作栏 ── */
+.action-bar{display:flex;justify-content:flex-end;gap:12px;padding:16px 20px;border-top:1px solid var(--border);background:var(--panel-2);border-radius:0 0 var(--radius) var(--radius)}
+.btn{padding:10px 24px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{background:#a83d24}
+.btn.secondary{background:var(--panel);color:var(--ink-2);border-color:var(--border)}
+.btn.secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn.success{background:var(--ok);color:#fff}
+.btn.success:hover{background:#15665a}
+.btn.danger{background:var(--bad);color:#fff}
+.btn.danger:hover{background:#a0242b}
+.btn.sm{padding:6px 14px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── 资质表格（审核详情页） ── */
+.qual-table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.qual-table th{background:var(--panel-2);padding:12px 14px;text-align:left;font-size:12px;font-weight:600;color:var(--ink-3);border-bottom:1px solid var(--border)}
+.qual-table td{padding:12px 14px;font-size:13px;color:var(--ink-1);border-bottom:1px solid var(--border)}
+.qual-table tr:last-child td{border-bottom:none}
+.qual-table tr:hover{background:var(--panel-2)}
+.qual-table .name-cell{display:flex;align-items:center;gap:8px}
+.qual-table .status-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.qual-table .status-tag.uploaded{background:var(--ok-soft);color:var(--ok)}
+.qual-table .status-tag.pending{background:var(--warn-soft);color:var(--warn)}
+.qual-table .status-tag.expired{background:var(--bad-soft);color:var(--bad)}
+.qual-table .status-tag.none{background:var(--panel-2);color:var(--ink-3)}
+.qual-table .row-actions{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.qual-table .row-actions button{padding:5px 12px;border-radius:5px;font-size:12px;cursor:pointer;transition:all .2s;border:1px solid}
+.qual-table .row-actions .upload-btn{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+.qual-table .row-actions .upload-btn:hover{background:var(--accent);color:#fff}
+.qual-table .row-actions .change-btn{background:var(--panel);color:var(--ink-2);border-color:var(--border)}
+.qual-table .row-actions .change-btn:hover{border-color:var(--accent);color:var(--accent)}
+.qual-table .row-actions .preview-link{color:var(--accent);text-decoration:none;cursor:pointer;font-size:12px}
+.qual-table .row-actions .preview-link.disabled{color:var(--ink-4);pointer-events:none;opacity:.5}
+
+/* ── 审核详情页布局 ── */
+.review-layout{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+.review-main{display:flex;flex-direction:column;gap:20px}
+.review-side{position:sticky;top:120px}
+
+/* 状态卡 */
+.status-card{text-align:center;padding:24px}
+.status-card .big-tag{display:inline-block;padding:8px 20px;border-radius:20px;font-size:15px;font-weight:600;margin-bottom:12px}
+.status-card .big-tag.pending{background:var(--warn-soft);color:var(--warn)}
+.status-card .big-tag.approved{background:var(--ok-soft);color:var(--ok)}
+.status-card .big-tag.rejected{background:var(--bad-soft);color:var(--bad)}
+.status-card .level{font-size:13px;color:var(--ink-2);margin-bottom:4px}
+.status-card .handler{font-size:12px;color:var(--ink-3)}
+
+/* 风险提示 */
+.risk-list{display:flex;flex-direction:column;gap:10px}
+.risk-item{display:flex;gap:10px;padding:10px 12px;border-radius:8px;font-size:12px;line-height:1.5}
+.risk-item.warn{background:var(--warn-soft);color:var(--warn)}
+.risk-item.bad{background:var(--bad-soft);color:var(--bad)}
+.risk-item.info{background:var(--info-soft);color:var(--info)}
+.risk-item .icon{flex-shrink:0;font-size:14px}
+
+/* 审核操作区 */
+.review-op{display:flex;flex-direction:column;gap:14px}
+.review-op select,.review-op textarea{
+  padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;color:var(--ink-1);
+  background:var(--panel);outline:none;font-family:inherit;width:100%
+}
+.review-op select:focus,.review-op textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.review-op textarea{resize:vertical;min-height:80px}
+.review-op .btns{display:flex;gap:10px}
+.review-op .btns .btn{flex:1;justify-content:center}
+
+/* ── 审核历史时间线 ── */
+.timeline{position:relative;padding-left:28px}
+.timeline::before{content:'';position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:var(--border)}
+.tl-item{position:relative;padding-bottom:20px}
+.tl-item:last-child{padding-bottom:0}
+.tl-item::before{content:'';position:absolute;left:-24px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--panel);border:2px solid var(--border)}
+.tl-item.submit::before{border-color:var(--info);background:var(--info)}
+.tl-item.approve::before{border-color:var(--ok);background:var(--ok)}
+.tl-item.reject::before{border-color:var(--bad);background:var(--bad)}
+.tl-item.pending::before{border-color:var(--warn);background:var(--warn)}
+.tl-item.current::before{border-color:var(--accent);background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.tl-item .tl-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.tl-item .tl-time{font-size:12px;color:var(--ink-3)}
+.tl-item .tl-user{font-size:13px;font-weight:500;color:var(--ink-1)}
+.tl-item .tl-level{font-size:11px;padding:1px 8px;border-radius:3px;background:var(--panel-2);color:var(--ink-3)}
+.tl-item .tl-result{font-size:12px;font-weight:500}
+.tl-item .tl-result.ok{color:var(--ok)}
+.tl-item .tl-result.bad{color:var(--bad)}
+.tl-item .tl-result.warn{color:var(--warn)}
+.tl-item .tl-opinion{font-size:12px;color:var(--ink-2);background:var(--panel-2);padding:8px 12px;border-radius:6px;margin-top:6px}
+
+/* ── 模态框（上传对话框） ── */
+.scrim{position:fixed;inset:0;background:rgba(20,20,40,.45);z-index:200;display:none;align-items:center;justify-content:center}
+.scrim.show{display:flex}
+.modal{background:var(--panel);border-radius:12px;width:520px;max-width:92vw;max-height:88vh;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:modalIn .25s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+.modal-h{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center}
+.modal-h h3{font-size:16px;font-weight:600;color:var(--ink-1)}
+.modal-h .x{position:absolute;right:18px;top:18px;width:28px;height:28px;border-radius:6px;display:grid;place-items:center;cursor:pointer;color:var(--ink-3);font-size:18px;transition:all .2s}
+.modal-h .x:hover{background:var(--panel-2);color:var(--ink-1)}
+.modal-b{padding:22px;max-height:calc(88vh - 130px);overflow-y:auto}
+.modal-f{padding:16px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;background:var(--panel-2)}
+
+/* 上传对话框内的拖拽区 */
+.modal-upload-zone{border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--panel-2)}
+.modal-upload-zone:hover{border-color:var(--accent);background:var(--accent-soft)}
+.modal-upload-zone .icon{font-size:32px;margin-bottom:6px}
+.modal-upload-zone .text{font-size:14px;color:var(--ink-2);font-weight:500}
+.modal-upload-zone .sub{font-size:12px;color:var(--ink-3);margin-top:4px}
+
+/* 已选文件预览 */
+.selected-file{margin-top:16px;padding:14px;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;gap:12px;background:var(--panel)}
+.selected-file .thumb{width:56px;height:56px;border-radius:8px;display:grid;place-items:center;font-size:24px;flex-shrink:0}
+.selected-file .thumb.img{background:linear-gradient(135deg,#e8d5c4,#d4a574);color:#fff}
+.selected-file .thumb.doc{background:linear-gradient(135deg,#d0d0d0,#a0a0a0);color:#fff}
+.selected-file .info{flex:1;min-width:0}
+.selected-file .info .name{font-size:14px;font-weight:500;color:var(--ink-1)}
+.selected-file .info .meta{font-size:12px;color:var(--ink-3);margin-top:2px}
+.selected-file .remove{width:28px;height:28px;border-radius:6px;display:grid;place-items:center;cursor:pointer;color:var(--ink-3);font-size:16px;transition:all .2s}
+.selected-file .remove:hover{background:var(--bad-soft);color:var(--bad)}
+
+/* ── 附件预览层 ── */
+.preview-scrim{position:fixed;inset:0;background:rgba(10,10,20,.7);z-index:300;display:none;align-items:center;justify-content:center;padding:40px}
+.preview-scrim.show{display:flex}
+.preview-box{background:var(--panel);border-radius:12px;width:720px;max-width:92vw;max-height:88vh;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.preview-h{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+.preview-h .file-icon{width:40px;height:40px;border-radius:8px;display:grid;place-items:center;font-size:20px;color:#fff}
+.preview-h .file-icon.img{background:linear-gradient(135deg,#e8d5c4,#d4a574)}
+.preview-h .file-icon.doc{background:linear-gradient(135deg,#d0d0d0,#a0a0a0)}
+.preview-h .file-info{flex:1}
+.preview-h .file-info .name{font-size:15px;font-weight:600;color:var(--ink-1)}
+.preview-h .file-info .meta{font-size:12px;color:var(--ink-3);margin-top:2px}
+.preview-h .x{width:32px;height:32px;border-radius:6px;display:grid;place-items:center;cursor:pointer;color:var(--ink-3);font-size:20px;transition:all .2s}
+.preview-h .x:hover{background:var(--panel-2);color:var(--ink-1)}
+.preview-body{padding:24px;max-height:calc(88vh - 140px);overflow-y:auto}
+.preview-area{padding:40px;background:#fafafa;border:1px dashed var(--border);border-radius:8px;text-align:center;color:var(--ink-3);font-size:13px;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.preview-area .big-icon{font-size:48px}
+.preview-area .title{font-size:15px;font-weight:500;color:var(--ink-2)}
+.preview-area .desc{font-size:12px;color:var(--ink-3);max-width:400px;line-height:1.8}
+.preview-tools{display:flex;gap:8px;margin-top:16px;justify-content:center}
+.preview-tools button{padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--panel);font-size:12px;color:var(--ink-2);cursor:pointer;transition:all .2s}
+.preview-tools button:hover{border-color:var(--accent);color:var(--accent)}
+.preview-f{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--panel-2)}
+.preview-f .nav{display:flex;gap:8px}
+.preview-f .nav button{padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--panel);font-size:12px;color:var(--ink-2);cursor:pointer}
+.preview-f .nav button:disabled{opacity:.4;cursor:not-allowed}
+.preview-f .download{padding:8px 20px;background:var(--accent);color:#fff;border-radius:6px;font-size:13px;cursor:pointer;border:none}
+
+/* ── Toast 提示 ── */
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:8px;font-size:14px;font-weight:500;z-index:500;opacity:0;transition:all .3s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.15)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--ok);color:#fff}
+.toast.err{background:var(--bad);color:#fff}
+.toast.info{background:var(--info);color:#fff}
+
+/* ── 场景B演示区 ── */
+.demo-area{text-align:center;padding:60px 20px}
+.demo-area .desc{font-size:14px;color:var(--ink-3);margin-bottom:20px}
+.demo-area .trigger-btn{padding:14px 36px;background:var(--accent);color:#fff;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;border:none;transition:all .2s}
+.demo-area .trigger-btn:hover{background:var(--accent-2);transform:translateY(-1px)}
+.demo-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
+.demo-card{padding:20px;border:1px solid var(--border);border-radius:10px;background:var(--panel);text-align:left}
+.demo-card .icon{font-size:28px;margin-bottom:10px}
+.demo-card h4{font-size:14px;font-weight:600;color:var(--ink-1);margin-bottom:6px}
+.demo-card p{font-size:12px;color:var(--ink-3);line-height:1.6}
+
+/* 响应式 */
+/* 紧凑版资质类型选项：默认 1×6 一行（6个卡片排成一行） */
+.type-group-compact{grid-template-columns:repeat(6,1fr);gap:6px}
+.type-group-compact .type-item{padding:10px 4px;gap:6px;flex-direction:column;text-align:center;justify-content:center}
+.type-group-compact .type-item .icon{width:34px;height:34px;font-size:17px;border-radius:7px;flex-shrink:0}
+.type-group-compact .type-item .name{font-size:11px;text-align:center;line-height:1.3}
+.type-group-compact .type-item .desc{display:none}
+/* 响应式：中屏以下降级为3列一行（2行×3列），显示描述 */
+@media(max-width:900px){
+  .type-group-compact{grid-template-columns:repeat(3,1fr);gap:8px}
+  .type-group-compact .type-item{padding:10px 8px;flex-direction:row;text-align:left;justify-content:flex-start}
+  .type-group-compact .type-item .icon{width:28px;height:28px;font-size:14px}
+  .type-group-compact .type-item .name{font-size:12px;text-align:left}
+  .type-group-compact .type-item .desc{display:block;font-size:10px}
+}
+/* 响应式：窄屏降级为2列（3行×2列） */
+@media(max-width:600px){
+  .type-group-compact{grid-template-columns:repeat(2,1fr)}
+}
+/* 附件上传模块内嵌时的紧凑样式 */
+.upload-inline .upload-zone{padding:20px 16px}
+.upload-inline .upload-zone .icon{font-size:28px}
+.upload-inline .upload-zone .text{font-size:13px}
+.upload-inline .upload-zone .sub{font-size:11px}
+.upload-inline .upload-zone .btn{padding:6px 16px;font-size:12px;margin-top:8px}
+.upload-inline .file-item{padding:10px}
+.upload-inline .file-item .thumb{width:40px;height:40px;font-size:16px}
+.upload-inline .file-item .info .name{font-size:12px}
+.upload-inline .file-item .info .meta{font-size:10px}
+.upload-inline .file-item .actions button{padding:4px 10px;font-size:11px}
+
+@media(max-width:1100px){
+  .info-grid{grid-template-columns:repeat(2,1fr)}
+  .review-layout{grid-template-columns:1fr}
+  .review-side{position:static}
+}
+@media(max-width:900px){
+  .qual-form-row{flex-direction:column !important}
+  .qual-form-row > div{width:100% !important}
+}
+@media(max-width:768px){
+  .info-grid{grid-template-columns:1fr}
+  .type-group{grid-template-columns:1fr}
+  .form-row{flex-direction:column}
+  .demo-cards{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ 顶部导航 ═══════════ -->
+<div class="topbar">
+  <div class="logo"><div class="dot">庆</div>庆柬云</div>
+  <div class="title">资质审核资料提交 · 交互原型</div>
+  <div class="spacer"></div>
+  <div class="user"><div class="avatar">审</div>审核员 · 李敏</div>
+</div>
+
+<!-- ═══════════ Tab 切换 ═══════════ -->
+<div class="tabbar">
+  <div class="tab on" data-tab="fill">资料填写页<span class="num">A</span></div>
+  <div class="tab" data-tab="review">审核详情页<span class="num">B</span></div>
+</div>
+
+<!-- ═══════════ 场景A：资料填写页 ═══════════ -->
+<div class="page on" id="page-fill">
+  <div>
+    <div>
+      <!-- 申请主体信息（可编辑） -->
+      <div class="card">
+        <div class="card-h">
+          <h3>申请主体信息</h3>
+          <span class="tag editable">可编辑 · 新申请/业务变更均需填写</span>
+        </div>
+        <div class="card-b">
+          <!-- 第一行：申请方类型 + 申请方名称 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>申请方类型<span class="req">*</span></label>
+              <select id="applicantType" onchange="onApplicantTypeChange()">
+                <option value="provider">服务商</option>
+                <option value="agent">代理商</option>
+              </select>
+              <span class="hint">选择后系统将自动匹配对应资质要求</span>
+            </div>
+            <div class="form-group">
+              <label>申请方名称<span class="req">*</span></label>
+              <input type="text" id="applicantName" placeholder="请输入企业名称或个人姓名" value="麦麦提·艾力">
+              <span class="hint">企业请填写营业执照全称，个人请填写真实姓名</span>
+            </div>
+          </div>
+
+          <!-- 第二行：手机号 + 所属区域三级联动 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>手机号<span class="req">*</span></label>
+              <input type="tel" id="applicantPhone" placeholder="请输入11位手机号" value="13812345678" maxlength="11">
+              <span class="hint">用于接收审核进度通知，请确保准确</span>
+            </div>
+            <div class="form-group">
+              <label>所属区域<span class="req">*</span></label>
+              <div style="display:flex;gap:8px">
+                <select id="regionProvince" style="flex:1" onchange="onProvinceChange()">
+                  <option value="">请选择省</option>
+                  <option value="新疆维吾尔自治区" selected>新疆维吾尔自治区</option>
+                </select>
+                <select id="regionCity" style="flex:1" onchange="onCityChange()">
+                  <option value="">请选择市</option>
+                  <option value="乌鲁木齐市" selected>乌鲁木齐市</option>
+                  <option value="昌吉回族自治州">昌吉回族自治州</option>
+                  <option value="伊犁哈萨克自治州">伊犁哈萨克自治州</option>
+                  <option value="喀什地区">喀什地区</option>
+                </select>
+                <select id="regionDistrict" style="flex:1">
+                  <option value="">请选择区/县</option>
+                  <option value="天山区" selected>天山区</option>
+                  <option value="沙依巴克区">沙依巴克区</option>
+                  <option value="新市区">新市区</option>
+                  <option value="水磨沟区">水磨沟区</option>
+                </select>
+              </div>
+              <span class="hint">三级联动选择，决定管辖代理商和服务区域</span>
+            </div>
+          </div>
+
+          <!-- 第三行：业务范围复选框 -->
+          <div class="form-group" style="margin-bottom:18px">
+            <label>业务范围<span class="req">*</span><span style="font-weight:400;color:var(--ink-3);font-size:12px;margin-left:8px">可多选，选择后需上传对应资质</span></label>
+            <div class="checkbox-group" id="businessScope" style="display:flex;flex-wrap:wrap;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:var(--panel-2)">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--ink-2)">
+                <input type="checkbox" name="scope" value="摄影摄像" checked style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer">摄影摄像
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--ink-2)">
+                <input type="checkbox" name="scope" value="插花礼仪" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer">插花礼仪
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--ink-2)">
+                <input type="checkbox" name="scope" value="乐队演出" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer">乐队演出
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--ink-2)">
+                <input type="checkbox" name="scope" value="礼仪执事" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer">礼仪执事
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--ink-2)">
+                <input type="checkbox" name="scope" value="主持人" checked style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer">主持人
+              </label>
+            </div>
+          </div>
+
+          <!-- 第四行：系统自动生成字段（只读） -->
+          <div class="form-row" style="margin-bottom:0">
+            <div class="form-group">
+              <label id="idLabel">服务商ID</label>
+              <input type="text" id="applicantId" value="SP001" disabled style="background:var(--panel-2);color:var(--ink-3);cursor:not-allowed">
+              <span class="hint">系统自动生成，新申请提交后分配</span>
+            </div>
+            <div class="form-group">
+              <label>申请编号</label>
+              <input type="text" value="QUAL-20260902-001" disabled style="background:var(--panel-2);color:var(--ink-3);cursor:not-allowed">
+              <span class="hint">提交后自动生成，格式：QUAL-日期-序号</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 资质信息表单 -->
+      <div class="card">
+        <div class="card-h">
+          <h3>资质信息填写</h3>
+          <span class="tag editable">可编辑</span>
+        </div>
+        <div class="card-b">
+          <!-- 左右并排：左侧表单字段 + 右侧附件上传 -->
+          <div class="qual-form-row" style="display:flex;gap:20px;align-items:flex-start">
+            <!-- 左侧：所有表单字段（上下排列） -->
+            <div style="flex:1;min-width:0">
+              <!-- 资质类型选择 -->
+              <div class="form-group" style="margin-bottom:18px">
+                <label>资质类型<span class="req">*</span></label>
+                <div class="type-group type-group-compact" id="typeGroup">
+                  <div class="type-item on" data-type="营业执照">
+                    <div class="icon">📋</div>
+                    <div><div class="name">营业执照</div><div class="desc">企业/个体工商户</div></div>
+                  </div>
+                  <div class="type-item" data-type="经营许可证">
+                    <div class="icon">📜</div>
+                    <div><div class="name">经营许可证</div><div class="desc">行业经营许可</div></div>
+                  </div>
+                  <div class="type-item" data-type="居民身份证">
+                    <div class="icon">🪪</div>
+                    <div><div class="name">居民身份证</div><div class="desc">个人身份证明</div></div>
+                  </div>
+                  <div class="type-item" data-type="演出许可">
+                    <div class="icon">🎭</div>
+                    <div><div class="name">演出许可</div><div class="desc">营业性演出许可</div></div>
+                  </div>
+                  <div class="type-item" data-type="资质证书">
+                    <div class="icon">🏅</div>
+                    <div><div class="name">资质证书</div><div class="desc">专业技能认证</div></div>
+                  </div>
+                  <div class="type-item" data-type="其他">
+                    <div class="icon">📁</div>
+                    <div><div class="name">其他</div><div class="desc">其他证明材料</div></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>证件编号<span class="req">*</span></label>
+                  <input type="text" id="certNo" placeholder="请输入证件编号" value="91650102MA77XXXX">
+                  <span class="hint">请与证件上的编号完全一致</span>
+                </div>
+                <div class="form-group">
+                  <label>有效期至<span class="req">*</span></label>
+                  <input type="date" id="expireDate" value="2028-06-30">
+                  <div class="check-row">
+                    <input type="checkbox" id="longTerm">
+                    <label for="longTerm">长期有效</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom:18px">
+                <label>发证机关</label>
+                <input type="text" id="issuer" placeholder="选填，如：乌鲁木齐市市场监督管理局">
+              </div>
+
+              <div class="form-group" style="margin-bottom:0">
+                <label>备注说明</label>
+                <textarea id="remark" placeholder="选填，补充说明资质相关情况..." maxlength="200" oninput="document.getElementById('charCount').textContent=this.value.length+'/200'"></textarea>
+                <div class="char-count" id="charCount">0/200</div>
+              </div>
+            </div>
+
+            <!-- 右侧：附件上传模块（内嵌紧凑版） -->
+            <div style="width:360px;flex-shrink:0">
+              <div class="card upload-inline" style="margin:0">
+                <div class="card-h" style="padding:12px 16px">
+                  <h3 style="font-size:14px">附件上传</h3>
+                  <span class="tag editable">必传</span>
+                </div>
+                <div class="card-b" style="padding:16px">
+                  <div class="upload-zone" id="uploadZone" onclick="triggerFileSelect()">
+                    <div class="icon">📤</div>
+                    <div class="text">点击或拖拽文件到此处上传</div>
+                    <div class="sub">支持 JPG / PNG / PDF，单文件 ≤ 10MB</div>
+                    <div class="btn">选择文件</div>
+                  </div>
+                  <input type="file" id="fileInput" style="display:none" accept=".jpg,.jpeg,.png,.pdf" onchange="handleFileSelect(this)">
+                  <div class="format-hint" style="margin-top:10px;padding:8px 12px;font-size:11px">
+                    <span>💡</span>
+                    <span>建议上传清晰彩色扫描件，分辨率 ≥ 300dpi</span>
+                  </div>
+                  <div class="file-list" id="fileList" style="margin-top:10px">
+                    <div class="file-item">
+                      <div class="thumb img">🖼</div>
+                      <div class="info">
+                        <div class="name">营业执照_正面.jpg</div>
+                        <div class="meta">2.4 MB · 已上传</div>
+                      </div>
+                      <div class="actions">
+                        <button onclick="showToast('预览功能','info')">预览</button>
+                        <button class="del" onclick="this.closest('.file-item').remove();showToast('文件已删除','info')">删除</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="action-bar">
+          <button class="btn secondary" onclick="showToast('草稿已保存','ok')">保存草稿</button>
+          <button class="btn primary" onclick="submitForm()">提交审核</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 场景B：审核详情页（代理商/管理员视角） ═══════════ -->
+<div class="page" id="page-review">
+  <!-- 顶部：申请主体信息卡 -->
+  <div class="card">
+    <div class="card-h">
+      <h3>申请主体信息</h3>
+      <span class="tag readonly">只读</span>
+      <div style="flex:1"></div>
+      <span style="font-size:12px;color:var(--ink-3)">申请编号：QUAL-20260902-001</span>
+    </div>
+    <div class="card-b">
+      <div class="info-grid">
+        <div class="info-item"><span class="lbl">申请方类型</span><span class="val">服务商</span></div>
+        <div class="info-item"><span class="lbl">申请方名称</span><span class="val">麦麦提·艾力</span></div>
+        <div class="info-item"><span class="lbl">服务商ID</span><span class="val">SP001</span></div>
+        <div class="info-item"><span class="lbl">手机号</span><span class="val">13812345678</span></div>
+        <div class="info-item"><span class="lbl">所属区域</span><span class="val">乌鲁木齐市天山区</span></div>
+        <div class="info-item"><span class="lbl">业务范围</span><span class="val">摄影摄像、主持人</span></div>
+        <div class="info-item"><span class="lbl">申请时间</span><span class="val">2026-09-02 14:30</span></div>
+        <div class="info-item"><span class="lbl">申请类型</span><span class="val">新申请</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="review-layout">
+    <!-- 左侧主区域 -->
+    <div class="review-main">
+      <!-- 资质基础信息 -->
+      <div class="card">
+        <div class="card-h">
+          <h3>资质基础信息</h3>
+          <span class="tag editable">审核可编辑</span>
+        </div>
+        <div class="card-b">
+          <div class="form-row">
+            <div class="form-group">
+              <label>资质类型</label>
+              <select>
+                <option>营业执照</option>
+                <option>经营许可证</option>
+                <option>居民身份证</option>
+                <option>演出许可</option>
+                <option>资质证书</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>证件编号</label>
+              <input type="text" value="91650102MA77XXXX">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>有效期至</label>
+              <input type="date" value="2028-06-30">
+            </div>
+            <div class="form-group">
+              <label>发证机关</label>
+              <input type="text" value="乌鲁木齐市市场监督管理局">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>备注说明</label>
+            <textarea>因原营业执照照片模糊，已重新上传清晰扫描件，请审核员核实。</textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 附件表格 -->
+      <div class="card">
+        <div class="card-h">
+          <h3>资质附件清单</h3>
+          <span class="tag editable">行内上传/预览</span>
+        </div>
+        <div class="card-b" style="padding:0">
+          <table class="qual-table">
+            <thead>
+              <tr>
+                <th style="width:50px">序号</th>
+                <th style="min-width:130px">资质项</th>
+                <th style="width:160px">证件编号</th>
+                <th style="width:120px">有效期至</th>
+                <th style="width:90px">附件状态</th>
+                <th style="width:200px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="qualTableBody">
+              <tr data-idx="0">
+                <td>1</td>
+                <td><div class="name-cell">营业执照<span class="status-tag uploaded">已上传</span></div></td>
+                <td>91650102MA77XXXX</td>
+                <td>2028-06-30</td>
+                <td><span class="status-tag uploaded">已上传</span></td>
+                <td>
+                  <div class="row-actions">
+                    <button class="change-btn" onclick="openUploadModal('营业执照')">更改</button>
+                    <a class="preview-link" onclick="openPreview('营业执照','营业执照_扫描件.jpg','img')">点击预览</a>
+                  </div>
+                </td>
+              </tr>
+              <tr data-idx="1">
+                <td>2</td>
+                <td><div class="name-cell">经营许可证<span class="status-tag uploaded">已上传</span></div></td>
+                <td>新文演字第2026001号</td>
+                <td>2027-12-31</td>
+                <td><span class="status-tag uploaded">已上传</span></td>
+                <td>
+                  <div class="row-actions">
+                    <button class="change-btn" onclick="openUploadModal('经营许可证')">更改</button>
+                    <a class="preview-link" onclick="openPreview('经营许可证','营业性演出许可证.pdf','doc')">点击预览</a>
+                  </div>
+                </td>
+              </tr>
+              <tr data-idx="2">
+                <td>3</td>
+                <td><div class="name-cell">居民身份证<span class="status-tag pending">待上传</span></div></td>
+                <td>65010219900101****</td>
+                <td>长期</td>
+                <td><span class="status-tag pending">待上传</span></td>
+                <td>
+                  <div class="row-actions">
+                    <button class="upload-btn" onclick="openUploadModal('居民身份证')">上传</button>
+                    <a class="preview-link disabled">点击预览</a>
+                  </div>
+                </td>
+              </tr>
+              <tr data-idx="3">
+                <td>4</td>
+                <td><div class="name-cell">演出许可<span class="status-tag none">未提交</span></div></td>
+                <td>—</td>
+                <td>—</td>
+                <td><span class="status-tag none">未提交</span></td>
+                <td>
+                  <div class="row-actions">
+                    <button class="upload-btn" onclick="openUploadModal('演出许可')">上传</button>
+                    <a class="preview-link disabled">点击预览</a>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 审核历史 -->
+      <div class="card">
+        <div class="card-h"><h3>审核历史记录</h3></div>
+        <div class="card-b">
+          <div class="timeline">
+            <div class="tl-item current pending">
+              <div class="tl-head">
+                <span class="tl-time">待处理</span>
+                <span class="tl-user">王主管</span>
+                <span class="tl-level">复审</span>
+                <span class="tl-result warn">审核中</span>
+              </div>
+              <div class="tl-opinion" style="background:var(--accent-soft);color:var(--accent)">当前待处理 — 请审核员核实重新上传的营业执照清晰度</div>
+            </div>
+            <div class="tl-item submit">
+              <div class="tl-head">
+                <span class="tl-time">2026-09-02 14:30</span>
+                <span class="tl-user">麦麦提·艾力</span>
+                <span class="tl-level">申请方</span>
+                <span class="tl-result warn">重新提交</span>
+              </div>
+              <div class="tl-opinion">已更换清晰的营业执照扫描件，原照片模糊问题已解决。</div>
+            </div>
+            <div class="tl-item reject">
+              <div class="tl-head">
+                <span class="tl-time">2026-09-02 11:30</span>
+                <span class="tl-user">李审核</span>
+                <span class="tl-level">初审</span>
+                <span class="tl-result bad">待复核</span>
+              </div>
+              <div class="tl-opinion">营业执照照片模糊，关键文字无法辨认，请重新上传清晰扫描件。其他资质材料齐全。</div>
+            </div>
+            <div class="tl-item submit">
+              <div class="tl-head">
+                <span class="tl-time">2026-09-02 10:15</span>
+                <span class="tl-user">系统</span>
+                <span class="tl-level">—</span>
+                <span class="tl-result info">首次提交</span>
+              </div>
+              <div class="tl-opinion">服务商首次提交资质审核申请，包含营业执照、经营许可证两项材料。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧边栏 -->
+    <div class="review-side">
+      <!-- 状态卡 -->
+      <div class="card">
+        <div class="card-b status-card">
+          <div class="big-tag pending">⏳ 待复审</div>
+          <div class="level">当前层级：复审（2/3）</div>
+          <div class="handler">处理人：王主管 · 待接单</div>
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left">
+            <div><div style="font-size:11px;color:var(--ink-3)">提交时间</div><div style="font-size:13px;font-weight:500">09-02 14:30</div></div>
+            <div><div style="font-size:11px;color:var(--ink-3)">剩余时限</div><div style="font-size:13px;font-weight:500;color:var(--warn)">23小时</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 风险提示 -->
+      <div class="card">
+        <div class="card-h"><h3>风险提示</h3></div>
+        <div class="card-b">
+          <div class="risk-list">
+            <div class="risk-item info">
+              <span class="icon">ℹ️</span>
+              <span>经营许可证将在 15 个月后到期（2027-12-31），建议提前提醒续期</span>
+            </div>
+            <div class="risk-item warn">
+              <span class="icon">⚠️</span>
+              <span>居民身份证尚未上传，属于必传材料，将影响审核通过</span>
+            </div>
+            <div class="risk-item info">
+              <span class="icon">ℹ️</span>
+              <span>该服务商存在 1 次历史驳回记录，本次为重新提交</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 审核操作区 -->
+      <div class="card">
+        <div class="card-h"><h3>审核操作</h3></div>
+        <div class="card-b">
+          <div class="review-op">
+            <div class="form-group" style="margin-bottom:0">
+              <label>审核结果<span class="req">*</span></label>
+              <select id="reviewResult">
+                <option value="approve">✅ 通过</option>
+                <option value="pending" selected>⏳ 待复核</option>
+                <option value="reject">❌ 驳回</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>审核意见<span id="opinionReq" style="display:none" class="req">*</span></label>
+              <textarea id="reviewOpinion" placeholder="请填写审核意见，驳回时必填..." oninput="toggleOpinionReq()"></textarea>
+            </div>
+            <div class="btns">
+              <button class="btn secondary" onclick="showToast('已取消操作','info')">取消</button>
+              <button class="btn primary" onclick="submitReview()">保存审核</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 上传对话框（模态框） ═══════════ -->
+<div class="scrim" id="uploadScrim">
+  <div class="modal">
+    <div class="modal-h" style="position:relative">
+      <h3 id="uploadModalTitle">上传资质附件</h3>
+      <div class="x" onclick="closeUploadModal()">✕</div>
+    </div>
+    <div class="modal-b">
+      <div class="modal-upload-zone" id="modalUploadZone" onclick="triggerModalFileSelect()">
+        <div class="icon">📤</div>
+        <div class="text">点击选择文件或拖拽到此处</div>
+        <div class="sub">支持 JPG / PNG / PDF · 单文件 ≤ 10MB</div>
+      </div>
+      <input type="file" id="modalFileInput" style="display:none" accept=".jpg,.jpeg,.png,.pdf" onchange="handleModalFileSelect(this)">
+
+      <div class="format-hint" style="margin-top:14px">
+        <span>💡</span>
+        <span>建议上传清晰彩色扫描件，分辨率 ≥ 300dpi，确保所有文字可辨认</span>
+      </div>
+
+      <!-- 已选文件预览 -->
+      <div id="selectedFileArea" style="display:none">
+        <div class="selected-file">
+          <div class="thumb" id="selectedThumb">🖼</div>
+          <div class="info">
+            <div class="name" id="selectedFileName">文件名</div>
+            <div class="meta" id="selectedFileMeta">2.4 MB · JPG 图片</div>
+          </div>
+          <div class="remove" onclick="clearSelectedFile()">✕</div>
+        </div>
+        <!-- 上传进度 -->
+        <div id="uploadProgress" style="display:none;margin-top:12px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-3);margin-bottom:4px">
+            <span>上传中...</span><span id="progressPercent">0%</span>
+          </div>
+          <div class="progress" style="width:100%;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div class="bar" id="progressBar" style="height:100%;background:var(--accent);border-radius:3px;width:0%;transition:width .2s"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn secondary" onclick="closeUploadModal()">取消</button>
+      <button class="btn primary" id="confirmUploadBtn" onclick="confirmUpload()" disabled>确认上传</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 附件预览层 ═══════════ -->
+<div class="preview-scrim" id="previewScrim" onclick="if(event.target===this)closePreview()">
+  <div class="preview-box">
+    <div class="preview-h">
+      <div class="file-icon" id="previewIcon">🖼</div>
+      <div class="file-info">
+        <div class="name" id="previewFileName">文件名</div>
+        <div class="meta" id="previewFileMeta">2.4 MB · 上传于 2026-09-02 14:25</div>
+      </div>
+      <div class="x" onclick="closePreview()">✕</div>
+    </div>
+    <div class="preview-body">
+      <div class="preview-area" id="previewArea">
+        <div class="big-icon" id="previewBigIcon">🖼</div>
+        <div class="title" id="previewTitle">图片预览区域</div>
+        <div class="desc" id="previewDesc">实际项目中将在此展示图片原件，支持放大、缩小、旋转、下载等操作。此处为原型演示占位。</div>
+        <div class="preview-tools">
+          <button onclick="showToast('放大','info')">🔍+ 放大</button>
+          <button onclick="showToast('缩小','info')">🔍- 缩小</button>
+          <button onclick="showToast('旋转','info')">🔄 旋转</button>
+          <button onclick="showToast('全屏','info')">⛶ 全屏</button>
+        </div>
+      </div>
+    </div>
+    <div class="preview-f">
+      <div class="nav">
+        <button id="prevFileBtn" onclick="navPreview(-1)" disabled>← 上一个</button>
+        <span id="previewIndex" style="font-size:12px;color:var(--ink-3);align-self:center">1 / 2</span>
+        <button id="nextFileBtn" onclick="navPreview(1)">下一个 →</button>
+      </div>
+      <button class="download" onclick="showToast('开始下载原件','ok')">⬇ 下载原件</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════ Tab 切换 ═══════════ */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on');
+    document.getElementById('page-'+t.dataset.tab).classList.add('on');
+  };
+});
+
+/* ═══════════ 资质类型单选 ═══════════ */
+document.querySelectorAll('#typeGroup .type-item').forEach(it=>{
+  it.onclick=()=>{
+    document.querySelectorAll('#typeGroup .type-item').forEach(x=>x.classList.remove('on'));
+    it.classList.add('on');
+  };
+});
+
+/* ═══════════ 申请方类型切换 ═══════════ */
+function onApplicantTypeChange(){
+  const type=document.getElementById('applicantType').value;
+  const idLabel=document.getElementById('idLabel');
+  const idInput=document.getElementById('applicantId');
+  if(type==='agent'){
+    idLabel.textContent='代理商ID';
+    idInput.value='AG001';
+  }else{
+    idLabel.textContent='服务商ID';
+    idInput.value='SP001';
+  }
+}
+
+/* ═══════════ 所属区域三级联动 ═══════════ */
+const REGION_DATA={
+  '新疆维吾尔自治区':{
+    '乌鲁木齐市':['天山区','沙依巴克区','新市区','水磨沟区','头屯河区','达坂城区'],
+    '昌吉回族自治州':['昌吉市','阜康市','呼图壁县','玛纳斯县','奇台县'],
+    '伊犁哈萨克自治州':['伊宁市','奎屯市','霍尔果斯市','伊宁县','察布查尔锡伯自治县'],
+    '喀什地区':['喀什市','疏附县','疏勒县','英吉沙县','泽普县','莎车县'],
+    '阿克苏地区':['阿克苏市','温宿县','库车市','沙雅县','新和县'],
+    '吐鲁番市':['高昌区','鄯善县','托克逊县']
+  }
+};
+function onProvinceChange(){
+  const province=document.getElementById('regionProvince').value;
+  const citySel=document.getElementById('regionCity');
+  const districtSel=document.getElementById('regionDistrict');
+  citySel.innerHTML='<option value="">请选择市</option>';
+  districtSel.innerHTML='<option value="">请选择区/县</option>';
+  if(province&&REGION_DATA[province]){
+    Object.keys(REGION_DATA[province]).forEach(city=>{
+      citySel.innerHTML+='<option value="'+city+'">'+city+'</option>';
+    });
+  }
+}
+function onCityChange(){
+  const province=document.getElementById('regionProvince').value;
+  const city=document.getElementById('regionCity').value;
+  const districtSel=document.getElementById('regionDistrict');
+  districtSel.innerHTML='<option value="">请选择区/县</option>';
+  if(province&&city&&REGION_DATA[province]&&REGION_DATA[province][city]){
+    REGION_DATA[province][city].forEach(d=>{
+      districtSel.innerHTML+='<option value="'+d+'">'+d+'</option>';
+    });
+  }
+}
+
+/* ═══════════ 长期有效复选框 ═══════════ */
+document.getElementById('longTerm').onchange=function(){
+  const dateInput=document.getElementById('expireDate');
+  dateInput.disabled=this.checked;
+  if(this.checked) dateInput.value='';
+};
+
+/* ═══════════ 表单提交 ═══════════ */
+function submitForm(){
+  // 申请主体信息验证
+  const name=document.getElementById('applicantName').value.trim();
+  const phone=document.getElementById('applicantPhone').value.trim();
+  const province=document.getElementById('regionProvince').value;
+  const city=document.getElementById('regionCity').value;
+  const district=document.getElementById('regionDistrict').value;
+  const scopes=document.querySelectorAll('input[name="scope"]:checked');
+  if(!name){showToast('请填写申请方名称','err');return;}
+  if(!phone||phone.length!==11||!/^1\d{10}$/.test(phone)){showToast('请填写正确的11位手机号','err');return;}
+  if(!province||!city||!district){showToast('请完整选择所属区域（省/市/区）','err');return;}
+  if(scopes.length===0){showToast('请至少选择一项业务范围','err');return;}
+  // 资质信息验证
+  const certNo=document.getElementById('certNo').value.trim();
+  const expireDate=document.getElementById('expireDate').value;
+  const longTerm=document.getElementById('longTerm').checked;
+  if(!certNo){showToast('请填写证件编号','err');return;}
+  if(!expireDate&&!longTerm){showToast('请选择有效期至或勾选长期有效','err');return;}
+  showToast('资质申请已提交，正在跳转审核详情页...','ok');
+  // 提交成功后跳转到审核详情页（体现两页关联）
+  setTimeout(()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+    document.querySelector('.tab[data-tab="review"]').classList.add('on');
+    document.getElementById('page-review').classList.add('on');
+    window.scrollTo(0,0);
+  },1200);
+}
+
+/* ═══════════ 场景A：拖拽上传 ═══════════ */
+const uploadZone=document.getElementById('uploadZone');
+['dragover','dragenter'].forEach(ev=>uploadZone.addEventListener(ev,e=>{e.preventDefault();uploadZone.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>uploadZone.addEventListener(ev,e=>{e.preventDefault();uploadZone.classList.remove('drag');}));
+uploadZone.addEventListener('drop',e=>{
+  const file=e.dataTransfer.files[0];
+  if(file) addFileToList(file);
+});
+function triggerFileSelect(){document.getElementById('fileInput').click();}
+function handleFileSelect(input){
+  if(input.files[0]) addFileToList(input.files[0]);
+  input.value='';
+}
+function addFileToList(file){
+  const isImg=/\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
+  const size=(file.size/1024/1024).toFixed(1);
+  const item=document.createElement('div');
+  item.className='file-item';
+  item.innerHTML=`
+    <div class="thumb ${isImg?'img':'doc'}">${isImg?'🖼':'📄'}</div>
+    <div class="info">
+      <div class="name">${file.name}</div>
+      <div class="meta">${size} MB · 上传中...</div>
+      <div class="progress"><div class="bar" style="width:0%"></div></div>
+    </div>
+    <div class="actions">
+      <button onclick="showToast('预览功能','info')">预览</button>
+      <button class="del" onclick="this.closest('.file-item').remove();showToast('文件已删除','info')">删除</button>
+    </div>`;
+  document.getElementById('fileList').appendChild(item);
+  // 模拟上传进度
+  const bar=item.querySelector('.bar');
+  const meta=item.querySelector('.meta');
+  let p=0;
+  const timer=setInterval(()=>{
+    p+=Math.random()*25;
+    if(p>=100){p=100;clearInterval(timer);meta.textContent=size+' MB · 已上传 · '+new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});bar.parentElement.style.display='none';showToast('文件上传成功','ok');}
+    bar.style.width=p+'%';
+  },200);
+}
+
+/* ═══════════ 场景B：上传对话框 ═══════════ */
+let currentUploadType='';
+let selectedFile=null;
+function openUploadModal(type){
+  currentUploadType=type;
+  document.getElementById('uploadModalTitle').textContent='上传资质附件 — '+type;
+  document.getElementById('uploadScrim').classList.add('show');
+  clearSelectedFile();
+}
+function closeUploadModal(){
+  document.getElementById('uploadScrim').classList.remove('show');
+  clearSelectedFile();
+}
+function triggerModalFileSelect(){document.getElementById('modalFileInput').click();}
+function handleModalFileSelect(input){
+  if(input.files[0]){
+    selectedFile=input.files[0];
+    showSelectedFile();
+  }
+  input.value='';
+}
+function showSelectedFile(){
+  const isImg=/\.(jpg|jpeg|png|gif|webp)$/i.test(selectedFile.name);
+  const size=(selectedFile.size/1024/1024).toFixed(1);
+  document.getElementById('selectedFileArea').style.display='block';
+  document.getElementById('selectedThumb').className='thumb '+(isImg?'img':'doc');
+  document.getElementById('selectedThumb').textContent=isImg?'🖼':'📄';
+  document.getElementById('selectedFileName').textContent=selectedFile.name;
+  document.getElementById('selectedFileMeta').textContent=size+' MB · '+(isImg?'图片文件':'文档文件');
+  document.getElementById('confirmUploadBtn').disabled=false;
+}
+function clearSelectedFile(){
+  selectedFile=null;
+  document.getElementById('selectedFileArea').style.display='none';
+  document.getElementById('uploadProgress').style.display='none';
+  document.getElementById('confirmUploadBtn').disabled=true;
+}
+function confirmUpload(){
+  if(!selectedFile)return;
+  document.getElementById('uploadProgress').style.display='block';
+  const bar=document.getElementById('progressBar');
+  const percent=document.getElementById('progressPercent');
+  let p=0;
+  const timer=setInterval(()=>{
+    p+=Math.random()*20;
+    if(p>=100){
+      p=100;clearInterval(timer);
+      setTimeout(()=>{
+        closeUploadModal();
+        showToast(currentUploadType+' 附件上传成功','ok');
+        // 更新表格行状态
+        updateQualRowStatus(currentUploadType);
+      },400);
+    }
+    bar.style.width=p+'%';
+    percent.textContent=Math.round(p)+'%';
+  },150);
+}
+function updateQualRowStatus(type){
+  const rows=document.querySelectorAll('#qualTableBody tr');
+  rows.forEach(row=>{
+    const nameCell=row.querySelector('.name-cell');
+    if(nameCell&&nameCell.textContent.includes(type)){
+      const statusTags=row.querySelectorAll('.status-tag');
+      statusTags.forEach(t=>{t.className='status-tag uploaded';t.textContent='已上传';});
+      const actions=row.querySelector('.row-actions');
+      const btn=actions.querySelector('button');
+      btn.className='change-btn';btn.textContent='更改';
+      const link=actions.querySelector('.preview-link');
+      link.className='preview-link';
+      link.onclick=()=>openPreview(type,type+'_扫描件.'+(/\.(jpg|jpeg|png)$/i.test(selectedFile?.name||'')?'jpg':'pdf'),'img');
+    }
+  });
+}
+
+// 上传对话框拖拽
+const modalZone=document.getElementById('modalUploadZone');
+['dragover','dragenter'].forEach(ev=>modalZone.addEventListener(ev,e=>{e.preventDefault();modalZone.style.borderColor='var(--accent)';modalZone.style.background='var(--accent-soft)';}));
+['dragleave','drop'].forEach(ev=>modalZone.addEventListener(ev,e=>{e.preventDefault();modalZone.style.borderColor='';modalZone.style.background='';}));
+modalZone.addEventListener('drop',e=>{
+  const file=e.dataTransfer.files[0];
+  if(file){selectedFile=file;showSelectedFile();}
+});
+
+/* ═══════════ 附件预览层 ═══════════ */
+const previewFiles=[
+  {name:'营业执照',file:'营业执照_扫描件.jpg',type:'img'},
+  {name:'经营许可证',file:'营业性演出许可证.pdf',type:'doc'}
+];
+let previewIdx=0;
+function openPreview(name,file,type){
+  // 找到对应索引
+  previewIdx=previewFiles.findIndex(f=>f.name===name);
+  if(previewIdx<0) previewIdx=0;
+  renderPreview();
+  document.getElementById('previewScrim').classList.add('show');
+}
+function renderPreview(){
+  const f=previewFiles[previewIdx];
+  const isImg=f.type==='img';
+  document.getElementById('previewIcon').className='file-icon '+(isImg?'img':'doc');
+  document.getElementById('previewIcon').textContent=isImg?'🖼':'📄';
+  document.getElementById('previewFileName').textContent=f.file;
+  document.getElementById('previewFileMeta').textContent=(isImg?'2.4 MB · 图片文件':'1.8 MB · PDF文档')+' · 上传于 2026-09-02 14:25';
+  document.getElementById('previewBigIcon').textContent=isImg?'🖼':'📄';
+  document.getElementById('previewTitle').textContent=isImg?'图片预览区域':'文档预览区域';
+  document.getElementById('previewDesc').textContent=isImg
+    ?'实际项目中将在此展示图片原件，支持放大、缩小、旋转、下载等操作。此处为原型演示占位。'
+    :'实际项目中将在此展示文档内容，支持翻页、缩放、下载等操作。此处为原型演示占位。';
+  document.getElementById('previewIndex').textContent=(previewIdx+1)+' / '+previewFiles.length;
+  document.getElementById('prevFileBtn').disabled=previewIdx===0;
+  document.getElementById('nextFileBtn').disabled=previewIdx===previewFiles.length-1;
+}
+function navPreview(dir){
+  previewIdx+=dir;
+  if(previewIdx<0)previewIdx=0;
+  if(previewIdx>=previewFiles.length)previewIdx=previewFiles.length-1;
+  renderPreview();
+}
+function closePreview(){document.getElementById('previewScrim').classList.remove('show');}
+
+/* ═══════════ 审核操作 ═══════════ */
+function toggleOpinionReq(){
+  const result=document.getElementById('reviewResult').value;
+  const opinion=document.getElementById('reviewOpinion').value.trim();
+  const req=document.getElementById('opinionReq');
+  if(result==='reject'&&!opinion){req.style.display='inline';}
+  else{req.style.display='none';}
+}
+document.getElementById('reviewResult').onchange=toggleOpinionReq;
+function submitReview(){
+  const result=document.getElementById('reviewResult').value;
+  const opinion=document.getElementById('reviewOpinion').value.trim();
+  if(result==='reject'&&!opinion){showToast('驳回时必须填写审核意见','err');return;}
+  const resultText={approve:'审核通过',pending:'已转待复核',reject:'已驳回'}[result];
+  showToast('审核结果已保存：'+resultText,'ok');
+}
+
+/* ═══════════ Toast ═══════════ */
+let toastTimer;
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast '+(type||'info')+' show';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ESC 关闭弹窗
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(document.getElementById('previewScrim').classList.contains('show'))closePreview();
+    else if(document.getElementById('uploadScrim').classList.contains('show'))closeUploadModal();
+  }
+});
+</script>
+</body>
+</html>

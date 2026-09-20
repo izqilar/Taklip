@@ -1,0 +1,64 @@
+locale files: 60  parseFail=0  filesWithDupKeys=0
+
+=== admin editor.json zoom ===
+  zh-CN: present keys=[out,reset,in,fit,fitShort] 
+  en: present keys=[out,reset,in,fit,fitShort] 
+  ug: present keys=[out,reset,in,fit,fitShort] 
+  kk-CN: present keys=[out,reset,in,fit,fitShort] 
+  ky-CN: present keys=[out,reset,in,fit,fitShort] 
+  uz-CN: present keys=[out,reset,in,fit,fitShort] 
+
+=== target keys ===
+  web/zh-CN/errors.json :: error.loadFailed => MISSING
+  web/en/errors.json :: error.loadFailed => MISSING
+  admin/zh-CN/errors.json :: error.loadFailed => MISSING
+  admin/en/errors.json :: error.loadFailed => MISSING
+  admin/zh-CN/common.json :: pages.error.404 => "页面不存在（404）"
+  admin/en/common.json :: pages.error.404 => MISSING
+  admin/zh-CN/common.json :: pages.error.backHome => "返回首页"
+  admin/en/common.json :: pages.error.backHome => MISSING
+  web/zh-CN/errors.json :: error.submitReviewFailed => "提交资质审核失败，请重试"
+  web/en/errors.json :: error.submitReviewFailed => MISSING
+  admin/zh-CN/errors.json :: error.submitReviewFailed => "提交资质审核失败，请重试"
+  admin/en/errors.json :: error.submitReviewFailed => MISSING
+  web/zh-CN/editor.json :: page.noPageData => MISSING
+  web/en/editor.json :: page.noPageData => MISSING
+  admin/zh-CN/editor.json :: page.noPageData => MISSING
+  admin/en/editor.json :: page.noPageData => MISSING
+
+=== t(...) || literal  remaining ===
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\components\WorkPreviewModal.tsx:197
+      {t('errors:dashboard.noPreview') || '该作品暂无可预览内容'}
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\components\WorkPreviewModal.tsx:215
+      {t('common:button.prevPage') || '上一页'}
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\components\WorkPreviewModal.tsx:218
+      {hasSchema ? `${t('common:button.page') || '第'} ${page + 1} / ${pages.length} ${t('common:button.pageUnit') || '页'}` : '—'}
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\components\WorkPreviewModal.tsx:221
+      {t('common:button.nextPage') || '下一页'}
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\components\WorkPreviewModal.tsx:224
+      {t('common:button.replayAnim') || '重播动画'}
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\components\WorkPreviewModal.tsx:235
+      {t('common:button.playAnim') || '播放动画'}
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\components\WorkPreviewModal.tsx:245
+      aria-label={`${t('common:button.page') || '第'} ${i + 1} ${t('common:button.pageUnit') || '页'}`}
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\components\WorkPreviewModal.tsx:276
+      {work.title || t('common:status.untitled') || '未命名作品'}
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\components\WorkPreviewModal.tsx:311
+      {published ? t('common:status.publishedBadge') || '已发布' : t('common:status.draft') || '草稿'}
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\components\WorkPreviewModal.tsx:327
+      <div style={{ marginBottom: 4, fontSize: 12, color: INK3 }}>{t('common:detail.id') || '作品编号'}</div>
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\components\WorkPreviewModal.tsx:333
+      <div style={{ marginBottom: 4, fontSize: 12, color: INK3 }}>{t('common:detail.views') || '访问量'}</div>
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\components\WorkPreviewModal.tsx:337
+      <div style={{ marginBottom: 4, fontSize: 12, color: INK3 }}>{t('common:detail.updatedAt') || '最近更新'}</div>
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\components\WorkPreviewModal.tsx:342
+      <div style={{ marginBottom: 4, fontSize: 12, color: INK3 }}>{t('common:detail.online') || '线上访问'}</div>
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\components\WorkPreviewModal.tsx:349
+      {t('common:detail.visitH5') || '访问 H5'}（{work.publishCode}）→
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web\src\pages\ProjectList.tsx:577
+      DRAFT: { label: t('errors:dashboard.tplDraft') || '草稿' },
+  D:\MyWorkBuddy\2026-08-10-22-39-56\apps\admin\src\pages\audit-logs.tsx:71
+      title={t('menu.admin.auditLogs') || '操作日志'}
+  COUNT=16
+
+regions.tsx alive count=0

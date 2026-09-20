@@ -1,0 +1,626 @@
+<title>庆柬云 · 运营端开发文档（React + Refine + Ant Design 5）</title>
+
+<blockquote><p>版本：v2.0（2026-08-28）｜依据：已验收 UI 原型 index.html + 真实项目技术栈｜状态：技术实现契约，供运营端（apps/admin）开发落地</p></blockquote>
+
+<h1 seq="auto">文档说明</h1>
+<p>本文档将已验收的「庆柬云 · 分层管理后台」UI 原型，按真实项目技术栈（React 18 + Refine + Ant Design 5 + NestJS/Prisma/PostgreSQL/Redis）翻译为可直接执行的开发契约。读者：运营端前端工程师、服务端工程师、技术负责人。范围：工程结构、Refine 装配、角色权限、Prisma 数据模型、页面与对话框实现规格、设计系统、API 契约与验收清单。</p>
+<p>术语：与原型一致——总台（ADMIN 管理总台）、代理商（AGENT）、服务商（SERVICE_PROVIDER）、用户（USER）；「视角」指页头切换进入某角色层的工作界面；「对象视角」指在角色层内检索并切换到具体对象，查看其名下数据。</p>
+<p>约定：本文档所有代码为 TypeScript；路径相对 monorepo 根；接口前缀统一 <code>/api</code>；品牌名沿用原型「庆柬云」。</p>
+
+<h1 seq="auto">技术栈与工程结构</h1>
+<h2 seq="auto">技术栈总览</h2>
+<table>
+<thead><tr><th><p>端</p></th><th><p>技术</p></th><th><p>版本</p></th><th><p>职责</p></th></tr></thead>
+<tbody>
+<tr><td><p>服务端 apps/server</p></td><td><p>NestJS + Prisma</p></td><td><p>NestJS 10 / Prisma 5</p></td><td><p>REST API、鉴权、RBAC/ABAC、审核、财务、消息</p></td></tr>
+<tr><td><p>数据库</p></td><td><p>PostgreSQL（Docker h5design-postgres）</p></td><td><p>PG 15+</p></td><td><p>业务与权限数据持久化</p></td></tr>
+<tr><td><p>缓存/队列</p></td><td><p>Redis（Docker h5design-redis）</p></td><td><p>Redis 7</p></td><td><p>会话缓存、计数、消息队列、幂等键</p></td></tr>
+<tr><td><p>运营端 apps/admin</p></td><td><p>React + Refine + AntD</p></td><td><p>React 18 / Refine 4 / AntD 5</p></td><td><p>四层管理后台 UI（本文档主体）</p></td></tr>
+<tr><td><p>用户端 apps/web</p></td><td><p>React 18 + Vite 5 + Konva 9</p></td><td><p>—</p></td><td><p>用户端 / H5 编辑器（本文档不展开）</p></td></tr>
+<tr><td><p>共享包 packages/core</p></td><td><p>类型与工厂函数</p></td><td><p>—</p></td><td><p>跨端共享 TS 类型、枚举、状态标签映射、工厂</p></td></tr>
+</tbody>
+</table>
+<h2 seq="auto">Monorepo 结构</h2>
+<pre lang="text" caption="pnpm monorepo 目录"><code>h5design/
+├─ apps/
+│  ├─ server/                # NestJS：/api
+│  │  ├─ src/modules/        # auth / users / regions / agents / providers /
+│  │  │                      # templates / orders / wallet / feedback / messages / roles / settings
+│  │  └─ prisma/             # schema.prisma、migrations、seed
+│  ├─ web/                   # 用户端 / H5 编辑器（端口 5173）
+│  └─ admin/                 # 运营端（端口 5174）—— 本文档主体
+│     ├─ src/
+│     │  ├─ providers/       # dataProvider / authProvider / accessControlProvider / i18n
+│     │  ├─ pages/           # console/ agent/ provider/ user 四层页面
+│     │  ├─ components/      # 通用列表、详情抽屉、状态标签、对象选择器
+│     │  ├─ config/          # resources、主题 token、常量
+│     │  └─ App.tsx          # Refine 装配入口
+│     └─ vite.config.ts
+├─ packages/
+│  └─ core/                  # src/types.ts、src/enums.ts、src/factory.ts、src/status.ts
+├─ pnpm-workspace.yaml
+├─ docker-compose.yml        # h5design-postgres / h5design-redis
+└─ package.json</code></pre>
+<h2 seq="auto">pnpm 与依赖</h2>
+<pre lang="yaml" caption="pnpm-workspace.yaml"><code>packages:
+  - 'apps/*'
+  - 'packages/*'</code></pre>
+<p>运营端核心依赖：<code>@refinedev/core</code>、<code>@refinedev/antd</code>、<code>@refinedev/react-router-v6</code>、<code>antd</code>、<code>react</code>、<code>react-router-dom</code>、<code>@tanstack/react-query</code>、<code>dayjs</code>、<code>react-i18next</code>、<code>i18next</code>、<code>@h5design/core</code>（workspace 依赖）。</p>
+
+<h1 seq="auto">总体架构</h1>
+<h2 seq="auto">分层登录模型</h2>
+<table>
+<thead><tr><th><p>层</p></th><th><p>角色枚举</p></th><th><p>菜单数</p></th><th><p>数据作用域</p></th><th><p>首页</p></th></tr></thead>
+<tbody>
+<tr><td><p>管理总台</p></td><td><p>ADMIN</p></td><td><p>13（超集）</p></td><td><p>ALL（全平台）</p></td><td><p>经营总览</p></td></tr>
+<tr><td><p>代理商中心</p></td><td><p>AGENT</p></td><td><p>8</p></td><td><p>REGION（本辖区，regionPath 前缀）</p></td><td><p>辖区概览</p></td></tr>
+<tr><td><p>服务商中心</p></td><td><p>SERVICE_PROVIDER</p></td><td><p>8</p></td><td><p>SELF（自身）</p></td><td><p>我的工作台</p></td></tr>
+<tr><td><p>用户视角</p></td><td><p>USER</p></td><td><p>7</p></td><td><p>SELF（单用户）</p></td><td><p>用户工作台</p></td></tr>
+</tbody>
+</table>
+<p>登录即定层：JWT 携带 <code>role</code> 与 <code>scope</code>（regionPath / selfId），前端按层投影菜单，后端按层强制隔离数据。</p>
+<h2 seq="auto">视角切换</h2>
+<p>总台账号可在「总台 / 代理商 / 服务商 / 用户」四视角间切换（页头 segmented）。切换后侧栏菜单、面包屑、首页、数据作用域、列表接口参数整体联动；三层各有独立首页。总台管理员可进入对象视角：在角色层内按 ID / 用户名 / 昵称 / 手机号 / 区域检索具体对象，整页数据切换到该对象名下（后端聚合接口返回对象 KPI + 列表）。</p>
+<h2 seq="auto">可写 / 只读模型</h2>
+<p>页头账号菜单在「超级管理员（可写 · 可代操作）」与「运维管理员（只读 · 默认只读，单独授权可写）」间切换。只读态：黄色提示条、主操作禁用、行内通过 / 驳回 / 编辑锁定，仅保留查看与导出。后端对只读会话拒绝非 GET 写请求（<code>403</code>）。</p>
+<h2 seq="auto">数据隔离（regionPath 注入）</h2>
+<p>区域表维护 <code>regionPath</code>（如 <code>乌鲁木齐/天山区</code>）；代理商绑定辖区；服务商挂所属区域与服务类型；订单 / 反馈 / 消息关联主体。后端以当前登录主体推导可见域，所有列表接口注入 <code>where</code> 过滤，杜绝越层取数；前端仅负责展示。</p>
+<h1 seq="auto">运营端 Refine 工程装配</h1>
+<h2 seq="auto">应用初始化</h2>
+<pre lang="tsx" caption="apps/admin/src/App.tsx"><code>import { Refine, Authenticated } from '@refinedev/core';
+import { RefineThemedLayoutV2, ErrorComponent } from '@refinedev/antd';
+import { dataProvider } from './providers/dataProvider';
+import { authProvider } from './providers/authProvider';
+import { accessControlProvider } from './providers/accessControlProvider';
+import { i18nProvider } from './providers/i18n';
+import { resources } from './config/resources';
+import { App as AntdApp, ConfigProvider } from 'antd';
+import { antdTheme } from './config/theme';
+
+export default function App() {
+  return (
+    &lt;ConfigProvider theme={antdTheme}&gt;
+      &lt;AntdApp&gt;
+        &lt;Refine
+          dataProvider={dataProvider}
+          authProvider={authProvider}
+          accessControlProvider={accessControlProvider}
+          i18nProvider={i18nProvider}
+          resources={resources}
+          options={{ syncWithLocation: true, warnWhenUnsavedChanges: true }}
+        &gt;
+          &lt;Authenticated key="app"&gt;
+            &lt;RefineThemedLayoutV2 Sider={LayerSider} Header={LayerHeader}&gt;
+              &lt;Routes /&gt;
+            &lt;/RefineThemedLayoutV2&gt;
+          &lt;/Authenticated&gt;
+        &lt;/Refine&gt;
+      &lt;/AntdApp&gt;
+    &lt;/ConfigProvider&gt;
+  );
+}</code></pre>
+<p>要点：<code>LayerSider</code> 按当前视角（console / agent / provider / user）过滤资源菜单并渲染分组与角标；<code>LayerHeader</code> 承载视角切换 segmented、账号模式（可写 / 只读）与「返回总台」按钮。</p>
+<h2 seq="auto">dataProvider 设计</h2>
+<p>自定义 dataProvider 直连 <code>/api</code>，实现 Refine 标准方法并追加 <code>custom</code> 用于审核、导出与对象视角聚合。</p>
+<table>
+<thead><tr><th><p>方法</p></th><th><p>HTTP</p></th><th><p>路径</p></th><th><p>说明</p></th></tr></thead>
+<tbody>
+<tr><td><p>getList</p></td><td><p>GET</p></td><td><p>/api/:resource</p></td><td><p>分页 / 排序 / 筛选 / 关键词；返回 items + total</p></td></tr>
+<tr><td><p>getOne</p></td><td><p>GET</p></td><td><p>/api/:resource/:id</p></td><td><p>详情</p></td></tr>
+<tr><td><p>create</p></td><td><p>POST</p></td><td><p>/api/:resource</p></td><td><p>新建（含「＋新建」入口页面）</p></td></tr>
+<tr><td><p>update</p></td><td><p>PATCH</p></td><td><p>/api/:resource/:id</p></td><td><p>编辑保存</p></td></tr>
+<tr><td><p>deleteOne</p></td><td><p>DELETE</p></td><td><p>/api/:resource/:id</p></td><td><p>按需启用</p></td></tr>
+<tr><td><p>custom</p></td><td><p>POST</p></td><td><p>按 action 映射</p></td><td><p>approve / reject / export / view-scope / adjust-user</p></td></tr>
+</tbody>
+</table>
+<pre lang="ts" caption="getList 实现骨架"><code>async getList({ resource, pagination, sorters, filters, meta }) {
+  const params = buildQuery({ pagination, sorters, filters, meta }); // 见 API 契约章
+  const res = await http.get(`/api/${resource}`, { params });
+  return { data: res.data.items, total: res.data.total };
+}</code></pre>
+<h2 seq="auto">authProvider（JWT）</h2>
+<pre lang="ts" caption="authProvider 骨架"><code>export const authProvider: AuthProvider = {
+  login: async ({ username, password }) => {
+    const { data } = await http.post('/api/auth/login', { username, password });
+    localStorage.setItem('token', data.accessToken);
+    localStorage.setItem('me', JSON.stringify(data.user)); // role / scope / layer
+    return { success: true, redirectTo: '/' };
+  },
+  logout: async () => { localStorage.clear(); return { success: true }; },
+  check: async () => {
+    const token = localStorage.getItem('token');
+    return token ? { authenticated: true } : { authenticated: false, redirectTo: '/login' };
+  },
+  getIdentity: async () => JSON.parse(localStorage.getItem('me') || 'null'),
+  getPermissions: async () => {
+    const me = JSON.parse(localStorage.getItem('me') || '{}');
+    return me.role; // 或 me.permissions 权限点数组
+  },
+};</code></pre>
+<h2 seq="auto">accessControlProvider（RBAC / ABAC）</h2>
+<pre lang="ts" caption="accessControlProvider 骨架"><code>export const accessControlProvider: AccessControlProvider = {
+  can: async ({ resource, action, params }) =&gt; {
+    const me = getIdentity();
+    // 数据作用域维度：resource 是否在该层菜单可见
+    if (!inLayer(me.layer, resource)) return { can: false, reason: '当前层级无权访问' };
+    // 功能权限维度：权限点检查（如导出需 data:export）
+    if (action === 'export' &amp;&amp; !me.permissions.includes('data:export')) {
+      return { can: false, reason: '缺少导出权限' };
+    }
+    // 位阶维度：只读账号仅允许 list / show
+    if (me.readonly &amp;&amp; !['list', 'show'].includes(action)) {
+      return { can: false, reason: '当前账号为只读，不可写操作' };
+    }
+    return { can: true };
+  },
+};</code></pre>
+<h2 seq="auto">resources 与动态菜单</h2>
+<p>resources 为「总台 13 项超集」，每项带 <code>meta.layer</code> 与 <code>meta.group</code>；<code>LayerSider</code> 按当前视角过滤渲染。</p>
+<pre lang="ts" caption="apps/admin/src/config/resources.ts（节选）"><code>export const resources: ResourceProps[] = [
+  { name: 'dashboard', list: '/', meta: { label: '经营总览', layer: 'console', group: '总览与治理', icon: 'Layout' } },
+  { name: 'regions', list: '/regions', meta: { label: '区域管理', layer: 'console', group: '总览与治理', icon: 'Environment' } },
+  { name: 'agents', list: '/agents', meta: { label: '代理商管理', layer: 'console', group: '总览与治理' } },
+  { name: 'providers', list: '/providers', meta: { label: '服务商管理', layer: 'console', group: '总览与治理', badge: 12 } },
+  { name: 'users', list: '/users', meta: { label: '用户管理', layer: 'console', group: '运营监管' } },
+  { name: 'templates', list: '/templates', meta: { label: '模板审核', layer: 'console', group: '运营监管' } },
+  { name: 'orders', list: '/orders', meta: { label: '订单管理', layer: 'console', group: '运营监管' } },
+  { name: 'wallets', list: '/wallets', meta: { label: '钱包总览', layer: 'console', group: '财务中心' } },
+  { name: 'withdrawals', list: '/withdrawals', meta: { label: '提现审核', layer: 'console', group: '财务中心', badge: 3 } },
+  { name: 'feedback', list: '/feedback', meta: { label: '评价与反馈中心', layer: 'console', group: '评价与反馈中心' } },
+  { name: 'messages', list: '/messages', meta: { label: '消息中心', layer: 'console', group: '消息中心' } },
+  { name: 'roles', list: '/roles', meta: { label: '角色与权限', layer: 'console', group: '系统' } },
+  { name: 'settings', list: '/settings', meta: { label: '系统设置', layer: 'console', group: '系统' } },
+  // 代理商 / 服务商 / 用户层资源（layer: agent | provider | user）
+  { name: 'a-users', list: '/agent/users', meta: { label: '辖区用户', layer: 'agent', group: '代理商中心' } },
+  { name: 'a-providers', list: '/agent/providers', meta: { label: '辖区服务商', layer: 'agent', group: '代理商中心' } },
+  // ... 完整 36 个资源见附录「四层资源清单」
+];</code></pre>
+<h2 seq="auto">路由与页面挂载</h2>
+<p>采用 <code>react-router-dom</code> + Refine 布局：登录页 <code>/login</code>；四层首页与列表页按资源注册；对象视角页复用同一路由组件，读取 <code>?object=AG001&amp;layer=agent</code> 查询参数并请求聚合接口。页面级懒加载（<code>React.lazy</code>）控制首屏体积。</p>
+<h1 seq="auto">角色与权限</h1>
+<h2 seq="auto">角色类型与位阶</h2>
+<p>总台管理员展开为 5 个职能角色，位阶从高到低：超级管理员 → 运维管理员 → 服务审核员 = 财务管理员 → 在线客服。其他决策层可在管辖范围内设立同类职能角色，并支持自定义角色。</p>
+<ul>
+<li>超级管理员：所有内容可读可写，可创建 / 授权角色。</li>
+<li>运维管理员：所有内容默认可读，部分可写（开通权限）。</li>
+<li>服务审核员：只读 + 总台审核类内容（入驻 / 模板 / 公告 / 申诉）。</li>
+<li>财务管理员：全权处理提现等财务内容（提现 / 钱包 / 流水 / 对账）。</li>
+<li>在线客服：答复各类问题，除查询回复外无实质业务权限。</li>
+</ul>
+<h2 seq="auto">权限三要素</h2>
+<p>每条角色记录：归属层级 × 类型（内置 / 自定义）× 职能，叠加数据作用域（ALL / REGION / SELF）、功能权限（权限点勾选集合）、授权边界（数据 / 功能 / 位阶）。底层角色权限不得触达高层权限范围。</p>
+<h2 seq="auto">功能权限点（10 域 28 点）</h2>
+<table>
+<thead><tr><th><p>#</p></th><th><p>功能域</p></th><th><p>权限点 key（checkbox）</p></th></tr></thead>
+<tbody>
+<tr><td><p>①</p></td><td><p>用户与账号</p></td><td><p>user:view / user:edit</p></td></tr>
+<tr><td><p>②</p></td><td><p>入驻与服务商</p></td><td><p>provider:review / provider:qualification / provider:upgrade</p></td></tr>
+<tr><td><p>③</p></td><td><p>服务与内容</p></td><td><p>template:publish / content:offline / template:review / qualification:manage</p></td></tr>
+<tr><td><p>④</p></td><td><p>订单与履约</p></td><td><p>order:view / order:handle / order:after-sale</p></td></tr>
+<tr><td><p>⑤</p></td><td><p>财务</p></td><td><p>finance:view / withdrawal:review / withdrawal:operate / finance:reconcile</p></td></tr>
+<tr><td><p>⑥</p></td><td><p>优惠券与权益</p></td><td><p>coupon:config / coupon:issue / coupon:view</p></td></tr>
+<tr><td><p>⑦</p></td><td><p>评价与申诉</p></td><td><p>feedback:handle / appeal:arbitrate</p></td></tr>
+<tr><td><p>⑧</p></td><td><p>消息与公告</p></td><td><p>announce:publish / announce:review / message:send</p></td></tr>
+<tr><td><p>⑨</p></td><td><p>组织与系统</p></td><td><p>role:manage / region:manage / settings:manage</p></td></tr>
+<tr><td><p>⑩</p></td><td><p>数据导出</p></td><td><p>data:export</p></td></tr>
+</tbody>
+</table>
+<h2 seq="auto">三层功能域映射</h2>
+<table>
+<thead><tr><th><p>层级</p></th><th><p>展示功能域</p></th><th><p>隐藏</p></th></tr></thead>
+<tbody>
+<tr><td><p>总台</p></td><td><p>①~⑩ 全 10 域</p></td><td><p>—</p></td></tr>
+<tr><td><p>代理商</p></td><td><p>①②④⑤⑥⑦⑧⑨⑩</p></td><td><p>③ 服务与内容</p></td></tr>
+<tr><td><p>服务商</p></td><td><p>③④⑤⑦⑧⑩</p></td><td><p>①②⑥⑨</p></td></tr>
+</tbody>
+</table>
+<h2 seq="auto">权限落地（ABAC 策略）</h2>
+<pre lang="ts" caption="后端守卫（NestJS guard）"><code>@Injectable()
+export class AbacGuard implements CanActivate {
+  async canActivate(ctx: ExecutionContext) {
+    const req = ctx.switchToHttp().getRequest();
+    const user = req.user;                 // role / scope(regionPath|selfId) / perms[]
+    const { resource, action } = metaOf(ctx); // 由 @Abac('providers', 'review') 注入
+    // 1 位阶：只读账号拒绝写动作
+    if (user.readonly &amp;&amp; !READONLY_OK.has(action)) return false;
+    // 2 功能权限
+    if (!user.perms.includes(permKey(resource, action))) return false;
+    // 3 数据作用域：注入 where（regionPath 前缀 / selfId）
+    req.scopeWhere = buildScopeWhere(user);
+    return true;
+  }
+}</code></pre>
+
+<h1 seq="auto">数据模型（Prisma）</h1>
+<h2 seq="auto">核心模型概览</h2>
+<p>模型按「主体（User/Agent/ServiceProvider）→ 业务（Service/Template/Order）→ 资金（Wallet/Ledger/Withdrawal）→ 治理（Feedback/Message/Announcement）→ 权限（Role/Permission/UserRole）→ 权益（Coupon/UserCoupon）」组织；<code>regionPath</code> 为字符串前缀路径，是数据隔离的唯一权威字段。</p>
+<h2 seq="auto">Prisma schema（节选）</h2>
+<pre lang="prisma" caption="prisma/schema.prisma（核心表）"><code>enum RoleType { USER SERVICE_PROVIDER AGENT ADMIN }
+
+model User {
+  id          String   @id @default(cuid())
+  username    String   @unique
+  password    String
+  role        RoleType
+  name        String
+  phone       String?
+  regionPath  String?           // 隔离前缀，如 '乌鲁木齐/天山区'
+  status      Status
+  tier        MemberTier        // USER 的会员等级
+  balance     Int      @default(0)
+  points      Int      @default(0)
+  createdAt   DateTime @default(now())
+  agent       Agent?
+  provider    ServiceProvider?
+}
+
+model Region {
+  id         String   @id @default(cuid())
+  name       String
+  level      RegionLevel        // PROVINCE / CITY / DISTRICT
+  regionPath String   @unique   // '乌鲁木齐/天山区'
+  agentId    String?
+  agent      Agent?   @relation(fields: [agentId], references: [id])
+}
+
+model Agent {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  regionId  String
+  region    Region   @relation(fields: [regionId], references: [id])
+  status    AgentStatus         // NORMAL / REVIEW / DISABLED
+  monthlyFlow Int    @default(0)
+}
+
+model ServiceProvider {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  type        String   // 婚庆主持 / 摄影摄像 ...
+  regionPath  String
+  status      ProviderStatus    // PENDING_REVIEW / APPROVED / REJECTED / REVIEWING / UPGRADING
+  qualification Json?            // 资质项数组
+}
+
+model Service {
+  id          String  @id @default(cuid())
+  providerId  String
+  name        String
+  type        String
+  price       Int
+  status      ServiceStatus      // ON_SALE / DRAFT / OFF_SHELF
+  template    Boolean @default(false) // 模板审核复用
+}
+
+model Order {
+  id        String   @id @default(cuid())
+  orderNo   String   @unique
+  userId    String
+  providerId String
+  serviceId String
+  amount    Int
+  status    OrderStatus          // PENDING_ACCEPT / IN_PROGRESS / DONE / AFTER_SALE
+  createdAt DateTime @default(now())
+}
+
+model Wallet {
+  id        String  @id @default(cuid())
+  ownerType String  // AGENT / PROVIDER
+  ownerId   String
+  balance   Int
+  frozen    Int
+  totalFlow Int
+}
+
+model Ledger {
+  id        String   @id @default(cuid())
+  walletId  String
+  type      LedgerType // IN / PENDING / OUT
+  amount    Int
+  balanceAfter Int
+  createdAt DateTime @default(now())
+}
+
+model Withdrawal {
+  id         String  @id @default(cuid())
+  providerId String
+  amount     Int
+  account    String
+  status     ReviewStatus   // PENDING / APPROVED / REJECTED
+  createdAt  DateTime @default(now())
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  no        String   @unique
+  kind      String   // 服务投诉 / 价格争议 / 服务满意 ...
+  userId    String
+  targetId  String
+  status    FeedbackStatus  // NEGOTIATING / HANDLED / UPGRADED / CLOSED
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model Message {
+  id        String    @id @default(cuid())
+  title     String
+  kind      MessageKind  // 订单 / 服务 / 评价 / 权益 / 公告 / 系统通知
+  scope     String       // 全平台 / 区域 / 指定用户
+  status    MessageStatus // UNREAD / READ / PENDING_REVIEW / PUBLISHED
+  body      String?
+  createdAt DateTime  @default(now())
+}
+
+model Role {
+  id        String  @id @default(cuid())
+  name      String
+  layer     LayerType      // CONSOLE / AGENT / PROVIDER
+  type      RoleKind       // BUILTIN / CUSTOM
+  scope     ScopeType      // ALL / REGION / SELF
+  perms     String[]       // 权限点 key 数组（10 域 28 点）
+  level     Int            // 位阶：100 超级 / 90 运维 / 80 审核 / 80 财务 / 60 客服
+  accountCount Int @default(0)
+}
+
+model UserRole {
+  userId String
+  roleId String
+  @@id([userId, roleId])
+}
+
+model Coupon {
+  id        String  @id @default(cuid())
+  title     String
+  amount    Int
+  validFrom DateTime
+  validTo   DateTime
+  condition String?
+  status    CouponStatus
+}
+
+model UserCoupon {
+  id      String  @id @default(cuid())
+  userId  String
+  coupon  Coupon  @relation(fields: [couponId], references: [id])
+  couponId String
+  used    Boolean @default(false)
+}</code></pre>
+<h2 seq="auto">packages/core 类型</h2>
+<p>共享包导出：角色 / 状态 / 层级枚举、权限点常量表、<code>StatusTag</code> 映射（<code>#ok→success、#warn→warning、#bad→error、#mut→default、#ac→processing</code>）、<code>createListQuery</code> / <code>parseListResult</code> 工厂函数，运营端与用户端共用，保证状态渲染一致。</p>
+<h1 seq="auto">页面实现规格（四层）</h1>
+<h2 seq="auto">通用列表页组件</h2>
+<p>运营端所有列表页复用同一套组件，由配置驱动（<code>ListPageConfig</code>：标题 / 副标题 / 列定义 / 筛选集 / 操作类型 / 新建开关），与原型 PAGES 结构一一对应。</p>
+<pre lang="tsx" caption="components/DataListPage.tsx（骨架）"><code>interface ListPageConfig {
+  title: string; sub: string; chip: string;
+  columns: ColumnDef[];            // 含 n(数值右对齐)、status(状态标签列)、render
+  filters: FilterTab[];            // { key, label, value? } 可点击筛选按钮
+  searchPlaceholder?: string;      // 关键词搜索 + 清空叉
+  exportable?: boolean;            // 受 data:export 控制
+  actions: 'view' | 'edit' | 'review' | 'ro' | 'none' | 'cfg';
+  creatable?: boolean;             // 「＋新建」
+  scope?: string;                  // 作用域 chip
+}
+export function DataListPage({ config, objectScope }: Props) {
+  const { data, tableProps, setCurrent } = useList({ resource, filters, sorters });
+  return (
+    &lt;AntdList header={renderHeader(config, objectScope)}&gt;
+      &lt;Table {...tableProps} rowKey="id" columns={buildColumns(config)} /&gt;
+    &lt;/AntdList&gt;
+  );
+}</code></pre>
+<h2 seq="auto">总台 13 页</h2>
+<table>
+<thead><tr><th><p>资源</p></th><th><p>页面</p></th><th><p>列字段</p></th><th><p>筛选</p></th><th><p>操作</p></th></tr></thead>
+<tbody>
+<tr><td><p>dashboard</p></td><td><p>经营总览</p></td><td><p>KPI + 区域对比条形图 + 代理商绩效表 + 待办</p></td><td><p>—</p></td><td><p>待办直达</p></td></tr>
+<tr><td><p>regions</p></td><td><p>区域管理</p></td><td><p>区域 / 级别 / 代理商 / 服务商数 / 用户数</p></td><td><p>全部区域·省级·市级·区县级</p></td><td><p>查看 / 编辑</p></td></tr>
+<tr><td><p>agents</p></td><td><p>代理商管理</p></td><td><p>代理商 / 辖区 / 服务商数 / 月流水 / 状态</p></td><td><p>全部·正常·待复核·停用</p></td><td><p>查看 / 编辑</p></td></tr>
+<tr><td><p>providers</p></td><td><p>服务商管理（入驻审核队列）</p></td><td><p>申请人 / 手机号 / 服务类型 / 区域 / 资质 / 提交时间 / 状态</p></td><td><p>全部·已通过·已驳回·待审核</p></td><td><p>查看 / 通过 / 驳回</p></td></tr>
+<tr><td><p>users</p></td><td><p>用户管理</p></td><td><p>用户 / 手机号 / 角色 / 区域 / 注册时间 / 状态</p></td><td><p>全部用户·客户·服务商·代理商·管理员</p></td><td><p>查看 / 编辑</p></td></tr>
+<tr><td><p>templates</p></td><td><p>模板审核</p></td><td><p>模板 / 作者 / 类型 / 价格 / 状态</p></td><td><p>全部·已上架·待审核·已下架</p></td><td><p>查看 / 通过 / 驳回</p></td></tr>
+<tr><td><p>orders</p></td><td><p>订单管理</p></td><td><p>订单号 / 用户 / 类型 / 金额 / 状态 / 下单时间</p></td><td><p>全部·待接单·履约中·已完成·售后</p></td><td><p>—</p></td></tr>
+<tr><td><p>wallets</p></td><td><p>钱包总览</p></td><td><p>主体 / 类型 / 可用余额 / 冻结 / 累计流水 / 状态</p></td><td><p>全部·代理商·服务商</p></td><td><p>—</p></td></tr>
+<tr><td><p>withdrawals</p></td><td><p>提现审核</p></td><td><p>服务商 / 申请金额 / 收款账户 / 申请时间 / 状态</p></td><td><p>全部·已通过·已驳回·待审核</p></td><td><p>查看 / 通过 / 驳回</p></td></tr>
+<tr><td><p>feedback</p></td><td><p>评价与反馈中心</p></td><td><p>编号 / 类型 / 反馈人 / 对象 / 状态 / 时间</p></td><td><p>全部反馈·升级仲裁·协商中·已关闭</p></td><td><p>查看 / 处理</p></td></tr>
+<tr><td><p>messages</p></td><td><p>消息中心</p></td><td><p>标题 / 类型 / 接收范围 / 状态 / 发布时间</p></td><td><p>收件箱·公告审核·已发布</p></td><td><p>查看 / 通过(发布) / 驳回</p></td></tr>
+<tr><td><p>roles</p></td><td><p>角色与权限</p></td><td><p>角色 / 归属层级 / 账号数 / 数据作用域 / 功能权限 / 权限位阶 / 类型</p></td><td><p>全部·总台管理员·代理商·服务商·自定义角色</p></td><td><p>查看 / 编辑</p></td></tr>
+<tr><td><p>settings</p></td><td><p>系统设置</p></td><td><p>分类 / 配置项 / 当前值 / 说明</p></td><td><p>全部·基础·费用·审核·通知</p></td><td><p>编辑</p></td></tr>
+</tbody>
+</table>
+<h2 seq="auto">代理商中心 8 页</h2>
+<table>
+<thead><tr><th><p>资源</p></th><th><p>页面</p></th><th><p>列字段</p></th><th><p>筛选</p></th><th><p>操作</p></th></tr></thead>
+<tbody>
+<tr><td><p>a-dashboard</p></td><td><p>辖区概览</p></td><td><p>辖区 KPI + 服务类别占比 + 辖区服务商列表 + 待办</p></td><td><p>—</p></td><td><p>待办直达</p></td></tr>
+<tr><td><p>a-users</p></td><td><p>辖区用户</p></td><td><p>用户 / 手机号 / 角色 / 注册时间 / 状态</p></td><td><p>全部·客户·服务商</p></td><td><p>查看（仅查看）</p></td></tr>
+<tr><td><p>a-providers</p></td><td><p>辖区服务商</p></td><td><p>服务商 / 类型 / 资质 / 本月接单 / 状态</p></td><td><p>全部·待初审·待复审·业务升级审核·已通过</p></td><td><p>查看 / 通过 / 驳回</p></td></tr>
+<tr><td><p>a-orders</p></td><td><p>辖区订单</p></td><td><p>订单号 / 用户 / 类型 / 金额 / 状态 / 时间</p></td><td><p>全部·履约中·已完成·售后</p></td><td><p>—</p></td></tr>
+<tr><td><p>a-wallet</p></td><td><p>财务中心</p></td><td><p>科目 / 类型 / 金额 / 时间 / 状态</p></td><td><p>全部·入账·挂账·出账</p></td><td><p>—</p></td></tr>
+<tr><td><p>a-feedback</p></td><td><p>评价与反馈中心</p></td><td><p>编号 / 类型 / 用户 / 对象 / 状态 / 时间</p></td><td><p>全部·协商中·已处理·可升级</p></td><td><p>查看 / 处理</p></td></tr>
+<tr><td><p>a-messages</p></td><td><p>消息中心</p></td><td><p>标题 / 类型 / 状态 / 时间</p></td><td><p>全部·待我处理·已读</p></td><td><p>查看 / 通过(发布) / 驳回</p></td></tr>
+<tr><td><p>a-roles</p></td><td><p>角色与权限</p></td><td><p>角色 / 归属层级 / 账号数 / 数据作用域 / 功能权限 / 类型</p></td><td><p>全部·辖区角色·自定义角色</p></td><td><p>查看 / 编辑</p></td></tr>
+</tbody>
+</table>
+<h2 seq="auto">服务商中心 8 页</h2>
+<table>
+<thead><tr><th><p>资源</p></th><th><p>页面</p></th><th><p>列字段</p></th><th><p>筛选</p></th><th><p>操作</p></th></tr></thead>
+<tbody>
+<tr><td><p>p-dashboard</p></td><td><p>我的工作台</p></td><td><p>余额/冻结 + 在售服务 + 订单收益 + 待办</p></td><td><p>—</p></td><td><p>待办直达</p></td></tr>
+<tr><td><p>p-services</p></td><td><p>服务管理</p></td><td><p>服务 / 类型 / 价格 / 状态</p></td><td><p>全部·在售·草稿·已下架</p></td><td><p>查看 / 编辑</p></td></tr>
+<tr><td><p>p-orders</p></td><td><p>订单处理</p></td><td><p>订单号 / 用户 / 服务 / 金额 / 状态 / 时间</p></td><td><p>全部·待接单·履约中·已完成</p></td><td><p>—</p></td></tr>
+<tr><td><p>p-qualification</p></td><td><p>资质管理</p></td><td><p>资质项 / 编号 / 有效期 / 审核状态</p></td><td><p>全部·有效·待审核·已过期</p></td><td><p>查看 / 编辑</p></td></tr>
+<tr><td><p>p-wallet</p></td><td><p>财务中心</p></td><td><p>科目 / 类型 / 金额 / 时间 / 状态</p></td><td><p>全部·入账·挂账·提现</p></td><td><p>—</p></td></tr>
+<tr><td><p>p-feedback</p></td><td><p>评价与反馈中心</p></td><td><p>编号 / 类型 / 对象 / 状态 / 时间</p></td><td><p>全部·待回应·申诉中·已回应</p></td><td><p>查看 / 处理</p></td></tr>
+<tr><td><p>p-messages</p></td><td><p>消息中心</p></td><td><p>标题 / 类型 / 状态 / 时间</p></td><td><p>全部·待我处理·已读</p></td><td><p>查看 / 通过(发布) / 驳回</p></td></tr>
+<tr><td><p>p-roles</p></td><td><p>角色与权限</p></td><td><p>角色 / 归属层级 / 账号数 / 数据作用域 / 功能权限 / 类型</p></td><td><p>全部·服务角色·自定义角色</p></td><td><p>查看 / 编辑</p></td></tr>
+</tbody>
+</table>
+<h2 seq="auto">用户视角 7 页</h2>
+<p>按当前选中用户动态渲染，切换用户即联动刷新；操作统一为「查看」（仅只读）。</p>
+<table>
+<thead><tr><th><p>资源</p></th><th><p>页面</p></th><th><p>列字段</p></th><th><p>筛选</p></th></tr></thead>
+<tbody>
+<tr><td><p>u-dashboard</p></td><td><p>用户工作台</p></td><td><p>资料卡 + 余额/积分/订单/消费 + 会员权益卡 + 等级测试台 + 调整用户数据</p></td><td><p>—</p></td></tr>
+<tr><td><p>u-orders</p></td><td><p>我的订单</p></td><td><p>订单 / 服务 / 服务商 / 金额 / 时间 / 状态</p></td><td><p>全部·待服务·已完成</p></td></tr>
+<tr><td><p>u-providers</p></td><td><p>我的服务商</p></td><td><p>服务商 / 服务类型 / 评分 / 关注时间 / 状态</p></td><td><p>全部·关注中</p></td></tr>
+<tr><td><p>u-coupons</p></td><td><p>优惠与权益</p></td><td><p>优惠券 / 面额 / 有效期 / 使用条件 / 状态</p></td><td><p>全部·未使用·已使用</p></td></tr>
+<tr><td><p>u-wallet</p></td><td><p>我的钱包</p></td><td><p>时间 / 类型 / 金额 / 变动后余额 / 状态</p></td><td><p>全部·收入·支出</p></td></tr>
+<tr><td><p>u-feedback</p></td><td><p>评价与反馈</p></td><td><p>服务 / 评分 / 评价内容 / 时间 / 状态</p></td><td><p>全部·已发布</p></td></tr>
+<tr><td><p>u-messages</p></td><td><p>消息中心</p></td><td><p>标题 / 类型 / 时间 / 状态</p></td><td><p>全部·待处理·已处理</p></td></tr>
+</tbody>
+</table>
+<h2 seq="auto">首页看板实现</h2>
+<p>四层首页均用 <code>useCustom</code> 拉取聚合数据：总台（/api/dashboard）、代理商（/api/agent/dashboard）、服务商（/api/provider/dashboard）、用户（/api/users/:id/dashboard）。看板图表使用 AntD 生态图表库（如 <code>@ant-design/charts</code> 或 <code>recharts</code>），区域对比用条形图，服务类别占比用柱状 / 环形图；待办卡片点击直达对应列表（<code>useNavigate</code> + <code>query</code> 筛选）。</p>
+<h1 seq="auto">详情对话框实现（AntD）</h1>
+<h2 seq="auto">四种操作类型</h2>
+<table>
+<thead><tr><th><p>类型</p></th><th><p>适用</p></th><th><p>实现</p></th><th><p>按钮</p></th></tr></thead>
+<tbody>
+<tr><td><p>A 仅查看</p></td><td><p>辖区用户等监督型</p></td><td><p>Drawer + Descriptions 只读</p></td><td><p>关闭</p></td></tr>
+<tr><td><p>B 查看 + 审核</p></td><td><p>入驻 / 模板 / 提现 / 公告 / 初审复审 / 业务升级</p></td><td><p>Drawer + Descriptions + Form（审核意见）</p></td><td><p>通过 / 驳回（驳回必填）</p></td></tr>
+<tr><td><p>C 查看 + 编辑</p></td><td><p>区域 / 代理 / 用户 / 反馈 / 角色 / 服务 / 资质 / 配置</p></td><td><p>Drawer 内 Descriptions ↔ Form 切换</p></td><td><p>查看态「编辑」→ 编辑态「保存 / 取消」</p></td></tr>
+<tr><td><p>D 仅编辑</p></td><td><p>系统设置</p></td><td><p>Drawer + Form 直开</p></td><td><p>保存 / 取消</p></td></tr>
+</tbody>
+</table>
+<h2 seq="auto">Drawer + Form 规格</h2>
+<pre lang="tsx" caption="components/DetailDrawer.tsx（骨架）"><code>export function DetailDrawer({ resource, id, config, onClose }) {
+  const { queryResult } = useShow({ resource, id });      // 详情
+  const { mutate } = useUpdate();                          // 编辑保存
+  const [mode, setMode] = useState&lt;'view' | 'edit'&gt;('view');
+  const [form] = Form.useForm();
+  useEffect(() =&gt; { if (queryResult.data?.data) form.setFieldsValue(queryResult.data.data); }, [queryResult.data]);
+  return (
+    &lt;Drawer open title={config.title} width={560} extra={config.actions}&gt;
+      {mode === 'view'
+        ? &lt;Descriptions column={1} items={buildView(config, queryResult.data?.data)} /&gt;
+        : &lt;Form form={form} onFinish={save} layout="vertical"&gt;{buildForm(config)}&lt;/Form&gt;}
+    &lt;/Drawer&gt;
+  );
+}</code></pre>
+<p>要点：编辑态预填当前记录（杜绝空白表单）；保存调 <code>update</code> 成功后 invalidate 刷新列表并回查看态；只读账号下编辑 / 保存按钮禁用。</p>
+<h2 seq="auto">审核交互</h2>
+<pre lang="tsx" caption="审核通过 / 驳回"><code>const { mutate: approve } = useCustomMutation();
+const approveIt = () =&gt; approve({
+  url: `/api/${resource}/${id}/approve`,
+  method: 'post', values: { comment: form.getFieldValue('comment') },
+}, { onSuccess: () =&gt; { message.success('已通过'); invalidate(); onClose(); } });
+
+// 驳回：AntD Modal.confirm 内嵌 Form，comment 必填校验，不满足拦截
+const rejectIt = () =&gt; Modal.confirm({
+  title: '驳回确认', content: &lt;Form form={rejForm}&gt;&lt;Form.Item name="comment"
+    rules={[{ required: true, message: '请填写驳回原因' }]}&gt;
+    &lt;Input.TextArea /&gt;&lt;/Form.Item&gt;&lt;/Form&gt;,
+  onOk: () =&gt; approve({ url: `/api/${resource}/${id}/reject`, method: 'post', values: rejForm.getFieldsValue() }),
+});</code></pre>
+<p>审核按钮随只读态锁定；通过 / 驳回后列表状态即时刷新（<code>useInvalidate</code>）。</p>
+<h2 seq="auto">角色权限编辑（分层复选框组）</h2>
+<pre lang="tsx" caption="角色详情 · 功能权限复选框组"><code>const PERM_GROUPS = [
+  { domain: '用户与账号', key: 'user', perms: [{ label: '用户查询', key: 'user:view' }, { label: '用户编辑', key: 'user:edit' }] },
+  { domain: '入驻与服务商', key: 'provider', perms: [/* provider:review / qualification / upgrade */] },
+  // ... 10 域 28 点（见角色与权限章）
+];
+
+function PermCheckGroup({ layer, value, onChange }) {
+  const groups = PERM_GROUPS.filter(g =&gt; layerDomains[layer].includes(g.key)); // 按层过滤
+  return (
+    &lt;div className="perm-groups"&gt;
+      {groups.map(g =&gt; (
+        &lt;Card key={g.key} size="small" title={g.domain}&gt;
+          &lt;Checkbox.Group options={g.perms} value={value} onChange={onChange} /&gt;
+        &lt;/Card&gt;
+      ))}
+    &lt;/div&gt;
+  );
+}</code></pre>
+<p>功能权限按角色层过滤作用域：总台 10 域、代理商 9 域（隐③）、服务商 6 域（①②⑥⑨ 隐）；编辑回显已勾选权限点，保存写回 <code>perms</code> 数组。</p>
+
+<h1 seq="auto">设计系统（AntD 主题）</h1>
+<h2 seq="auto">主题 token</h2>
+<pre lang="ts" caption="apps/admin/src/config/theme.ts"><code>import type { ThemeConfig } from 'antd';
+export const antdTheme: ThemeConfig = {
+  token: {
+    colorPrimary: '#c24b2e',        // 朱砂：品牌 / 主按钮 / KPI 高亮
+    colorInfo: '#14676b',           // 青：次级强调 / 数值
+    colorBgLayout: '#faf5eb',       // 暖石底色
+    colorBgContainer: '#ffffff',
+    borderRadius: 6,
+    controlHeight: 34,
+    fontFamily: "'PingFang SC', 'Microsoft YaHei', sans-serif",
+  },
+  components: {
+    Table: { headerBg: '#faf5eb', headerColor: '#5b4632' },
+    Tag: { borderRadiusSM: 999 },
+    Button: { primaryShadow: 'none' },
+  },
+};</code></pre>
+<h2 seq="auto">状态标签映射</h2>
+<table>
+<thead><tr><th><p>原型前缀</p></th><th><p>AntD Tag color</p></th><th><p>语义示例</p></th></tr></thead>
+<tbody>
+<tr><td><p>#ok</p></td><td><p>success</p></td><td><p>正常 / 已通过 / 已上架 / 已发布</p></td></tr>
+<tr><td><p>#warn</p></td><td><p>warning</p></td><td><p>待审核 / 待复核 / 待处理</p></td></tr>
+<tr><td><p>#bad</p></td><td><p>error</p></td><td><p>停用 / 已驳回 / 售后</p></td></tr>
+<tr><td><p>#mut</p></td><td><p>default</p></td><td><p>草稿 / 待复审 / 未激活</p></td></tr>
+<tr><td><p>#ac</p></td><td><p>processing</p></td><td><p>履约中 / 升级仲裁 / 内置角色</p></td></tr>
+</tbody>
+</table>
+<p>状态文案全部中文化，无英文键值残留；列表与详情对话框共用同一 <code>StatusTag</code> 组件。</p>
+
+<h1 seq="auto">国际化与 RTL</h1>
+<p>运营端复用 <code>react-i18next</code>：<code>zh-CN</code> 为默认，后续按需接入 6 语言。i18nProvider 将 Refine 内置文案与业务资源（菜单、列头、按钮、状态）统一走字典；<code>dir</code> 由 <code>i18n.language</code> 推导，RTL（阿语等 4 种）下 AntD <code>ConfigProvider direction="rtl"</code> 自动翻转布局，运营端表格 / 抽屉 / 表单默认兼容。</p>
+
+<h1 seq="auto">API 契约（dataProvider → /api）</h1>
+<h2 seq="auto">通用列表参数</h2>
+<pre lang="text" caption="GET /api/:resource 查询参数"><code>page=1&amp;pageSize=10
+sort=field:asc|desc
+filter[status]=PENDING_REVIEW
+filter[role]=AGENT
+q=关键词           # 覆盖 id/名称/昵称/手机号/区域 模糊匹配
+scope=agent:AG001 # 对象视角：强制按对象过滤（总台管理员）
+导出：GET /api/:resource/export（鉴权 + data:export）</code></pre>
+<h2 seq="auto">方法 → 端点映射</h2>
+<table>
+<thead><tr><th><p>动作</p></th><th><p>方法与端点</p></th><th><p>说明</p></th></tr></thead>
+<tbody>
+<tr><td><p>登录</p></td><td><p>POST /api/auth/login</p></td><td><p>返回 accessToken + user(role/scope/perms)</p></td></tr>
+<tr><td><p>我的信息</p></td><td><p>GET /api/auth/me</p></td><td><p>刷新身份与权限</p></td></tr>
+<tr><td><p>列表 / 详情</p></td><td><p>GET /api/:resource[/:id]</p></td><td><p>dataProvider getList / getOne</p></td></tr>
+<tr><td><p>新建 / 编辑 / 删除</p></td><td><p>POST / PATCH / DELETE /api/:resource[/:id]</p></td><td><p>create / update / deleteOne</p></td></tr>
+<tr><td><p>审核通过 / 驳回</p></td><td><p>POST /api/:resource/:id/approve|reject</p></td><td><p>驳回 body.comment 必填；幂等（Redis 幂等键）</p></td></tr>
+<tr><td><p>反馈处理</p></td><td><p>POST /api/feedback/:id/handle</p></td><td><p>处理意见 + 状态流转</p></td></tr>
+<tr><td><p>公告审核发布</p></td><td><p>POST /api/messages/:id/approve</p></td><td><p>通过即发布到接收范围</p></td></tr>
+<tr><td><p>角色权限保存</p></td><td><p>PATCH /api/roles/:id</p></td><td><p>perms 权限点数组 + 数据作用域</p></td></tr>
+<tr><td><p>对象视角聚合</p></td><td><p>GET /api/view-scope?layer=agent&amp;object=AG001</p></td><td><p>返回对象 KPI + 各列表摘要，总台管理员专用</p></td></tr>
+<tr><td><p>用户数据调整</p></td><td><p>POST /api/users/:id/adjust</p></td><td><p>等级测试 / 余额 / 积分调整，仅可写账号</p></td></tr>
+</tbody>
+</table>
+<h2 seq="auto">错误码</h2>
+<table>
+<thead><tr><th><p>HTTP</p></th><th><p>业务码</p></th><th><p>场景</p></th><th><p>前端处理</p></th></tr></thead>
+<tbody>
+<tr><td><p>401</p></td><td><p>AUTH_INVALID</p></td><td><p>令牌失效 / 未登录</p></td><td><p>跳转 /login</p></td></tr>
+<tr><td><p>403</p></td><td><p>FORBIDDEN / READONLY</p></td><td><p>越层访问 / 只读写操作</p></td><td><p>提示 + 禁用操作</p></td></tr>
+<tr><td><p>409</p></td><td><p>STATE_CONFLICT</p></td><td><p>状态机冲突（重复审核等）</p></td><td><p>刷新列表重试</p></td></tr>
+<tr><td><p>422</p></td><td><p>VALIDATION</p></td><td><p>驳回原因缺失 / 字段非法</p></td><td><p>表单错误提示</p></td></tr>
+<tr><td><p>429</p></td><td><p>RATE_LIMIT</p></td><td><p>频控</p></td><td><p>退避重试</p></td></tr>
+<tr><td><p>500</p></td><td><p>INTERNAL</p></td><td><p>服务异常</p></td><td><p>异常态提示 + 重试</p></td></tr>
+</tbody>
+</table>
+
+<h1 seq="auto">验收清单</h1>
+<ol>
+<li>pnpm monorepo 可一键启动：<code>pnpm -F server dev</code>、<code>pnpm -F admin dev</code>，Docker 起 PG / Redis。</li>
+<li>四层登录与菜单投影正确：总台 13 项全量，低层无高层入口；JWT 角色 / 作用域正确注入。</li>
+<li>视角切换联动侧栏 / 面包屑 / 首页 / 数据作用域；三视角「返回总台」按钮右缘对齐、绿色。</li>
+<li>对象视角按 ID / 用户名 / 昵称 / 手机号 / 区域检索，整页数据联动；总台管理员可代操作。</li>
+<li>超级管理员可写；运维管理员只读（黄条 + 操作禁用 + 后端 403）。</li>
+<li>角色与权限：总台展开 5 职能角色位阶正确；功能权限复选框按层过滤（代理 9 域 / 服务商 6 域）；编辑保存权限组合并回显。</li>
+<li>服务商入驻进总台审核队列；代理商辖区服务商支持初审 / 复审 / 业务升级审核。</li>
+<li>各页筛选按钮可点击检索；搜索框支持回车与清空叉；导出受 data:export 控制。</li>
+<li>详情对话框按 A/B/C/D 实现，驳回原因必填，编辑预填不空白；状态字段全中文无英文键值。</li>
+<li>四态（加载 / 空 / 异常 / 只读）齐全；国际化字典与 RTL 方向可切换。</li>
+</ol>
+
+<h1 seq="auto">未决事项</h1>
+<p>真实密码策略与令牌刷新机制；数据库 DDL 迁移基线（prisma migrate 首批脚本）；消息推送通道（短信 / IM / 推送）接入；资金账户与支付网关对接；多语言文案与 4 种 RTL 语言包完整性。以上不影响本文档页面与接口契约的实施，由技术选型 / 排期阶段确认。</p>

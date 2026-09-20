@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+
+/* ---- 编辑器内核子树基础重置（作用域限 .editor-canvas-wrap）----
+ * 与 web 端 preflight 等价，保证两端画布视觉像素级一致。admin 关闭了全局 preflight
+ *（避免覆盖 antd），故在此为编辑器子树单独提供 box-sizing / border / button / 字体 重置。
+ * 注意：button 排除 .ant-btn，避免破坏编辑器宿主页内嵌的 antd 组件。
+ * 顺序关键：必须放在 @tailwind utilities 之前（与内核 src/styles/editor.css 一致）。
+ * 编辑器原子类本身由本配置 JIT 扫描 packages/editor|render/src 实时生成（同 web 机制）。 */
+.editor-canvas-wrap,
+.editor-canvas-wrap *,
+.editor-canvas-wrap *::before,
+.editor-canvas-wrap *::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: #e5e7eb;
+}
+
+.editor-canvas-wrap {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* 统一字体栈，覆盖 antd 默认字体，保证与 web 端一致 */
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  color: #1f2937; /* gray-800，覆盖 antd 默认文字色 */
+}
+
+/* ── 按钮基础重置（用 :where() 降特异性到 0-0-1，低于所有 Tailwind 工具类的 0-1-0）
+ * 只重置浏览器默认外观，不覆盖 bg-*/text-* 等任何工具类。
+ * 不用 :where() 时 .editor-canvas-wrap button 的 0-2-0 会覆盖 bg-red-500 等 0-1-0 工具类，
+ * 导致发布/退出按钮背景透明、文字不可见（#17 修复）。 */
+:where(.editor-canvas-wrap) button,
+:where(.editor-canvas-wrap) [type='button'],
+:where(.editor-canvas-wrap) [type='reset'],
+:where(.editor-canvas-wrap) [type='submit'] {
+  -webkit-appearance: button;
+  appearance: button;
+  cursor: pointer;
+  text-transform: none;
+}
+
+/* ── 仅对非 antd 按钮移除浏览器默认 margin/padding ──
+ * 注意：这里只放真正需要"归零"且不会与工具类冲突的属性。
+ * padding 已在上方注释说明不由这里控制。 */
+.editor-canvas-wrap button:not(.ant-btn),
+.editor-canvas-wrap [type='button']:not(.ant-btn),
+.editor-canvas-wrap [type='reset']:not(.ant-btn),
+.editor-canvas-wrap [type='submit']:not(.ant-btn) {
+  margin: 0;
+}
+
+.editor-canvas-wrap img,
+.editor-canvas-wrap video,
+.editor-canvas-wrap canvas,
+.editor-canvas-wrap svg {
+  display: block;
+  vertical-align: middle;
+}
+
+/* 用 :where() 把特异性降到 0-0-1（与 web 端 preflight 同级），
+   这样缩略图等带 h-full 工具类的 <img> 能正确以容器高度显示，
+   不会被 height:auto 覆盖成 1:1 原始尺寸（运营端 #2 修复）。
+   max-width:100% 仍保留，避免大图溢出画布。 */
+:where(.editor-canvas-wrap) img,
+:where(.editor-canvas-wrap) video {
+  max-width: 100%;
+  height: auto;
+}
+
+.editor-canvas-wrap input,
+.editor-canvas-wrap select,
+.editor-canvas-wrap textarea {
+  font-family: inherit;
+  font-size: 100%;
+  font-weight: inherit;
+  line-height: inherit;
+  color: inherit;
+  margin: 0;
+}
+
+.editor-canvas-wrap p,
+.editor-canvas-wrap h1,
+.editor-canvas-wrap h2,
+.editor-canvas-wrap h3,
+.editor-canvas-wrap h4,
+.editor-canvas-wrap h5,
+.editor-canvas-wrap h6,
+.editor-canvas-wrap figure,
+.editor-canvas-wrap blockquote,
+.editor-canvas-wrap dl,
+.editor-canvas-wrap dd {
+  margin: 0;
+}
+
+.editor-canvas-wrap ul,
+.editor-canvas-wrap ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editor-canvas-wrap [hidden] {
+  display: none !important;
+}
+
+@tailwind utilities;
+
+/* 运营端画布宿主：让编辑器主内容区（三栏布局：页面列表+画布+属性面板）
+   填满 .editor-canvas-wrap 的剩余高度。
+   ⚠️ 只命中三栏容器本身，不用 > div 通配（会误伤 SettingsPanel 的 fixed 面板
+   和弹出菜单，导致设置面板全屏覆盖 / 菜单宽度被重置为 100%）。 */
+.editor-canvas-wrap > .flex.min-h-0 {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 编辑器在运营端渲染于 AdminLayout 的 <main> 内（带 padding: 20px 24px 32px），
+   而 EditorApp 根元素是 h-screen（100vh），需要抵消父级 padding 才能填满视口。
+   仅在编辑器页生效，不影响其他管理页面。 */
+.editor-canvas-wrap {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000 !important;
+}

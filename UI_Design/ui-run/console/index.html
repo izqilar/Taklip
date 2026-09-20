@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>庆柬云 · 分层管理后台</title>
+<style>
+/* 一个后端 · 分层治理 · 总台统筹
+   庆柬云 B 端控制台：暖石底 + 朱砂主色 + 青副色，网格排版，静默动效
+   底色不纯白 / 强调色单角色 / 状态双角色（浅底深字）/ B端靠线不靠阴影 */
+:root{
+  --page:#f5f2ec;
+  --bg:#fffefb;
+  --panel-2:#f3eee7;
+  --border:rgba(74,60,42,.10);
+  --ink-1:#2a2118;
+  --ink-2:#4c4236;
+  --ink-3:#86765f;
+  --accent:#c24b2e;
+  --accent-2:#14676b;
+  --accent-soft:rgba(194,75,46,.10);
+  --accent-2-soft:rgba(20,103,107,.10);
+  --on-accent:#fff;
+  --up:#1d7a6b;  --up-ink:#0f5a4e;
+  --down:#c02b33; --down-ink:#8f1d24;
+  --warn:#b77a16; --warn-ink:#7a4d07;
+  --r-sm:6px;
+  --r-md:10px;
+  --r-lg:14px;
+  --side:240px;
+  --row:46px;
+  --num:"Bahnschrift","DIN Alternate","Arial",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--page);color:var(--ink-1);
+  font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums;font-family:var(--num)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;min-height:28px}
+a{color:inherit;text-decoration:none}
+input,select,textarea{font:inherit;color:inherit}
+table{border-collapse:collapse;width:100%}
+svg{flex:none}
+/* ── 布局：左导航 + 右主区 ─────────────────────────── */
+.app{display:grid;grid-template-columns:var(--side) 1fr;min-height:100vh}
+@media(max-width:1180px){.app{grid-template-columns:64px 1fr}.side .lbl{display:none}}
+
+/* ── 侧栏 ────────────────────────────────────────── */
+.side{background:var(--bg);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:18px 18px 14px;border-bottom:1px solid var(--border)}
+.brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#d2603f,#a93a20);
+  display:grid;place-items:center;color:#fff}
+.brand b{font-size:16px;letter-spacing:.02em;display:block;line-height:1.2}
+.brand small{font-size:11px;color:var(--ink-3);letter-spacing:.14em}
+.nav{flex:1;overflow:auto;padding:10px 10px 16px}
+.grp{font-size:11px;color:var(--ink-3);letter-spacing:.08em;margin:16px 12px 6px;font-weight:600}
+.grp:first-child{margin-top:6px}
+.mi{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:var(--r-sm);
+  color:var(--ink-2);cursor:pointer;user-select:none;position:relative;transition:background .12s}
+.mi:hover{background:var(--panel-2)}
+.mi .ic{width:18px;height:18px;opacity:.85}
+.mi .lbl{flex:1;font-size:13.5px}
+.mi .bdg{min-width:18px;height:18px;padding:0 5px;border-radius:999px;font-size:11px;
+  background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700}
+.mi.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.mi.on::before{content:"";position:absolute;left:-10px;top:7px;bottom:7px;width:3px;
+  border-radius:3px;background:var(--accent)}
+.sidefoot{padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidefoot .av{width:30px;height:30px;border-radius:50%;background:var(--accent-2);
+  color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700}
+.sidefoot .who{flex:1;min-width:0}
+.sidefoot .who b{font-size:13px;display:block}
+.sidefoot .who span{font-size:11px;color:var(--ink-3)}
+
+/* ── 顶栏 ────────────────────────────────────────── */
+.main{display:flex;flex-direction:column;min-width:0}
+.top{display:flex;align-items:center;gap:12px;padding:12px 24px;border-bottom:1px solid var(--border);
+  background:var(--bg);position:sticky;top:0;z-index:20}
+.crumb{font-size:15px;font-weight:700;white-space:nowrap}
+.crumb .at{color:var(--ink-3);font-weight:500;margin:0 8px}
+.viewswitch{display:flex;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;background:var(--page)}
+.viewswitch button{padding:6px 16px;font-size:13px;color:var(--ink-2);display:flex;gap:6px;align-items:center}
+.viewswitch button+button{border-left:1px solid var(--border)}
+.viewswitch button.on{background:var(--bg);color:var(--accent);font-weight:600;box-shadow:inset 0 -2px 0 var(--accent)}
+.top .sp{margin-left:auto}
+.acc{display:flex;align-items:center;gap:8px;padding:5px 6px 5px 12px;border:1px solid var(--border);
+  border-radius:999px;background:var(--bg);cursor:pointer;position:relative}
+.acc .tag{font-size:11px;padding:2px 8px;border-radius:999px;font-weight:600}
+.acc .tag.write{background:var(--accent-soft);color:var(--accent)}
+.acc .tag.ro{background:var(--panel-2);color:var(--ink-3)}
+.acc .dd{width:22px;height:22px;border-radius:50%;background:var(--panel-2);display:grid;place-items:center;font-size:12px}
+.accmenu{position:absolute;right:0;top:calc(100% + 6px);width:240px;background:var(--bg);
+  border:1px solid var(--border);border-radius:var(--r-md);box-shadow:0 12px 32px rgba(42,33,24,.14);
+  padding:6px;display:none;z-index:40}
+.accmenu.on{display:block}
+.accmenu .row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r-sm);cursor:pointer}
+.accmenu .row:hover{background:var(--panel-2)}
+.accmenu .row b{font-size:13px;display:block}
+.accmenu .row span{font-size:11px;color:var(--ink-3)}
+.accmenu .row .ck{margin-left:auto;color:var(--accent)}
+.accmenu .sep{height:1px;background:var(--border);margin:5px 4px}
+.btn{border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 13px;color:var(--ink-2);
+  background:var(--bg);display:inline-flex;align-items:center;gap:6px;font-size:13px}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:#b13e22}
+.btn:disabled,.btn[disabled]{opacity:.45;cursor:not-allowed;background:var(--panel-2);border-color:var(--border);color:var(--ink-3)}
+.link{color:var(--accent);cursor:pointer;font-size:13px;white-space:nowrap}
+.link:hover{text-decoration:underline}
+.link[data-ro]{color:var(--ink-3);cursor:not-allowed}
+
+/* ── 主区 ────────────────────────────────────────── */
+.body{padding:20px 24px 32px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.page{display:none;flex-direction:column;gap:16px;min-width:0}
+.page.on{display:flex}
+.pghead{display:flex;align-items:baseline;gap:12px}
+.pghead h2{font-size:18px;font-weight:750}
+.pghead .sub{color:var(--ink-3);font-size:13px}
+.pghead .sp{margin-left:auto}
+.rolechip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 10px;border-radius:999px;
+  background:var(--accent-2-soft);color:var(--accent-2);font-weight:600}
+
+/* KPI 条：主指标大一号，不搞四张一样大 */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:1280px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:14px 16px;position:relative;overflow:hidden}
+.kpi .k{color:var(--ink-3);font-size:12.5px;display:flex;align-items:center;gap:6px}
+.kpi .k .ic{width:15px;height:15px}
+.kpi .v{font-size:27px;font-weight:750;margin-top:6px;letter-spacing:.01em}
+.kpi .d{font-size:12px;margin-top:4px;display:flex;align-items:center;gap:4px}
+.kpi .d.up{color:var(--up-ink)}
+.kpi .d.dn{color:var(--down-ink)}
+.kpi .d .ic{width:13px;height:13px}
+.kpi .f{font-size:12px;color:var(--ink-3);margin-top:4px}
+.kpi.main{border-color:var(--accent);box-shadow:inset 0 2px 0 var(--accent)}
+.kpi.main .v{color:var(--accent)}
+.spark{position:absolute;right:12px;bottom:12px;opacity:.9}
+
+/* 面板与表格 */
+.panel{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;min-width:0}
+.panel>header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);font-weight:650;font-size:14.5px}
+.panel>header .hint{margin-left:auto;color:var(--ink-3);font-weight:400;font-size:12px}
+.panel>header .hint b{color:var(--accent)}
+.wrap{overflow:auto}
+th,td{text-align:left;padding:0 16px;height:var(--row);border-bottom:1px solid var(--border);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+th{color:var(--ink-3);font-weight:500;font-size:12.5px;letter-spacing:.02em;background:var(--panel-2)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:#faf7f1}
+td.n,th.n{text-align:right}
+td .mut{color:var(--ink-3);font-size:12.5px}
+.tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500}
+.tag.ok{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up-ink)}
+.tag.warn{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn-ink)}
+.tag.bad{background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--down-ink)}
+.tag.mut{background:var(--panel-2);color:var(--ink-3)}
+.tag.ac{background:var(--accent-soft);color:var(--accent)}
+.acts{display:flex;gap:12px}
+.acts .l{font-size:13px;cursor:pointer}
+.acts .l.ok{color:var(--up-ink)}
+.acts .l.bad{color:var(--down-ink)}
+.acts .l.dim{color:var(--ink-3)}
+
+/* 筛选条 */
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--bg);
+  border:1px solid var(--border);border-radius:var(--r-md);padding:10px 12px}
+.chip{border:1px solid var(--border);border-radius:999px;padding:4px 12px;color:var(--ink-2);font-size:12.5px}
+.chip.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);font-weight:600}
+.field{border:1px solid var(--border);border-radius:var(--r-sm);padding:5px 11px;min-width:170px;background:var(--bg);font-size:13px}
+.field:focus{outline:1px solid var(--accent);border-color:var(--accent)}
+.searchbox{position:relative;display:inline-flex;align-items:center}
+.searchbox .field{padding-right:30px}
+.searchbox .clr{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:none;min-height:0;
+  width:18px;height:18px;border-radius:50%;background:var(--ink-3);color:#fff;border:0;padding:0;
+  font-size:11px;line-height:1;cursor:pointer;align-items:center;justify-content:center}
+.searchbox .clr:hover{background:var(--accent)}
+.searchbox.has-val:hover .clr{display:inline-flex}
+
+/* 双栏 */
+.duo{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+@media(max-width:1280px){.duo{grid-template-columns:1fr}}
+.trio{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:16px}
+@media(max-width:1280px){.trio{grid-template-columns:1fr 1fr}}\n
+/* objpick toolbar */
+.objpick{display:flex;align-items:center;gap:12px;margin-top:10px;padding:10px 24px;border-bottom:1px solid var(--border);
+  background:color-mix(in srgb,var(--warn) 7%,var(--bg))}
+.objpick .op-t{font-size:12.5px;font-weight:700;color:var(--warn-ink);white-space:nowrap}
+.combobox{position:relative;min-width:320px}
+.combobox .field{width:100%;min-width:0}
+.objlist{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--r-md);box-shadow:0 12px 32px rgba(42,33,24,.14);max-height:280px;overflow:auto;display:none;z-index:50}
+.objlist.on{display:block}
+.objlist .o{display:flex;gap:10px;align-items:center;padding:9px 12px;cursor:pointer;font-size:13px;width:100%;text-align:left}
+.objlist .o:hover{background:var(--panel-2)}
+.objlist .o b{font-size:13px}
+.objlist .o span{color:var(--ink-3);font-size:12px}
+.objlist .o .n{margin-left:auto;color:var(--accent);font-size:11.5px;white-space:nowrap}
+.rolechip.ro{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn-ink)}
+.objpick .sp{margin-left:auto}
+.objpick .btn{white-space:nowrap}
+.objpick .btn#objExit{background:var(--up);border-color:var(--up);color:#fff}
+.objpick .btn#objExit:hover{background:#16665a;border-color:#16665a}\n
+/* ── 用户工作台（用户视角） ── */
+.ucard{display:flex;flex-direction:column;gap:12px;background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:14px 16px}
+.ucard-top{display:flex;align-items:center;gap:12px}
+.ucard .uav{width:46px;height:46px;border-radius:50%;background:var(--accent-2);color:#fff;
+  display:grid;place-items:center;font-size:19px;font-weight:700;flex:none}
+.ucard .uname{display:flex;align-items:center;gap:8px}
+.ucard .uname b{font-size:16px}
+.ucard .umeta{font-size:12px;color:var(--ink-3);margin-top:3px}
+.leveltest{display:flex;align-items:center;gap:8px}
+.leveltest .sp{margin-left:auto}
+.ucard #uAdjust{background:var(--up);border-color:var(--up);color:#fff}
+.ucard #uAdjust:hover{background:#16665a;border-color:#16665a}
+.leveltest .lt-label{font-size:12px;color:var(--ink-3);white-space:nowrap}
+.lt-switch{display:flex;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden}
+.lt-switch button{padding:5px 12px;font-size:12.5px;color:var(--ink-2);background:var(--page)}
+.lt-switch button+button{border-left:1px solid var(--border)}
+.lt-switch button.on{background:var(--accent);color:#fff;font-weight:600}
+.perks{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+.perks .pk{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink-2);background:var(--panel-2);
+  border-radius:var(--r-sm);padding:8px 12px}
+.perks .pdot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.duo-inline{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal .fd select.field{width:100%;min-width:0;appearance:auto;padding:6px 10px}
+.uadjwho{font-size:13px;color:var(--ink-2)}
+/* ── 图表（SVG 手绘，不用生图） ───────────────────── */
+.chart{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:14px 16px}
+.chart h4{font-size:14.5px;font-weight:650;display:flex;align-items:center;gap:8px}
+.chart h4 .hint{margin-left:auto;color:var(--ink-3);font-size:12px;font-weight:400}
+.bars{display:flex;flex-direction:column;gap:11px;margin-top:14px}
+.bar .row{display:flex;align-items:center;gap:10px;font-size:12.5px}
+.bar .nm{width:64px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .tr{flex:1;height:14px;background:var(--panel-2);border-radius:4px;overflow:hidden}
+.bar .fl{height:100%;border-radius:4px}
+.bar .vl{width:58px;text-align:right;color:var(--ink-3);font-size:12px}
+.legend{display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--ink-2)}
+.legend i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:5px}
+
+/* 待办列表 */
+.todo{display:flex;flex-direction:column}
+.todo .it{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border);cursor:pointer}
+.todo .it:last-child{border-bottom:0}
+.todo .it:hover{background:#faf7f1}
+.todo .icn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center}
+.todo .icn.a{background:var(--accent-soft);color:var(--accent)}
+.todo .icn.b{background:var(--accent-2-soft);color:var(--accent-2)}
+.todo .icn.c{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn-ink)}
+.todo .tx{flex:1;min-width:0}
+.todo .tx b{font-size:13.5px;display:block}
+.todo .tx span{font-size:12px;color:var(--ink-3)}
+.todo .cnt{font-size:20px;font-weight:750;color:var(--accent)}
+.todo .cnt.s{font-size:13px;color:var(--ink-3);font-weight:500}
+
+/* Tab */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);padding:0 12px;background:var(--panel-2)}
+.tabs button{padding:10px 14px;font-size:13.5px;color:var(--ink-2);border-bottom:2px solid transparent;display:flex;gap:6px;align-items:center}
+.tabs button.on{color:var(--accent);font-weight:600;border-bottom-color:var(--accent)}
+.tabs .n{font-size:11px;padding:0 6px;border-radius:999px;background:var(--panel-2);color:var(--ink-3)}
+.tabs button.on .n{background:var(--accent);color:#fff}
+.tabpane{display:none}
+.tabpane.on{display:block}
+
+/* 列表页头部工具 */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pager{display:flex;gap:6px;align-items:center;justify-content:flex-end;padding:10px 16px;color:var(--ink-3);font-size:12.5px}
+.pager .btn{padding:3px 10px;font-size:12px}
+
+/* 四态 */
+[data-state]{display:none}
+[data-state].on{display:grid}
+.empty,.loading,.error{place-items:center;gap:12px;padding:64px 20px;text-align:center;color:var(--ink-2)}
+.empty .ic,.error .ic{width:40px;height:40px;color:var(--ink-3);opacity:.6}
+.empty b,.error b{color:var(--ink-1);font-size:15px}
+.empty span,.error span{color:var(--ink-3);font-size:13px}
+.skel{background:linear-gradient(90deg,var(--panel-2),#faf7f1,var(--panel-2));
+  height:var(--row);border-radius:var(--r-sm);margin:6px 16px;opacity:.8}
+
+/* 弹窗 */
+.scrim{position:fixed;inset:0;background:rgba(30,24,16,.45);opacity:0;pointer-events:none;transition:opacity .18s;z-index:50}
+.scrim.on{opacity:1;pointer-events:auto}
+.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);width:min(520px,92vw);
+  background:var(--bg);border-radius:var(--r-lg);padding:20px;opacity:0;pointer-events:none;
+  transition:.18s;box-shadow:0 24px 60px rgba(30,24,16,.22);z-index:60}
+.modal.on{opacity:1;pointer-events:auto;transform:translate(-50%,-50%)}
+.modal h3{font-size:16px;display:flex;align-items:center;gap:8px}
+.modal .x{margin-left:auto;color:var(--ink-3);cursor:pointer}
+.modal .fd{display:flex;flex-direction:column;gap:6px;margin-top:14px}
+.modal label{font-size:12.5px;color:var(--ink-2);font-weight:600}
+.modal input,.modal textarea,.modal select{border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:8px 11px;background:var(--bg);width:100%}
+.modal .kv{display:grid;grid-template-columns:86px 1fr;gap:6px 12px;font-size:13px;margin-top:14px}
+.modal .kv dt{color:var(--ink-3)}
+.modal .kv dd{color:var(--ink-1);font-weight:600}
+.modal .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.perm{display:flex;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--r-sm);padding:11px;max-height:280px;overflow:auto}
+.perm .pgrp{display:flex;flex-wrap:wrap;gap:4px 16px;padding-bottom:8px;border-bottom:1px dashed var(--border)}
+.perm .pgrp:last-child{border-bottom:none;padding-bottom:0}
+.perm .pgt{width:100%;font-size:12px;font-weight:700;color:var(--ink-2)}
+.perm .pchk{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--ink-1);cursor:pointer;margin:0}
+.perm .pchk input{width:auto;accent-color:var(--accent);padding:0}
+.notice{display:flex;gap:10px;align-items:flex-start;padding:11px 14px;border-radius:var(--r-md);
+  background:var(--accent-2-soft);color:var(--accent-2);font-size:13px}
+.notice .ic{width:17px;height:17px;margin-top:2px}
+.notice.ro{background:color-mix(in srgb,var(--warn) 13%,transparent);color:var(--warn-ink)}
+.rule{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-3);padding:9px 16px;border-bottom:1px solid var(--border);background:#faf7f1}
+.rule .ic{width:14px;height:14px}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ══ 侧栏：菜单由 JS 按当前视角渲染（总台13项 / 代理商7项 / 服务商7项） ══ -->
+  <aside class="side">
+    <div class="brand">
+      <span class="mark">
+        <svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48Zm-96,85.15L52.57,64H203.43ZM98.71,128,40,181.81V74.19Zm11.84,10.85,12,11.05a8,8,0,0,0,10.82,0l12-11.05,58,53.15H52.57ZM157.29,128,216,74.18V181.82Z"/></svg>
+      </span>
+      <span><b>庆柬云</b><small>管理后台</small></span>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidefoot">
+      <span class="av" id="sideAv">超</span>
+      <div class="who"><b id="sideName">超级管理员</b><span id="sideRole">总台 · 可写</span></div>
+      <button class="dd" style="width:26px;height:26px;border-radius:50%;background:var(--panel-2);display:grid;place-items:center;font-size:13px" title="退出登录">⏻</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- ══ 顶栏：面包屑 + 角色视角切换 + 账号权限 ══ -->
+    <header class="top">
+      <div class="crumb"><span id="crumbView">管理总台</span><span class="at">/</span><span id="crumbPage">经营总览</span></div>
+      <div class="viewswitch" id="viewswitch">
+        <button data-view="console" class="on">总台视角</button>
+        <button data-view="agent">代理商视角</button>
+        <button data-view="provider">服务商视角</button>
+        <button data-view="user">用户视角</button>
+      </div>
+      <span class="sp"></span>
+      <button class="btn" data-go="empty" title="预览空状态">空状态</button>
+      <button class="btn" data-go="loading" title="预览加载态">加载态</button>
+      <button class="btn" data-go="error" title="预览异常态">异常态</button>
+      <button class="btn primary" id="primaryBtn" title="主操作">＋ 发布公告</button>
+      <div class="acc" id="acc">
+        <span id="accRole">超级管理员</span>
+        <span class="tag write" id="accTag">可写</span>
+        <span class="dd">⌄</span>
+        <div class="accmenu" id="accmenu">
+          <div class="row" data-mode="super"><b>超级管理员</b><span>全量权限 · 可代操作（可写）</span><span class="ck">✓</span></div>
+          <div class="row" data-mode="ops"><b>运维管理员</b><span>部分权限 · 默认只读核查</span><span class="ck">✓</span></div>
+          <div class="sep"></div>
+          <div class="row"><b>退出登录</b></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ══ 对象视角工具栏：管理员在代理商/服务商视角下，按 ID/昵称/手机号选择具体对象查看其名下数据 ══ -->
+    <div class="objpick" id="objPick" style="display:none">
+      <span class="op-t">搜索</span>
+      <div class="combobox">
+        <input class="field" id="objQ" placeholder="搜索 ID / 用户名 / 昵称 / 手机号…" autocomplete="off">
+        <div class="objlist" id="objList"></div>
+      </div>
+      <span class="rolechip ro" id="objTag">—</span>
+      <span class="sp"></span>
+      <button class="btn" id="objExit">返回总台</button>
+    </div>
+
+    <!-- ══ 主区 ══ -->
+    <div class="body">
+      <!-- 当前是只读时的横幅 -->
+      <div class="notice ro" id="roBanner" style="display:none">
+        <svg class="ic" viewBox="0 0 256 256" fill="currentColor"><path d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM96,56a32,32,0,0,1,64,0V80H96ZM208,208H48V96H208V208Zm-68-56a12,12,0,1,1-12-12A12,12,0,0,1,140,152Z"/></svg>
+        <span>当前为 <b>运维管理员（只读）</b> 视角：可查看全部数据，操作（通过/驳回/编辑）已锁定；如须代操作，请切换为超级管理员或由管理员单独授权。</span>
+      </div>
+
+      <!-- ════════════ 总台 · 经营总览 ════════════ -->
+      <section class="page" id="pg-console-home">
+        <div class="pghead">
+          <div>
+            <h2>经营总览</h2>
+            <div class="sub">平台运营核心指标 · 截至今日 08-27</div>
+          </div>
+          <span class="sp"></span>
+          <span class="rolechip">总台 · 全盘治理</span>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi main">
+            <div class="k">平台总流水</div>
+            <div class="v num">¥128,640</div>
+            <div class="d up"><svg class="ic" viewBox="0 0 256 256" fill="currentColor"><path d="M205.66,117.66a8,8,0,0,1-11.32,0L136,59.31V216a8,8,0,0,1-16,0V59.31L61.66,117.66a8,8,0,0,1-11.32-11.32l72-72a8,8,0,0,1,11.32,0l72,72A8,8,0,0,1,205.66,117.66Z"/></svg>▲ 12.4% 较上周</div>
+            <div class="f">抽成 ¥12,864（10%）</div>
+          </div>
+          <div class="kpi">
+            <div class="k">注册用户</div>
+            <div class="v num">8,432</div>
+            <div class="d up"><svg class="ic" viewBox="0 0 256 256" fill="currentColor"><path d="M205.66,117.66a8,8,0,0,1-11.32,0L136,59.31V216a8,8,0,0,1-16,0V59.31L61.66,117.66a8,8,0,0,1-11.32-11.32l72-72a8,8,0,0,1,11.32,0l72,72A8,8,0,0,1,205.66,117.66Z"/></svg>▲ 6.1%</div>
+          </div>
+          <div class="kpi">
+            <div class="k">在营服务商</div>
+            <div class="v num">326</div>
+            <div class="d up">▲ 3.2%</div>
+            <div class="f">待入驻审核 <b style="color:var(--accent)">12</b> 家</div>
+          </div>
+          <div class="kpi">
+            <div class="k">成交订单</div>
+            <div class="v num">1,926</div>
+            <div class="d up">▲ 9.7%</div>
+            <div class="f">退款率 2.1%</div>
+          </div>
+        </div>
+
+        <div class="duo">
+          <div class="chart">
+            <h4>区域经营对比<span class="hint">近 30 日 · 按流水排序</span></h4>
+            <div class="bars" id="regionBars"></div>
+            <div class="legend"><span><i style="background:var(--accent)"></i>平台流水</span><span><i style="background:var(--accent-2)"></i>订单量</span></div>
+          </div>
+          <div class="chart">
+            <h4>资金流水趋势<span class="hint">近 14 日</span></h4>
+            <svg viewBox="0 0 400 170" style="width:100%;height:auto;margin-top:12px" aria-label="流水趋势">
+              <defs><linearGradient id="lg1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#c24b2e" stop-opacity=".25"/><stop offset="1" stop-color="#c24b2e" stop-opacity="0"/></linearGradient></defs>
+              <path d="M0,128 L31,120 L62,124 L93,106 L124,112 L155,90 L186,96 L217,74 L248,82 L279,58 L310,66 L341,44 L372,52 L400,34 L400,170 L0,170 Z" fill="url(#lg1)"/>
+              <polyline points="0,128 31,120 62,124 93,106 124,112 155,90 186,96 217,74 248,82 279,58 310,66 341,44 372,52 400,34" fill="none" stroke="#c24b2e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="0" y1="150" x2="400" y2="150" stroke="rgba(74,60,42,.12)"/>
+            </svg>
+            <div class="legend"><span><i style="background:var(--accent)"></i>总流水（万元）</span><span style="margin-left:auto">峰值 ¥1.42w</span></div>
+          </div>
+        </div>
+
+        <div class="trio">
+          <div class="panel">
+            <header>代理商绩效 TOP5<span class="hint">按月流水</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>代理商</th><th>辖区</th><th class="n">流水</th><th class="n">订单</th></tr></thead>
+              <tbody id="agentTop"></tbody>
+            </table></div>
+          </div>
+          <div class="panel">
+            <header>待办与预警<span class="hint">点按直达</span></header>
+            <div class="todo">
+              <div class="it" data-goto="withdrawals"><span class="icn a">¥</span><div class="tx"><b>待审核提现</b><span>提现审核队列</span></div><span class="cnt num">3</span></div>
+              <div class="it" data-goto="review"><span class="icn b">审</span><div class="tx"><b>服务商入驻待审</b><span>服务商管理 · 入驻审核队列</span></div><span class="cnt num">12</span></div>
+              <div class="it" data-goto="feedback"><span class="icn c">⭐</span><div class="tx"><b>升级反馈待仲裁</b><span>评价与反馈中心</span></div><span class="cnt num">2</span></div>
+              <div class="it" data-goto="messages"><span class="icn a">✉</span><div class="tx"><b>权威公告待审</b><span>消息中心 · 公告审核</span></div><span class="cnt num">1</span></div>
+            </div>
+          </div>
+          <div class="panel">
+            <header>服务商入驻审核<span class="hint">待审 <b>12</b> · 点按处理</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>申请人</th><th>类型</th><th>区域</th><th>状态</th><th></th></tr></thead>
+              <tbody id="reviewMini"></tbody>
+            </table></div>
+          </div>
+        </div>
+      </section>
+      <!-- ════════════ 代理商 · 辖区概览 ════════════ -->
+      <section class="page" id="pg-agent-home">
+        <div class="pghead">
+          <div>
+            <h2>辖区概览</h2>
+            <div class="sub" id="aSub">天山区 · 辖区经营指标 · 截至今日 08-27</div>
+          </div>
+          <span class="sp"></span>
+          <span class="rolechip" id="aChip">代理商 · 天山区 · 辖区作用域</span>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi main">
+            <div class="k">辖区流水</div>
+            <div class="v num" id="aFlow">¥18,320</div>
+            <div class="d up" id="aFlowPct">▲ 11.6% 较上周</div>
+            <div class="f" id="aFee">辖区抽成 ¥1,832</div>
+          </div>
+          <div class="kpi">
+            <div class="k">辖区用户</div>
+            <div class="v num" id="aUsers">1,204</div>
+            <div class="d up">▲ 5.2%</div>
+          </div>
+          <div class="kpi">
+            <div class="k">辖区服务商</div>
+            <div class="v num" id="aSvc">38</div>
+            <div class="d up">▲ 2.1%</div>
+            <div class="f" id="aSvcPend">入驻待初审 <b style="color:var(--accent)">5</b> 家</div>
+          </div>
+          <div class="kpi">
+            <div class="k">辖区订单</div>
+            <div class="v num" id="aOrd">214</div>
+            <div class="d up">▲ 8.3%</div>
+          </div>
+        </div>
+
+        <div class="duo">
+          <div class="panel">
+            <header>待办事项<span class="hint">辖区可办 · 点按直达</span></header>
+            <div class="todo">
+              <div class="it" data-goto="providers"><span class="icn b">审</span><div class="tx"><b>服务商入驻待初审</b><span>辖区服务商 · 入驻初审</span></div><span class="cnt num" id="aPend">5</span></div>
+              <div class="it" data-goto="feedback"><span class="icn a">⭐</span><div class="tx"><b>辖区协商反馈</b><span>评价与反馈中心 · 协商中</span></div><span class="cnt num" id="aFb">2</span></div>
+              <div class="it" data-goto="feedback"><span class="icn c">▲</span><div class="tx"><b>升级提醒</b><span>超出辖区协商时限，将升级总台</span></div><span class="cnt num" id="aUp">1</span></div>
+              <div class="it" data-goto="messages"><span class="icn a">✉</span><div class="tx"><b>我的待审公告</b><span>消息中心 · 发布待审</span></div><span class="cnt num" id="aMsg">1</span></div>
+            </div>
+          </div>
+          <div class="chart">
+            <h4>辖区服务商构成<span class="hint">按服务类型</span></h4>
+            <div class="bars" id="agentCatBars"></div>
+            <div class="legend"><span><i style="background:var(--accent)"></i>数量</span><span><i style="background:var(--accent-2)"></i>本月接单</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <header>辖区服务商<span class="hint">regionPath 数据隔离 · 仅本辖区</span></header>
+          <div class="wrap"><table>
+            <thead><tr><th>服务商</th><th>服务类型</th><th>资质</th><th class="n">本月接单</th><th class="n">本月收益</th><th>状态</th><th></th></tr></thead>
+            <tbody id="agentProvList"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- ════════════ 服务商 · 我的工作台 ════════════ -->
+      <section class="page" id="pg-provider-home">
+        <div class="pghead">
+          <div>
+            <h2>我的工作台</h2>
+            <div class="sub" id="pSub">特约设计 · 供给经营 · 截至今日 08-27</div>
+          </div>
+          <span class="sp"></span>
+          <span class="rolechip" id="pChip">服务商 · 自身作用域</span>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi main">
+            <div class="k">可提现收益</div>
+            <div class="v num" id="pBal">¥1,240</div>
+            <div class="d up" id="pBalPct">+ ¥860 本月</div>
+            <div class="f" id="pFrozen">冻结中 ¥320</div>
+          </div>
+          <div class="kpi">
+            <div class="k">在售服务</div>
+            <div class="v num" id="pOnSale">6</div>
+            <div class="d" id="pOnSaleF">3 类服务角色</div>
+          </div>
+          <div class="kpi">
+            <div class="k">本月接单</div>
+            <div class="v num" id="pOrders">18</div>
+            <div class="d up" id="pOrdersPct">▲ 4 单</div>
+            <div class="f" id="pOrderF">待接单 <b style="color:var(--accent)">2</b> · 待交付 <b style="color:var(--accent)">3</b></div>
+          </div>
+          <div class="kpi">
+            <div class="k">本月收益</div>
+            <div class="v num" id="pIncome">¥2,860</div>
+            <div class="d up" id="pIncomePct">▲ 12.8%</div>
+          </div>
+        </div>
+
+        <div class="trio">
+          <div class="panel">
+            <header>订单待办<span class="hint">点按直达</span></header>
+            <div class="todo">
+              <div class="it" data-goto="orders"><span class="icn a">接</span><div class="tx"><b>待接单</b><span>订单处理</span></div><span class="cnt num" id="pPd">2</span></div>
+              <div class="it" data-goto="orders"><span class="icn c">交</span><div class="tx"><b>待交付</b><span>履约中订单</span></div><span class="cnt num" id="pDlv">3</span></div>
+              <div class="it" data-goto="feedback"><span class="icn b">⭐</span><div class="tx"><b>被诉回应</b><span>评价与反馈中心</span></div><span class="cnt num" id="pAppeal">1</span></div>
+            </div>
+          </div>
+          <div class="panel">
+            <header>我的服务<span class="hint">服务管理</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>服务</th><th class="n">价格</th><th>状态</th></tr></thead>
+              <tbody id="spServList"></tbody>
+            </table></div>
+          </div>
+          <div class="panel">
+            <header>最近订单<span class="hint">订单处理</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>订单</th><th class="n">金额</th><th>状态</th></tr></thead>
+              <tbody id="spOrdList"></tbody>
+            </table></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════ 用户 · 工作台（观察/调整用户数据 + 会员等级测试） ════════════ -->
+      <section class="page" id="pg-user-home">
+        <div class="pghead">
+          <div>
+            <h2>用户工作台</h2>
+            <div class="sub" id="uSub">王丽 · 金卡会员 · 个人中心预览 · 截至今日 08-27</div>
+          </div>
+          <span class="sp"></span>
+          <span class="rolechip" id="uChip">用户 · 金卡会员</span>
+        </div>
+
+        <!-- 用户资料卡 + 等级测试 + 调整 -->
+        <div class="ucard" id="uCard">
+          <div class="ucard-top">
+            <span class="uav" id="uAv">王</span>
+            <div class="uname"><b id="uName">王丽</b><span class="tag ac" id="uTier">金卡会员</span></div>
+          </div>
+          <div class="umeta" id="uMeta">ID U003 · 手机 139****6688 · 上海 · 注册 2024-03-12</div>
+          <div class="leveltest">
+            <span class="lt-label">会员等级</span>
+            <div class="lt-switch" id="ltSwitch">
+              <button data-tier="普通用户">普通</button>
+              <button data-tier="银卡会员">银卡</button>
+              <button data-tier="金卡会员">金卡</button>
+              <button data-tier="黑金会员">黑金</button>
+            </div>
+            <span class="sp"></span>
+            <button class="btn" id="uAdjust">调整用户数据</button>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi main">
+            <div class="k">账户余额</div>
+            <div class="v num" id="uBal">¥2,480</div>
+            <div class="d up">+ ¥500 本月充值</div>
+          </div>
+          <div class="kpi">
+            <div class="k">积分</div>
+            <div class="v num" id="uPts">3,260</div>
+            <div class="d up">可兑换 8 张券</div>
+          </div>
+          <div class="kpi">
+            <div class="k">进行中订单</div>
+            <div class="v num" id="uActive">2</div>
+            <div class="d up">待服务 1 · 待评价 1</div>
+          </div>
+          <div class="kpi">
+            <div class="k">累计消费</div>
+            <div class="v num" id="uSpend">¥18,640</div>
+            <div class="d up">共 12 笔</div>
+          </div>
+        </div>
+
+        <div class="duo">
+          <div class="panel">
+            <header>我的订单<span class="hint">最近订单 · 用户视角</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>订单</th><th>服务</th><th>服务商</th><th class="n">金额</th><th>状态</th></tr></thead>
+              <tbody id="uOrdList"></tbody>
+            </table></div>
+          </div>
+          <div class="chart">
+            <h4>会员权益<span class="hint" id="uTierHint">金卡会员 · 可享</span></h4>
+            <div class="perks" id="uPerks"></div>
+          </div>
+        </div>
+
+        <div class="trio">
+          <div class="panel">
+            <header>关注的服务商<span class="hint">我的服务商</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>服务商</th><th>类型</th><th class="n">评分</th></tr></thead>
+              <tbody id="uFavList"></tbody>
+            </table></div>
+          </div>
+          <div class="panel">
+            <header>我的优惠券<span class="hint">优惠与权益</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>券</th><th class="n">面额</th><th>状态</th></tr></thead>
+              <tbody id="uCouponList"></tbody>
+            </table></div>
+          </div>
+          <div class="panel">
+            <header>我的评价<span class="hint">评价与反馈</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>服务</th><th class="n">评分</th><th>状态</th></tr></thead>
+              <tbody id="uRevList"></tbody>
+            </table></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════ 通用列表页（由 JS 渲染） ════════════ -->
+      <section class="page" id="pg-list">
+        <div class="pghead">
+          <div><h2 id="listTitle"></h2><div class="sub" id="listSub"></div></div>
+          <span class="sp"></span><span class="rolechip" id="listChip"></span>
+        </div>
+        <div class="toolbar">
+          <div class="filters" id="listFilters"></div>
+          <span class="sp"></span>
+          <span class="searchbox">
+            <input class="field" id="listSearch" placeholder="搜索关键词…" style="min-width:200px">
+            <button class="clr" id="listSearchClr" type="button" title="清除">✕</button>
+          </span>
+          <button class="btn" id="listSearchBtn">搜索</button>
+          <button class="btn" id="listExport">导出</button>
+          <button class="btn primary" id="listNew" style="display:none">＋ 新建</button>
+        </div>
+        <div class="panel">
+          <header id="listPanelHead"><span>数据列表</span><span class="hint" id="listCount"></span></header>
+          <div class="wrap"><table id="listTable"></table></div>
+          <div class="pager">
+            <span>共 <b class="num" id="listTotal">0</b> 条</span>
+            <button class="btn" disabled>‹ 上一页</button><button class="btn" disabled>下一页 ›</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════ 四态 ════════════ -->
+      <section class="page" id="pg-states">
+        <div class="panel" data-state="empty">
+          <div class="empty">
+            <svg class="ic" viewBox="0 0 256 256" fill="currentColor"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200Zm-68-56a12,12,0,1,1-12-12A12,12,0,0,1,148,144Z"/></svg>
+            <b>暂无待处理数据</b>
+            <span>当前筛选条件下没有记录。可切换筛选条件，或点击下方按钮创建第一条。</span>
+            <button class="btn primary">＋ 新建</button>
+          </div>
+        </div>
+        <div class="panel" data-state="loading">
+          <div class="loading"><div style="width:100%">
+            <div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div>
+            <div class="skel" style="width:60%"></div>
+          </div></div>
+        </div>
+        <div class="panel" data-state="error">
+          <div class="error">
+            <svg class="ic" viewBox="0 0 256 256" fill="currentColor"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,172Z"/></svg>
+            <b>数据加载失败</b>
+            <span>接口请求超时，可能是网络波动或服务暂不可用。请重试，或联系运维管理员。</span>
+            <button class="btn" id="retryBtn">↻ 重试</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- ══ 审核弹窗 ══ -->
+<div class="scrim" id="scrim"></div>
+<div class="modal" id="modal">
+  <h3><span class="rolechip" style="background:var(--accent-soft);color:var(--accent)" id="modalTag">审核</span> <span id="modalTitle">服务商入驻审核</span><span class="x" id="modalX">✕</span></h3>
+  <dl class="kv" id="mKv"></dl>
+  <div id="mForm"></div>
+  <div class="fd" id="mOpinionWrap" style="display:none">
+    <label>审核意见（驳回必填）</label>
+    <textarea rows="3" placeholder="填写通过 / 驳回的理由，将同步通知申请人…" id="mOpinion"></textarea>
+  </div>
+  <div class="acts">
+    <button class="btn" id="mEdit" style="display:none">编辑</button>
+    <button class="btn" id="mCancel">关闭</button>
+    <button class="btn" id="mReject" style="display:none">驳回</button>
+    <button class="btn primary" id="mApprove" style="display:none">通过</button>
+  </div>
+</div>
+
+<!-- ══ 用户数据调整弹窗 ══ -->
+<div class="modal" id="umodal">
+  <h3><span class="rolechip" style="background:var(--accent-soft);color:var(--accent)">调整</span> 用户数据调整<span class="x" id="uModalX">✕</span></h3>
+  <div class="fd"><label>目标用户</label><div class="uadjwho" id="uAdjWho">—</div></div>
+  <div class="duo-inline">
+    <div class="fd"><label>会员等级</label>
+      <select class="field" id="uAdjTier">
+        <option>普通用户</option><option>银卡会员</option><option>金卡会员</option><option>黑金会员</option>
+      </select>
+    </div>
+    <div class="fd"><label>账户余额（元）</label><input class="field" id="uAdjBal"></div>
+  </div>
+  <div class="duo-inline">
+    <div class="fd"><label>积分</label><input class="field" id="uAdjPts"></div>
+    <div class="fd"><label>调整类型</label>
+      <select class="field" id="uAdjType"><option>客服补偿</option><option>等级复核</option><option>功能/服务测试</option><option>人工修正</option></select>
+    </div>
+  </div>
+  <div class="fd"><label>调整说明（留痕）</label><textarea rows="2" id="uAdjNote" placeholder="记录调整原因，将同步写入用户操作日志…"></textarea></div>
+  <div class="acts">
+    <button class="btn" id="uAdjCancel">取消</button>
+    <button class="btn primary" id="uAdjSave">保存调整</button>
+  </div>
+</div>
+<script>
+/* ══════════ 图标（Phosphor · regular · MIT） ══════════ */
+const IC={
+layout:'M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,16V96H40V56ZM40,112H96v88H40Zm176,88H112V112H216v88Z',
+map:'M228.92,49.69a8,8,0,0,0-6.86-1.45L160.93,63.52,99.58,32.84a8,8,0,0,0-5.52-.6l-64,16A8,8,0,0,0,24,56V200a8,8,0,0,0,9.94,7.76l61.13-15.28,61.35,30.68A8.15,8.15,0,0,0,160,224a8,8,0,0,0,1.94-.24l64-16A8,8,0,0,0,232,200V56A8,8,0,0,0,228.92,49.69ZM104,52.94l48,24V203.06l-48-24ZM40,62.25l48-12v127.5l-48,12Zm176,131.5-48,12V78.25l48-12Z',
+building:'M232,224H208V32h8a8,8,0,0,0,0-16H40a8,8,0,0,0,0,16h8V224H24a8,8,0,0,0,0,16H232a8,8,0,0,0,0-16ZM64,32H192V224H160V184a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8v40H64Zm80,192H112V192h32ZM88,64a8,8,0,0,1,8-8h16a8,8,0,0,1,0,16H96A8,8,0,0,1,88,64Zm48,0a8,8,0,0,1,8-8h16a8,8,0,0,1,0,16H144A8,8,0,0,1,136,64ZM88,104a8,8,0,0,1,8-8h16a8,8,0,0,1,0,16H96A8,8,0,0,1,88,104Zm48,0a8,8,0,0,1,8-8h16a8,8,0,0,1,0,16H144A8,8,0,0,1,136,104ZM88,144a8,8,0,0,1,8-8h16a8,8,0,0,1,0,16H96A8,8,0,0,1,88,144Zm48,0a8,8,0,0,1,8-8h16a8,8,0,0,1,0,16H144A8,8,0,0,1,136,144Z',
+bag:'M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200ZM176,88a48,48,0,0,1-96,0,8,8,0,0,1,16,0,32,32,0,0,0,64,0,8,8,0,0,1,16,0Z',
+users:'M244.8,150.4a8,8,0,0,1-11.2-1.6A51.6,51.6,0,0,0,192,128a8,8,0,0,1-7.37-4.89,8,8,0,0,1,0-6.22A8,8,0,0,1,192,112a24,24,0,1,0-23.24-30,8,8,0,1,1-15.5-4A40,40,0,1,1,219,117.51a67.94,67.94,0,0,1,27.43,21.68A8,8,0,0,1,244.8,150.4ZM190.92,212a8,8,0,1,1-13.84,8,57,57,0,0,0-98.16,0,8,8,0,1,1-13.84-8,72.06,72.06,0,0,1,33.74-29.92,48,48,0,1,1,58.36,0A72.06,72.06,0,0,1,190.92,212ZM128,176a32,32,0,1,0-32-32A32,32,0,0,0,128,176ZM72,120a8,8,0,0,0-8-8A24,24,0,1,1,87.24,82a8,8,0,1,0,15.5-4A40,40,0,1,0,37,117.51,67.94,67.94,0,0,0,9.6,139.19a8,8,0,1,0,12.8,9.61A51.6,51.6,0,0,1,64,128,8,8,0,0,0,72,120Z',
+squares:'M104,40H56A16,16,0,0,0,40,56v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,104,40Zm0,64H56V56h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,64H152V56h48v48Zm-96,32H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm0,64H56V152h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Zm0,64H152V152h48v48Z',
+receipt:'M72,104a8,8,0,0,1,8-8h96a8,8,0,0,1,0,16H80A8,8,0,0,1,72,104Zm8,40h96a8,8,0,0,0,0-16H80a8,8,0,0,0,0,16ZM232,56V208a8,8,0,0,1-11.58,7.15L192,200.94l-28.42,14.21a8,8,0,0,1-7.16,0L128,200.94,99.58,215.15a8,8,0,0,1-7.16,0L64,200.94,35.58,215.15A8,8,0,0,1,24,208V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56Zm-16,0H40V195.06l20.42-10.22a8,8,0,0,1,7.16,0L96,199.06l28.42-14.22a8,8,0,0,1,7.16,0L160,199.06l28.42-14.22a8,8,0,0,1,7.16,0L216,195.06Z',
+wallet:'M216,64H56a8,8,0,0,1,0-16H192a8,8,0,0,0,0-16H56A24,24,0,0,0,32,56V184a24,24,0,0,0,24,24H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64Zm0,128H56a8,8,0,0,1-8-8V78.63A23.84,23.84,0,0,0,56,80H216Zm-48-60a12,12,0,1,1,12,12A12,12,0,0,1,168,132Z',
+coins:'M230.33,141.06a24.43,24.43,0,0,0-21.24-4.23l-41.84,9.62A28,28,0,0,0,140,112H89.94a31.82,31.82,0,0,0-22.63,9.37L44.69,144H16A16,16,0,0,0,0,160v40a16,16,0,0,0,16,16H120a7.93,7.93,0,0,0,1.94-.24l64-16a6.94,6.94,0,0,0,1.19-.4L226,182.82l.44-.2a24.6,24.6,0,0,0,3.93-41.56ZM16,160H40v40H16Zm203.43,8.21-38,16.18L119,200H56V155.31l22.63-22.62A15.86,15.86,0,0,1,89.94,128H140a12,12,0,0,1,0,24H112a8,8,0,0,0,0,16h32a8.32,8.32,0,0,0,1.79-.2l67-15.41.31-.08a8.6,8.6,0,0,1,6.3,15.9ZM164,96a36,36,0,0,0,5.9-.48,36,36,0,1,0,28.22-47A36,36,0,1,0,164,96Zm60-12a20,20,0,1,1-20-20A20,20,0,0,1,224,84ZM164,40a20,20,0,0,1,19.25,14.61,36,36,0,0,0-15,24.93A20.42,20.42,0,0,1,164,80a20,20,0,0,1,0-40Z',
+star:'M239.18,97.26A16.38,16.38,0,0,0,224.92,86l-59-4.76L143.14,26.15a16.36,16.36,0,0,0-30.27,0L90.11,81.23,31.08,86a16.46,16.46,0,0,0-9.37,28.86l45,38.83L53,211.75a16.38,16.38,0,0,0,24.5,17.82L128,198.49l50.53,31.08A16.4,16.4,0,0,0,203,211.75l-13.76-58.07,45-38.83A16.43,16.43,0,0,0,239.18,97.26Zm-15.34,5.47-48.7,42a8,8,0,0,0-2.56,7.91l14.88,62.8a.37.37,0,0,1-.17.48c-.18.14-.23.11-.38,0l-54.72-33.65a8,8,0,0,0-8.38,0L69.09,215.94c-.15.09-.19.12-.38,0a.37.37,0,0,1-.17-.48l14.88-62.8a8,8,0,0,0-2.56-7.91l-48.7-42c-.12-.1-.23-.19-.13-.5s.18-.27.33-.29l63.92-5.16A8,8,0,0,0,103,91.86l24.62-59.61c.08-.17.11-.25.35-.25s.27.08.35.25L153,91.86a8,8,0,0,0,6.75,4.92l63.92,5.16c.15,0,.24,0,.33.29S224,102.63,223.84,102.73Z',
+bell:'M221.8,175.94C216.25,166.38,208,139.33,208,104a80,80,0,1,0-160,0c0,35.34-8.26,62.38-13.81,71.94A16,16,0,0,0,48,200H88.81a40,40,0,0,0,78.38,0H208a16,16,0,0,0,13.8-24.06ZM128,216a24,24,0,0,1-22.62-16h45.24A24,24,0,0,1,128,216ZM48,184c7.7-13.24,16-43.92,16-80a64,64,0,1,1,128,0c0,36.05,8.28,66.73,16,80Z',
+shield:'M208,40H48A16,16,0,0,0,32,56v56c0,52.72,25.52,84.67,46.93,102.19,23.06,18.86,46,25.27,47,25.53a8,8,0,0,0,4.2,0c1-.26,23.91-6.67,47-25.53C198.48,196.67,224,164.72,224,112V56A16,16,0,0,0,208,40Zm0,72c0,37.07-13.66,67.16-40.6,89.42A129.3,129.3,0,0,1,128,223.62a128.25,128.25,0,0,1-38.92-21.81C61.82,179.51,48,149.3,48,112l0-56,160,0Z',
+gear:'M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm88-29.84q.06-2.16,0-4.32l14.92-18.64a8,8,0,0,0,1.48-7.06,107.21,107.21,0,0,0-10.88-26.25,8,8,0,0,0-6-3.93l-23.72-2.64q-1.48-1.56-3-3L186,40.54a8,8,0,0,0-3.94-6,107.71,107.71,0,0,0-26.25-10.87,8,8,0,0,0-7.06,1.49L130.16,40Q128,40,125.84,40L107.2,25.11a8,8,0,0,0-7.06-1.48A107.6,107.6,0,0,0,73.89,34.51a8,8,0,0,0-3.93,6L67.32,64.27q-1.56,1.49-3,3L40.54,70a8,8,0,0,0-6,3.94,107.71,107.71,0,0,0-10.87,26.25,8,8,0,0,0,1.49,7.06L40,125.84Q40,128,40,130.16L25.11,148.8a8,8,0,0,0-1.48,7.06,107.21,107.21,0,0,0,10.88,26.25,8,8,0,0,0,6,3.93l23.72,2.64q1.49,1.56,3,3L70,215.46a8,8,0,0,0,3.94,6,107.71,107.71,0,0,0,26.25,10.87,8,8,0,0,0,7.06-1.49L125.84,216q2.16.06,4.32,0l18.64,14.92a8,8,0,0,0,7.06,1.48,107.21,107.21,0,0,0,26.25-10.88,8,8,0,0,0,3.93-6l2.64-23.72q1.56-1.48,3-3L215.46,186a8,8,0,0,0,6-3.94,107.71,107.71,0,0,0,10.87-26.25,8,8,0,0,0-1.49-7.06Zm-16.1-6.5a73.93,73.93,0,0,1,0,8.68,8,8,0,0,0,1.74,5.48l14.19,17.73a91.57,91.57,0,0,1-6.23,15L187,173.11a8,8,0,0,0-5.1,2.64,74.11,74.11,0,0,1-6.14,6.14,8,8,0,0,0-2.64,5.1l-2.51,22.58a91.32,91.32,0,0,1-15,6.23l-17.74-14.19a8,8,0,0,0-5-1.75h-.48a73.93,73.93,0,0,1-8.68,0,8,8,0,0,0-5.48,1.74L100.45,215.8a91.57,91.57,0,0,1-15-6.23L82.89,187a8,8,0,0,0-2.64-5.1,74.11,74.11,0,0,1-6.14-6.14,8,8,0,0,0-5.1-2.64L46.43,170.6a91.32,91.32,0,0,1-6.23-15l14.19-17.74a8,8,0,0,0,1.74-5.48,73.93,73.93,0,0,1,0-8.68,8,8,0,0,0-1.74-5.48L40.2,100.45a91.57,91.57,0,0,1,6.23-15L69,82.89a8,8,0,0,0,5.1-2.64,74.11,74.11,0,0,1,6.14-6.14A8,8,0,0,0,82.89,69L85.4,46.43a91.32,91.32,0,0,1,15-6.23l17.74,14.19a8,8,0,0,0,5.48,1.74,73.93,73.93,0,0,1,8.68,0,8,8,0,0,0,5.48-1.74L155.55,40.2a91.57,91.57,0,0,1,15,6.23L173.11,69a8,8,0,0,0,2.64,5.1,74.11,74.11,0,0,1,6.14,6.14,8,8,0,0,0,5.1,2.64l22.58,2.51a91.32,91.32,0,0,1,6.23,15l-14.19,17.74A8,8,0,0,0,199.87,123.66Z',
+house:'M219.31,108.68l-80-80a16,16,0,0,0-22.62,0l-80,80A15.87,15.87,0,0,0,32,120v96a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V160h32v56a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V120A15.87,15.87,0,0,0,219.31,108.68ZM208,208H160V152a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8v56H48V120l80-80,80,80Z',
+desktop:'M208,40H48A24,24,0,0,0,24,64V176a24,24,0,0,0,24,24h72v16H96a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16H136V200h72a24,24,0,0,0,24-24V64A24,24,0,0,0,208,40ZM48,56H208a8,8,0,0,1,8,8v80H40V64A8,8,0,0,1,48,56ZM208,184H48a8,8,0,0,1-8-8V160H216v16A8,8,0,0,1,208,184Z',
+stack:'M230.91,172A8,8,0,0,1,228,182.91l-96,56a8,8,0,0,1-8.06,0l-96-56A8,8,0,0,1,36,169.09l92,53.65,92-53.65A8,8,0,0,1,230.91,172ZM220,121.09l-92,53.65L36,121.09A8,8,0,0,0,28,134.91l96,56a8,8,0,0,0,8.06,0l96-56A8,8,0,1,0,220,121.09ZM24,80a8,8,0,0,1,4-6.91l96-56a8,8,0,0,1,8.06,0l96,56a8,8,0,0,1,0,13.82l-96,56a8,8,0,0,1-8.06,0l-96-56A8,8,0,0,1,24,80Zm23.88,0L128,126.74,208.12,80,128,33.26Z',
+package:'M223.68,66.15,135.68,18a15.88,15.88,0,0,0-15.36,0l-88,48.17a16,16,0,0,0-8.32,14v95.64a16,16,0,0,0,8.32,14l88,48.17a15.88,15.88,0,0,0,15.36,0l88-48.17a16,16,0,0,0,8.32-14V80.18A16,16,0,0,0,223.68,66.15ZM128,32l80.34,44-29.77,16.3-80.35-44ZM128,120,47.66,76l33.9-18.56,80.34,44ZM40,90l80,43.78v85.79L40,175.82Zm176,85.78h0l-80,43.79V133.82l32-17.51V152a8,8,0,0,0,16,0V107.55L216,90v85.77Z',
+idcard:'M200,112a8,8,0,0,1-8,8H152a8,8,0,0,1,0-16h40A8,8,0,0,1,200,112Zm-8,24H152a8,8,0,0,0,0,16h40a8,8,0,0,0,0-16Zm40-80V200a16,16,0,0,1-16,16H40a16,16,0,0,1-16-16V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56ZM216,200V56H40V200H216Zm-80.26-34a8,8,0,1,1-15.5,4c-2.63-10.26-13.06-18-24.25-18s-21.61,7.74-24.25,18a8,8,0,1,1-15.5-4,39.84,39.84,0,0,1,17.19-23.34,32,32,0,1,1,45.12,0A39.76,39.76,0,0,1,135.75,166ZM96,136a16,16,0,1,0-16-16A16,16,0,0,0,96,136Z',
+caret:'M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z'
+};
+const ic=(n,s=18)=>`<svg class="ic" width="${s}" height="${s}" viewBox="0 0 256 256" fill="currentColor"><path d="${IC[n]}"/></svg>`;
+</script>
+<script>
+/* ══════════ 三层菜单（一个后端 · 分层治理） ══════════ */
+const MENU={
+console:[
+ {g:'总览与治理',items:[
+  {id:'dashboard',l:'经营总览',i:'layout'},
+  {id:'regions',l:'区域管理',i:'map'},
+  {id:'agents',l:'代理商管理',i:'building'},
+  {id:'review',l:'服务商管理',i:'bag',badge:12}]},
+ {g:'运营监管',items:[
+  {id:'users',l:'用户管理',i:'users'},
+  {id:'templates',l:'模板审核',i:'squares'},
+  {id:'orders',l:'订单管理',i:'receipt'}]},
+ {g:'财务中心',items:[
+  {id:'wallets',l:'钱包总览',i:'wallet'},
+  {id:'withdrawals',l:'提现审核',i:'coins',badge:3}]},
+ {items:[
+  {id:'feedback',l:'评价与反馈中心',i:'star',badge:2},
+  {id:'messages',l:'消息中心',i:'bell',badge:1}]},
+ {g:'系统',items:[
+  {id:'roles',l:'角色与权限',i:'shield'},
+  {id:'settings',l:'系统设置',i:'gear'}]}
+],
+agent:[
+ {g:'代理商中心',items:[
+  {id:'dashboard',l:'辖区概览',i:'house'},
+  {id:'a-users',l:'辖区用户',i:'users'},
+  {id:'a-providers',l:'辖区服务商',i:'building'},
+  {id:'a-orders',l:'辖区订单',i:'receipt'},
+  {id:'a-wallet',l:'财务中心',i:'wallet'},
+  {id:'a-feedback',l:'评价与反馈中心',i:'star',badge:2},
+  {id:'a-messages',l:'消息中心',i:'bell',badge:1},
+  {id:'a-roles',l:'角色与权限',i:'shield'}]}
+],
+provider:[
+ {g:'服务商中心',items:[
+  {id:'dashboard',l:'我的工作台',i:'desktop'},
+  {id:'p-services',l:'服务管理',i:'stack'},
+  {id:'p-orders',l:'订单处理',i:'package'},
+  {id:'p-qualification',l:'资质管理',i:'idcard'},
+  {id:'p-wallet',l:'财务中心',i:'coins'},
+  {id:'p-feedback',l:'评价与反馈中心',i:'star'},
+  {id:'p-messages',l:'消息中心',i:'bell'},
+  {id:'p-roles',l:'角色与权限',i:'shield'}]}
+],
+user:[
+ {g:'用户中心',items:[
+  {id:'dashboard',l:'用户工作台',i:'house'},
+  {id:'u-orders',l:'我的订单',i:'receipt'},
+  {id:'u-providers',l:'我的服务商',i:'building'},
+  {id:'u-coupons',l:'优惠与权益',i:'bag'},
+  {id:'u-wallet',l:'我的钱包',i:'coins'},
+  {id:'u-feedback',l:'评价与反馈',i:'star'},
+  {id:'u-messages',l:'消息中心',i:'bell'}]}
+]};
+const VIEWMETA={
+ console:{crumb:'管理总台',chip:'总台 · 全盘治理'},
+ agent:{crumb:'代理商中心',chip:'代理商 · 天山区'},
+ provider:{crumb:'服务商中心',chip:'服务商 · 特约设计'},
+ user:{crumb:'用户视角',chip:'用户 · 会员权益'}
+};
+</script>
+<script>
+/* ══════════ 列表页数据（页面 = 菜单项 → PAGES[key]） ══════════
+   单元格以 #ok/#warn/#bad/#mut/#ac 开头 → 渲染为状态标签 */
+const PAGES={
+/* ── 总台 13 项 ── */
+regions:{t:'区域管理',s:'行政区划树 · 总台维护',chip:'总台',fcol:1,f:[{t:'全部区域'},{t:'省级'},{t:'市级'},{t:'区县级'}],
+ h:[{t:'区域'},{t:'级别'},{t:'代理商'},{t:'服务商数',n:1},{t:'用户数',n:1}],
+ r:[['新疆维吾尔自治区','省级','全域','326','8,432'],['乌鲁木齐市','市级','天山区/沙依巴克区/高新区','168','4,120'],['天山区','区县级','乌鲁木齐天山区','38','1,204'],['沙依巴克区','区县级','乌鲁木齐沙依巴克','52','1,376'],['高新区（新市区）','区县级','乌鲁木齐高新','41','1,082']],
+ acts:'edit',new:true},
+agents:{t:'代理商管理',s:'代理商与辖区绑定 · 绩效排行',chip:'总台',fcol:4,f:[{t:'全部'},{t:'正常'},{t:'待复核'},{t:'停用'}],
+ h:[{t:'代理商'},{t:'辖区'},{t:'服务商数',n:1},{t:'月流水',n:1},{t:'状态'}],
+ r:[['乌鲁木齐天山区','天山区','38','¥18,320','#ok 正常'],['乌鲁木齐沙依巴克','沙依巴克区','52','¥26,480','#ok 正常'],['乌鲁木齐高新','高新区','41','¥21,150','#warn 待复核'],['乌鲁木齐水磨沟','水磨沟区','29','¥12,640','#bad 停用']],
+ acts:'edit',new:true},
+review:{t:'服务商管理',s:'入驻审核队列 · 总台统一把关（本期已切换）',chip:'总台 · 审核队列',fcol:6,f:[{t:'全部'},{t:'已通过'},{t:'已驳回'},{t:'待审核'}],
+ h:[{t:'申请人'},{t:'手机号'},{t:'服务类型'},{t:'所属区域'},{t:'资质'},{t:'提交时间'},{t:'状态'}],
+ r:[['麦麦提·艾力','138****2210','婚庆主持','天山区','营业执照/实名认证','08-27 10:12','#warn 待审核'],
+     ['古丽娜尔','135****8044','摄影摄像','沙依巴克区','营业执照/案例集','08-27 09:41','#warn 待审核'],
+     ['王磊','186****3302','宴会设计','高新区','营业执照/资质证书','08-27 08:55','#warn 待审核'],
+     ['阿迪力江','139****1176','花艺布置','天山区','营业执照/实名认证','08-26 18:20','#warn 待审核'],
+     ['李婷','150****6621','乐队演出','天山区','营业执照/演出许可','08-26 16:03','#ok 已通过'],['赵敏','133****5512','司仪培训','高新区','营业执照/资质证书','08-26 14:02','#bad 已驳回']],
+ acts:'review'},
+users:{t:'用户管理',s:'全量用户监督 · 角色/状态/启停',chip:'总台',fcol:2,f:[{t:'全部用户'},{t:'客户',v:'客户'},{t:'服务商',v:'服务商'},{t:'代理商',v:'代理商'},{t:'管理员',v:'管理员'}],
+ h:[{t:'用户'},{t:'手机号'},{t:'角色'},{t:'所属区域'},{t:'注册时间'},{t:'状态'}],
+ r:[['麦麦提·艾力','138****2210','服务商','天山区','2026-05-12','#ok 正常'],['乌鲁木齐天山区','400-8000','代理商','天山区','2026-04-02','#ok 正常'],['王磊','186****3302','客户','高新区','2026-06-21','#ok 正常'],['刘倩','137****4419','客户','天山区','2026-07-30','#warn 待复核'],['张敏','189****9001','管理员','总部','2026-02-14','#ok 正常']],
+ acts:'edit'},
+templates:{t:'模板审核',s:'请柬模板 · 待审/已审/下架/申诉',chip:'总台',fcol:4,f:[{t:'全部'},{t:'已上架'},{t:'待审核'},{t:'已下架'}],
+ h:[{t:'模板'},{t:'作者'},{t:'类型'},{t:'价格',n:1},{t:'状态'}],
+ r:[['「红绸喜字」电子请柬','麦麦提设计','婚庆', '¥29','#warn 待审核'],['「鎏金岁月」H5 请柬','古丽工作室','宴会','¥49','#warn 待审核'],['「青梅竹马」手绘风','王磊工坊','婚庆','¥19','#ok 已上架'],['「天山婚礼」实景','阿迪力摄影','摄影','¥39','#bad 已下架']],
+ acts:'review',new:true},
+orders:{t:'订单管理',s:'全量订单 · 履约监督',chip:'总台',fcol:4,f:[{t:'全部'},{t:'待接单'},{t:'履约中'},{t:'已完成'},{t:'售后'}],
+ h:[{t:'订单号'},{t:'用户'},{t:'类型'},{t:'金额',n:1},{t:'状态'},{t:'下单时间'}],
+ r:[['QJ202608270013','刘倩','摄影摄像','¥1,280','#warn 待接单','08-27 09:20'],['QJ202608270011','张伟','婚庆主持','¥880','#ac 履约中','08-27 08:42'],['QJ202608260098','热依汗','花艺布置','¥520','#ok 已完成','08-26 19:15'],['QJ202608260071','王磊','宴会设计','¥2,400','#bad 售后','08-26 14:03']],
+ acts:null},
+wallets:{t:'钱包总览',s:'全量资金总账',chip:'总台',fcol:1,f:[{t:'全部'},{t:'代理商'},{t:'服务商'}],
+ h:[{t:'主体'},{t:'类型'},{t:'可用余额',n:1},{t:'冻结',n:1},{t:'累计流水',n:1},{t:'状态'}],
+ r:[['乌鲁木齐天山区','代理商','¥3,120','¥260','¥18,320','#ok 正常'],['麦麦提·艾力','服务商','¥1,240','¥320','¥6,880','#ok 正常'],['古丽娜尔','服务商','¥2,060','¥0','¥9,540','#ok 正常'],['王磊工坊','服务商','¥0','¥0','¥0','#mut 未激活']],
+ acts:null},
+withdrawals:{t:'提现审核',s:'提现审批 · 到账确认',chip:'总台 · 财务中心',fcol:4,f:[{t:'全部'},{t:'已通过'},{t:'已驳回'},{t:'待审核'}],
+ h:[{t:'服务商'},{t:'申请金额',n:1},{t:'收款账户'},{t:'申请时间'},{t:'状态'}],
+ r:[['麦麦提·艾力','¥800','招商银行 ****2210','08-27 09:02','#warn 待审核'],['古丽娜尔','¥1,500','工商银行 ****8044','08-26 20:31','#warn 待审核'],['阿迪力江','¥600','建设银行 ****1176','08-26 17:44','#warn 待审核'],['李婷','¥400','农业银行 ****6621','08-25 15:20','#ok 已通过'],['王磊','¥900','工商银行 ****3302','08-24 11:08','#bad 已驳回']],
+ acts:'review'},
+feedback:{t:'评价与反馈中心',s:'全部反馈 / 升级仲裁 · 同业务两段合一',chip:'总台',fcol:4,f:[{t:'全部反馈'},{t:'升级仲裁'},{t:'协商中'},{t:'已关闭'}],
+ h:[{t:'编号'},{t:'类型'},{t:'反馈人'},{t:'对象'},{t:'状态'},{t:'时间'}],
+ r:[['FB-2709','服务投诉','张伟','麦麦提·艾力','#ac 升级仲裁','08-27 09:10'],['FB-2705','价格争议','刘倩','古丽娜尔','#warn 协商中','08-27 08:33'],['FB-2698','交付延期','热依汗','阿迪力江','#ac 升级仲裁','08-26 21:02'],['FB-2683','服务满意','王磊','李婷','#ok 已关闭','08-26 12:40']],
+ acts:'edit'},
+messages:{t:'消息中心',s:'收件箱 / 权威公告审核 · 同业务两段合一',chip:'总台',fcol:3,f:[{t:'收件箱',v:'读'},{t:'公告审核',v:'待审核'},{t:'已发布',v:'已发布'}],
+ h:[{t:'标题'},{t:'类型'},{t:'接收范围'},{t:'状态'},{t:'发布时间'}],
+ r:[['【系统】今日新增 12 条入驻申请待处理','系统通知','总台管理员','#ok 已读','08-27 08:00'],['【用户】王磊 提交了售后申请','用户消息','总台管理员','#warn 未读','08-26 22:15'],['关于服务商入驻审核规范调整的通知','权威公告','全部服务商','#warn 待审核','08-27 09:30'],['平台 8 月运营月报','经营公告','总台管理员','#ok 已发布','08-26 18:00'],['提现到账延迟说明','运维通知','相关服务商','#ok 已发布','08-26 15:20']],
+ acts:'review',new:true},
+roles:{t:'角色与权限',s:'角色分层治理 · 位阶：超级管理员 > 运维管理员 > 服务审核员 = 财务管理员 > 在线客服',chip:'总台',fcol:1,f:[{t:'全部'},{t:'总台管理员',v:'总台'},{t:'代理商',v:'代理商'},{t:'服务商',v:'服务商'},{t:'自定义角色',fcol:6,v:'自定义'}],
+ h:[{t:'角色'},{t:'归属层级'},{t:'账号数',n:1},{t:'数据作用域'},{t:'功能权限'},{t:'权限位阶'},{t:'类型'}],
+ r:[['超级管理员','总台','1','全平台','全量读写 · 可创建/授权角色','最高','#ac 内置',['用户查询','用户编辑','入驻审核','资质审核','业务升级审核','模板/服务上架','内容下架','模板审核','资质管理','订单查询','订单处理','售后处理','流水查询','提现审核','提现代操作','对账','券/权益配置','优惠券发放','权益查询','反馈处理','申诉仲裁','公告发布','公告审核','站内信收发','角色管理','区域/代理商管理','系统设置','列表数据导出']],['运维管理员','总台','2','全平台','默认只读 · 授权可写部分模块','高','#ac 内置',['用户查询','订单查询','流水查询','权益查询','反馈处理','列表数据导出']],['服务审核员','总台','4','全平台（业务审核域）','只读 + 审核（入驻/模板/公告/申诉）','中','#ac 内置',['入驻审核','资质审核','业务升级审核','模板审核','反馈处理','申诉仲裁','公告审核','列表数据导出']],['财务管理员','总台','2','全平台（财务域）','财务全权（提现/钱包/流水/对账）','中','#ac 内置',['流水查询','提现审核','提现代操作','对账','权益查询','列表数据导出']],['在线客服','总台','6','全平台（服务域）','查询 + 回复 · 无业务写权限','低','#ac 内置',['用户查询','订单查询','反馈处理','站内信收发']],['代理商','代理商','3','本辖区','管辖范围监督/审核/有限处理','业务主体','#mut 内置',['用户查询','订单查询','订单处理','反馈处理','申诉仲裁','站内信收发','列表数据导出']],['服务商','服务商','326','自身','自身服务订单/消息处理','业务主体','#mut 内置',['订单查询','订单处理','售后处理','资质管理','站内信收发','列表数据导出']],['辖区活动专员','代理商','2','本辖区','辖区营销活动执行 · 只读','按授权','#warn 自定义',['优惠券发放','权益查询','反馈处理','列表数据导出']]],
+ acts:'edit',new:true},
+settings:{t:'系统设置',s:'全局配置 · 仅超级管理员可改',chip:'总台',fcol:0,f:[{t:'全部'},{t:'基础'},{t:'费用'},{t:'审核'},{t:'通知'}],
+ h:[{t:'分类'},{t:'配置项'},{t:'当前值'},{t:'说明'}],
+ r:[['基础','平台名称','庆柬云','平台对外展示名称'],['费用','平台抽成比例','10%','总台流水抽成（服务商侧）'],['费用','提现最低金额','¥100','低于该金额不可提现'],['审核','反馈协商时限','48 小时','超时自动升级总台仲裁'],['审核','公告审核','开启','发布前需总台审核'],['通知','短信通知','开启','关键节点短信提醒']],
+ acts:'cfg',new:true},
+/* ── 代理商中心 ── */
+'a-users':{t:'辖区用户',s:'regionPath 数据隔离 · 仅本辖区',chip:'代理商 · 天山区',fcol:2,f:[{t:'全部'},{t:'客户',v:'客户'},{t:'服务商',v:'服务商'}],
+ h:[{t:'用户'},{t:'手机号'},{t:'角色'},{t:'注册时间'},{t:'状态'}],
+ r:[['刘倩','137****4419','客户','2026-07-30','#ok 正常'],['张伟','186****1204','客户','2026-06-18','#ok 正常'],['热依汗','139****8823','客户','2026-05-26','#warn 待复核'],['麦麦提·艾力','138****2210','服务商','2026-05-12','#ok 正常']],
+ acts:'view'},
+'a-providers':{t:'辖区服务商',s:'入驻初审 / 复审 / 业务升级 · 辖区把关',chip:'代理商 · 天山区',fcol:4,f:[{t:'全部'},{t:'待初审'},{t:'待复审'},{t:'业务升级审核'},{t:'已通过'}],
+ h:[{t:'服务商'},{t:'类型'},{t:'资质'},{t:'本月接单',n:1},{t:'状态'}],
+ r:[['麦麦提·艾力','婚庆主持','已认证','6','#ok 已通过'],['阿迪力江','花艺布置','已认证','4','#ok 已通过'],['新入驻·买买提','摄影摄像','待初审','0','#warn 待初审'],['新入驻·小雅','化妆造型','待初审','0','#warn 待初审'],['新入驻·古丽','花艺布置','资质待核','0','#mut 待复审'],['阿依古丽','婚庆主持（新增）','已认证','2','#ac 业务升级审核']],
+ acts:'review',new:true},
+'a-orders':{t:'辖区订单',s:'辖区履约跟踪',chip:'代理商 · 天山区',fcol:4,f:[{t:'全部'},{t:'履约中'},{t:'已完成'},{t:'售后'}],
+ h:[{t:'订单号'},{t:'用户'},{t:'类型'},{t:'金额',n:1},{t:'状态'},{t:'时间'}],
+ r:[['QJ202608270013','刘倩','摄影摄像','¥1,280','#bad 售后','08-27 09:20'],['QJ202608270009','张伟','婚庆主持','¥880','#ac 履约中','08-27 08:15'],['QJ202608260098','热依汗','花艺布置','¥520','#ok 已完成','08-26 19:15']],
+ acts:null},
+'a-wallet':{t:'财务中心',s:'辖区结算 · 抽成与分账',chip:'代理商 · 天山区',fcol:1,f:[{t:'全部'},{t:'入账'},{t:'挂账'},{t:'出账'}],
+ h:[{t:'科目'},{t:'类型'},{t:'金额',n:1},{t:'时间'},{t:'状态'}],
+ r:[['辖区抽成 8 月','入账','+¥1,832','08-27 08:00','#ok 已入账'],['服务商结算打款','出账','-¥6,400','08-26 18:00','#ok 已出账'],['辖区流水 8 月','入账','+¥18,320','08-26 08:00','#ok 已入账'],['服务商 麦麦提 分成待结','挂账','¥1,260','08-27 09:20','#warn 挂账中']],
+ acts:null},
+'a-feedback':{t:'评价与反馈中心',s:'辖区协商 · 超时升级总台',chip:'代理商 · 天山区',fcol:4,f:[{t:'辖区反馈'},{t:'协商中'},{t:'已处理'},{t:'可升级'}],
+ h:[{t:'编号'},{t:'类型'},{t:'用户'},{t:'对象'},{t:'状态'},{t:'时间'}],
+ r:[['FB-2709','服务投诉','张伟','麦麦提·艾力','#warn 协商中','08-27 09:10'],['FB-2705','价格争议','刘倩','古丽娜尔','#warn 协商中','08-27 08:33'],['FB-2693','交付延期','热依汗','阿迪力江','#ac 可升级','08-26 19:40'],['FB-2688','服务投诉','阿娜尔','新入驻·小雅','#ok 已处理','08-26 16:20']],
+ acts:'edit'},
+'a-messages':{t:'消息中心',s:'待办驱动 · 消息统一处理',chip:'代理商 · 天山区',fcol:2,f:[{t:'全部'},{t:'待处理',v:['未读','待审核']},{t:'已处理',v:['已读','已发布']},{t:'我发布的',v:'已发布'}],
+ h:[{t:'标题'},{t:'类型'},{t:'状态'},{t:'时间'}],
+ r:[['辖区活动通知（待审）','辖区公告','#warn 待审核','08-27 09:02'],['辖区服务商上新提醒','系统通知','#ok 已读','08-26 16:30'],['用户 张伟 提交售后申请','用户消息','#warn 未读','08-26 20:15'],['辖区 8 月运营公告','辖区公告','#ok 已发布','08-25 18:00']],
+ acts:'review',new:true},
+'a-roles':{t:'角色与权限',s:'辖区角色管理 · 权限不超代理商（REGION）',chip:'代理商 · 天山区',fcol:5,f:[{t:'全部'},{t:'辖区角色',v:'内置'},{t:'自定义角色',v:'自定义'}],
+ h:[{t:'角色'},{t:'归属层级'},{t:'账号数',n:1},{t:'数据作用域'},{t:'功能权限'},{t:'类型'}],
+ r:[['代理商','代理商','3','本辖区','管辖范围监督/审核/有限处理','#mut 内置',['用户查询','用户编辑','订单查询','订单处理','反馈处理','申诉仲裁','站内信收发','列表数据导出']],['辖区服务审核员','代理商','2','本辖区（业务审核域）','只读 + 审核（入驻/模板/申诉）','#ac 内置',['入驻审核','资质审核','业务升级审核','反馈处理','申诉仲裁','列表数据导出']],['辖区财务管理员','代理商','1','本辖区（财务域）','辖区结算/抽成/提现处理','#ac 内置',['流水查询','提现审核','提现代操作','对账','列表数据导出']],['辖区客服','代理商','3','本辖区（服务域）','查询 + 回复 · 无业务写权限','#ac 内置',['用户查询','订单查询','反馈处理','站内信收发']],['辖区活动专员','代理商','2','本辖区','辖区营销活动执行 · 只读','#warn 自定义',['券/权益配置','优惠券发放','权益查询','反馈处理','列表数据导出']]],
+ acts:'edit',new:true},
+/* ── 服务商中心 ── */
+'p-services':{t:'服务管理',s:'服务上架 / SKU / 作品集',chip:'服务商 · 特约设计',fcol:3,f:[{t:'全部'},{t:'在售'},{t:'草稿'},{t:'已下架'}],
+ h:[{t:'服务'},{t:'类型'},{t:'价格',n:1},{t:'状态'}],
+ r:[['「红绸喜字」电子请柬','婚庆','¥29','#ok 在售'],['「鎏金岁月」H5 请柬','宴会','¥49','#ok 在售'],['「青梅竹马」手绘风','婚庆','¥19','#mut 草稿'],['「天山婚礼」实景','摄影','¥39','#bad 已下架']],
+ acts:'edit',new:true},
+'p-orders':{t:'订单处理',s:'接单 / 履约 / 交付',chip:'服务商 · 特约设计',fcol:4,f:[{t:'全部'},{t:'待接单'},{t:'履约中'},{t:'已完成'}],
+ h:[{t:'订单号'},{t:'用户'},{t:'服务'},{t:'金额',n:1},{t:'状态'},{t:'时间'}],
+ r:[['QJ202608270013','刘倩','摄影摄像','¥1,280','#warn 待接单','08-27 09:20'],['QJ202608270011','张伟','婚庆主持','¥880','#ac 履约中','08-27 08:42'],['QJ202608260098','热依汗','花艺布置','¥520','#ok 已完成','08-26 19:15']],
+ acts:null},
+'p-qualification':{t:'资质管理',s:'资质 / 实名 / 服务角色',chip:'服务商 · 特约设计',fcol:3,f:[{t:'全部'},{t:'有效'},{t:'待审核'},{t:'已过期'}],
+ h:[{t:'资质项'},{t:'编号'},{t:'有效期'},{t:'审核状态'}],
+ r:[['营业执照','91650100****2210','2026-03-01 ~ 2029-02-28','#ok 有效'],['演出许可证','650102****0802','2026-06-01 ~ 2027-05-31','#ok 有效'],['实名认证','—','—','#warn 待审核'],['卫生许可证','650102****1105','2025-01-01 ~ 2025-12-31','#bad 已过期']],
+ acts:'edit'},
+'p-wallet':{t:'财务中心',s:'收益 / 提现',chip:'服务商 · 特约设计',fcol:1,f:[{t:'全部'},{t:'入账'},{t:'挂账'},{t:'提现'}],
+ h:[{t:'科目'},{t:'类型'},{t:'金额',n:1},{t:'时间'},{t:'状态'}],
+ r:[['订单结算 8 月','入账','+¥1,240','08-26 18:00','#ok 已入账'],['提现申请 ¥800','提现','-¥800','08-27 09:02','#warn 审核中'],['订单结算 7 月','入账','+¥1,620','07-31 18:00','#ok 已入账'],['订单 QJ202608260098 结算待入账','挂账','¥520','08-27 10:05','#warn 挂账中']],
+ acts:null},
+'p-feedback':{t:'评价与反馈中心',s:'我的反馈 / 被诉回应 / 申诉',chip:'服务商 · 特约设计',fcol:1,f:[{t:'我的反馈'},{t:'被诉回应'},{t:'申诉'}],
+ h:[{t:'编号'},{t:'类型'},{t:'对象'},{t:'状态'},{t:'时间'}],
+ r:[['FB-2709','被诉回应','用户 张伟','#warn 待回应','08-27 09:10'],['FB-2698','申诉','总台仲裁','#ac 申诉中','08-26 21:02']],
+ acts:'edit'},
+'p-messages':{t:'消息中心',s:'待办驱动 · 消息统一处理',chip:'服务商 · 特约设计',fcol:3,f:[{t:'全部'},{t:'待处理',v:['未读','待补材料','待回应']},{t:'已处理',v:['已读','审核中','已到账']}],
+ h:[{t:'标题'},{t:'类型'},{t:'时间'},{t:'状态'}],
+ r:[['关于服务商入驻审核规范调整的通知','权威公告','08-27 09:30','#ac 未读'],['资质复核待补材料通知','资质通知','08-27 10:20','#warn 待补材料'],['用户 阿依古丽 提交服务投诉','用户消息','08-27 11:05','#warn 待回应'],['订单 QJ202608270011 已接单','订单通知','08-27 08:45','#ok 已读'],['业务升级申请审核中','资质通知','08-26 17:30','#ac 审核中'],['8 月订单结算已到账','财务通知','08-26 18:00','#ok 已到账']],
+ acts:null},
+'p-roles':{t:'角色与权限',s:'服务角色管理 · 权限不超自身（SELF）',chip:'服务商 · 特约设计',fcol:5,f:[{t:'全部'},{t:'服务角色',v:'内置'},{t:'自定义角色',v:'自定义'}],
+ h:[{t:'角色'},{t:'归属层级'},{t:'账号数',n:1},{t:'数据作用域'},{t:'功能权限'},{t:'类型'}],
+ r:[['服务商','服务商','326','自身','自身服务订单/消息处理','#mut 内置',['订单查询','订单处理','售后处理','资质管理','站内信收发','列表数据导出']],['客服专员','服务商','4','自身（服务域）','查询 + 回复 · 无业务写权限','#ac 内置',['站内信收发','订单查询','反馈处理']],['订单专员','服务商','2','自身（订单域）','订单接单/履约/交付处理','#ac 内置',['订单查询','订单处理','售后处理','列表数据导出']],['设计助理','服务商','1','自身（内容域）','服务上架/作品集 · 只读','#warn 自定义',['模板/服务上架','内容下架','列表数据导出']]],
+ acts:'edit',new:true}
+};
+</script>
+<script>
+/* ══════════ 应用逻辑 ══════════ */
+const $=s=>document.querySelector(s);
+let VIEW='console', PAGE='dashboard', RO=false;
+/* 对象视角：CUR 表示当前正在查看的具体代理商/服务商（仅总台管理员在代理/服务商视角下使用） */
+let CUR={type:'agent',obj:null};
+const num=x=>(x||0).toLocaleString('en-US');
+function objSource(){return CUR.type==='agent'?AGENTS:CUR.type==='provider'?PROVIDERS:USERS;}
+function objTagName(){return CUR.type==='agent'?'代理商':CUR.type==='provider'?'服务商':'用户';}
+function isViewAs(){return VIEW==='agent'||VIEW==='provider'||VIEW==='user';}
+
+/* ── 单元格渲染：以 #tag 开头 → 状态标签 ── */
+const TAGMAP={ok:'ok',warn:'warn',bad:'bad',mut:'mut',ac:'ac'};
+function cell(c){
+  if(typeof c==='string'&&c[0]==='#'){const i=c.indexOf(' ');const tag=c.slice(1,i);const txt=c.slice(i+1);
+    return `<span class="tag ${TAGMAP[tag]||'mut'}">${txt}</span>`;}
+  return c;
+}
+
+/* ── 侧栏导航 ── */
+function renderNav(){
+  const nav=$('#nav');let h='';
+  MENU[VIEW].forEach(g=>{
+    if(g.g)h+=`<div class="grp">${g.g}</div>`;
+    g.items.forEach(it=>{
+      h+=`<div class="mi ${it.id===PAGE?'on':''}" data-p="${it.id}">${ic(it.i)}
+        <span class="lbl">${it.l}</span>${it.badge?`<span class="bdg">${it.badge}</span>`:''}</div>`;});
+  });
+  nav.innerHTML=h;
+  nav.querySelectorAll('.mi').forEach(el=>el.onclick=()=>goPage(el.dataset.p));
+}
+
+/* ── 列表页渲染 ── */
+let LIST_FILTER=0, LIST_KEY='';
+function renderList(key){
+  const p=PAGES[key];if(!p){renderNav();return;}
+  $('#listTitle').textContent=p.t;
+  $('#listSub').textContent=p.s;
+  $('#listChip').textContent=p.chip;
+  // 行级过滤：fcol 分类标签 + 搜索关键词（保留原始行索引）
+  let list=p.r.map((r,i)=>({r,i,idx:i}));
+  if(p.fcol!==undefined&&LIST_FILTER>0){
+    const fc=p.f[LIST_FILTER].fcol!==undefined?p.f[LIST_FILTER].fcol:p.fcol;
+    const fv=p.f[LIST_FILTER].v||p.f[LIST_FILTER].t;
+    list=list.filter(x=>{const t=String(x.r[fc]);return Array.isArray(fv)?fv.some(v=>t.indexOf(v)>=0):t.indexOf(fv)>=0;});
+  }
+  if(LIST_KEY)list=list.filter(x=>x.r.some(v=>String(v).indexOf(LIST_KEY)>=0));
+  const f=$('#listFilters');f.innerHTML='';
+  p.f.forEach((c,i)=>{
+    const el=document.createElement(p.fcol!==undefined?'button':'span');
+    el.className='chip'+(i===LIST_FILTER?' on':'');
+    el.textContent=c.t+(c.n?` ${c.n}`:'');
+    if(p.fcol!==undefined)el.onclick=()=>{LIST_FILTER=(i===LIST_FILTER?0:i);renderList(key);};
+    f.appendChild(el);});
+  let th='';p.h.forEach(c=>th+=`<th class="${c.n?'n':''}">${c.t}</th>`);
+  if(p.acts)th+='<th>操作</th>';
+  let tr='';
+  list.forEach((x,i)=>{const r=x.r;
+    let tds='';p.h.forEach((c,j)=>{tds+=`<td class="${c.n?'n':''}">${cell(r[j])}</td>`;});
+    if(p.acts){
+      const mm=MODAL_META[key]||{};
+      const roCls=RO?' data-ro':'';
+      if(p.acts==='review'){
+        tds+=`<td><div class="acts"><span class="l" data-a="view" data-i="${x.idx}">查看</span><span class="l ok" data-a="ok" data-i="${x.idx}"${roCls}>通过</span><span class="l bad" data-a="no" data-i="${x.idx}"${roCls}>驳回</span></div></td>`;
+      }else if(p.acts==='ro'||mm.viewOnly){
+        tds+=`<td><div class="acts"><span class="l" data-a="view" data-i="${x.idx}">查看</span></div></td>`;
+      }else if(p.acts==='cfg'){
+        tds+=`<td><div class="acts"><span class="l dim" data-a="edit" data-i="${x.idx}"${roCls}>编辑</span></div></td>`;
+      }else{
+        tds+=`<td><div class="acts"><span class="l" data-a="view" data-i="${x.idx}">查看</span><span class="l dim" data-a="edit" data-i="${x.idx}"${roCls}>${mm.btn||'编辑'}</span></div></td>`;
+      }
+    }
+    tr+=`<tr>${tds}</tr>`;});
+  $('#listTable').innerHTML=`<thead><tr>${th}</tr></thead><tbody>${tr}</tbody>`;
+  $('#listTotal').textContent=list.length;
+  $('#listPanelHead').innerHTML=`<span>${p.t}</span><span class="hint">共 <b>${list.length}</b> 条 · 数据隔离由后端强制</span>`;
+  const ne=$('#listNew');ne.style.display=p.new?'inline-flex':'none';
+  // 行内操作
+  $('#listTable').querySelectorAll('[data-a]').forEach(el=>{
+    el.onclick=()=>{
+      if(RO&&(el.dataset.a==='ok'||el.dataset.a==='no'||el.dataset.a==='edit'))return;
+      const i=+el.dataset.i,a=el.dataset.a;
+      if(a==='ok')openModal(key,i,'ok');
+      else if(a==='no')openModal(key,i,'no');
+      else if(a==='edit')openModal(key,i,'edit');
+      else openModal(key,i,'view');
+    };
+  });
+  $('#listNew').onclick=()=>openModal(key,0,'new');
+}
+
+/* ── 页面切换 ── */
+function goPage(id){
+  PAGE=id;
+  LIST_FILTER=0;LIST_KEY='';
+  const lsi=$('#listSearch');if(lsi){lsi.value='';syncListSearch();}
+  renderNav();
+  const meta=VIEWMETA[VIEW];
+  const home=id==='dashboard';
+  $('#crumbView').textContent=meta.crumb;
+  $('#crumbPage').textContent=home?viewHomeTitle():pageTitle(id);
+  document.querySelectorAll('.page').forEach(s=>s.classList.remove('on'));
+  if(home){$(`#pg-${VIEW}-home`).classList.add('on');}
+  else{
+    if(VIEW==='user'){const um=userListMeta(id);if(um)PAGES[id]=um;}
+    $('#pg-list').classList.add('on');renderList(id);
+  }
+  $('#primaryBtn').textContent=VIEW==='provider'?'＋ 新建服务':VIEW==='user'?'调整用户数据':'＋ 发布公告';
+  requestAnimationFrame(alignExit);
+}
+function viewHomeTitle(){return VIEW==='console'?'经营总览':VIEW==='agent'?'辖区概览':VIEW==='provider'?'我的工作台':'用户工作台';}
+function pageTitle(id){
+  const p=PAGES[id];if(p)return p.t;
+  const it=MENU[VIEW].flatMap(g=>g.items).find(x=>x.id===id);return it?it.l:id;
+}
+
+/* ── 视角切换 ── */
+function switchView(v){
+  VIEW=v;PAGE='dashboard';
+  if(v==='agent'||v==='provider'||v==='user'){
+    const src=v==='agent'?AGENTS:v==='provider'?PROVIDERS:USERS;
+    CUR={type:v==='agent'?'agent':v==='provider'?'provider':'user',obj:src[0]};
+    renderScope();
+  }
+  document.querySelectorAll('#viewswitch button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
+  goPage('dashboard');
+  syncObjUI();
+}
+$('#viewswitch').addEventListener('click',e=>{const b=e.target.closest('button');if(b)switchView(b.dataset.view);});
+
+/* ── 四态 ── */
+function show(name){
+  document.querySelectorAll('.page').forEach(s=>s.classList.remove('on'));
+  if(name==='data'){goPage(PAGE);return;}
+  $('#pg-states').classList.add('on');
+  document.querySelectorAll('[data-state]').forEach(s=>s.classList.toggle('on',s.dataset.state===name));
+}
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{show(b.dataset.go);});
+$('#retryBtn').onclick=()=>show('data');
+
+/* ── 只读 / 可写（决策②：按管理员账号权限） ── */
+function setMode(m){
+  RO=(m==='ops');
+  $('#accRole').textContent=RO?'运维管理员':'超级管理员';
+  $('#accTag').textContent=RO?'只读':'可写';
+  $('#accTag').className='tag '+(RO?'ro':'write');
+  $('#sideName').textContent=RO?'运维管理员':'超级管理员';
+  $('#sideRole').textContent=RO?'总台 · 只读':'总台 · 可写';
+  $('#sideAv').textContent=RO?'运':'超';
+  $('#roBanner').style.display=RO?'flex':'none';
+  $('#primaryBtn').disabled=RO;
+  if(isViewAs())renderScope();
+  if(PAGE!=='dashboard')renderList(PAGE);
+}
+$('#acc').addEventListener('click',e=>{
+  if(e.target.closest('.accmenu .row[data-mode]')){
+    setMode(e.target.closest('.accmenu .row').dataset.mode);
+    $('#accmenu').classList.remove('on');return;}
+  $('#accmenu').classList.toggle('on');
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.acc'))$('#accmenu').classList.remove('on');});
+
+/* ── 弹窗 ── */
+function permGroups(){
+  const hideMap={agent:['服务与内容'],provider:['用户与账号','入驻与服务商','优惠券与权益','组织与系统']};
+  const hide=hideMap[VIEW]||[];
+  return PERM_GROUPS.filter(g=>hide.indexOf(g.g)<0);
+}
+const PERM_GROUPS=[
+ {g:'用户与账号',items:['用户查询','用户编辑']},
+ {g:'入驻与服务商',items:['入驻审核','资质审核','业务升级审核']},
+ {g:'服务与内容',items:['模板/服务上架','内容下架','模板审核','资质管理']},
+ {g:'订单与履约',items:['订单查询','订单处理','售后处理']},
+ {g:'财务',items:['流水查询','提现审核','提现代操作','对账']},
+ {g:'优惠券与权益',items:['券/权益配置','优惠券发放','权益查询']},
+ {g:'评价与申诉',items:['反馈处理','申诉仲裁']},
+ {g:'消息与公告',items:['公告发布','公告审核','站内信收发']},
+ {g:'组织与系统',items:['角色管理','区域/代理商管理','系统设置']},
+ {g:'数据导出',items:['列表数据导出']}
+];
+const MODAL_META={
+ /* ── 总台 10 页 ── */
+ regions:{tag:'区域',title:'区域详情',labels:['区域名称','级别','绑定代理商','服务商数','用户数'],f:r=>[r[0],r[1],r[2],r[3],r[4]],
+   edit:1,eLabels:['区域名称','级别','绑定代理商'],eF:r=>[r[0],r[1],r[2]],eCols:[0,1,2],eTypes:['text','select','text'],eOpts:{1:['省级','市级','区县级']}},
+ agents:{tag:'代理',title:'代理商详情',labels:['代理商名称','所属辖区','服务商数','月流水','状态'],f:r=>[r[0],r[1],r[2],r[3],r[4]],
+   edit:1,eLabels:['代理商名称','绑定辖区','状态'],eF:r=>[r[0],r[1],r[4]],eCols:[0,1,4],eTypes:['text','text','select'],eOpts:{2:['正常','待复核','停用']}},
+ review:{tag:'审核',title:'服务商入驻审核',labels:['申请人','手机号','服务类型','所属区域','资质','提交时间','状态'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6]],stCol:6,okVal:'#ok 已通过',noVal:'#bad 已驳回'},
+ users:{tag:'用户',title:'用户详情',labels:['用户','手机号','角色','所属区域','注册时间','状态'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5]],
+   edit:1,eLabels:['角色','所属区域','状态'],eF:r=>[r[2],r[3],r[5]],eCols:[2,3,5],eTypes:['select','text','select'],eOpts:{0:['客户','服务商','代理商','管理员'],2:['正常','停用']}},
+ templates:{tag:'审核',title:'模板审核',labels:['模板名称','作者','类型','价格','状态'],f:r=>[r[0],r[1],r[2],r[3],r[4]],stCol:4,okVal:'#ok 已上架',noVal:'#bad 已驳回'},
+ withdrawals:{tag:'提现',title:'提现审核',labels:['服务商','申请金额','收款账户','申请时间','状态'],f:r=>[r[0],r[1],r[2],r[3],r[4]],stCol:4,okVal:'#ok 已通过',noVal:'#bad 已驳回'},
+ feedback:{tag:'反馈',title:'反馈处理',labels:['编号','类型','反馈人','对象','状态','时间','反馈内容'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],'（反馈内容：服务与描述不符，请协助处理）'],
+   edit:1,btn:'处理',eLabels:['处理意见','状态流转'],eF:r=>['',r[4]],eCols:[null,4],eTypes:['textarea','select'],eOpts:{1:['协商中','已关闭','升级仲裁']}},
+ messages:{tag:'公告',title:'公告审核',labels:['标题','类型','接收范围','状态','发布时间','正文内容'],f:r=>[r[0],r[1],r[2],r[3],r[4],'（公告正文：关于服务商入驻审核规范的调整说明……）'],stCol:3,okVal:'#ok 已发布',noVal:'#bad 已驳回'},
+ roles:{tag:'角色',title:'角色详情',labels:['角色名称','归属层级','账号数','数据作用域','功能权限','权限位阶','类型'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6]],
+   edit:1,eLabels:['角色名称','数据作用域','功能权限'],eF:r=>[r[0],r[3],r[7]],eCols:[0,3,7],eTypes:['text','text','perm']},
+ settings:{tag:'配置',title:'配置项',labels:['分类','配置项','当前值','说明'],f:r=>[r[0],r[1],r[2],r[3]],
+   edit:1,eLabels:['分类','配置项','当前值','说明'],eF:r=>[r[0],r[1],r[2],r[3]],eCols:[0,1,2,3],eTypes:['text','text','text','text']},
+ /* ── 代理商中心 5 页 ── */
+ 'a-users':{tag:'用户',title:'用户详情',labels:['用户','手机号','角色','注册时间','状态'],f:r=>[r[0],r[1],r[2],r[3],r[4]],viewOnly:1},
+ 'a-providers':{tag:'服务商',title:'服务商审核',labels:['服务商','服务类型','资质','本月接单','状态','联系电话'],f:r=>[r[0],r[1],r[2],r[3],r[4],'—'],stCol:4,okVal:'#ok 已通过',noVal:'#bad 已驳回'},
+ 'a-feedback':{tag:'反馈',title:'反馈处理',labels:['编号','类型','用户','对象','状态','时间'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5]],
+   edit:1,btn:'处理',eLabels:['处理意见','状态流转'],eF:r=>['',r[4]],eCols:[null,4],eTypes:['textarea','select'],eOpts:{1:['协商中','已处理','可升级']}},
+ 'a-messages':{tag:'公告',title:'公告审核',labels:['标题','类型','状态','时间','正文内容'],f:r=>[r[0],r[1],r[2],r[3],'（公告正文：……）'],stCol:2,okVal:'#ok 已发布',noVal:'#bad 已驳回'},
+ 'a-roles':{tag:'角色',title:'角色详情',labels:['角色名称','归属层级','账号数','数据作用域','功能权限','类型'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5]],
+   edit:1,eLabels:['角色名称','数据作用域','功能权限'],eF:r=>[r[0],r[3],r[6]],eCols:[0,3,6],eTypes:['text','text','perm']},
+ /* ── 服务商中心 4 页 ── */
+ 'p-services':{tag:'服务',title:'服务详情',labels:['服务名称','类型','价格','状态'],f:r=>[r[0],r[1],r[2],r[3]],
+   edit:1,eLabels:['服务名称','类型','价格','状态'],eF:r=>[r[0],r[1],r[2],r[3]],eCols:[0,1,2,3],eTypes:['text','text','text','select'],eOpts:{3:['在售','草稿','已下架']}},
+ 'p-qualification':{tag:'资质',title:'资质详情',labels:['资质项','编号','有效期','审核状态'],f:r=>[r[0],r[1],r[2],r[3]],
+   edit:1,eLabels:['资质项','有效期','审核状态'],eF:r=>[r[0],r[2],r[3]],eCols:[0,2,3],eTypes:['text','text','select'],eOpts:{2:['有效','待审核','已过期']}},
+ 'p-feedback':{tag:'反馈',title:'反馈处理',labels:['编号','类型','对象','状态','时间','反馈内容'],f:r=>[r[0],r[1],r[2],r[3],r[4],'（反馈内容示例）'],
+   edit:1,btn:'处理',eLabels:['回应说明','状态流转'],eF:r=>['',r[3]],eCols:[null,3],eTypes:['textarea','select'],eOpts:{1:['待回应','申诉中','已回应']}},
+ 'p-roles':{tag:'角色',title:'角色详情',labels:['角色名称','归属层级','账号数','数据作用域','功能权限','类型'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5]],
+   edit:1,eLabels:['角色名称','数据作用域','功能权限'],eF:r=>[r[0],r[3],r[6]],eCols:[0,3,6],eTypes:['text','text','perm']},
+ /* ── 用户视角 6 页（已定制，仅查看） ── */
+ 'u-orders':{tag:'订单',title:'订单详情',labels:['服务','服务商','金额','下单时间','订单号'],f:r=>[r[1],r[2],r[3],r[4],r[0]]},
+ 'u-providers':{tag:'服务商',title:'服务商详情',labels:['服务商','服务类型','评分','关注时间'],f:r=>[r[0],r[1],r[2],r[3]]},
+ 'u-coupons':{tag:'券',title:'优惠券详情',labels:['优惠券','面额','有效期','使用条件'],f:r=>[r[0],r[1],r[2],r[3]]},
+ 'u-wallet':{tag:'流水',title:'钱包流水',labels:['时间','类型','金额','变动后余额'],f:r=>[r[0],r[1],r[2],r[3]]},
+ 'u-feedback':{tag:'评价',title:'评价详情',labels:['服务','评分','评价内容','时间'],f:r=>[r[0],r[1],r[2],r[3]]},
+ 'u-messages':{tag:'消息',title:'消息详情',labels:['标题','类型','时间'],f:r=>[r[0],r[1],r[2]]}
+};
+let MODAL_KEY=null,MODAL_I=0,MODAL_ACT='view';
+const REVIEW_KEYS=['review','withdrawals','templates','messages','a-providers','a-messages'];
+function buildForm(mm,r){
+  const vals=mm.eF(r);
+  return mm.eLabels.map((lbl,k)=>{
+    const t=(mm.eTypes||[])[k]||'text';
+    const opts=((mm.eOpts||{})[k])||[];
+    const val=vals[k]===null||vals[k]===undefined?'':vals[k];
+    if(t==='textarea')return `<div class="fd"><label>${lbl}</label><textarea class="field" data-ef="${k}" rows="2">${val}</textarea></div>`;
+    if(t==='select')return `<div class="fd"><label>${lbl}</label><select class="field" data-ef="${k}">${opts.map(o=>`<option${o===val?' selected':''}>${o}</option>`).join('')}</select></div>`;
+    if(t==='perm'){
+      const cur=Array.isArray(val)?val:[];
+      return `<div class="fd"><label>${lbl}</label><div class="perm">${permGroups().map(g=>`<div class="pgrp"><div class="pgt">${g.g}</div>${g.items.map(it=>`<label class="pchk"><input type="checkbox" data-ef="${k}" data-perm="${it}"${cur.indexOf(it)>=0?' checked':''}>${it}</label>`).join('')}</div>`).join('')}</div></div>`;
+    }
+    return `<div class="fd"><label>${lbl}</label><input class="field" data-ef="${k}" value="${val}"></div>`;
+  }).join('');
+}
+function openModal(key,i,act){
+  const p=PAGES[key];if(!p)return;
+  const mm=MODAL_META[key]||{tag:'详情',title:p.t,f:()=>[],labels:['申请人','服务类型','所属区域','资质材料','提交时间']};
+  MODAL_KEY=key;MODAL_I=i;MODAL_ACT=act;
+  const r=p.r[i]||[];
+  $('#modalTag').textContent=mm.tag||'详情';
+  $('#modalTitle').textContent=act==='new'?('新建 · '+p.t):(mm.title||p.t);
+  const vals=mm.f(r),L=mm.labels||[];
+  $('#mKv').innerHTML=L.map((lbl,k)=>{
+    const v=vals[k];if(v===''||v===undefined)return '';
+    return `<dt>${lbl}</dt><dd>${cell(v)}</dd>`;
+  }).join('');
+  const editing=act==='edit'||(act==='new'&&mm.edit);
+  $('#mForm').innerHTML=mm.edit?buildForm(mm,act==='new'?[]:r):'';
+  $('#mForm').style.display=(mm.edit&&editing)?'block':'none';
+  $('#mKv').style.display=(mm.edit&&editing)?'none':'grid';
+  $('#mOpinion').value='';
+  const isReview=act==='ok'||act==='no'||(act==='view'&&REVIEW_KEYS.indexOf(key)>=0);
+  $('#mOpinionWrap').style.display=(isReview&&!editing)?'block':'none';
+  const rejectBtn=$('#mReject'),approve=$('#mApprove'),editBtn=$('#mEdit');
+  editBtn.style.display=(mm.edit&&!isReview)?'inline-flex':'none';
+  editBtn.textContent=editing?'保存':'编辑';
+  rejectBtn.style.display=isReview?'inline-flex':'none';
+  approve.style.display=isReview?'inline-flex':'none';
+  approve.textContent=act==='no'?'确认驳回':'通过';
+  approve.className='btn primary'+(act==='no'?' bad':'');
+  rejectBtn.textContent=(act==='no')?'取消':'驳回';
+  const canW=!RO;
+  rejectBtn.disabled=!canW;approve.disabled=!canW;
+  $('#mCancel').textContent=(mm.edit&&editing)?'取消':'关闭';
+  $('#scrim').classList.add('on');$('#modal').classList.add('on');
+}
+function approveModal(ok){
+  if(RO)return;
+  const p=PAGES[MODAL_KEY],mm=MODAL_META[MODAL_KEY],r=p.r[MODAL_I];
+  if(!ok){const o=$('#mOpinion').value.trim();if(!o){alert('驳回原因必填');return;}}
+  if(mm.stCol!==undefined&&r){r[mm.stCol]=ok?mm.okVal:mm.noVal;}
+  closeModal();if(MODAL_KEY)renderList(MODAL_KEY);
+}
+function saveModal(){
+  if(RO)return;
+  const p=PAGES[MODAL_KEY],mm=MODAL_META[MODAL_KEY],r=p.r[MODAL_I];
+  const eTypes=mm.eTypes||[];
+  (mm.eLabels||[]).forEach((lbl,k)=>{
+    const col=(mm.eCols||[])[k];
+    if(col===null||col===undefined)return;
+    if(eTypes[k]==='perm'){
+      r[col]=[...$('#mForm').querySelectorAll(`[data-ef="${k}"]:checked`)].map(c=>c.dataset.perm);
+    }else{
+      const el=$('#mForm').querySelector(`[data-ef="${k}"]`);
+      if(el)r[col]=el.value;
+    }
+  });
+  closeModal();renderList(MODAL_KEY);
+}
+function closeModal(){$('#scrim').classList.remove('on');$('#modal').classList.remove('on');}
+$('#scrim').onclick=closeModal;
+$('#modalX').onclick=closeModal;
+$('#mCancel').onclick=closeModal;
+$('#mApprove').onclick=()=>{if(MODAL_ACT==='no')approveModal(false);else approveModal(true);};
+$('#mReject').onclick=()=>{if(MODAL_ACT==='no'){closeModal();return;}approveModal(false);};
+$('#mEdit').onclick=()=>{if(MODAL_ACT==='edit'||MODAL_ACT==='new')saveModal();else openModal(MODAL_KEY,MODAL_I,'edit');};
+$('#primaryBtn').onclick=()=>{if(RO)return;if(VIEW==='user'){openUModal();return;}openModal(VIEW==='console'?'messages':VIEW==='agent'?'a-messages':'p-services',0,'new');};
+
+/* ── 待办直达 ── */
+document.addEventListener('click',e=>{
+  const it=e.target.closest('.todo .it');if(!it)return;
+  const g=it.dataset.goto;if(g)goPage(g);
+});
+
+/* ── 首页动态数据（总台看板：静态示例） ── */
+function renderHome(){
+  const rb=$('#regionBars');const regs=[['乌鲁木齐',128.6,1926],['北京',96.2,1440],['上海',88.4,1312],['广州',71.8,1086],['成都',52.3,804]];
+  const mx=Math.max(...regs.map(r=>r[1]));
+  rb.innerHTML=regs.map(r=>`<div class="bar"><div class="row"><span class="nm">${r[0]}</span>
+    <span class="tr"><span class="fl" style="width:${r[1]/mx*100}%;background:var(--accent)"></span></span>
+    <span class="vl">¥${r[1]}w</span><span class="vl" style="width:56px;color:var(--accent-2)">${r[2]}</span></div></div>`).join('');
+  $('#agentTop').innerHTML=[
+    ['乌鲁木齐天山区','天山区','¥18,320','214'],['乌鲁木齐沙依巴克','沙依巴克区','¥26,480','309'],
+    ['乌鲁木齐高新','高新区','¥21,150','252'],['北京朝阳','朝阳区','¥30,720','368'],['上海浦东','浦东新区','¥24,860','291']
+  ].map(r=>`<tr><td>${r[0]}</td><td class="mut">${r[1]}</td><td class="n num">${r[2]}</td><td class="n num">${r[3]}</td></tr>`).join('');
+  $('#reviewMini').innerHTML=[
+    ['麦麦提·艾力','婚庆主持','天山区','#warn 待审'],['古丽娜尔','摄影摄像','沙依巴克','#warn 待审'],['王磊','宴会设计','高新区','#warn 待审']
+  ].map(r=>`<tr><td>${r[0]}</td><td class="mut">${r[1]}</td><td class="mut">${r[2]}</td><td>${cell(r[3])}</td><td><span class="link" data-goto="review">处理</span></td></tr>`).join('');
+  $('#reviewMini').parentElement.querySelectorAll('.link').forEach(l=>l.onclick=()=>goPage('review'));
+}
+
+/* ── 具体对象数据（代理商/服务商样例，对象视角按此切换） ── */
+const AGENTS=[
+ {id:'AG001',name:'阿依古丽',nick:'天山花姐',phone:'138****2210',region:'天山区',
+  flow:18320,flowPct:'11.6',users:1204,svc:38,orders:214,orderPct:'8.3',pend:5,fb:2,up:1,msg:1,
+  cats:[['婚庆主持',18,6],['摄影摄像',10,4],['花艺布置',6,4],['化妆造型',4,2]],
+  prov:[['麦麦提·艾力','婚庆主持','#ok 已认证','6','¥2,860','#ok 正常'],['阿迪力江','花艺布置','#ok 已认证','4','¥1,520','#ok 正常'],['李婷','乐队演出','#ok 已认证','3','¥980','#ok 正常'],['新入驻·买买提','摄影摄像','#warn 待初审','0','¥0','#warn 待初审']]},
+ {id:'AG002',name:'艾山江',nick:'沙依巴克老艾',phone:'139****7756',region:'沙依巴克区',
+  flow:26480,flowPct:'9.2',users:986,svc:29,orders:309,orderPct:'6.4',pend:3,fb:1,up:0,msg:2,
+  cats:[['婚庆主持',12,5],['摄影摄像',9,3],['花艺布置',4,2],['乐队演出',4,1]],
+  prov:[['古丽娜尔','摄影摄像','#ok 已认证','9','¥3,120','#ok 正常'],['帕提曼','化妆造型','#ok 已认证','7','¥2,140','#ok 正常'],['新入驻·外力','乐队演出','#warn 待初审','0','¥0','#warn 待初审']]},
+ {id:'AG003',name:'买买提江',nick:'高新小买',phone:'137****9023',region:'高新区',
+  flow:21150,flowPct:'14.5',users:1320,svc:44,orders:252,orderPct:'10.1',pend:7,fb:3,up:1,msg:1,
+  cats:[['婚庆主持',22,9],['摄影摄像',12,5],['宴会设计',6,3],['花艺布置',4,2]],
+  prov:[['王磊','宴会设计','#ok 已认证','5','¥2,460','#ok 正常'],['米热古丽','花艺布置','#ok 已认证','6','¥1,880','#ok 正常'],['新入驻·亚森','摄影摄像','#warn 待初审','0','¥0','#warn 待初审']]},
+ {id:'AG004',name:'王芳',nick:'北京朝阳',phone:'186****3311',region:'朝阳区',
+  flow:30720,flowPct:'8.1',users:2204,svc:68,orders:368,orderPct:'7.2',pend:4,fb:1,up:0,msg:1,
+  cats:[['婚庆主持',28,11],['摄影摄像',18,7],['宴会设计',12,5],['化妆造型',10,4]],
+  prov:[['李静','婚庆主持','#ok 已认证','11','¥5,260','#ok 正常'],['张伟','摄影摄像','#ok 已认证','8','¥3,480','#ok 正常']]},
+ {id:'AG005',name:'陈晨',nick:'上海浦东',phone:'189****5588',region:'浦东新区',
+  flow:24860,flowPct:'10.3',users:1890,svc:55,orders:291,orderPct:'9.0',pend:6,fb:2,up:1,msg:0,
+  cats:[['婚庆主持',20,8],['花艺布置',14,6],['乐队演出',10,5],['化妆造型',11,4]],
+  prov:[['周悦','花艺布置','#ok 已认证','9','¥3,960','#ok 正常'],['孙浩','乐队演出','#ok 已认证','6','¥2,380','#ok 正常']]}
+];
+const PROVIDERS=[
+ {id:'SP001',name:'麦麦提·艾力',nick:'喜事管家',phone:'138****2210',type:'婚庆主持',region:'天山区',
+  bal:1240,balPct:'+ ¥860 本月',frozen:320,onSale:6,onSaleF:'3 类服务角色',orders:18,ordersPct:'▲ 4 单',pd:2,dlv:3,income:2860,incomePct:'▲ 12.8%',appeal:1,
+  svc:[['「红绸喜字」','¥29','#ok 在售'],['「鎏金岁月」','¥49','#ok 在售'],['「青梅竹马」','¥19','#mut 草稿']],
+  ord:[['QJ…0013','¥1,280','#warn 待接单'],['QJ…0011','¥880','#ac 履约中'],['QJ…0098','¥520','#ok 已完成']]},
+ {id:'SP002',name:'古丽娜尔',nick:'光影古丽',phone:'135****8044',type:'摄影摄像',region:'沙依巴克区',
+  bal:3260,balPct:'+ ¥1,100 本月',frozen:640,onSale:8,onSaleF:'2 类服务角色',orders:26,ordersPct:'▲ 6 单',pd:1,dlv:4,income:5180,incomePct:'▲ 15.2%',appeal:0,
+  svc:[['「婚礼跟拍」','¥999','#ok 在售'],['「情侣写真」','¥499','#ok 在售'],['「轻写真」','¥299','#mut 草稿']],
+  ord:[['QJ…0021','¥999','#warn 待接单'],['QJ…0018','¥1,680','#ac 履约中'],['QJ…0012','¥899','#ok 已完成']]},
+ {id:'SP003',name:'王磊',nick:'宴会设计王',phone:'186****3302',type:'宴会设计',region:'高新区',
+  bal:980,balPct:'+ ¥420 本月',frozen:210,onSale:4,onSaleF:'2 类服务角色',orders:12,ordersPct:'▲ 2 单',pd:3,dlv:2,income:2460,incomePct:'▲ 7.6%',appeal:1,
+  svc:[['「主题宴会全案」','¥1,880','#ok 在售'],['「甜品台设计」','¥399','#ok 在售']],
+  ord:[['QJ…0033','¥1,880','#warn 待接单'],['QJ…0028','¥799','#ac 履约中']]},
+ {id:'SP004',name:'阿迪力江',nick:'花艺阿迪',phone:'139****1176',type:'花艺布置',region:'天山区',
+  bal:760,balPct:'+ ¥300 本月',frozen:180,onSale:5,onSaleF:'2 类服务角色',orders:15,ordersPct:'▲ 3 单',pd:0,dlv:5,income:1520,incomePct:'▲ 9.4%',appeal:0,
+  svc:[['「婚礼花艺套餐」','¥888','#ok 在售'],['「商务花篮」','¥128','#ok 在售']],
+  ord:[['QJ…0041','¥888','#warn 待接单'],['QJ…0036','¥668','#ac 履约中']]}
+];
+
+/* ── 具体对象视角：渲染某代理商/服务商名下数据 ── */
+function renderAgent(o){
+  $('#aSub').textContent=o.region+' · 辖区经营指标 · 截至今日 08-27';
+  $('#aChip').textContent='代理商 · '+o.region+' · 辖区作用域';
+  $('#aFlow').textContent='¥'+num(o.flow);
+  $('#aFlowPct').textContent='▲ '+o.flowPct+'% 较上周';
+  $('#aFee').textContent='辖区抽成 ¥'+num(Math.round(o.flow*0.1));
+  $('#aUsers').textContent=num(o.users);
+  $('#aSvc').textContent=o.svc;
+  $('#aSvcPend').innerHTML='入驻待初审 <b style="color:var(--accent)">'+o.pend+'</b> 家';
+  $('#aOrd').textContent=o.orders;
+  $('#aPend').textContent=o.pend;$('#aFb').textContent=o.fb;$('#aUp').textContent=o.up;$('#aMsg').textContent=o.msg;
+  const ac=$('#agentCatBars');const amx=Math.max(...o.cats.map(c=>c[1]));
+  ac.innerHTML=o.cats.map(c=>`<div class="bar"><div class="row"><span class="nm">${c[0]}</span>
+    <span class="tr"><span class="fl" style="width:${c[1]/amx*100}%;background:var(--accent)"></span></span>
+    <span class="vl">${c[1]}</span><span class="vl" style="width:36px;color:var(--accent-2)">${c[2]}</span></div></div>`).join('');
+  $('#agentProvList').innerHTML=o.prov.map(r=>`<tr><td>${r[0]}</td><td class="mut">${r[1]}</td><td>${cell(r[2])}</td><td class="n num">${r[3]}</td><td class="n num">${r[4]}</td><td>${cell(r[5])}</td><td><span class="link">查看</span></td></tr>`).join('');
+}
+function renderProvider(o){
+  $('#pSub').textContent=o.type+' · 供给经营 · 截至今日 08-27';
+  $('#pChip').textContent='服务商 · '+o.region+' · 自身作用域';
+  $('#pBal').textContent='¥'+num(o.bal);
+  $('#pBalPct').textContent=o.balPct;
+  $('#pFrozen').textContent='冻结中 ¥'+num(o.frozen);
+  $('#pOnSale').textContent=o.onSale;
+  $('#pOnSaleF').textContent=o.onSaleF;
+  $('#pOrders').textContent=o.orders;
+  $('#pOrdersPct').textContent=o.ordersPct;
+  $('#pOrderF').innerHTML='待接单 <b style="color:var(--accent)">'+o.pd+'</b> · 待交付 <b style="color:var(--accent)">'+o.dlv+'</b>';
+  $('#pIncome').textContent='¥'+num(o.income);
+  $('#pIncomePct').textContent=o.incomePct;
+  $('#pPd').textContent=o.pd;$('#pDlv').textContent=o.dlv;$('#pAppeal').textContent=o.appeal;
+  $('#spServList').innerHTML=o.svc.map(r=>`<tr><td>${r[0]}</td><td class="n num">${r[1]}</td><td>${cell(r[2])}</td></tr>`).join('');
+  $('#spOrdList').innerHTML=o.ord.map(r=>`<tr><td class="num">${r[0]}</td><td class="n num">${r[1]}</td><td>${cell(r[2])}</td></tr>`).join('');
+}
+function renderScope(){ if(CUR.type==='agent')renderAgent(CUR.obj); else if(CUR.type==='provider')renderProvider(CUR.obj); else renderUser(CUR.obj); }
+
+/* ── 用户视角：会员等级 / 用户样例 / 工作台渲染 / 数据调整 ── */
+const TIERS={
+ '普通用户':{cls:'mut',perks:['在线浏览 · 搜索服务商','提交预约申请','基础在线客服','新人礼包 ¥20']},
+ '银卡会员':{cls:'ac',perks:['含普通用户全部权益','全场服务 9.8 折','专属客服','生日当月 ¥50 券','积分加速 ×1.2']},
+ '金卡会员':{cls:'ac',perks:['含银卡会员全部权益','全场服务 9.5 折','优先排期','每年 1 次免费改期','积分加速 ×1.5 · 双倍积分日']},
+ '黑金会员':{cls:'ac',perks:['含金卡会员全部权益','全场服务 9 折','金牌管家 1 对 1','无限次改期','专属 VIP 通道','季度专属礼遇']}
+};
+const USERS=[
+ {id:'U001',name:'买买提·艾山',phone:'137****5521',city:'乌鲁木齐',tier:'普通用户',reg:'2025-11-02',bal:320,pts:860,active:1,spend:2680,
+  ord:[['QD…0312','婚庆主持','麦麦提·艾力','¥6,800','08-20','#warn 待服务'],['QD…0298','摄影摄像','古丽娜尔','¥1,999','08-15','#ac 待支付'],['QD…0260','花艺布置','阿迪力江','¥888','07-30','#ok 已完成']],
+  fav:[['麦麦提·艾力','婚庆主持','4.9','08-02'],['阿迪力江','花艺布置','4.7','07-12']],
+  cp:[['新人礼包','¥20','08-01~09-30','满 0 元可用','#warn 未使用'],['满1000减100','¥100','至 10-31','满 ¥1,000 可用','#ok 已使用']],
+  wal:[['08-21','充值','+¥500','¥820','#ok 成功'],['08-20','消费','-¥6,800','¥320','#ok 成功'],['08-02','新人礼包','+¥20','¥120','#ok 成功']],
+  rev:[['婚庆主持','5.0','主持非常专业，流程很顺','08-25','#ok 已发布']],
+  msg:[['订单待确认收货提醒','订单','08-25 18:20','#warn 待确认收货'],['请为婚庆主持服务评价','评价','08-25 09:00','#warn 待评价'],['售后申请处理中','售后','08-27 09:30','#warn 处理中'],['平台 9 月大促活动预告','平台公告','08-26 10:00','#warn 未读'],['预约待确认提醒','订单','08-21 10:32','#warn 未读'],['新人礼包已到账','权益','08-02 09:00','#ok 已读']]},
+ {id:'U002',name:'古再丽',phone:'136****9087',city:'乌鲁木齐',tier:'银卡会员',reg:'2024-06-18',bal:1580,pts:5210,active:2,spend:9860,
+  ord:[['QD…0305','摄影摄像','古丽娜尔','¥2,699','08-18','#warn 待服务'],['QD…0277','化妆造型','帕提曼','¥1,280','08-09','#ac 待支付'],['QD…0241','婚庆主持','麦麦提·艾力','¥6,800','07-22','#ok 已完成'],['QD…0209','花艺布置','阿迪力江','¥888','06-30','#ok 已完成']],
+  fav:[['古丽娜尔','摄影摄像','4.8','08-05'],['帕提曼','化妆造型','4.9','07-18']],
+  cp:[['银卡生日券','¥50','本月有效','生日月使用','#warn 未使用'],['满2000减200','¥200','至 11-30','满 ¥2,000 可用','#warn 未使用']],
+  wal:[['08-19','充值','+¥1,000','¥1,580','#ok 成功'],['08-18','消费','-¥2,699','¥580','#ok 成功'],['08-06','积分兑换','-500 积分','¥520','#ok 成功']],
+  rev:[['摄影摄像','4.8','跟拍很有感觉','08-24','#ok 已发布']],
+  msg:[['订单 QD…0277 待支付','订单','08-20 12:05','#warn 待支付'],['优惠券 满2000减200 已到账','权益','08-19 10:00','#ok 已到账'],['账户安全提醒：异地登录','系统通知','08-22 18:00','#ok 已读'],['银卡生日券已发放','权益','08-01 00:00','#warn 未读'],['预约待确认提醒','订单','08-18 14:05','#ok 已读']]},
+ {id:'U003',name:'王丽',phone:'139****6688',city:'上海',tier:'金卡会员',reg:'2024-03-12',bal:2480,pts:3260,active:2,spend:18640,
+  ord:[['QD…0301','宴会设计','王磊','¥1,880','08-19','#warn 待服务'],['QD…0286','花艺布置','周悦','¥3,960','08-11','#ac 履约中'],['QD…0264','乐队演出','孙浩','¥2,380','07-28','#ok 已完成']],
+  fav:[['王磊','宴会设计','4.9','08-03'],['周悦','花艺布置','4.8','07-20']],
+  cp:[['金卡优先券','免排期','至 12-31','金卡专享','#warn 未使用'],['满3000减300','¥300','至 10-31','满 ¥3,000 可用','#warn 未使用']],
+  wal:[['08-20','充值','+¥500','¥2,480','#ok 成功'],['08-19','消费','-¥1,880','¥1,980','#ok 成功'],['08-12','消费','-¥3,960','¥980','#ok 成功']],
+  rev:[['宴会设计','5.0','现场效果超出预期','08-27','#ok 已发布'],['花艺布置','4.9','花材新鲜，配色高级','08-15','#ok 已发布']],
+  msg:[['服务商 周悦 给您留言','服务','08-22 15:30','#warn 待回复'],['预约时间变更通知','订单','08-21 09:15','#warn 未读'],['已为您取消订单 QD…0264','订单','07-30 14:00','#ok 已取消'],['金卡权益升级提醒','权益','08-19 09:00','#warn 未读'],['订单履约中通知','订单','08-12 16:20','#ok 已读']]},
+ {id:'U004',name:'阿里木江',phone:'135****3344',city:'乌鲁木齐',tier:'黑金会员',reg:'2023-01-20',bal:6800,pts:12800,active:1,spend:52400,
+  ord:[['QD…0295','婚庆主持','麦麦提·艾力','¥12,800','08-16','#warn 待服务'],['QD…0270','摄影摄像','古丽娜尔','¥4,599','08-02','#ok 已完成']],
+  fav:[['麦麦提·艾力','婚庆主持','4.9','08-10'],['古丽娜尔','摄影摄像','4.8','07-25']],
+  cp:[['黑金季度礼','¥1,000','本季度有效','黑金专享','#warn 未使用'],['专属管家券','1次','长期有效','预约管家','#warn 未使用']],
+  wal:[['08-17','充值','+¥2,000','¥6,800','#ok 成功'],['08-16','消费','-¥12,800','¥4,800','#ok 成功'],['08-03','退款','+¥899','¥4,200','#ok 成功']],
+  rev:[['婚庆主持','5.0','管家全程陪同，非常省心','08-22','#ok 已发布']],
+  msg:[['退款 ¥899 已到账','钱包','08-04 10:00','#ok 已到账'],['黑金年度体检权益已发放','权益','08-05 09:00','#ok 已到账'],['黑金季度礼已发放','权益','08-01 00:00','#warn 未读'],['专属管家服务提醒','服务','08-10 10:00','#ok 已读']]},
+ {id:'U005',name:'刘婷婷',phone:'186****1100',city:'北京',tier:'普通用户',reg:'2026-02-08',bal:120,pts:120,active:0,spend:980,
+  ord:[['QD…0320','摄影摄像','李静','¥999','08-22','#ok 已完成']],
+  fav:[['李静','摄影摄像','4.6','08-10']],
+  cp:[['新人礼包','¥20','08-10~09-30','满 0 元可用','#ok 已使用']],
+  wal:[['08-22','消费','-¥999','¥120','#ok 成功'],['08-10','新人礼包','+¥20','¥120','#ok 成功']],
+  rev:[],
+  msg:[['订单 QD…0320 已完成','订单','08-24 18:00','#ok 已完成'],['系统升级维护通知','系统通知','08-20 20:00','#ok 已读'],['新人礼包已到账','权益','08-10 09:00','#ok 已读']]},
+ {id:'U006',name:'张伟',phone:'189****7733',city:'上海',tier:'金卡会员',reg:'2024-10-30',bal:1920,pts:2480,active:3,spend:13200,
+  ord:[['QD…0316','乐队演出','孙浩','¥2,000','08-21','#warn 待服务'],['QD…0300','花艺布置','周悦','¥1,680','08-13','#ac 履约中'],['QD…0279','宴会设计','王磊','¥2,880','07-26','#ok 已完成']],
+  fav:[['孙浩','乐队演出','4.7','08-06'],['周悦','花艺布置','4.8','07-22']],
+  cp:[['金卡优先券','免排期','至 12-31','金卡专享','#warn 未使用']],
+  wal:[['08-22','充值','+¥300','¥1,920','#ok 成功'],['08-21','消费','-¥2,000','¥1,620','#ok 成功']],
+  rev:[['乐队演出','4.7','气氛很好','08-24','#ok 已发布']],
+  msg:[['请为乐队演出服务评价','评价','08-25 09:00','#warn 待评价'],['优惠券 金卡优先券 已发放','权益','08-14 09:00','#ok 已到账'],['预约待确认提醒','订单','08-21 11:40','#warn 未读'],['金卡权益升级提醒','权益','08-13 09:00','#ok 已读']]}
+];
+
+/* ── 用户视角子模块列表：按当前选中用户动态构建 ── */
+function userListMeta(id){
+  const o=CUR.obj,t=tierOf(o),b='用户 · '+t;
+  const map={
+   'u-orders':{t:'我的订单',s:`${o.name} 的全部订单`,chip:b,
+     h:[{t:'订单'},{t:'服务'},{t:'服务商'},{t:'金额',n:1},{t:'时间'},{t:'状态'}],r:o.ord,acts:'ro',
+     f:[{t:'全部'},{t:'待服务'},{t:'已完成'}]},
+   'u-providers':{t:'我的服务商',s:`${o.name} 关注的服务商`,chip:b,
+     h:[{t:'服务商'},{t:'服务类型'},{t:'评分',n:1},{t:'关注时间'},{t:'状态'}],
+     r:o.fav.map(x=>[x[0],x[1],'★ '+x[2],x[3],'#ok 关注中']),acts:'ro',f:[{t:'全部'},{t:'关注中'}]},
+   'u-coupons':{t:'优惠与权益',s:`${o.name} 的优惠券与会员权益`,chip:b,
+     h:[{t:'优惠券'},{t:'面额',n:1},{t:'有效期'},{t:'使用条件'},{t:'状态'}],r:o.cp,acts:'ro',
+     f:[{t:'全部'},{t:'未使用'},{t:'已使用'}]},
+   'u-wallet':{t:'我的钱包',s:`${o.name} 的余额与流水`,chip:b,
+     h:[{t:'时间'},{t:'类型'},{t:'金额',n:1},{t:'变动后余额',n:1},{t:'状态'}],r:o.wal,acts:'ro',
+     f:[{t:'全部'},{t:'收入'},{t:'支出'}]},
+   'u-feedback':{t:'评价与反馈',s:`${o.name} 的评价与反馈记录`,chip:b,
+     h:[{t:'服务'},{t:'评分',n:1},{t:'评价内容'},{t:'时间'},{t:'状态'}],r:o.rev.map(x=>[x[0],'★ '+x[1],x[2],x[3],x[4]]),acts:'ro',
+     f:[{t:'全部'},{t:'已发布'}]},
+   'u-messages':{t:'消息中心',s:`${o.name} 的通知与消息`,chip:b,
+     h:[{t:'标题'},{t:'类型'},{t:'时间'},{t:'状态'}],r:o.msg,acts:'ro',fcol:3,f:[{t:'全部'},{t:'待处理',v:['未读','待支付','待确认收货','待评价','待回复','处理中']},{t:'已处理',v:['已读','已完成','已到账','已退款','已取消']}]}
+  };
+  return map[id];
+}
+
+let TEST_TIER=null;
+function tierOf(o){return TEST_TIER||o.tier;}
+function renderUser(o){
+  const ucard=$('#uCard');
+  ucard.style.cssText='display:flex;flex-direction:column;gap:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:14px 16px';
+  const utop=ucard.querySelector('.ucard-top');
+  if(utop)utop.style.cssText='display:flex;align-items:center;gap:12px';
+  const t=tierOf(o);
+  $('#uSub').textContent=o.name+' · '+t+' · 个人中心预览 · 截至今日 08-27'+(TEST_TIER?'（等级测试中）':'');
+  $('#uChip').textContent='用户 · '+t;
+  $('#uAv').textContent=o.name[0];
+  $('#uName').textContent=o.name;
+  $('#uTier').textContent=t;
+  $('#uTier').className='tag '+TIERS[t].cls;
+  $('#uMeta').textContent='ID '+o.id+' · 手机 '+o.phone+' · '+o.city+' · 注册 '+o.reg;
+  $('#uBal').textContent='¥'+num(o.bal);
+  $('#uPts').textContent=num(o.pts);
+  $('#uActive').textContent=o.active;
+  $('#uSpend').textContent='¥'+num(o.spend);
+  $('#uOrdList').innerHTML=o.ord.map(r=>`<tr><td class="num">${r[0]}</td><td>${r[1]}</td><td class="mut">${r[2]}</td><td class="n num">${r[3]}</td><td>${cell(r[5])}</td></tr>`).join('');
+  $('#uFavList').innerHTML=o.fav.map(r=>`<tr><td>${r[0]}</td><td class="mut">${r[1]}</td><td class="n num">★ ${r[2]}</td></tr>`).join('');
+  $('#uCouponList').innerHTML=o.cp.map(r=>`<tr><td>${r[0]}</td><td class="n num">${r[1]}</td><td>${cell(r[4])}</td></tr>`).join('');
+  $('#uRevList').innerHTML=o.rev.map(r=>`<tr><td>${r[0]}</td><td class="n num">★ ${r[1]}</td><td>${cell(r[4])}</td></tr>`).join('');
+  $('#uTierHint').textContent=t+' · 可享';
+  $('#uPerks').innerHTML=TIERS[t].perks.map(p=>`<div class="pk"><span class="pdot"></span>${p}</div>`).join('');
+  document.querySelectorAll('#ltSwitch button').forEach(b=>b.classList.toggle('on',b.dataset.tier===t));
+  $('#uAdjust').disabled=RO;
+}
+document.querySelectorAll('#ltSwitch button').forEach(b=>b.onclick=()=>{
+  if(TEST_TIER===b.dataset.tier)TEST_TIER=null;else TEST_TIER=b.dataset.tier;
+  renderUser(CUR.obj);
+});
+function openUModal(){
+  if(RO)return;
+  const o=CUR.obj;
+  $('#uAdjWho').textContent=o.name+'（'+o.id+'）· '+o.city+' · 当前等级 '+tierOf(o);
+  $('#uAdjTier').value=tierOf(o);
+  $('#uAdjBal').value=o.bal;
+  $('#uAdjPts').value=o.pts;
+  $('#uAdjNote').value='';
+  $('#scrim').classList.add('on');$('#umodal').classList.add('on');
+}
+function closeUModal(){$('#scrim').classList.remove('on');$('#umodal').classList.remove('on');}
+$('#uAdjust').onclick=openUModal;
+$('#uModalX').onclick=closeUModal;
+$('#uAdjCancel').onclick=closeUModal;
+$('#uAdjSave').onclick=()=>{
+  if(RO)return;
+  const o=CUR.obj;
+  o.bal=+$('#uAdjBal').value||0;
+  o.pts=+$('#uAdjPts').value||0;
+  o.tier=$('#uAdjTier').value;
+  TEST_TIER=null;
+  closeUModal();renderUser(o);syncObjUI();
+};
+
+/* ── 列表搜索：搜索按钮 + 回车 ── */
+function syncListSearch(){const lsi=$('#listSearch');if(lsi)lsi.parentElement.classList.toggle('has-val',!!lsi.value);}
+$('#listSearchBtn').onclick=()=>{LIST_KEY=$('#listSearch').value.trim();renderList(PAGE);};
+$('#listSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){LIST_KEY=e.target.value.trim();renderList(PAGE);}});
+$('#listSearch').addEventListener('input',syncListSearch);
+$('#listSearchClr').onclick=()=>{const lsi=$('#listSearch');lsi.value='';LIST_KEY='';syncListSearch();renderList(PAGE);lsi.focus();};
+
+/* ── 对象选择器：搜索/选择具体代理商或服务商 ── */
+function syncObjUI(){
+  const on=isViewAs();
+  const op=$('#objPick');
+  // 内联设置基础布局：规避浏览器翻译层对 .objpick 基础规则选择器的污染
+  if(on){
+    op.style.cssText='display:flex;align-items:center;gap:12px;margin-top:10px;padding:10px 24px;border-bottom:1px solid var(--border);background:#faf5eb';
+  }else{
+    op.style.cssText='display:none';
+  }
+  $('#objList').classList.remove('on');
+  if(!on)return;
+  const o=CUR.obj;
+  $('#objQ').value='';
+  $('#objTag').textContent=o.name+' · '+(o.region||o.city)+' · '+o.phone;
+  renderObjList();
+}
+function renderObjList(){
+  const q=$('#objQ').value.trim();
+  const src=objSource().filter(o=>!q||[o.id,o.name,o.nick,o.phone,o.region].some(s=>s.includes(q)));
+  $('#objList').innerHTML=src.length?src.map(o=>`<button class="o" data-id="${o.id}">
+    <b>${o.name}</b><span>${o.nick?'昵称 '+o.nick+' · ':''}${o.region||o.city} · ${o.phone}</span>
+    <span class="n">${o.id}${o===CUR.obj?' · 当前':''}</span></button>`).join('')
+    :`<div class="o" style="cursor:default;color:var(--ink-3)">无匹配对象</div>`;
+}
+function setCurObj(o){CUR.obj=o;renderScope();syncObjUI();if(VIEW==='user'&&PAGE!=='dashboard')goPage(PAGE);}
+/* ── 返回总台按钮：右缘对齐当前页 pghead 内 sp 之后元素（角色标签）的右缘 ── */
+function alignExit(){
+  const btn=document.getElementById('objExit');
+  if(!btn||btn.offsetParent===null)return;
+  const pgs=[...document.querySelectorAll('.page.on .pghead')].filter(e=>e.offsetParent!==null);
+  if(!pgs.length)return;
+  const sp=pgs[0].querySelector('.sp');
+  const ref=(sp&&sp.nextElementSibling)?sp.nextElementSibling:sp;
+  if(!ref)return;
+  const target=ref.getBoundingClientRect().right;
+  const b=btn.getBoundingClientRect().right;
+  const cur=parseFloat(getComputedStyle(btn).marginRight)||0;
+  const need=Math.round(cur+(b-target));
+  if(Math.abs(need-cur)>0.5)btn.style.marginRight=need+'px';
+}
+window.addEventListener('resize',()=>requestAnimationFrame(alignExit));
+$('#objQ').addEventListener('focus',()=>{$('#objList').classList.add('on');renderObjList();});
+$('#objQ').addEventListener('input',()=>renderObjList());
+$('#objList').addEventListener('click',e=>{
+  const b=e.target.closest('.o[data-id]');if(!b)return;
+  const o=objSource().find(x=>x.id===b.dataset.id);if(o)setCurObj(o);
+  $('#objList').classList.remove('on');
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.combobox'))$('#objList').classList.remove('on');});
+$('#objExit').onclick=()=>switchView('console');
+
+/* ── 启动 ── */
+renderHome();
+renderNav();
+goPage('dashboard');
+
+/* ══════════ 关键屏声明（截图器枚举） ══════════ */
+window.__UI_CAPTURE__={
+  reset:async()=>{setMode('super');switchView('console');goPage('dashboard');},
+  states:[
+    {id:'console-home',label:'总台 · 经营总览',go:async()=>{setMode('super');switchView('console');goPage('dashboard');}},
+    {id:'agent-home',label:'代理商 · 辖区概览',go:async()=>{setMode('super');switchView('agent');goPage('dashboard');}},
+    {id:'provider-home',label:'服务商 · 我的工作台',go:async()=>{setMode('super');switchView('provider');goPage('dashboard');}},
+    {id:'view-as-agent',label:'对象视角 · 沙依巴克代理商',go:async()=>{setMode('super');switchView('agent');setCurObj(AGENTS[1]);}},
+    {id:'view-as-provider',label:'对象视角 · 摄影服务商',go:async()=>{setMode('super');switchView('provider');setCurObj(PROVIDERS[1]);}},
+    {id:'user-home',label:'用户 · 工作台（金卡）',go:async()=>{setMode('super');switchView('user');setCurObj(USERS[2]);}},
+    {id:'view-as-user',label:'用户视角 · 黑金测试',go:async()=>{setMode('super');switchView('user');setCurObj(USERS[3]);TEST_TIER='黑金会员';renderUser(CUR.obj);}},
+    {id:'review-list',label:'总台 · 服务商入驻审核',go:async()=>{setMode('super');switchView('console');goPage('review');}},
+    {id:'readonly',label:'运维管理员 · 只读锁定',go:async()=>{setMode('ops');switchView('console');goPage('review');}},
+    {id:'modal',label:'审核弹窗',go:async()=>{setMode('super');switchView('console');goPage('review');openModal('review',0,'ok');}},
+    {id:'empty',label:'空状态',go:async()=>show('empty')},
+    {id:'loading',label:'加载态',go:async()=>show('loading')},
+    {id:'error',label:'异常态',go:async()=>show('error')}
+  ]};
+</script>
+</body>
+</html>

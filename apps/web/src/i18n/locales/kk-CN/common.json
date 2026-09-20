@@ -1,0 +1,403 @@
+{
+  "app": {
+    "name": "H5 ديزاين تەكشەسى",
+    "slogan": "H5 ديزاينداۋ سونشا وڭاي"
+  },
+  "nav": {
+    "templates": "ۇلگىلەر",
+    "dashboard": "تۋىندىلار",
+    "pricing": "باعا",
+    "login": "كىرۋۋ",
+    "register": "تىزىمدەلۋ",
+    "logout": "شىعۋ",
+    "allCategories": "All Categories",
+    "home": "Home",
+    "designStudio": "Studio",
+    "findServices": "Services",
+    "orders": "Orders",
+    "messages": "Messages",
+    "settings": "Аккаунт",
+    "profile": "Profile",
+    "myWorks": "тۋىندىلار",
+    "myWorkbench": "جۇمىس ۇستەلىم",
+    "providerStudio": "Provider Studio",
+    "adminReview": "Template Review",
+    "providerEntry": "Provider Entry",
+    "myOrders": "тапسىрыстарым",
+    "myMessages": "حابارلارىم",
+    "workbench": "جۇمىس ۇستەلى",
+    "agentStudio": "агентتىك ستудия"
+  },
+  "role": {
+    "USER": "قالىپتى پايدالانۋشى",
+    "SERVICE_PROVIDER": "قىزمەت وتكەرۋشى",
+    "AGENT": "ۋاكىل",
+    "ADMIN": "اكىمشى"
+  },
+  "account": {
+    "accountId": "Аккаунт ID",
+    "copyId": "Толық ID-ны көшіру",
+    "copied": "Көшірілді",
+    "realName": {
+      "APPROVED": "Тексерілген",
+      "PENDING": "Тексеруде",
+      "REJECTED": "Қабылданбады",
+      "NONE": "Тексерілмеген"
+    },
+    "provider": {
+      "APPROVED": "Мақұлданды",
+      "PENDING": "Қаралуда",
+      "REJECTED": "Қабылданбады",
+      "NONE": "Сертификатталмаған"
+    }
+  },
+  "button": {
+    "create": "ديزاىندى باستاۋ",
+    "preview": "الدىن كورۋ",
+    "publish": "جارىيالاۋ",
+    "save": "ساقتاۋ",
+    "cancel": "كۇشىن جويۋ",
+    "confirm": "راستاۋ",
+    "delete": "وشىرۋ",
+    "duplicate": "كوبەيتۋ",
+    "back": "قايىرىلۋ",
+    "browseTemplates": "ۇلگى كورۋ",
+    "viewMore": "كوبىرەك",
+    "upload": "جۇكتەۋ",
+    "change": "Change",
+    "crop": "Crop",
+    "selectFromLibrary": "ماتەريالدان تاڭداۋ",
+    "backToList": "Back to List",
+    "close": "Close",
+    "confirmPublish": "Confirm Publish",
+    "retry": "Retry",
+    "useTemplate": "Use Template"
+  },
+  "status": {
+    "saving": "ساقتاۋدا...",
+    "saved": "ساقتالدى",
+    "unsaved": "ساقتالمادى",
+    "publishing": "جارىيالاۋدا...",
+    "published": "جارىيالاندى",
+    "loading": "جۇكتەلۋدە...",
+    "empty": "مازمۇن جوق",
+    "loadingProject": "Loading project...",
+    "noTemplates": "No templates",
+    "publishedBadge": "Published",
+    "untitled": "Untitled"
+  },
+  "home": {
+    "heroTitle": "H5 ديزاىنداۋ سونشا وڭاي",
+    "heroSubtitle": "كودسىز · ۇلگىلەنگەن · بىر باسۋمەن جارىيالاۋ",
+    "scenes": "قورىتىندى تۇرلەرى",
+    "hotTemplates": "قىزۋ ۇلگىلەر",
+    "viewMore": "كوبىرەك ←",
+    "feature1Title": "سۇيرەپ ديزاىنداۋ",
+    "feature1Desc": "كورگەنىڭىز - العانىڭىز، كود كەرمەيدى",
+    "feature2Title": "كوپ قۇرىلعى",
+    "feature2Desc": "تەلەفون/تابلەت/كومپيۋتەر",
+    "feature3Title": "بىر باسۋمەن جارىيالاۋ",
+    "feature3Desc": "سىلتەمە مەن QR كود قۇرۋ",
+    "footer": "© 2026 H5 ديزاين تەكشەسى",
+    "uses": "رەت پايدالانىلدى"
+  },
+  "scene": {
+    "wedding": "توي شاقىرۋى",
+    "recruitment": "قىزمەتكەر قابىلداۋ",
+    "conference": "ماسليحات شاقىرۋى",
+    "marketing": "كاسىپورىن ۇگىتتەۋ",
+    "birthday": "تۋعان كۇن",
+    "education": "بىلىم بەرۋ",
+    "festival": "مەيرامدىق كارتا",
+    "recommend": "Recommended",
+    "business": "Business",
+    "life": "Life Events"
+  },
+  "placeholder": {
+    "comingSoon": "Coming soon",
+    "providerEntry": "I'm a provider, join now",
+    "providerEntrySub": "Join free and start your service business"
+  },
+  "share": {
+    "qrCode": "QR Code",
+    "saveQr": "Save QR",
+    "copyLink": "Copy Link",
+    "copied": "Copied",
+    "wechatHint": "Tap ··· to share",
+    "openInWechat": "Open in WeChat to share"
+  },
+  "published": {
+    "view": "View",
+    "qr": "QR Code",
+    "unpublish": "Unpublish",
+    "qrTitle": "Work QR Code"
+  },
+  "profile": {
+    "myWorks": "Менің жұмыстарым",
+    "myFavorites": "Таңдаулылар",
+    "myOrders": "Тапсырыстарым",
+    "settings": "Аккаунт",
+    "messages": "Хабарлар"
+  },
+  "favorites": {
+    "title": "Таңдаулылар",
+    "toggle": "Таңдау",
+    "empty": "Әлі ешқандай қалып ұнамадыңыз, қалыптарға қараңыз",
+    "browseTemplates": "Қалыптарды көру",
+    "remove": "Өшіру"
+  },
+  "settings": {
+    "title": "Аккаунт параметрлері",
+    "profile": "Негізгі ақпарат",
+    "nickname": "Лақап ат",
+    "avatar": "Аватар",
+    "phone": "Телефон",
+    "changePassword": "Құпия сөзді өзгерту",
+    "currentPassword": "Ағымдағы құпия сөз",
+    "newPassword": "Жаңа құпия сөз",
+    "confirmPassword": "Жаңа құпия сөзді растау",
+    "save": "Сақтау",
+    "saved": "Сақталды",
+    "passwordChanged": "Құпия сөз өзгертілді",
+    "basicInfo": "Basic Info",
+    "basicInfoDesc": "Manage your avatar, nickname and contact info",
+    "security": "Security",
+    "securityDesc": "Protect your account security",
+    "providerSection": "Provider",
+    "accountSection": "Account",
+    "notProvider": "You are not a provider yet",
+    "providerDesc": "After joining you can publish free templates, list paid works and earn revenue. Multiple service types can be applied at once (Design / Photo / Venue / Floral / Steward / Perform).",
+    "providerPendingTitle": "Review in progress",
+    "providerPendingDesc": "Your submitted qualification materials are under review, usually 1-3 business days. Before approval you may publish free supplies but not paid works.",
+    "providerApprovedTitle": "Provider activated",
+    "providerApprovedDesc": "Your qualification is approved. You can publish free and paid works; revenue settles to your provider wallet.",
+    "enterStudio": "Enter Provider Studio",
+    "logoutDesc": "Log out of the current account; you need to sign in again to continue.",
+    "deleteAccount": "Delete account",
+    "deleteAccountDesc": "After deletion, all your works, orders and data will be permanently removed and cannot be recovered.",
+    "deleteComingSoon": "Account deletion coming soon",
+    "serviceType": "Select service types",
+    "serviceTypeHint": "(multiple)",
+    "qualificationNote": "Qualification note (optional)",
+    "submitApply": "Submit application",
+    "applySuccess": "Application submitted, under review",
+    "avatarChange": "Change avatar",
+    "avatarHint": "JPG, PNG under 5MB",
+    "statusNone": "Not joined",
+    "applyProviderBtn": "Apply to be a provider",
+    "accountActionsDesc": "These actions require caution",
+    "notifications": "Notification Preferences",
+    "notificationsDesc": "Choose which message types you want to receive",
+    "notifSystem": "System",
+    "notifSystemDesc": "Version updates and system maintenance",
+    "notifOrder": "Orders",
+    "notifOrderDesc": "Purchase and refund status changes",
+    "notifInteraction": "Interactions",
+    "notifInteractionDesc": "Comments, likes and other interactions",
+    "notifMarketing": "Marketing",
+    "notifMarketingDesc": "Promotions and event recommendations (can be turned off)",
+    "realName": "Real Name",
+    "bio": "Bio",
+    "email": "Email",
+    "changePhone": "Change",
+    "phoneChangeTitle": "Change Phone Number",
+    "phoneChangeDesc": "After change, sign in with the new phone number",
+    "newPhone": "New Phone",
+    "verifyCode": "Verification Code",
+    "getCode": "Get Code",
+    "codeCountdown": "Resend in {{s}}s",
+    "confirmChangePhone": "Confirm Change",
+    "wechatBind": "WeChat Binding",
+    "wechatBindDesc": "Bind WeChat for quick QR login and message sync",
+    "wechatUnbound": "Not bound",
+    "wechatBound": "Bound",
+    "bindWechat": "Bind WeChat",
+    "devices": "Login Devices",
+    "devicesDesc": "View and manage your signed-in devices",
+    "dangerZone": "Danger Zone",
+    "dangerZoneDesc": "These actions cannot be undone. Please proceed with caution.",
+    "deleteConfirmTitle": "Confirm Account Deletion",
+    "deleteConfirmDesc": "This will permanently delete your account and all associated data, which cannot be recovered.",
+    "deleteDataListTitle": "Data to be deleted",
+    "deleteWorks": "Works",
+    "deleteOrders": "Orders",
+    "deleteFavorites": "Favorites",
+    "deletePasswordLabel": "Enter your password to confirm",
+    "deleteConfirmBtn": "Confirm Deletion",
+    "deleteCancelled": "Account deletion is coming soon",
+    "demoTitle": "Provider Status Preview (demo only)",
+    "demoNone": "Not joined",
+    "demoPending": "Under review",
+    "demoApproved": "Approved",
+    "previewNote": "(preview only, not real data)",
+    "avatarUploading": "Uploading…",
+    "smsComingSoon": "SMS verification is coming soon",
+    "wechatComingSoon": "WeChat binding is coming soon",
+    "devicesComingSoon": "Device management is coming soon",
+    "providerValueTitle": "Why join",
+    "providerValue1": "Publish free supplies and showcase your works",
+    "providerValue2": "List paid works and earn revenue share",
+    "providerValue3": "Enter the provider studio to manage orders and wallet",
+    "providerApplyHint": "You can apply for multiple service types at once",
+    "addService": "қызмет қосу",
+    "addServiceTitle": "қызмет қосу",
+    "addServiceDesc": "Кеңейткіңіз келетін қызмет түрлерін таңдаңыз, тапсырылғаннан кейін әкімші тексереді.",
+    "addServiceHint": "Әрекетті немесе тексерудегі қызметтерді қайта таңдауға болмайды",
+    "submitAddService": "Растау",
+    "addServiceEmpty": "Қосуға болатын қызмет жоқ",
+    "pendingReviewSuffix": "тексеруде..."
+  },
+  "provider": {
+    "upgrade": "Become a Provider",
+    "upgradeSub": "Join free, publish templates and earn",
+    "studioEntry": "Enter Provider Studio",
+    "studioEntrySub": "Manage templates, view earnings and withdraw",
+    "reviewTitle": "Provider qualification review",
+    "reviewHint": "After joining you can publish free templates; paid templates require passing qualification review first.",
+    "reviewPending": "Pending review",
+    "reviewApproved": "Approved",
+    "submitReview": "Submit for review",
+    "applyTitle": "Select the services you offer",
+    "applyHint": "Multi-select; you can adjust them later in the provider studio.",
+    "applyConfirm": "Confirm to join",
+    "applySelectHint": "Please select at least one service"
+  },
+  "providers": {
+    "title": "Service Providers",
+    "sub": "Connect with design, photography, venues, floral & gifts, ceremony and performance teams",
+    "viewMore": "Explore services ›",
+    "comingSoon": "Provider features coming soon",
+    "design": {
+      "name": "Design",
+      "tags": [
+        "Invitations",
+        "Posters",
+        "Branding",
+        "Illustration"
+      ]
+    },
+    "photo": {
+      "name": "Photo & Film",
+      "tags": [
+        "Wedding shoot",
+        "Event photo",
+        "Product shot",
+        "Video"
+      ]
+    },
+    "venue": {
+      "name": "Venues",
+      "tags": [
+        "Banquet hotel",
+        "Conf. center",
+        "Birthday party",
+        "Team base"
+      ]
+    },
+    "floral": {
+      "name": "Floral & Gifts",
+      "tags": [
+        "Bouquets",
+        "Wedding floral",
+        "Plants",
+        "Gift boxes"
+      ]
+    },
+    "ritual": {
+      "name": "Ceremony",
+      "tags": [
+        "Wedding lead",
+        "Funeral care",
+        "Reception",
+        "Host"
+      ]
+    },
+    "show": {
+      "name": "Performance",
+      "tags": [
+        "Wedding band",
+        "Dance",
+        "Singer",
+        "Host"
+      ]
+    }
+  },
+  "cancel": "Cancel",
+  "category": {
+    "wedding": "той шақыруы",
+    "birth_celebration": "Birth Celebration",
+    "birthday": "туған күн",
+    "festival": "мейрамдық карта",
+    "housewarming": "Housewarming",
+    "school_promotion": "School & Admissions",
+    "social_gathering": "Social Gathering",
+    "memorial": "Memorial",
+    "brand": "Branding & Corporate",
+    "recruitment": "қызметкер қабылдау",
+    "conference": "мәслихат шақыруы",
+    "opening": "Grand Opening",
+    "education": "білім беру",
+    "biz_social": "Business Social",
+    "marketing": "кәсіпорын үгіттеу"
+  },
+  "quickMake": {
+    "title": "Quick Make",
+    "subtitle": "Build your H5 in three steps",
+    "steps": {
+      "selectType": "Pick a type",
+      "selectTemplate": "Pick a template",
+      "fillForm": "Fill in content"
+    },
+    "types": {
+      "wedding": "Wedding Invitation",
+      "recruitment": "Recruitment",
+      "conference": "Conference",
+      "marketing": "Product Marketing",
+      "birthday": "Birthday",
+      "education": "Education",
+      "festival": "Festival"
+    },
+    "fields": {
+      "title": "Title",
+      "date": "Date",
+      "invitation": "Invitation",
+      "location": "Location",
+      "cover": "Cover Image",
+      "slogan": "Slogan",
+      "position": "Position",
+      "requirements": "Requirements",
+      "contact": "Contact",
+      "content": "Content",
+      "info": "Info",
+      "blessing": "Blessing",
+      "cta": "Button Text",
+      "from": "From",
+      "subtitle": "Subtitle",
+      "highlights": "Highlights",
+      "website": "Website",
+      "sign": "Signature"
+    },
+    "form": {
+      "uploadHint": "Upload an image as the cover",
+      "uploading": "Uploading...",
+      "preview": "Preview",
+      "required": "Required"
+    },
+    "buttons": {
+      "next": "Next",
+      "prev": "Back",
+      "finish": "Finish & Open Editor",
+      "selectTemplate": "Select this template",
+      "backHome": "Back to Home"
+    },
+    "messages": {
+      "selectTypeFirst": "Please select a type first",
+      "selectTemplateFirst": "Please select a template first",
+      "needLogin": "Please log in to finish",
+      "creating": "Creating your work...",
+      "success": "Work created, opening editor",
+      "fail": "Failed, please retry",
+      "loginRedirect": "Log in to continue Quick Make"
+    }
+  }
+}

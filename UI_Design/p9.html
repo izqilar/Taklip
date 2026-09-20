@@ -1,0 +1,1771 @@
+<script>
+/* ══════════ 应用逻辑 ══════════ */
+const $=s=>document.querySelector(s);
+let VIEW='console', PAGE='dashboard', RO=false;
+/* 对象视角：CUR 表示当前正在查看的具体代理商/服务商（仅总台管理员在代理/服务商视角下使用） */
+let CUR={type:'agent',obj:null};
+const num=x=>(x||0).toLocaleString('en-US');
+function objSource(){return CUR.type==='agent'?AGENTS:CUR.type==='provider'?PROVIDERS:USERS;}
+function objTagName(){return CUR.type==='agent'?'代理商':CUR.type==='provider'?'服务商':'用户';}
+function isViewAs(){return VIEW==='agent'||VIEW==='provider'||VIEW==='user';}
+
+/* ── 单元格渲染：以 #tag 开头 → 状态标签 ── */
+const TAGMAP={ok:'ok',warn:'warn',bad:'bad',mut:'mut',ac:'ac'};
+function cell(c){
+  if(typeof c==='string'&&c[0]==='#'){const i=c.indexOf(' ');const tag=c.slice(1,i);const txt=c.slice(i+1);
+    return `<span class="tag ${TAGMAP[tag]||'mut'}">${txt}</span>`;}
+  return c;
+}
+
+/* ── 服务类型字典渲染：入驻/业务申请复选框统一从 SVC_DICT 取值 ── */
+function renderSvcScopes(){
+  const defOn=['SVC-01','SVC-05'];
+  [['papScopes','papScope'],['ffScopes','ffScope'],['upScopes','upScope']].forEach(pair=>{
+    const box=document.getElementById(pair[0]);if(!box)return;
+    box.innerHTML=SVC_DICT.filter(x=>x.status==='启用').map(x=>{
+      const on=defOn.indexOf(x.code)>=0?' checked':'';
+      return `<label><input type="checkbox" name="${pair[1]}" value="${x.name}"${on}>${x.name}</label>`;
+    }).join('');
+  });
+}
+
+/* ── 服务类型字典渲染：入驻/业务申请复选框统一从 SVC_DICT 取值 ── */
+function renderSvcScopes(){
+  const defOn=['SVC-01','SVC-05'];
+  [['papScopes','papScope'],['ffScopes','ffScope'],['upScopes','upScope']].forEach(pair=>{
+    const box=document.getElementById(pair[0]);if(!box)return;
+    box.innerHTML=SVC_DICT.filter(x=>x.status==='启用').map(x=>{
+      const on=defOn.indexOf(x.code)>=0?' checked':'';
+      return `<label><input type="checkbox" name="${pair[1]}" value="${x.name}"${on}>${x.name}</label>`;
+    }).join('');
+  });
+}
+
+/* ── 侧栏导航 ── */
+function renderNav(){
+  const nav=$('#nav');let h='';
+  MENU[VIEW].forEach(g=>{
+    if(g.g)h+=`<div class="grp">${g.g}</div>`;
+    g.items.forEach(it=>{
+      if(it.group){
+        const collapsed=it.collapsed?'collapsed':'';
+        h+=`<div class="subgrp ${collapsed}" data-sg="${it.group}">
+          <div class="subgrp-h">${ic(it.i)}<span>${it.group}</span><span class="sg-arrow">▾</span></div>
+          <div class="subgrp-items">`;
+        it.items.forEach(sub=>{
+          h+=`<div class="mi ${sub.id===PAGE?'on':''}" data-p="${sub.id}">${ic(sub.i)}
+            <span class="lbl">${sub.l}</span>${sub.badge?`<span class="bdg">${sub.badge}</span>`:''}</div>`;
+        });
+        h+=`</div></div>`;
+      }else{
+        h+=`<div class="mi ${it.id===PAGE?'on':''}" data-p="${it.id}">${ic(it.i)}
+          <span class="lbl">${it.l}</span>${it.badge?`<span class="bdg">${it.badge}</span>`:''}</div>`;
+      }
+    });
+  });
+  nav.innerHTML=h;
+  nav.querySelectorAll('.mi').forEach(el=>el.onclick=()=>goPage(el.dataset.p));
+  nav.querySelectorAll('.subgrp-h').forEach(el=>el.onclick=()=>{
+    el.parentElement.classList.toggle('collapsed');
+  });
+}
+
+/* ── 列表页渲染 ── */
+let LIST_FILTER=0, LIST_KEY='';
+function renderList(key){
+  const p=PAGES[key];if(!p){renderNav();return;}
+  $('#listTitle').textContent=p.t;
+  $('#listSub').textContent=p.s;
+  $('#listChip').textContent=p.chip;
+  // 行级过滤：fcol 分类标签 + 搜索关键词（保留原始行索引）
+  let list=p.r.map((r,i)=>({r,i,idx:i}));
+  if(p.fcol!==undefined&&LIST_FILTER>0){
+    const fc=p.f[LIST_FILTER].fcol!==undefined?p.f[LIST_FILTER].fcol:p.fcol;
+    const fv=p.f[LIST_FILTER].v||p.f[LIST_FILTER].t;
+    list=list.filter(x=>{const t=String(x.r[fc]);return Array.isArray(fv)?fv.some(v=>t.indexOf(v)>=0):t.indexOf(fv)>=0;});
+  }
+  if(LIST_KEY)list=list.filter(x=>x.r.some(v=>String(v).indexOf(LIST_KEY)>=0));
+  const f=$('#listFilters');f.innerHTML='';
+  p.f.forEach((c,i)=>{
+    const el=document.createElement(p.fcol!==undefined?'button':'span');
+    el.className='chip'+(i===LIST_FILTER?' on':'');
+    el.textContent=c.t+(c.n?` ${c.n}`:'');
+    if(p.fcol!==undefined)el.onclick=()=>{LIST_FILTER=(i===LIST_FILTER?0:i);renderList(key);};
+    f.appendChild(el);});
+  let th='';p.h.forEach(c=>th+=`<th class="${c.n?'n':''}">${c.t}</th>`);
+  if(p.acts)th+='<th>操作</th>';
+  let tr='';
+  list.forEach((x,i)=>{const r=x.r;
+    let tds='';p.h.forEach((c,j)=>{tds+=`<td class="${c.n?'n':''}">${cell(r[j])}</td>`;});
+    if(p.acts){
+      const mm=MODAL_META[key]||{};
+      const roCls=RO?' data-ro':'';
+      if(p.acts==='review'){
+        tds+=`<td><div class="acts"><span class="l" data-a="view" data-i="${x.idx}">查看</span><span class="l ok" data-a="ok" data-i="${x.idx}"${roCls}>通过</span><span class="l bad" data-a="no" data-i="${x.idx}"${roCls}>驳回</span></div></td>`;
+      }else if(p.acts==='approve'){
+        tds+=`<td><div class="acts"><span class="l" data-a="view" data-i="${x.idx}">查看</span><span class="l dim" data-a="edit" data-i="${x.idx}"${roCls}>审批</span></div></td>`;
+      }else if(p.acts==='audit'){
+        tds+=`<td><div class="acts"><span class="l" data-a="view" data-i="${x.idx}">查看</span><span class="l dim" data-a="edit" data-i="${x.idx}"${roCls}>审核</span></div></td>`;
+      }else if(p.acts==='notice'){
+        const st=String(r[p.fcol]||'');
+        const needFill=st.indexOf('初审通过')>=0;
+        const kind=r[1]&&String(r[1]).indexOf('代理商')>=0?'agent':(r[1]&&String(r[1]).indexOf('业务升级')>=0?'upgrade':'provider');
+        tds+=`<td><div class="acts"><span class="l" data-a="view" data-i="${x.idx}">查看</span>${needFill?`<span class="l ok" data-a="fill" data-i="${x.idx}" data-k="${kind}">填写资料</span>`:''}</div></td>`;
+      }else if(p.acts==='fbchain'){
+        tds+=`<td><div class="acts"><span class="l" data-a="view" data-i="${x.idx}">查看</span><span class="l dim" data-a="edit" data-i="${x.idx}"${roCls}>回应</span><span class="l ok" data-a="up" data-i="${x.idx}"${roCls}>升级代理商</span></div></td>`;
+      }else if(p.acts==='fbchain2'){
+        tds+=`<td><div class="acts"><span class="l" data-a="view" data-i="${x.idx}">查看</span><span class="l dim" data-a="edit" data-i="${x.idx}"${roCls}>处理</span><span class="l ok" data-a="up" data-i="${x.idx}"${roCls}>升级平台</span></div></td>`;
+      }else if(p.acts==='handle'){
+        const st=String((mm.fbSt&&mm.fbSt(x.r))||'');
+        const done=!/(\u5f85|\u5904\u7406\u4e2d|\u7533\u8bc9\u4e2d)/.test(st);
+        const lbl=done?'查看':'处理';
+        tds+=`<td><div class="acts"><span class="l ${done?'':'ok'}" data-a="view" data-i="${x.idx}">${lbl}</span></div></td>`;
+      }else if(p.acts==='ueval'){
+        const evCol=p.evalCol!==undefined?p.evalCol:4;
+        const mkCol=p.evalMarkCol!==undefined?p.evalMarkCol:evCol;
+        const est=String(x.r[evCol]||'');
+        const marked=String(x.r[mkCol]||'').indexOf('已评价')>=0||est.indexOf('已评价')>=0;
+        const showEv=!(p.evalOnlyDone&&est.indexOf('已完成')<0&&!marked);
+        const evLbl=marked?'追评':'评价';
+        tds+=`<td><div class="acts"><span class="l" data-a="view" data-i="${x.idx}">查看</span>${showEv?`<span class="l ok" data-a="eval" data-i="${x.idx}">${evLbl}</span>`:''}</div></td>`;
+      }else if(p.acts==='pord'){
+        const st0=String(x.r[p.fcol]||'');
+        const ev0=String(x.r[6]||'');
+        let pnm,pcls='ok';
+        if(ev0.indexOf('已评价')>=0){pnm='已评价';pcls='dim';}
+        else if(st0.indexOf('待接单')>=0)pnm='处理';
+        else if(st0.indexOf('履约中')>=0)pnm='维护';
+        else if(st0.indexOf('已完成')>=0)pnm='评价';
+        else pnm='处理';
+        tds+=`<td><div class="acts"><span class="l" data-a="view" data-i="${x.idx}">查看</span><span class="l ${pcls}" data-a="proc" data-i="${x.idx}"${roCls}${pcls==='dim'?' style="pointer-events:none;opacity:.55"':''}>${pnm}</span></div></td>`;
+      }else if(p.acts==='ro'||mm.viewOnly){
+        tds+=`<td><div class="acts"><span class="l" data-a="view" data-i="${x.idx}">查看</span></div></td>`;
+      }else if(p.acts==='cfg'){
+        tds+=`<td><div class="acts"><span class="l dim" data-a="edit" data-i="${x.idx}"${roCls}>编辑</span></div></td>`;
+      }else{
+        tds+=`<td><div class="acts"><span class="l" data-a="view" data-i="${x.idx}">查看</span><span class="l dim" data-a="edit" data-i="${x.idx}"${roCls}>${mm.btn||'编辑'}</span></div></td>`;
+      }
+    }
+    tr+=`<tr>${tds}</tr>`;});
+  $('#listTable').innerHTML=`<thead><tr>${th}</tr></thead><tbody>${tr}</tbody>`;
+  $('#listTotal').textContent=list.length;
+  $('#listPanelHead').innerHTML=`<span>${p.t}</span><span class="hint">共 <b>${list.length}</b> 条 · 数据隔离由后端强制</span>`;
+  const ne=$('#listNew');ne.style.display=p.new?'inline-flex':'none';ne.textContent=p.newLabel||'＋ 新建';
+  // 行内操作
+  $('#listTable').querySelectorAll('[data-a]').forEach(el=>{
+    el.onclick=()=>{
+      if(RO&&(el.dataset.a==='ok'||el.dataset.a==='no'||el.dataset.a==='edit'||el.dataset.a==='up'))return;
+      const i=+el.dataset.i,a=el.dataset.a;
+      if(a==='ok')openModal(key,i,'ok');
+      else if(a==='no')openModal(key,i,'no');
+      else if(a==='edit')openModal(key,i,'edit');
+      else if(a==='fill'){openFillPage(el.dataset.k,key);}
+      else if(a==='up'){fbUpgrade(key,i);}
+      else if(a==='eval'){openEvalModal(key,i);}
+      else if(a==='proc'){openProcModal(key,i);}
+      else if(a==='view'&&MODAL_META[key]&&MODAL_META[key].viewPage)openFbDetail(key,i);
+      else openModal(key,i,'view');
+    };
+  });
+  $('#listNew').onclick=()=>{const nm=MODAL_META[key]||{};if(nm.newPage)openFbNew(key);else openModal(key,0,'new');};
+}
+
+/* ── 资料填写页（通知公告 · 初审通过 → 填写资料） ── */
+let FILL_BACK='p-notices';
+function openFillPage(kind,backId){
+  FILL_BACK=backId||(VIEW==='user'?'u-notices':'p-notices');
+  const info=kind==='agent'
+    ?{title:'代理商入驻资料填写',sub:'初审已通过 · 补充完整资料后进入管理总台终审'}
+    :kind==='upgrade'
+    ?{title:'业务升级资料填写',sub:'初审已通过 · 补充升级资料后进入管理总台审核'}
+    :{title:'服务商入驻资料填写',sub:'初审已通过 · 补充完整资料后进入管理总台终审'};
+  $('#fillTitle').textContent=info.title;
+  $('#fillSub').textContent=info.sub;
+  $('#ffType').value=kind==='agent'?'代理商':'服务商';
+  const meta=VIEWMETA[VIEW];
+  $('#crumbView').textContent=meta.crumb;
+  $('#crumbPage').textContent=info.title;
+  document.querySelectorAll('.page').forEach(s=>s.classList.remove('on'));
+  $('#pg-fill').classList.add('on');
+}
+function bindFillActions(){
+  const b=$('#fillBack');if(b)b.onclick=()=>goPage(FILL_BACK);
+  const s=$('#ffSave');if(s)s.onclick=()=>alert('草稿已保存，可在通知公告中继续补充');
+  const sb=$('#ffSubmit');if(sb)sb.onclick=()=>{
+    const name=$('#ffName').value.trim(),phone=$('#ffPhone').value.trim(),cert=$('#ffCert').value.trim(),exp=$('#ffExpire').value;
+    if(!name){alert('请填写申请方名称');return;}
+    if(!phone||!/^1\d{10}$/.test(phone)){alert('请填写正确的 11 位手机号');return;}
+    if(!cert){alert('请填写证件编号');return;}
+    if(!exp&&!$('#ffLong').checked){alert('请选择有效期或勾选长期有效');return;}
+    const type=$('#ffType').value==='代理商'?'代理商':'服务商';
+    alert('资料已提交（'+type+'）\n\n申请资料已进入终审队列，可在「通知公告」关注审核结果。');
+    goPage(FILL_BACK);
+  };
+}
+bindFillActions();
+
+/* ── 反馈详情页（我的反馈 · 查看跳页面 + 发送消息） ── */
+let FB_VIEW=null,FB_EXTRA=[];
+function openFbDetail(key,i){
+  const p=PAGES[key];if(!p)return;
+  FB_VIEW={key,i};FB_EXTRA=[];
+  const mm=MODAL_META[key]||{};
+  const r=p.r[i]||[];
+  const meta=VIEWMETA[VIEW];
+  $('#crumbView').textContent=meta.crumb;
+  $('#crumbPage').textContent='反馈详情';
+  document.querySelectorAll('.page').forEach(s=>s.classList.remove('on'));
+  $('#pg-fbdetail').classList.add('on');
+  $('#fbdBody').innerHTML=renderFeedbackLayout(mm,r)+fbUpgradeBar(mm,r)+fbSendArea(VIEW==='console'?'平台':VIEW==='agent'?'代理商':VIEW==='provider'?'服务商':'我');
+  bindFbSend();
+  const up=document.getElementById('fbdUp');
+  if(up)up.onclick=()=>{fbUpgrade(key,FB_VIEW.i);openFbDetail(key,FB_VIEW.i);};
+  const bk=document.getElementById('fbdBack');
+  const backName=(p&&p.t)||'列表';
+  if(bk)bk.textContent='← 返回 '+backName;
+  requestAnimationFrame(alignExit);
+}
+function fbUpgradeBar(mm,r){
+  const key=FB_VIEW?FB_VIEW.key:null;
+  if(key!=='p-complaints'&&key!=='a-complaints')return '';
+  const st=(mm&&mm.fbSt&&mm.fbSt(r))||'';
+  const done=!/(\u5f85|\u5904\u7406\u4e2d|\u7533\u8bc9\u4e2d)/.test(String(st));
+  if(done)return '';
+  const isP=key==='p-complaints';
+  return `<div style="border-top:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px">
+    <span style="color:var(--ink-3);font-size:12px;flex:1">${isP?'服务商无法解决时，可升级至辖区代理商处理':'代理商无法解决时，可升级至平台仲裁处理'}</span>
+    <button class="btn ok" id="fbdUp">${isP?'升级代理商':'升级平台'}</button>
+  </div>`;
+}
+function fbSendArea(op){
+  op=op||'我';
+  return `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+    <div style="font-weight:600;font-size:13px;margin-bottom:8px">发送消息<span style="color:var(--ink-3);font-weight:400;font-size:11.5px">（补充反馈内容 / 对处理结果的追评）</span></div>
+    <div style="display:flex;gap:10px;align-items:flex-end">
+      <textarea class="field" id="fbdMsg" rows="2" style="flex:1" placeholder="请输入要发送给责任方的消息内容…"></textarea>
+      <button class="btn primary" id="fbdSend" data-op="${op}" style="white-space:nowrap">发送</button>
+    </div>
+  </div>`;
+}
+function bindFbSend(){
+  const s=$('#fbdSend');if(!s)return;
+  s.onclick=()=>{
+    const msg=$('#fbdMsg').value.trim();
+    if(!msg){alert('请输入消息内容');$('#fbdMsg').focus();return;}
+    FB_EXTRA.unshift({op:s.dataset.op||'我',time:'刚刚',content:msg});
+    const mm=MODAL_META[FB_VIEW.key]||{},r=PAGES[FB_VIEW.key].r[FB_VIEW.i]||[];
+    $('#fbdBody').innerHTML=renderFeedbackLayout(mm,r)+fbSendArea();
+    bindFbSend();
+    alert('消息已发送，责任方将收到提醒，可继续关注处理进度。');
+  };
+}
+(function(){const b=document.getElementById('fbdBack');if(b)b.onclick=()=>{if(FB_VIEW)goPage(FB_VIEW.key);};})();
+
+/* ── 新增反馈页（我的反馈 · ＋新增反馈） ── */
+function openFbNew(key){
+  const meta=VIEWMETA[VIEW];
+  $('#crumbView').textContent=meta.crumb;
+  $('#crumbPage').textContent='新增反馈';
+  document.querySelectorAll('.page').forEach(s=>s.classList.remove('on'));
+  $('#pg-fbnew').classList.add('on');
+  const t1=$('#fbnTitle');if(t1)t1.value='';
+  const c1=$('#fbnContent');if(c1)c1.value='';
+  const t2=$('#fbnType');if(t2)t2.selectedIndex=0;
+  const d1=$('#fbnDept');if(d1)d1.selectedIndex=0;
+  const t3=$('#fbnTarget');if(t3)t3.selectedIndex=0;
+  const b=document.getElementById('fbnBack');if(b){b.textContent='← 返回 '+(key==='user-feedback'?'用户反馈':'我的反馈');b.onclick=()=>goPage(key);}
+  const sv=document.getElementById('fbnSave');if(sv)sv.onclick=()=>alert('草稿已保存，可在「我的反馈」中继续补充');
+  const sb=document.getElementById('fbnSubmit');if(sb)sb.onclick=()=>{
+    const title=$('#fbnTitle').value.trim(),type=$('#fbnType').value,target=$('#fbnTarget').value,content=$('#fbnContent').value.trim();
+    if(!title){alert('请填写反馈主题');return;}
+    if(!content){alert('请填写反馈内容');return;}
+    const d=new Date(),now=String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    const dept=$('#fbnDept')?$('#fbnDept').value:'服务商负责人';
+    FB_NEW_ROWS.unshift(['FB-'+FB_SEQ++,title,type,target,now,'#warn 待回复',dept]);
+    const fno='FB-'+FB_SEQ;FB_SEQ++;
+    const un=VIEW==='console'?'平台':(CUR.obj?CUR.obj.name:'买买提·艾山');
+    if(dept==='服务商负责人'){const pp=PAGES['p-complaints'];if(pp)pp.r.unshift([fno,'用户反馈','用户 '+un,'#warn 待回应',now]);}
+    else if(dept==='代理商'){const pa=PAGES['a-complaints'];if(pa)pa.r.unshift([fno,'用户反馈',un,'（反馈：'+title+'）','#warn 待处理',now]);}
+    else{const pc=PAGES['complaints'];if(pc)pc.r.unshift([fno,'用户反馈',un,'（反馈：'+title+'）','#warn 待处理',now]);}
+    alert('反馈已提交（'+type+' · '+dept+'）\n\n已进入处理流程：'+dept+'（无法解决时逐级升级），可在「我的反馈」查看处理进度并补充消息。');
+    goPage(key);
+  };
+  requestAnimationFrame(alignExit);
+}
+
+/* ── 意见反馈 · 升级规则贯穿（服务商→代理商→平台） ── */
+function fbUpgrade(key,i){
+  const src=PAGES[key].r[i];
+  if(!src)return;
+  const d=new Date(),now=String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  const no=src[0];
+  if(key==='p-complaints'){
+    const pa=PAGES['a-complaints'];if(pa)pa.r.unshift([no,'升级处理',src[2],'（反馈升级：'+src[2]+' · 服务商无法解决）','#warn 待处理',now]);
+    src[3]='#ac 已升级';
+    alert('已升级至辖区代理商处理；若代理商仍无法解决，将升级至平台仲裁。');
+  }else if(key==='a-complaints'){
+    const pc=PAGES['complaints'];if(pc)pc.r.unshift([no,'升级处理',src[2],'（反馈升级：'+src[2]+' · 代理商无法解决）','#warn 待处理',now]);
+    src[4]='#ac 已升级';
+    alert('已升级至平台仲裁处理。');
+  }
+  renderList(key);
+}
+
+/* ── 入驻弹窗 · 三级区域联动 ── */
+const REGION_DATA={
+ '新疆维吾尔自治区':{
+  '乌鲁木齐市':['天山区','沙依巴克区','新市区','水磨沟区','头屯河区'],
+  '昌吉回族自治州':['昌吉市','阜康市','呼图壁县','玛纳斯县'],
+  '伊犁哈萨克自治州':['伊宁市','奎屯市','霍尔果斯市','新源县'],
+  '喀什地区':['喀什市','疏附县','疏勒县','莎车县']},
+ '甘肃省':{
+  '兰州市':['城关区','七里河区','西固区','安宁区'],
+  '天水市':['秦州区','麦积区','清水县','甘谷县']},
+ '青海省':{
+  '西宁市':['城东区','城中区','城西区','城北区'],
+  '海东市':['乐都区','平安区','互助土族自治县']}
+};
+function resetUpRegion(){
+  $('#upCity').innerHTML='<option value="">城市</option>';
+  $('#upDist').innerHTML='<option value="">区县</option>';
+  $('#upProv').value='';$('#upCity').value='';$('#upDist').value='';
+}
+function bindUpRegion(){
+  const citySel=$('#upCity'),distSel=$('#upDist');
+  $('#upProv').onchange=()=>{
+    const cities=REGION_DATA[$('#upProv').value]||{};
+    citySel.innerHTML='<option value="">城市</option>'+Object.keys(cities).map(c=>`<option>${c}</option>`).join('');
+    distSel.innerHTML='<option value="">区县</option>';
+    $('#upCity').value='';$('#upDist').value='';
+  };
+  citySel.onchange=()=>{
+    const dists=(REGION_DATA[$('#upProv').value]||{})[$('#upCity').value]||[];
+    distSel.innerHTML='<option value="">区县</option>'+dists.map(d=>`<option>${d}</option>`).join('');
+    $('#upDist').value='';
+  };
+}
+bindUpRegion();
+
+/* ── 账户详情（四层通用 · 按角色分层动态渲染 · 支持编辑保存） ── */
+let ACC_EDIT=false;
+const ACCOUNT_META={
+ console:{
+  chip:'总台 · 账户详情',
+  sub:'当前登录管理员的完整资料 · 按基础数据 / 归属与作用域 / 账户状态 / 职能与权限分区展示',
+  hero:{av:'张',name:'张敏',role:'超级管理员',roleCls:'ac',meta:'ID ADMIN001 · 手机 189****9001 · 总部 · 注册 2026-02-14'},
+  sections:[
+   {title:'基础数据',hint:'身份与联系信息',fields:[
+    {l:'用户 ID',v:'ADMIN001'},
+    {l:'姓名',v:'张敏',edit:'text',req:1},
+    {l:'昵称',v:'—',mut:1,edit:'text'},
+    {l:'手机号',v:'189****9001',edit:'text',req:1},
+    {l:'邮箱',v:'未绑定',mut:1,edit:'text'},
+    {l:'头像',v:'默认头像（姓名首字）'}]},
+   {title:'归属与作用域',hint:'角色层级与数据可见范围',fields:[
+    {l:'系统角色',v:'管理员（ADMIN）'},
+    {l:'所属区域',v:'总部',edit:'select',options:['总部','天山区','沙依巴克区','高新区']},
+    {l:'数据作用域',v:'全平台（ALL）'},
+    {l:'登录层级',v:'管理总台'}]},
+   {title:'账户状态',hint:'状态与时间信息',fields:[
+    {l:'账户状态',v:'正常',tag:'ok',edit:'select',options:['正常','停用'],tagMap:{'正常':'ok','停用':'bad'}},
+    {l:'注册时间',v:'2026-02-14'},
+    {l:'最后登录',v:'2026-08-28 09:12'},
+    {l:'写操作权限',v:'可写（可代操作）',tag:'ok',edit:'select',options:['可写（可代操作）','只读'],tagMap:{'可写（可代操作）':'ok','只读':'mut'}}]},
+   {title:'职能与权限',hint:'管理员特有 · 职能角色与权限位阶',fields:[
+    {l:'职能角色',v:'超级管理员',tag:'ac',edit:'select',options:['超级管理员','运维管理员','服务审核员','财务管理员','在线客服'],tagMap:{'超级管理员':'ac','运维管理员':'ac','服务审核员':'ac','财务管理员':'ac','在线客服':'ac'}},
+    {l:'权限位阶',v:'100（最高）',num:1},
+    {l:'角色类型',v:'内置角色'},
+    {l:'功能权限',v:'10 域 · 28 项（全勾）'}],
+    perms:['用户查询','用户编辑','入驻审核','资质审核','业务升级审核','模板审核','内容下架','订单查询','售后处理','流水查询','提现审核','提现代操作','对账','券权益配置','优惠券发放','反馈处理','申诉仲裁','公告发布','公告审核','站内信收发','角色管理','区域管理','系统设置','数据导出']}
+  ]},
+ agent:{
+  chip:'代理商 · 账户详情',
+  sub:'当前登录代理商的完整资料 · 按基础数据 / 归属与作用域 / 账户状态 / 辖区经营分区展示',
+  hero:{av:'阿',name:'阿依古丽',role:'代理商',roleCls:'ac',meta:'ID AG001 · 手机 138****2210 · 天山区 · 入驻 2025-08-15'},
+  sections:[
+   {title:'基础数据',hint:'身份与联系信息',fields:[
+    {l:'代理商 ID',v:'AG001'},
+    {l:'代理商名称',v:'乌鲁木齐天山区',edit:'text',req:1},
+    {l:'昵称',v:'天山花姐',edit:'text'},
+    {l:'手机号',v:'138****2210',edit:'text',req:1},
+    {l:'邮箱',v:'未绑定',mut:1,edit:'text'},
+    {l:'头像',v:'默认头像（姓名首字）'}]},
+   {title:'归属与作用域',hint:'角色层级与数据可见范围',fields:[
+    {l:'系统角色',v:'代理商（AGENT）'},
+    {l:'绑定辖区',v:'天山区（乌鲁木齐）',edit:'select',options:['天山区（乌鲁木齐）','沙依巴克区（乌鲁木齐）','高新区（乌鲁木齐）','水磨沟区（乌鲁木齐）']},
+    {l:'数据作用域',v:'本辖区（REGION）'},
+    {l:'登录层级',v:'代理商中心'}]},
+   {title:'账户状态',hint:'状态与时间信息',fields:[
+    {l:'账户状态',v:'正常',tag:'ok',edit:'select',options:['正常','待复核','停用'],tagMap:{'正常':'ok','待复核':'warn','停用':'bad'}},
+    {l:'入驻时间',v:'2025-08-15'},
+    {l:'最后登录',v:'2026-08-28 08:45'},
+    {l:'写操作权限',v:'可写（辖区内）',tag:'ok',edit:'select',options:['可写（辖区内）','只读'],tagMap:{'可写（辖区内）':'ok','只读':'mut'}}]},
+   {title:'辖区经营',hint:'代理商特有 · 辖区经营指标（只读）',fields:[
+    {l:'月流水',v:'¥18,320',num:1},
+    {l:'辖区抽成',v:'¥1,832（10%）',num:1},
+    {l:'辖区用户数',v:'1,204',num:1},
+    {l:'辖区服务商数',v:'38',num:1},
+    {l:'本月订单数',v:'214',num:1},
+    {l:'入驻待初审',v:'5 家',tag:'warn'}]}
+  ]},
+ provider:{
+  chip:'服务商 · 账户详情',
+  sub:'当前登录服务商的完整资料 · 按基础数据 / 归属与作用域 / 账户状态 / 服务与资质分区展示',
+  hero:{av:'麦',name:'麦麦提·艾力',role:'服务商',roleCls:'ac',meta:'ID SP001 · 手机 138****2210 · 天山区 · 入驻 2026-05-12'},
+  sections:[
+   {title:'基础数据',hint:'身份与联系信息',fields:[
+    {l:'服务商 ID',v:'SP001'},
+    {l:'姓名',v:'麦麦提·艾力',edit:'text',req:1},
+    {l:'昵称',v:'喜事管家',edit:'text'},
+    {l:'手机号',v:'138****2210',edit:'text',req:1},
+    {l:'邮箱',v:'未绑定',mut:1,edit:'text'},
+    {l:'头像',v:'默认头像（姓名首字）'}]},
+   {title:'归属与作用域',hint:'角色层级与数据可见范围',fields:[
+    {l:'系统角色',v:'服务商（SERVICE_PROVIDER）'},
+    {l:'所属区域',v:'天山区（乌鲁木齐）',edit:'select',options:['天山区（乌鲁木齐）','沙依巴克区（乌鲁木齐）','高新区（乌鲁木齐）']},
+    {l:'数据作用域',v:'自身（SELF）'},
+    {l:'登录层级',v:'服务商中心'}]},
+   {title:'账户状态',hint:'状态与时间信息',fields:[
+    {l:'账户状态',v:'已通过',tag:'ok',edit:'select',options:['已通过','待审核','已驳回'],tagMap:{'已通过':'ok','待审核':'warn','已驳回':'bad'}},
+    {l:'入驻时间',v:'2026-05-12'},
+    {l:'最后登录',v:'2026-08-28 09:30'},
+    {l:'写操作权限',v:'可写（自身服务）',tag:'ok',edit:'select',options:['可写（自身服务）','只读'],tagMap:{'可写（自身服务）':'ok','只读':'mut'}}]},
+   {title:'服务与资质',hint:'服务商特有 · 服务类型与资质认证',fields:[
+    {l:'服务类型',v:'婚庆主持（主营）',edit:'text'},
+    {l:'可服务项目',v:'婚庆主持 / 司仪 / 婚礼策划',tag:'ac',edit:'text'},
+    {l:'资质认证',v:'营业执照 / 实名认证',tag:'ok'},
+    {l:'在售服务数',v:'6',num:1},
+    {l:'本月收益',v:'¥2,860',num:1},
+    {l:'可提现余额',v:'¥1,240',num:1}]}
+  ]},
+ user:{
+  chip:'用户 · 账户详情',
+  sub:'当前用户的完整资料 · 按基础数据 / 归属与作用域 / 账户状态 / 会员与资产分区展示',
+  hero:{av:'买',name:'买买提·艾山',role:'普通用户',roleCls:'mut',meta:'ID U001 · 手机 137****5521 · 乌鲁木齐 · 注册 2025-11-02'},
+  sections:[
+   {title:'基础数据',hint:'身份与联系信息',fields:[
+    {l:'用户 ID',v:'U001'},
+    {l:'姓名',v:'买买提·艾山',edit:'text',req:1},
+    {l:'昵称',v:'—',mut:1,edit:'text'},
+    {l:'手机号',v:'137****5521',edit:'text',req:1},
+    {l:'邮箱',v:'未绑定',mut:1,edit:'text'},
+    {l:'头像',v:'默认头像（姓名首字）'}]},
+   {title:'归属与作用域',hint:'角色层级与数据可见范围',fields:[
+    {l:'系统角色',v:'客户（USER）'},
+    {l:'所在城市',v:'乌鲁木齐',edit:'text'},
+    {l:'数据作用域',v:'自身（SELF）'},
+    {l:'登录层级',v:'用户视角'}]},
+   {title:'账户状态',hint:'状态与时间信息',fields:[
+    {l:'账户状态',v:'正常',tag:'ok',edit:'select',options:['正常','停用'],tagMap:{'正常':'ok','停用':'bad'}},
+    {l:'注册时间',v:'2025-11-02'},
+    {l:'最后登录',v:'2026-08-27 20:15'},
+    {l:'写操作权限',v:'只读（个人资料）',tag:'mut'}]},
+   {title:'会员与资产',hint:'用户特有 · 会员等级与账户资产',fields:[
+    {l:'会员等级',v:'普通用户',tag:'mut',edit:'select',options:['普通用户','银卡会员','金卡会员','黑金会员'],tagMap:{'普通用户':'mut','银卡会员':'ac','金卡会员':'ac','黑金会员':'ac'}},
+    {l:'积分',v:'860',num:1},
+    {l:'钱包余额',v:'¥320',num:1},
+    {l:'累计消费',v:'¥2,680',num:1},
+    {l:'进行中订单',v:'1',num:1},
+    {l:'关注服务商',v:'2',num:1}]}
+  ]}
+};
+function renderAccount(){
+  const cfg=ACCOUNT_META[VIEW];
+  $('#accSub').textContent=cfg.sub;
+  $('#accChip').textContent=cfg.chip;
+  $('#accAv').textContent=cfg.hero.av;
+  $('#accName').textContent=cfg.hero.name;
+  $('#accHeroRole').textContent=cfg.hero.role;
+  $('#accHeroRole').className='tag '+cfg.hero.roleCls;
+  $('#accMeta').textContent=cfg.hero.meta;
+  const sec=$('#accSections');
+  sec.innerHTML=cfg.sections.map((s,si)=>{
+    const fields=s.fields.map((f,fi)=>{
+      let val;
+      if(ACC_EDIT && f.edit){
+        const dn=`acc-f-${si}-${fi}`;
+        if(f.edit==='select'){
+          val=`<select class="field acc-input" data-si="${si}" data-fi="${fi}">${(f.options||[]).map(o=>`<option ${o===f.v?'selected':''}>${o}</option>`).join('')}</select>`;
+        }else{
+          val=`<input class="field acc-input" type="text" value="${f.v}" data-si="${si}" data-fi="${fi}">`;
+        }
+      }else{
+        val=f.tag?`<span class="tag ${f.tag}">${f.v}</span>`:f.v;
+      }
+      return `<div class="pfield"><label>${f.l}${f.req?'<span class="req">*</span>':''}</label><div class="val ${f.mut?'mut':''} ${f.num?'num':''}">${val}</div></div>`;
+    }).join('');
+    const perms=s.perms?`<div class="perm-tags">${s.perms.map(p=>`<span class="pt">${p}</span>`).join('')}</div>`:'';
+    return `<div class="panel"><header>${s.title}<span class="hint">${s.hint}</span></header><div class="profile-grid">${fields}</div>${perms}</div>`;
+  }).join('');
+  $('#accEdit').textContent=ACC_EDIT?'保存':'编辑';
+  $('#accCancel').style.display=ACC_EDIT?'inline-flex':'none';
+}
+/* 账户详情：编辑 / 保存 / 取消 */
+$('#accEdit').addEventListener('click',()=>{
+  if(ACC_EDIT){
+    document.querySelectorAll('.acc-input').forEach(el=>{
+      const si=+el.dataset.si,fi=+el.dataset.fi;
+      const f=ACCOUNT_META[VIEW].sections[si].fields[fi];
+      f.v=el.value;
+      if(f.tagMap && f.tagMap[el.value])f.tag=f.tagMap[el.value];
+    });
+    ACC_EDIT=false;
+    renderAccount();
+  }else{
+    ACC_EDIT=true;
+    renderAccount();
+  }
+});
+$('#accCancel').addEventListener('click',()=>{
+  ACC_EDIT=false;
+  renderAccount();
+});
+
+/* ── 账号面板（阿里云风格下拉 · 四层差异化） ── */
+const ACCPANEL_META={
+ console:{
+  head:{av:'张',name:'张敏',id:'ADMIN001',role:'超级管理员',roleCls:'ac',auth:'已实名',authCls:'ok'},
+  links:[
+    {l:'角色与权限',i:'shield',go:'roles'},
+    {l:'系统设置',i:'gear',go:'settings'}],
+  todos:[
+    {l:'待审核入驻',n:12,hot:1,go:'review'},
+    {l:'待审核模板',n:5,hot:0,go:'templates'},
+    {l:'待审核提现',n:3,hot:1,go:'withdrawals'},
+    {l:'未读消息',n:8,hot:1,go:'messages'}],
+  tools:[
+    {l:'区域管理',go:'regions'},
+    {l:'数据导出',go:'users'},
+    {l:'公告管理',go:'messages'},
+    {l:'反馈中心',go:'feedback'},
+    {l:'账户详情',go:'account'},
+    {l:'帮助文档',go:'dashboard'}]
+ },
+ agent:{
+  head:{av:'阿',name:'阿依古丽',id:'AG001',role:'代理商',roleCls:'ac',auth:'已认证',authCls:'ok'},
+  links:[
+    {l:'财务中心',i:'wallet',go:'a-wallet'},
+    {l:'消息中心',i:'bell',go:'a-messages'}],
+  todos:[
+    {l:'待初审服务商',n:5,hot:1,go:'a-providers'},
+    {l:'待复审',n:2,hot:0,go:'a-providers'},
+    {l:'业务升级审核',n:1,hot:1,go:'a-providers'},
+    {l:'未读消息',n:3,hot:1,go:'a-messages'}],
+  tools:[
+    {l:'辖区用户',go:'a-users'},
+    {l:'辖区订单',go:'a-orders'},
+    {l:'评价反馈',go:'a-feedback'},
+    {l:'角色与权限',go:'a-roles'},
+    {l:'账户详情',go:'account'},
+    {l:'帮助',go:'dashboard'}]
+ },
+ provider:{
+  head:{av:'麦',name:'麦麦提·艾力',id:'SP001',role:'服务商',roleCls:'ac',auth:'资质有效',authCls:'ok'},
+  links:[
+    {l:'服务管理',i:'stack',go:'p-services'},
+    {l:'订单处理',i:'package',go:'p-orders'},
+    {l:'资质管理',i:'idcard',go:'p-qualification'}],
+  todos:[
+    {l:'待接单',n:4,hot:1,go:'p-orders'},
+    {l:'履约中',n:7,hot:0,go:'p-orders'},
+    {l:'待提现',n:2,hot:0,go:'p-wallet'},
+    {l:'未读消息',n:5,hot:1,go:'p-messages'}],
+  tools:[
+    {l:'财务中心',go:'p-wallet'},
+    {l:'评价反馈',go:'p-feedback'},
+    {l:'角色与权限',go:'p-roles'},
+    {l:'账户详情',go:'account'},
+    {l:'帮助',go:'dashboard'}]
+ },
+ user:{
+  head:{av:'买',name:'买买提·艾山',id:'U001',role:'金卡会员',roleCls:'ac',auth:'已实名',authCls:'ok'},
+  links:[
+    {l:'我的订单',i:'receipt',go:'u-orders'},
+    {l:'优惠与权益',i:'bag',go:'u-coupons'},
+    {l:'我的钱包',i:'coins',go:'u-wallet'}],
+  todos:[
+    {l:'待付款',n:1,hot:1,go:'u-orders'},
+    {l:'待评价',n:2,hot:0,go:'u-feedback'},
+    {l:'进行中',n:1,hot:0,go:'u-orders'},
+    {l:'未读消息',n:4,hot:1,go:'u-messages'}],
+  tools:[
+    {l:'我的服务商',go:'u-providers'},
+    {l:'评价反馈',go:'u-feedback'},
+    {l:'消息中心',go:'u-messages'},
+    {l:'账户详情',go:'account'},
+    {l:'帮助',go:'dashboard'}]
+ }
+};
+function renderAccPanel(){
+  const cfg=ACCPANEL_META[VIEW];
+  // 页头触发区
+  $('#accAvTop').textContent=cfg.head.av;
+  $('#accNameTop').textContent=cfg.head.name;
+  // 面板头部
+  $('#apAvatar').textContent=cfg.head.av;
+  $('#apName').textContent=cfg.head.name;
+  $('#apId').textContent=cfg.head.id;
+  $('#apRole').textContent=cfg.head.role;
+  $('#apRole').className='tag '+cfg.head.roleCls;
+  $('#apAuth').textContent=cfg.head.auth;
+  $('#apAuth').className='tag '+cfg.head.authCls;
+  // 权限模式仅总台显示
+  $('#apModeSec').style.display=VIEW==='console'?'block':'none';
+  // 快捷入口
+  $('#apLinks').innerHTML=cfg.links.map(l=>`<div class="ap-link" data-go="${l.go}">${ic(l.i)}<span>${l.l}</span></div>`).join('');
+  // 待办
+  $('#apTodos').innerHTML=cfg.todos.map(t=>`<div class="ap-todo" data-go="${t.go}"><span class="n ${t.hot?'hot':''}">${t.n}</span><span class="l">${t.l}</span></div>`).join('');
+  // 工具链
+  $('#apTools').innerHTML=cfg.tools.map(t=>`<span class="ap-tool" data-go="${t.go}">${t.l}</span>`).join('');
+}
+
+/* ── 页面切换 ── */
+function goPage(id){
+  PAGE=id;
+  LIST_FILTER=0;LIST_KEY='';
+  const lsi=$('#listSearch');if(lsi){lsi.value='';syncListSearch();}
+  renderNav();
+  const meta=VIEWMETA[VIEW];
+  const home=id==='dashboard';
+  $('#crumbView').textContent=meta.crumb;
+  $('#crumbPage').textContent=home?viewHomeTitle():pageTitle(id);
+  document.querySelectorAll('.page').forEach(s=>s.classList.remove('on'));
+  if(home){$(`#pg-${VIEW}-home`).classList.add('on');}
+  else{
+    const staticPg=document.getElementById('pg-'+id);
+    if(staticPg){staticPg.classList.add('on');if(id==='account')renderAccount();else if(id==='u-works')renderUserWorks();}
+    else{
+      if(VIEW==='user'){const um=userListMeta(id);if(um)PAGES[id]=um;}
+      else if(VIEW==='console'&&id==='user-feedback'){PAGES[id]=consoleFeedbackMeta();}
+      $('#pg-list').classList.add('on');renderList(id);
+    }
+  }
+  requestAnimationFrame(alignExit);
+}
+function viewHomeTitle(){return VIEW==='console'?'经营总览':VIEW==='agent'?'辖区经营概览':VIEW==='provider'?'我的工作台':'用户工作台';}
+function pageTitle(id){
+  const p=PAGES[id];if(p)return p.t;
+  const it=MENU[VIEW].flatMap(g=>g.items).find(x=>x.id===id);return it?it.l:id;
+}
+
+/* ── 视角切换 ── */
+function switchView(v){
+  VIEW=v;PAGE='dashboard';
+  if(v==='agent'||v==='provider'||v==='user'){
+    const src=v==='agent'?AGENTS:v==='provider'?PROVIDERS:USERS;
+    CUR={type:v==='agent'?'agent':v==='provider'?'provider':'user',obj:src[0]};
+    renderScope();
+  }
+  document.querySelectorAll('#viewswitch button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
+  goPage('dashboard');
+  syncObjUI();
+  renderAccPanel();
+  renderTopActs();
+}
+$('#viewswitch').addEventListener('click',e=>{const b=e.target.closest('button');if(b)switchView(b.dataset.view);});
+
+/* ── 顶部升格入口：用户→代理商/服务商，服务商→代理商 ── */
+const UP_SUBMITTED={agent:false,provider:false};
+let CUR_UP_ROLE='agent';
+function renderTopActs(){
+  const c=$('#topActs'); if(!c)return;
+  const acts=VIEW==='user'?[['agent','成为代理商'],['provider','成为服务商']]
+            :VIEW==='provider'?[['agent','成为代理商']]:[];
+  c.innerHTML=acts.map(([r,l])=>{
+    const done=UP_SUBMITTED[r];
+    return `<button class="btn" data-up="${r}"${done?' disabled':''}>${done?'已提交 · 审核中':l}</button>`;
+  }).join('');
+  c.querySelectorAll('[data-up]').forEach(b=>{if(!b.disabled)b.onclick=()=>{CUR_UP_ROLE=b.dataset.up;openUpModal(b.dataset.up);};});
+}
+function openUpModal(role){
+  if(RO){alert('当前为运维管理员（只读）视角，操作已锁定；如需代操作请切换为超级管理员。');return;}
+  const info=role==='provider'
+    ?{title:'申请成为服务商',desc:'提交入驻申请后，由辖区代理商初审、管理总台终审。审核通过后开通服务商后台，可发布服务并接单履约。',kv:[['申请角色','服务商'],['审核流程','辖区初审 → 总台终审'],['开通权限','服务发布 / 接单履约 / 财务中心']]}
+    :{title:'申请成为代理商',desc:'提交入驻申请后，由管理总台审核。审核通过后开通代理商后台，获得辖区经营与招商权限。',kv:[['申请角色','代理商'],['审核流程','总台初审 → 总台终审'],['开通权限','辖区经营 / 招商拓展 / 财务分佣']]};
+  $('#upModalTitle').textContent=info.title;
+  $('#upModalDesc').textContent=info.desc;
+  $('#upModalKv').innerHTML=info.kv.map(p=>`<dt>${p[0]}</dt><dd>${p[1]}</dd>`).join('');
+  $('#upReason').value='';
+  const isSp=role==='provider';
+  $('#upScopeWrap').style.display=isSp?'block':'none';
+  $('#upRegionWrap').style.display='block';
+  $('#upRegionLabel').innerHTML=isSp?'开展服务区域':'计划代理区域';
+  document.querySelectorAll('#upScopes input').forEach(c=>c.checked=false);
+  resetUpRegion();
+  $('#scrim').classList.add('on');$('#upModal').classList.add('on');
+}
+function closeUpModal(){$('#scrim').classList.remove('on');$('#upModal').classList.remove('on');}
+$('#upModalX').onclick=closeUpModal;
+$('#upCancel').onclick=closeUpModal;
+$('#upSubmit').onclick=()=>{
+  if(RO)return;
+  const reason=$('#upReason').value.trim();
+  if(!reason){alert('请填写申请理由');$('#upReason').focus();return;}
+  const role=CUR_UP_ROLE||'agent';
+  let extra='';
+  if(!$('#upProv').value||!$('#upCity').value||!$('#upDist').value){
+    alert(role==='provider'?'请完整选择开展服务区域（省/市/区县）':'请完整选择计划代理区域（省/市/区县）');return;
+  }
+  if(role==='provider'){
+    const scopes=[...document.querySelectorAll('#upScopes input:checked')].map(c=>c.value);
+    if(!scopes.length){alert('请至少选择一项服务类型');return;}
+    extra='服务类型：'+scopes.join(' / ')+'，开展区域：'+$('#upProv').value+' / '+$('#upCity').value+' / '+$('#upDist').value+'\n\n';
+  }else{
+    extra='代理区域：'+$('#upProv').value+' / '+$('#upCity').value+' / '+$('#upDist').value+'\n\n';
+  }
+  UP_SUBMITTED[role]=true;
+  closeUpModal();renderTopActs();
+  alert('入驻申请已提交（'+(role==='provider'?'服务商':'代理商')+'）\n\n'+extra+'申请理由：'+reason+'\n\n申请已进入审核队列：'+(role==='provider'?'辖区代理商初审 → 总台终审':'总台审核')+'，可在「消息中心」关注审核进度。');
+};
+
+/* ── 四态 ── */
+function show(name){
+  document.querySelectorAll('.page').forEach(s=>s.classList.remove('on'));
+  if(name==='data'){goPage(PAGE);return;}
+  $('#pg-states').classList.add('on');
+  document.querySelectorAll('[data-state]').forEach(s=>s.classList.toggle('on',s.dataset.state===name));
+}
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{show(b.dataset.go);});
+$('#retryBtn').onclick=()=>show('data');
+
+/* ── 只读 / 可写（决策②：按管理员账号权限） ── */
+function setMode(m){
+  RO=(m==='ops');
+  $('#sideName').textContent=RO?'运维管理员':'超级管理员';
+  $('#sideRole').textContent=RO?'总台 · 只读':'总台 · 可写';
+  $('#sideAv').textContent=RO?'运':'超';
+  $('#roBanner').style.display=RO?'flex':'none';
+  // 面板权限模式选中态 + 页头头像
+  document.querySelectorAll('.ap-mode').forEach(el=>el.classList.toggle('on',el.dataset.mode===m));
+  if(VIEW==='console'){
+    const av=RO?'运':'张';
+    $('#accAvTop').textContent=av;
+    $('#apAvatar').textContent=av;
+  }
+  if(isViewAs())renderScope();
+  if(PAGE!=='dashboard')renderList(PAGE);
+}
+$('#acc').addEventListener('click',e=>{
+  // 权限模式切换
+  const modeEl=e.target.closest('.ap-mode');
+  if(modeEl){setMode(modeEl.dataset.mode);return;}
+  // 快捷入口/待办/工具点击 → 跳转
+  const goEl=e.target.closest('[data-go]');
+  if(goEl){goPage(goEl.dataset.go);$('#accpanel').classList.remove('on');return;}
+  // 退出登录
+  if(e.target.closest('#apLogout')){$('#accpanel').classList.remove('on');return;}
+  // 复制ID
+  if(e.target.closest('.ap-copy')){
+    const id=$('#apId').textContent;
+    if(navigator.clipboard)navigator.clipboard.writeText(id);
+    return;
+  }
+  // 切换面板
+  $('#accpanel').classList.toggle('on');
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.acc'))$('#accpanel').classList.remove('on');});
+
+/* ── 弹窗 ── */
+function permGroups(){
+  const hideMap={agent:['服务与内容'],provider:['用户与账号','入驻与服务商','优惠券与权益','组织与系统']};
+  const hide=hideMap[VIEW]||[];
+  return PERM_GROUPS.filter(g=>hide.indexOf(g.g)<0);
+}
+const PERM_GROUPS=[
+ {g:'用户与账号',items:['用户查询','用户编辑']},
+ {g:'入驻与服务商',items:['入驻审核','资质审核','业务升级审核']},
+ {g:'服务与内容',items:['模板/服务上架','内容下架','模板审核','资质管理']},
+ {g:'订单与履约',items:['订单查询','订单处理','售后处理']},
+ {g:'财务',items:['流水查询','提现审核','提现代操作','对账']},
+ {g:'优惠券与权益',items:['券/权益配置','优惠券发放','权益查询']},
+ {g:'评价与申诉',items:['反馈处理','申诉仲裁']},
+ {g:'消息与公告',items:['公告发布','公告审核','站内信收发']},
+ {g:'组织与系统',items:['角色管理','区域/代理商管理','系统设置']},
+ {g:'数据导出',items:['列表数据导出']}
+];
+const MODAL_META={
+ /* ── 总台 10 页 ── */
+ regions:{tag:'区域',title:'区域详情',labels:['编号','区域名称','级别','绑定代理商','服务商数','用户数'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5]],
+   edit:1,eLabels:['区域名称','级别','绑定代理商'],eF:r=>[r[1],r[2],r[3]],eCols:[1,2,3],eTypes:['text','select','text'],eOpts:{1:['省级','市级','区县级']},eReq:[0,1]},
+ agents:{tag:'代理',title:'代理商详情',labels:['编号','代理商名称','所属辖区','服务商数','月流水','状态'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5]],
+   edit:1,eLabels:['代理商名称','绑定辖区','状态'],eF:r=>[r[1],r[2],r[5]],eCols:[1,2,5],eTypes:['text','text','select'],eOpts:{2:['正常','待复核','停用']},eReq:[0,1]},
+ review:{tag:'审核',title:'服务商入驻审核',labels:['编号','申请人','手机号','服务类型','所属区域','资质','提交时间','状态'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7]],stCol:7,okVal:'#ok 已通过',noVal:'#bad 已驳回',
+   edit:1,eLabels:['服务类型','所属区域','状态'],eF:r=>[r[3],r[4],r[7]],eCols:[3,4,7],eTypes:['text','text','select'],eOpts:{2:['#ok 已通过','#bad 已驳回','#warn 待审核']},eReq:[0,1]},
+ users:{tag:'用户',title:'用户详情',labels:['编号','用户','手机号','角色','所属区域','注册时间','状态'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6]],
+   edit:1,eLabels:['角色','所属区域','状态'],eF:r=>[r[3],r[4],r[6]],eCols:[3,4,6],eTypes:['select','text','select'],eOpts:{0:['客户','服务商','代理商','管理员'],2:['正常','停用']},eReq:[0,1]},
+ templates:{tag:'审核',title:'模板审核',labels:['编号','模板名称','作者','类型','价格','状态'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5]],stCol:5,okVal:'#ok 已上架',noVal:'#bad 已驳回'},
+ withdrawals:{tag:'提现',title:'提现审核',labels:['编号','服务商','申请金额','收款账户','申请时间','状态'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5]],stCol:5,okVal:'#ok 已通过',noVal:'#bad 已驳回'},
+ feedback:{tag:'反馈',title:'反馈处理',labels:['编号','类型','反馈人','对象','状态','时间','反馈内容'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],'（反馈内容：服务与描述不符，请协助处理）'],
+   edit:1,btn:'处理',eLabels:['处理意见','状态流转'],eF:r=>['',r[4]],eCols:[null,4],eTypes:['textarea','select'],eOpts:{1:['协商中','已关闭','升级仲裁']},eReq:[0]},
+ messages:{tag:'公告',title:'公告审核',labels:['编号','标题','类型','接收范围','状态','发布时间','正文内容'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],'（公告正文：关于服务商入驻审核规范的调整说明……）'],stCol:4,okVal:'#ok 已发布',noVal:'#bad 已驳回'},
+ roles:{tag:'角色',title:'角色详情',labels:['角色ID','角色名称','归属层级','账号数','数据作用域','功能权限','权限位阶','类型'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7]],
+   edit:1,eLabels:['角色名称','数据作用域','功能权限'],eF:r=>[r[1],r[4],r[8]],eCols:[1,4,8],eTypes:['text','text','perm'],eReq:[0]},
+ settings:{tag:'配置',title:'配置项',labels:['分类','配置项','当前值','说明'],f:r=>[r[0],r[1],r[2],r[3]],
+   edit:1,eLabels:['分类','配置项','当前值','说明'],eF:r=>[r[0],r[1],r[2],r[3]],eCols:[0,1,2,3],eTypes:['text','text','text','text'],eReq:[1,2]},
+ 'svc-dict':{tag:'字典',title:'服务种类详情',labels:['编号','业务种类','分类','状态','排序','说明'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5]],
+   edit:1,eLabels:['业务种类','分类','状态','排序','说明'],eF:r=>[r[1],r[2],r[3],r[4],r[5]],eCols:[1,2,3,4,5],eTypes:['text','text','select','text','text'],eOpts:{2:['启用','停用']},eReq:[0,1]},
+ 'svc-dict':{tag:'字典',title:'服务种类详情',labels:['编号','业务种类','分类','状态','排序','说明'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5]],
+   edit:1,eLabels:['业务种类','分类','状态','排序','说明'],eF:r=>[r[1],r[2],r[3],r[4],r[5]],eCols:[1,2,3,4,5],eTypes:['text','text','select','text','text'],eOpts:{2:['启用','停用']},eReq:[0,1]},
+ /* ── 服务商模块（第一期） ── */
+ 'provider-apply':{tag:'审批',title:'服务商入驻审批',labels:['申请编号','申请人','手机号','服务类型','所属区域','当前阶段','状态','经营计划'],
+   f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6],'（经营计划：拟开展婚庆主持+摄影摄像，已有2人团队，预计首年接单50单）'],
+   stCol:6,okVal:'#ok 已通过',noVal:'#bad 已驳回',
+   edit:1,statusOpts:['#ok 已通过','#warn 待复核','#bad 已驳回']},
+ 'provider-qual':{tag:'资质',title:'服务商资质审核',labels:['编号','服务商','资质类型','证照编号','有效期至','提交时间','状态','审核意见'],
+   f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6],'（审核意见：营业执照清晰可辨，经营范围含婚庆服务，建议通过）'],
+   stCol:6,okVal:'#ok 已通过',noVal:'#bad 已驳回',
+   edit:1,statusOpts:['#ok 已通过','#warn 待复核','#bad 已驳回'],
+   inlineEdits:[
+    {col:2,type:'select',options:['营业执照','经营许可证','居民身份证']},
+    {col:3,type:'text'},
+    {col:4,type:'date'}],
+   attachment:{items:[
+    {name:'营业执照',file:'营业执照.jpg',uploaded:true},
+    {name:'经营许可证',file:'经营许可证.pdf',uploaded:false},
+    {name:'居民身份证',file:'居民身份证.jpg',uploaded:true}]}},
+ 'provider-contract':{tag:'合同',title:'服务商合同详情',labels:['合同编号','服务商','类型','签订日期','到期日期','状态','关键条款'],
+   f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],'（关键条款：平台抽成10%，服务保证金5千元，服务区域独家保护，违约条款详见附件）'],
+   edit:1,eLabels:['合同编号','类型','状态'],eF:r=>[r[0],r[2],r[5]],eCols:[0,2,5],eTypes:['text','select','select'],eOpts:{1:['主合同','补充协议','续签合同','终止协议'],2:['已签订','审批中','待签订','已到期','已终止']},eReq:[0]},
+
+ /* ── 代理商模块（第一期） ── */
+ 'agent-apply':{tag:'审批',title:'代理商入驻审批',labels:['申请编号','申请人','手机号','意向区域','申请时间','当前阶段','状态','经营计划'],
+   f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6],'（经营计划：拟开展婚庆+摄影全品类，已有3人团队，预计首年拓展服务商20家）'],
+   stCol:6,okVal:'#ok 已通过',noVal:'#bad 已驳回',
+   edit:1,statusOpts:['#ok 已通过','#warn 待复核','#bad 已驳回']},
+ 'agent-qual':{tag:'资质',title:'代理商资质审核',labels:['编号','代理商','资质类型','证照编号','有效期至','提交时间','状态','审核意见'],
+   f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6],'（审核意见：营业执照清晰可辨，经营范围含婚庆服务，建议通过）'],
+   stCol:6,okVal:'#ok 已通过',noVal:'#bad 已驳回',
+   edit:1,statusOpts:['#ok 已通过','#warn 待复核','#bad 已驳回'],
+   inlineEdits:[
+    {col:2,type:'select',options:['营业执照','经营许可证','居民身份证']},
+    {col:3,type:'text'},
+    {col:4,type:'date'}],
+   attachment:{items:[
+    {name:'营业执照',file:'营业执照.jpg'},
+    {name:'经营许可证',file:'经营许可证.pdf'},
+    {name:'居民身份证',file:'居民身份证.jpg'}]}},
+ 'agent-contract':{tag:'合同',title:'合同详情',labels:['合同编号','代理商','类型','签订日期','到期日期','状态','关键条款'],
+   f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],'（关键条款：抽成比例10%，保证金2万元，辖区独家保护，违约条款详见附件）'],
+   edit:1,eLabels:['合同编号','类型','状态'],eF:r=>[r[0],r[2],r[5]],eCols:[0,2,5],eTypes:['text','select','select'],eOpts:{1:['主合同','补充协议','续签合同','终止协议'],2:['已签订','审批中','待签订','已到期','已终止']},eReq:[0]},
+ 'agent-invest':{tag:'招商',title:'招商申请详情',labels:['编号','申请人','手机号','意向区域','经营计划','申请时间','状态','跟进记录'],
+   f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6],'（跟进记录：08-27 电话沟通，意向较强，约08-29面谈；08-25 首次接触，了解平台模式）'],
+   edit:1,btn:'跟进',eLabels:['状态','跟进记录'],eF:r=>[r[6],''],eCols:[6,null],eTypes:['select','textarea'],eOpts:{0:['新申请','跟进中','已转化','已放弃']},eReq:[1]},
+ 'agent-pool':{tag:'意向',title:'意向代理商详情',labels:['编号','申请人','手机号','意向区域','来源','跟进次数','最后跟进','意向等级','备注'],
+   f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],'（备注：曾经营婚庆店3年，有一定客户资源，对平台模式感兴趣）'],
+   edit:1,btn:'跟进',eLabels:['意向等级','备注'],eF:r=>[r[7],''],eCols:[7,null],eTypes:['select','textarea'],eOpts:{0:['高意向','中意向','低意向']},eReq:[0]},
+
+ /* ── 代理商中心 5 页 ── */
+ 'a-qual':{tag:'资质',title:'辖区服务商资质审核',labels:['编号','服务商','资质类型','证照编号','有效期至','提交时间','状态','审核意见'],
+   f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6],'（审核意见：证照清晰可辨，经营范围含对应服务，建议通过）'],stCol:6,okVal:'#ok 已通过',noVal:'#bad 已驳回',
+   edit:1,statusOpts:['#ok 已通过','#warn 待复核','#bad 已驳回']},
+ 'a-contract':{tag:'合同',title:'我的合同详情',labels:['合同编号','类型','签订日期','到期日期','状态','关键条款'],
+   f:r=>[r[0],r[1],r[2],r[3],r[4],'（关键条款：抽成比例10%，保证金2万元，辖区独家保护，续签需提前30天申请）'],viewOnly:1},
+ 'a-users':{tag:'用户',title:'用户详情',labels:['编号','用户','手机号','角色','注册时间','状态'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5]],viewOnly:1},
+ 'a-providers':{tag:'服务商',title:'服务商审核',labels:['编号','服务商','服务类型','资质','本月接单','状态','联系电话'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],'—'],stCol:5,okVal:'#ok 已通过',noVal:'#bad 已驳回'},
+ 'a-feedback':{tag:'反馈',title:'反馈处理',labels:['编号','类型','用户','对象','状态','时间'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5]],
+   edit:1,btn:'处理',eLabels:['处理意见','状态流转'],eF:r=>['',r[4]],eCols:[null,4],eTypes:['textarea','select'],eOpts:{1:['协商中','已处理','可升级']},eReq:[0]},
+ 'a-messages':{tag:'公告',title:'公告审核',labels:['编号','标题','类型','状态','时间','正文内容'],f:r=>[r[0],r[1],r[2],r[3],r[4],'（公告正文：……）'],stCol:3,okVal:'#ok 已发布',noVal:'#bad 已驳回'},
+ 'a-roles':{tag:'角色',title:'角色详情',labels:['角色名称','归属层级','账号数','数据作用域','功能权限','类型'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5]],
+   edit:1,eLabels:['角色名称','数据作用域','功能权限'],eF:r=>[r[0],r[3],r[6]],eCols:[0,3,6],eTypes:['text','text','perm'],eReq:[0]},
+ /* ── 服务商中心 4 页 ── */
+ 'p-services':{tag:'服务',title:'服务详情',labels:['编号','服务名称','类型','价格','状态'],f:r=>[r[0],r[1],r[2],r[3],r[4]],
+   edit:1,eLabels:['服务名称','类型','价格','状态'],eF:r=>[r[0],r[1],r[2],r[3]],eCols:[0,1,2,3],eTypes:['text','text','text','select'],eOpts:{3:['在售','草稿','已下架']},eReq:[0,1,2]},
+ 'p-qualification':{tag:'资质',title:'资质详情',labels:['编号','证件编号','资质名称','有效期','审核状态'],f:r=>[r[0],r[1],r[2],r[3],r[4]],
+   edit:1,eLabels:['资质名称','有效期','审核状态'],eF:r=>[r[2],r[3],r[4]],eCols:[2,3,4],eTypes:['text','text','select'],eOpts:{2:['有效','待审核','已过期']},eReq:[0,1]},
+ 'p-feedback':{tag:'评价',title:'评价详情',labels:['订单','客户','评分','评价内容','时间'],f:r=>[r[0],r[1],r[2],r[3],r[4]],viewOnly:1},
+ 'p-roles':{tag:'角色',title:'角色详情',labels:['角色名称','归属层级','账号数','数据作用域','功能权限','类型'],f:r=>[r[0],r[1],r[2],r[3],r[4],r[5]],
+   edit:1,eLabels:['角色名称','数据作用域','功能权限'],eF:r=>[r[0],r[3],r[6]],eCols:[0,3,6],eTypes:['text','text','perm'],eReq:[0]},
+ /* ── 代理商中心新增审批 ── */
+ 'a-apply':{tag:'审批',title:'辖区服务商入驻审批',labels:['申请编号','服务商','手机号','服务类型','提交时间','状态','经营计划'],
+   f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],'（经营计划：拟在辖区开展对应服务，团队2人，预计首年接单40单）'],stCol:5,okVal:'#ok 已通过',noVal:'#bad 已驳回',
+   edit:1,statusOpts:['#ok 已通过','#warn 待复核','#bad 已驳回']},
+ 'a-withdraw':{tag:'提现',title:'辖区提现初审',labels:['服务商','申请金额','收款账户','申请时间','状态','审核意见'],
+   f:r=>[r[0],r[1],r[2],r[3],r[4],'（审核意见：提现金额在辖区可提现额度内，建议初审通过）'],stCol:4,okVal:'#ok 已通过',noVal:'#bad 已驳回',
+   edit:1,statusOpts:['#ok 已通过','#warn 待复核','#bad 已驳回']},
+ /* ── 用户视角 6 页（已定制，仅查看） ── */
+ 'u-orders':{tag:'订单',title:'订单详情',labels:['服务','服务商','金额','下单时间','订单号','评价等级','评价内容'],
+   f:r=>[r[1],r[2],r[3],r[4],r[0]].concat(String(r[5]).indexOf('已评价')>=0?['★ '+r[6]+' · '+['很不满意','不满意','一般','满意','非常满意'][(r[6]||5)-1],r[7]||'']:[])},
+ 'u-providers':{tag:'服务商',title:'服务商详情',labels:['编号','服务商','服务类型','评分','关注时间'],f:r=>[r[0],r[1],r[2],r[3],r[4]]},
+ 'u-coupons':{tag:'券',title:'优惠券详情',labels:['编号','优惠券','面额','有效期','使用条件'],f:r=>[r[0],r[1],r[2],r[3],r[4]]},
+ 'u-wallet':{tag:'流水',title:'钱包流水',labels:['流水号','时间','类型','金额','变动后余额'],f:r=>[r[0],r[1],r[2],r[3],r[4]]},
+ 'u-feedback':{tag:'评价',title:'评价详情',labels:['订单编号','服务','评分','评价内容','时间'],f:r=>[r[0],r[1],r[2],r[3],r[4]]},
+ 'u-messages':{tag:'消息',title:'消息详情',labels:['编号','标题','类型','时间'],f:r=>[r[0],r[1],r[2],r[3]]},
+ 'u-complaints':{tag:'反馈',title:'反馈详情',layout:'feedback',viewPage:'pg-fbdetail',newPage:'pg-fbnew',
+  fbKey:r=>r[1],fbSt:r=>r[5],fbDept:r=>r[6]||'服务商负责人',fbTime:r=>r[4],
+  labels:['编号','主题','类型','对象','提交时间','当前状态','处理部门'],
+  f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6]||((FB_THREAD[r[1]]||{}).dept)||'服务商负责人']},
+ 'complaints':{tag:'反馈',title:'意见反馈详情',viewPage:'pg-fbdetail',fbSt:r=>r[4],fbDept:()=>'平台',fbTime:r=>r[5],fbMe:r=>'（反馈内容：'+r[3]+'）',labels:['编号','类型','反馈人','内容','状态','处理部门','时间'],f:r=>[r[0],r[1],r[2],r[3],r[4],'平台',r[5]],
+   edit:1,btn:'处理',eLabels:['处理意见','状态'],eF:r=>['',r[4]],eCols:[null,4],eTypes:['textarea','select'],eOpts:{1:['#warn 待处理','#ok 已处理','#ac 已关闭']},eReq:[0]},
+ 'a-complaints':{tag:'反馈',title:'意见反馈详情',viewPage:'pg-fbdetail',fbSt:r=>r[4],fbDept:()=>'代理商',fbTime:r=>r[5],fbMe:r=>'（反馈内容：'+r[3]+'）',labels:['编号','类型','反馈人','内容','状态','处理部门','时间'],f:r=>[r[0],r[1],r[2],r[3],r[4],'代理商',r[5]],
+   edit:1,btn:'处理',eLabels:['处理意见','状态'],eF:r=>['',r[4]],eCols:[null,4],eTypes:['textarea','select'],eOpts:{1:['#warn 待处理','#ok 已处理','#ac 已升级']},eReq:[0]},
+ 'p-complaints':{tag:'反馈',title:'意见反馈详情',viewPage:'pg-fbdetail',fbSt:r=>r[3],fbDept:()=>'服务商负责人',fbTime:r=>r[4],fbMe:r=>'（反馈类型：'+r[1]+' · 对象：'+r[2]+'，详情以提交内容为准）',labels:['编号','类型','对象','状态','处理部门','时间'],f:r=>[r[0],r[1],r[2],r[3],'服务商负责人',r[4]],
+   edit:1,btn:'回应',eLabels:['回应内容','状态'],eF:r=>['',r[3]],eCols:[null,3],eTypes:['textarea','select'],eOpts:{1:['#warn 待回应','#ok 已回应','#ac 已升级']},eReq:[0]},
+ 'user-feedback':{tag:'反馈',title:'反馈详情',layout:'feedback',viewPage:'pg-fbdetail',
+  fbKey:r=>r[1],fbSt:r=>r[5],fbDept:r=>r[6]||'服务商负责人',fbTime:r=>r[4],
+  labels:['编号','主题','类型','对象','提交时间','当前状态','处理部门'],
+  f:r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6]||((FB_THREAD[r[1]]||{}).dept)||'服务商负责人']}
+};
+/* ── 我的反馈 · 处理流程痕迹 + 意见建议对话 ── */
+const FB_THREAD={
+ '售后申请处理中':{dept:'服务商负责人',me:'订单 QJ202608270011 服务与描述不符，申请售后处理，希望尽快解决。',replies:[
+   ['平台客服','08-27 10:15','已受理，正在核实该订单的服务记录与交付凭证，将尽快反馈处理结果。'],
+   ['服务商 麦麦提·艾力','08-27 11:00','已收到您的反馈，正在核对当日服务明细，预计 24 小时内给出处理方案。']]},
+ '建议增加电子请柬双语模板':{dept:'平台',me:'建议平台增加中英双语电子请柬模板，方便涉外婚礼与跨文化场景使用。',replies:[
+   ['平台客服','08-21 09:00','感谢您的建议，已记录并转交产品团队评估。'],
+   ['产品运营','08-22 16:30','该建议已采纳，双语模板将于 9 月版本上线，届时会通过「通知公告」告知。']]},
+ '价格咨询':{dept:'服务商负责人',me:'咨询「摄影师」摄影摄像套餐的具体价格、服务内容与可约档期。',replies:[
+   ['服务商 古丽娜尔','08-15 14:20','您好，基础套餐 998 元 / 4 小时，含精修 60 张、底片全送，可约档期详见店铺页面。']]},
+ 'FB-2712':{me:'希望平台支持双语请柬，方便涉外婚礼使用。',replies:[['产品运营','08-28 10:00','已收到建议，双语模板已列入 9 月版本计划。']]},
+ 'FB-2710':{me:'退款流程过长，已提交 3 天仍无进展，请尽快处理。',replies:[['平台客服','08-27 10:30','已加急处理，退款将于今日原路退回。']]},
+ 'FB-2706':{me:'页面加载较慢，打开模板列表需要等待较长时间。',replies:[['技术团队','08-27 09:00','已优化资源加载，问题已解决，感谢反馈。']]},
+ 'FB-2711':{me:'希望辖区增加化妆师服务。',replies:[['代理商 阿依古丽','08-27 11:00','已登记需求，正在对接辖区化妆师资源。']]},
+ 'FB-2708':{me:'售后处理较慢，希望加快进度。',replies:[['代理商 阿依古丽','08-27 09:30','已联系服务商加快处理，预计今日反馈。']]},
+ 'FB-2704':{me:'预约功能不顺畅，无法选择心仪档期。',replies:[['代理商 阿依古丽','08-26 15:00','已反馈至平台，功能优化中，请留意更新。']]},
+ 'FB-2709':{me:'（被诉回应）用户反馈服务延期 2 小时，我方已与用户协商补拍。',replies:[['麦麦提·艾力','08-27 10:00','已与用户沟通补拍方案，用户已同意，特此说明。']]},
+ 'FB-2698':{me:'对总台仲裁结果存在异议，申请复核。',replies:[['总台仲裁','08-27 09:00','已受理复核申请，将于 3 个工作日内答复。']]},
+ 'FB-2680':{me:'希望平台支持双语请柬模板。',replies:[['平台客服','08-25 10:00','已记录需求，感谢反馈。']]}
+};
+function fbTrace(st,dept){
+  const done=!/\u5f85|\u5904\u7406\u4e2d|\u7533\u8bc9\u4e2d/.test(String(st));
+  const steps=dept==='代理商'
+    ?[['提交反馈','已提交至反馈处理中心'],['代理商受理','代理商审核并协调处理'],['平台升级','代理商无法解决时升级至平台']]
+    :dept==='平台'
+    ?[['提交反馈','已提交至反馈处理中心'],['平台处理','平台直接受理处理']]
+    :[['提交反馈','已提交至反馈处理中心'],['服务商负责人受理','服务商核对并响应处理'],['代理商介入','服务商无法解决时升级至代理商'],['平台升级','仍未解决时最终升级至平台']];
+  return `<div class="flow" style="margin:0">`+steps.map((s,i)=>{
+    const mark=(i<=1)?'ok':(done?'ok':String(i+1));
+    return `<div class="fstep"><span class="fnum ${mark==='ok'?'ok':''}">${mark==='ok'?'✓':mark}</span><div><div class="ft">${s[0]}</div><div class="fd">${s[1]}</div></div></div>`;
+  }).join('')+`</div>`;
+}
+function fbThreadTable(mm,r,extra){
+  mm=mm||{};
+  const fbKey=(mm.fbKey&&mm.fbKey(r))||r[0];
+  const t=FB_THREAD[fbKey]||{me:(mm.fbMe&&mm.fbMe(r))||'（反馈内容：'+fbKey+'，详情以提交内容为准）',replies:[]};
+  const tm=(mm.fbTime&&mm.fbTime(r))||r[3];
+  const firstOp=(mm.fbMe)?(r[2]||'反馈人'):'我（'+tm+'）';
+  const all=[{op:firstOp,time:tm,content:t.me}].concat(t.replies.map(rp=>({op:rp[0],time:rp[1],content:rp[2]})));
+  const rows=(extra||[]).concat(all.slice().reverse());
+  return `<div style="max-height:190px;overflow-y:auto;border-radius:6px">
+  <table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:12.5px">
+    <thead><tr style="background:var(--bg);color:var(--ink-3);text-align:left">
+      <th style="position:sticky;top:0;background:var(--bg);z-index:1;padding:8px 10px;border:1px solid var(--border);width:132px">操作人</th>
+      <th style="position:sticky;top:0;background:var(--bg);z-index:1;padding:8px 10px;border:1px solid var(--border);width:112px">处理时间</th>
+      <th style="position:sticky;top:0;background:var(--bg);z-index:1;padding:8px 10px;border:1px solid var(--border);word-break:break-word">回复内容</th>
+    </tr></thead>
+    <tbody>${rows.map(x=>`<tr>
+      <td style="padding:8px 10px;border:1px solid var(--border);color:var(--ink-2);word-break:break-word">${x.op}</td>
+      <td style="padding:8px 10px;border:1px solid var(--border);color:var(--ink-3);white-space:nowrap">${x.time}</td>
+      <td style="padding:8px 10px;border:1px solid var(--border);line-height:1.6;white-space:normal;word-break:break-word;overflow-wrap:anywhere">${x.content}</td>
+    </tr>`).join('')}</tbody>
+  </table>
+  </div>`;
+}
+function renderFeedbackLayout(mm,r){
+  const vals=mm.f(r),L=mm.labels||[];
+  const kv=vals.map((v,k)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px dashed var(--border);font-size:13px"><span style="color:var(--ink-3)">${L[k]}</span><span>${cell(v)}</span></div>`).join('');
+  const st=(mm.fbSt&&mm.fbSt(r))||vals[4]||'';
+  const dept=(mm.fbDept&&mm.fbDept(r))||vals[5]||'服务商负责人';
+  return `<div style="display:flex;gap:16px;padding:12px 20px 10px">
+    <div style="flex:1;min-width:0">${kv}</div>
+    <div style="flex:1;min-width:0;border-left:1px solid var(--border);padding-left:16px">
+      <div style="font-weight:600;font-size:13px;margin-bottom:8px">处理流程<span style="color:var(--ink-3);font-weight:400;font-size:11.5px">（自下而上升级）</span></div>
+      ${fbTrace(st,dept)}
+    </div>
+  </div>
+  <div style="border-top:1px solid var(--border);padding:10px 20px 14px">
+    <div style="font-weight:600;font-size:13px;margin-bottom:6px">意见与回复<span style="color:var(--ink-3);font-weight:400;font-size:11.5px">（最新处理在上）</span></div>
+    ${fbThreadTable(mm,r,FB_EXTRA)}
+  </div>`;
+}
+let MODAL_KEY=null,MODAL_I=0,MODAL_ACT='view';
+const REVIEW_KEYS=['review','withdrawals','templates','messages','a-providers','a-messages'];
+function buildForm(mm,r){
+  const vals=mm.eF(r);
+  return mm.eLabels.map((lbl,k)=>{
+    const t=(mm.eTypes||[])[k]||'text';
+    const opts=((mm.eOpts||{})[k])||[];
+    const val=vals[k]===null||vals[k]===undefined?'':vals[k];
+    const star=(mm.eReq&&mm.eReq.indexOf(k)>=0)?'<span class="req">*</span>':'';
+    if(t==='textarea')return `<div class="fd"><label>${lbl}${star}</label><textarea class="field" data-ef="${k}" rows="2">${val}</textarea></div>`;
+    if(t==='select')return `<div class="fd"><label>${lbl}${star}</label><select class="field" data-ef="${k}">${opts.map(o=>`<option${o===val?' selected':''}>${o}</option>`).join('')}</select></div>`;
+    if(t==='perm'){
+      const cur=Array.isArray(val)?val:[];
+      return `<div class="fd"><label>${lbl}${star}</label><div class="perm">${permGroups().map(g=>`<div class="pgrp"><div class="pgt">${g.g}</div>${g.items.map(it=>`<label class="pchk"><input type="checkbox" data-ef="${k}" data-perm="${it}"${cur.indexOf(it)>=0?' checked':''}>${it}</label>`).join('')}</div>`).join('')}</div></div>`;
+    }
+    return `<div class="fd"><label>${lbl}${star}</label><input class="field" data-ef="${k}" value="${val}"></div>`;
+  }).join('');
+}
+function openModal(key,i,act){
+  const p=PAGES[key];if(!p)return;
+  const evOld=document.getElementById('evSubmit');if(evOld)evOld.remove();
+  let mm=MODAL_META[key];
+  if(!mm){mm={tag:'详情',title:p.t,f:r=>r,labels:(p.h||[]).map(c=>c.t)};}
+  MODAL_KEY=key;MODAL_I=i;MODAL_ACT=act;
+  const r=p.r[i]||[];
+  $('#modalTag').textContent=mm.tag||'详情';
+  $('#modalTitle').textContent=act==='new'?('新建 · '+p.t):(mm.title||p.t);
+  const vals=mm.f(r),L=mm.labels||[];
+  const editing=act==='edit'||(act==='new'&&mm.edit);
+  if(mm.layout==='feedback'){
+    $('#mKv').innerHTML=renderFeedbackLayout(mm,r);
+    $('#mKv').style.cssText='display:block;padding:0;gap:0';
+    $('#modal').style.width='min(780px,94vw)';
+    $('#modal').style.maxHeight='82vh';
+    $('#modal').style.overflowY='auto';
+  }else{
+  $('#mKv').innerHTML=L.map((lbl,k)=>{
+    const v=vals[k];if(v===''||v===undefined)return '';
+    if(editing&&mm.statusOpts&&mm.stCol===k){
+      const opts=mm.statusOpts.map(o=>{const lb=o.replace(/^#\w+\s*/,'');return `<option value="${o}"${o===v?' selected':''}>${lb}</option>`;}).join('');
+      return `<dt>${lbl}</dt><dd><select class="field" data-status-edit style="min-width:140px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:#fff;font-size:13px;cursor:pointer">${opts}</select></dd>`;
+    }
+    if(editing&&mm.inlineEdits){
+      const ie=mm.inlineEdits.find(x=>x.col===k);
+      if(ie){
+        const lr=lbl+'<span class="req">*</span>';
+        if(ie.type==='select'){
+          if(mm.attachment&&mm.attachment.items&&k===1){
+            const rows=mm.attachment.items.map((it,i)=>{
+              const upText=it.uploaded?'更改':'上传';
+              const upCls=it.uploaded?'qual-change-btn':'qual-upload-btn';
+              return `<tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:8px 14px;font-size:13px;color:var(--ink-3);border-right:1px solid var(--border)">${i+1}</td>
+                <td style="padding:8px 14px;font-size:13px;color:var(--ink-1);min-width:110px;border-right:1px solid var(--border)">${it.name}${it.uploaded?'<span style="display:inline-block;margin-left:6px;padding:1px 6px;border-radius:3px;background:var(--accent-soft);color:var(--accent);font-size:10px">已上传</span>':''}</td>
+                <td style="padding:8px 14px;font-size:13px;white-space:nowrap"><button class="btn sm ${upCls}" data-file="${it.file}" data-name="${it.name}" data-idx="${i}" style="padding:4px 12px;font-size:12px;margin-right:10px">${upText}</button><a href="javascript:void(0)" class="qual-preview-link" data-file="${it.file}" data-name="${it.name}" style="color:var(--accent);text-decoration:none;cursor:pointer;${it.uploaded?'':'opacity:.4;pointer-events:none'}">点击预览</a></td>
+              </tr>`;
+            }).join('');
+            return `<dt style="vertical-align:top;padding-top:10px">${lr}</dt><dd>
+              <table style="border-collapse:collapse;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#fff">
+                <tbody>${rows}</tbody>
+              </table>
+            </dd>`;
+          }
+          const opts=ie.options.map(o=>`<option value="${o}"${o===v?' selected':''}>${o}</option>`).join('');
+          return `<dt>${lr}</dt><dd><select class="field" data-inline-edit="${k}" style="min-width:120px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:#fff;font-size:13px;cursor:pointer">${opts}</select></dd>`;
+        }else if(ie.type==='date'){
+          const dv=(v&&v!=='长期')?v:'';
+          return `<dt>${lr}</dt><dd><input type="date" class="field" data-inline-edit="${k}" value="${dv}" style="min-width:160px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:#fff;font-size:13px"></dd>`;
+        }else{
+          return `<dt>${lr}</dt><dd><input class="field" data-inline-edit="${k}" value="${v}" style="min-width:200px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:#fff;font-size:13px"></dd>`;
+        }
+      }
+    }
+    return `<dt>${lbl}</dt><dd>${cell(v)}</dd>`;
+  }).join('');
+  }
+  if(mm.statusOpts){
+    $('#mForm').innerHTML='';$('#mForm').style.display='none';$('#mKv').style.display='grid';
+  }else if(mm.layout==='feedback'){
+    $('#mForm').innerHTML='';$('#mForm').style.display='none';$('#mKv').style.display='block';
+  }else{
+    $('#mForm').innerHTML=mm.edit?buildForm(mm,act==='new'?[]:r):'';
+    $('#mForm').style.display=(mm.edit&&editing)?'block':'none';
+    $('#mKv').style.display=(mm.edit&&editing)?'none':'grid';
+  }
+  $('#mOpinion').value='';
+  const attachArea=$('#modalAttach');
+  if(attachArea)attachArea.style.display='none';
+  setTimeout(()=>{
+    document.querySelectorAll('.qual-preview-link').forEach(el=>{
+      el.onclick=()=>showSingleAttachPreview(el.dataset.name,el.dataset.file);
+    });
+    document.querySelectorAll('.qual-upload-btn,.qual-change-btn').forEach(el=>{
+      el.onclick=()=>{
+        const nm=el.dataset.name;const isChg=el.classList.contains('qual-change-btn');
+        alert('原型预览：'+(isChg?'更改':'上传')+'附件功能\n\n资质类型：'+nm+'\n\n实际项目中将调用文件选择组件，支持图片/PDF等格式，上传后自动关联到对应资质类型，并更新上传状态。');
+      };
+    });
+  },10);
+  const isReview=act==='ok'||act==='no'||(act==='view'&&REVIEW_KEYS.indexOf(key)>=0);
+  $('#mOpinionWrap').style.display=(isReview&&!editing)?'block':'none';
+  const rejectBtn=$('#mReject'),approve=$('#mApprove'),editBtn=$('#mEdit');
+  const hasInlineEdit=mm.statusOpts&&editing;
+  editBtn.style.display=((mm.edit&&!isReview)||hasInlineEdit)?'inline-flex':'none';
+  editBtn.textContent=editing?'保存':'编辑';
+  rejectBtn.style.display=isReview?'inline-flex':'none';
+  approve.style.display=isReview?'inline-flex':'none';
+  approve.textContent=act==='no'?'确认驳回':'通过';
+  approve.className='btn primary'+(act==='no'?' bad':'');
+  rejectBtn.textContent=(act==='no')?'取消':'驳回';
+  const canW=!RO;
+  rejectBtn.disabled=!canW;approve.disabled=!canW;
+  $('#mCancel').textContent=(mm.edit&&editing)?'取消':'关闭';
+  $('#scrim').classList.add('on');$('#modal').classList.add('on');
+}
+function approveModal(ok){
+  if(RO)return;
+  const p=PAGES[MODAL_KEY],mm=MODAL_META[MODAL_KEY]||{},r=p.r[MODAL_I];
+  if(!ok){const o=$('#mOpinion').value.trim();if(!o){alert('驳回原因必填');return;}}
+  if(mm.stCol!==undefined&&r){r[mm.stCol]=ok?mm.okVal:mm.noVal;}
+  closeModal();if(MODAL_KEY)renderList(MODAL_KEY);
+}
+function saveModal(){
+  if(RO)return;
+  const p=PAGES[MODAL_KEY],mm=MODAL_META[MODAL_KEY]||{};
+  const isNew=MODAL_ACT==='new';
+  let r=isNew?null:(p.r[MODAL_I]||[]);
+  if(isNew){
+    const L=mm.labels?mm.labels.length:(p.h?p.h.length:0);
+    r=new Array(Math.max(L,1)).fill('');
+    const first=p.r[0]||[];
+    if(first[0]&&/^[A-Z]{1,6}-\d+$/.test(String(first[0]))){
+      let mx=0;
+      p.r.forEach(x=>{const m=String(x[0]||'').match(/^([A-Z]{1,6}-)(\d+)$/);if(m)mx=Math.max(mx,parseInt(m[2],10));});
+      r[0]=String(first[0]).replace(/\d+$/,mx+1);
+    }
+  }
+  const statusSel=document.querySelector('#mKv [data-status-edit]');
+  if(statusSel&&mm.stCol!==undefined&&r){r[mm.stCol]=statusSel.value;}
+  if(mm.inlineEdits&&r){
+    mm.inlineEdits.forEach(ie=>{
+      const el=document.querySelector(`#mKv [data-inline-edit="${ie.col}"]`);
+      if(el)r[ie.col]=el.value;
+    });
+  }
+  const eTypes=mm.eTypes||[];
+  (mm.eLabels||[]).forEach((lbl,k)=>{
+    const col=(mm.eCols||[])[k];
+    if(col===null||col===undefined)return;
+    if(eTypes[k]==='perm'){
+      r[col]=[...$('#mForm').querySelectorAll(`[data-ef="${k}"]:checked`)].map(c=>c.dataset.perm);
+    }else{
+      const el=$('#mForm').querySelector(`[data-ef="${k}"]`);
+      if(el)r[col]=el.value;
+    }
+  });
+  if(isNew)p.r.push(r);
+  closeModal();renderList(MODAL_KEY);
+}
+function closeModal(){$('#scrim').classList.remove('on');$('#modal').classList.remove('on');$('#modal').style.width='';$('#modal').style.maxHeight='';$('#modal').style.overflowY='';}
+/* ── 服务商订单处理（我的订单 · 按状态动态：处理/维护/评价） ── */
+function openProcModal(key,i){
+  if(RO)return;
+  const p=PAGES[key];if(!p)return;
+  const r=p.r[i]||[];
+  const st=String(r[p.fcol]||'');
+  const ev=String(r[6]||'');
+  const head=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed var(--border);font-size:13px">
+    <span style="color:var(--ink-3)">${r[0]} · ${r[2]}</span><span>${r[1]} · ${r[3]}</span></div>`;
+  $('#mKv').style.cssText='';
+  $('#mKv').innerHTML=head;
+  $('#mForm').innerHTML='';$('#mForm').style.display='none';
+  $('#mOpinionWrap').style.display='none';
+  $('#mEdit').style.display='none';$('#mReject').style.display='none';$('#mApprove').style.display='none';
+  ['#prSubmit','#prReject'].forEach(sel=>{const b=$(sel);if(b)b.remove();});
+  $('#mCancel').textContent='取消';
+  const addBtn=(id,txt,cls)=>$('#mCancel').parentNode.insertAdjacentHTML('beforeend',`<button class="btn ${cls}" id="${id}">${txt}</button>`);
+
+  if(st.indexOf('待接单')>=0){
+    $('#modalTag').textContent='接单';$('#modalTitle').textContent='处理订单 · 确认接单';
+    $('#mKv').insertAdjacentHTML('beforeend',`
+      <div style="padding:12px 0 4px;font-weight:600;font-size:13px">接单信息<span class="req">*</span></div>
+      <div style="padding:6px 0"><label style="display:block;font-size:12px;color:var(--ink-3);margin-bottom:4px">预计服务时间</label>
+        <input type="date" class="field" id="prDate" style="width:100%"></div>
+      <div style="padding:6px 0"><label style="display:block;font-size:12px;color:var(--ink-3);margin-bottom:4px">接单备注</label>
+        <textarea class="field" id="prNote" rows="3" style="width:100%" placeholder="与客户确认的服务细节、注意事项…"></textarea></div>`);
+    addBtn('prReject','拒绝接单','bad');
+    addBtn('prSubmit','确认接单','primary');
+    $('#prSubmit').onclick=()=>{
+      const d=$('#prDate').value;if(!d){alert('请选择预计服务时间');return;}
+      r[p.fcol]='#ac 履约中';r[6]='';r[7]='';r[8]='';
+      closeModal();renderList(key);alert('已确认接单，订单进入「履约中」。');
+    };
+    $('#prReject').onclick=()=>{r[p.fcol]='#bad 已拒单';closeModal();renderList(key);alert('已拒绝接单。');};
+  }else if(st.indexOf('履约中')>=0){
+    $('#modalTag').textContent='维护';$('#modalTitle').textContent='履约维护';
+    $('#mKv').insertAdjacentHTML('beforeend',`
+      <div style="padding:12px 0 4px;font-weight:600;font-size:13px">履约进度<span class="req">*</span></div>
+      <div style="padding:6px 0"><label style="display:block;font-size:12px;color:var(--ink-3);margin-bottom:4px">当前进度</label>
+        <select class="field" id="prProg" style="width:100%"><option>正常履约</option><option>待补充素材</option><option>已交付待验收</option></select></div>
+      <div style="padding:6px 0"><label style="display:block;font-size:12px;color:var(--ink-3);margin-bottom:4px">进度说明</label>
+        <textarea class="field" id="prNote" rows="3" style="width:100%" placeholder="记录本次履约进展、与客户的沟通结果…"></textarea></div>
+      <div style="padding:6px 0"><label style="display:block;font-size:12px;color:var(--ink-3);margin-bottom:4px">下次跟进时间</label>
+        <input type="date" class="field" id="prDate" style="width:100%"></div>`);
+    addBtn('prSubmit','保存维护记录','primary');
+    $('#prSubmit').onclick=()=>{
+      const prog=$('#prProg').value,note=$('#prNote').value.trim();
+      if(!note){alert('请填写进度说明');return;}
+      r[6]='#ok '+prog;
+      closeModal();renderList(key);alert('履约维护已保存（'+prog+'）。');
+    };
+  }else if(st.indexOf('已完成')>=0){
+    const marked=ev.indexOf('已评价')>=0;
+    $('#modalTag').textContent=marked?'追评':'评价';
+    $('#modalTitle').textContent=marked?'评价订单（追评）':'评价订单';
+    let star=marked?(Number(r[7])||5):5;
+    $('#mKv').insertAdjacentHTML('beforeend',`
+      <div style="padding:14px 0 2px;font-weight:600;font-size:13px">综合评分<span class="req">*</span></div>
+      <div style="padding:8px 0 6px;display:flex;align-items:center;gap:6px">${[1,2,3,4,5].map(n=>`<span class="evstar" data-s="${n}" style="cursor:pointer;font-size:26px;line-height:1;color:${n<=star?'#f5a623':'#d8d8d8'};transition:color .15s">★</span>`).join('')}<span id="evTip" style="margin-left:10px;color:var(--ink-3);font-size:12.5px"></span></div>
+      <div class="fd"><label>评语<span class="req">*</span></label><textarea class="field" id="evText" rows="3" style="width:100%" placeholder="对本次订单的服务过程与客户协作给出评价…">${marked?(String(r[8]||'')):''}</textarea></div>`);
+    const paint=()=>{
+      $('#mKv').querySelectorAll('.evstar').forEach(x=>{x.style.color=(+x.dataset.s<=star)?'#f5a623':'#d8d8d8';});
+      const t=$('#evTip');if(t)t.textContent=['很不满意','不满意','一般','满意','非常满意'][star-1]||'';
+    };
+    paint();
+    $('#mKv').querySelectorAll('.evstar').forEach(sx=>sx.onclick=()=>{star=+sx.dataset.s;paint();});
+    addBtn('prSubmit',marked?'提交追评':'提交评价','primary');
+    $('#prSubmit').onclick=()=>{
+      const txt=$('#evText').value.trim();
+      if(!txt){alert('请填写评语');return;}
+      r[6]='已评价';r[7]=star;r[8]=txt;
+      closeModal();renderList(key);alert((marked?'追评':'评价')+'已提交（'+star+' 星）。');
+    };
+  }else{
+    $('#modalTag').textContent='处理';$('#modalTitle').textContent='订单处理';
+    $('#mKv').insertAdjacentHTML('beforeend','<div style="padding:12px 0;color:var(--ink-3);font-size:13px">当前订单状态暂不支持处理操作。</div>');
+    addBtn('prSubmit','知道了','primary');
+    $('#prSubmit').onclick=closeModal;
+  }
+  $('#mCancel').onclick=closeModal;
+  $('#scrim').classList.add('on');$('#modal').classList.add('on');
+}
+
+/* ── 我的作品（用户视角 · 请柬作品卡片） ── */
+let UW_FILTER='all';
+function renderUserWorks(){
+  const o=CUR.obj, ws=o.works||[];
+  const list=UW_FILTER==='all'?ws:ws.filter(w=>w.st===UW_FILTER);
+  const sub=$('#uWSub'), chip=$('#uWChip');
+  if(sub)sub.textContent=o.name+' 创建的电子请柬作品 · 共 '+ws.length+' 件 · 编辑请柬跳转 H5 编辑器';
+  if(chip)chip.textContent='用户 · '+tierOf(o);
+  const g=$('#uWorksGrid'); if(!g)return;
+  g.innerHTML=list.length?list.map(w=>`
+    <div class="work-card">
+      <div class="wc-cover" style="background:linear-gradient(135deg,${w.g1},${w.g2})">
+        <span class="wc-title${w.pink?' pink':''}">${w.title}</span>
+        <span class="wc-badge ${w.st==='已发布'?'pub':'draft'}">${w.st}</span>
+        <div class="wc-emoji">${w.emoji}</div>
+        <div class="wc-sub">${w.sub}</div>
+      </div>
+      <div class="wc-meta"><span class="wc-tag">${w.tag}</span><span class="wc-date">${w.date}</span></div>
+      <div class="wc-acts">
+        <button class="btn sm" onclick="openWorkModal('${w.id}')">查看</button>
+        <button class="btn sm primary" onclick="alert('原型预览：编辑作品「'+'${w.title}'+'」将跳转 H5 编辑器（apps/web 5173）')">编辑</button>
+      </div>
+    </div>`).join('')
+    :'<div class="panel" style="padding:40px;text-align:center;color:var(--ink-3)">该筛选下暂无作品</div>';
+}
+function openWorkModal(id){
+  const o=CUR.obj, w=(o.works||[]).find(x=>x.id===id); if(!w)return;
+  $('#modalTag').textContent='作品';
+  $('#modalTitle').textContent='请柬作品详情';
+  $('#mKv').style.cssText='';
+  $('#mKv').innerHTML=`
+    <dt>作品编号</dt><dd>${w.id}</dd>
+    <dt>作品名称</dt><dd>${w.title}</dd>
+    <dt>封面主题</dt><dd>${w.tag}</dd>
+    <dt>使用场景</dt><dd>${w.scene}</dd>
+    <dt>作品状态</dt><dd>${w.st==='已发布'?'<span class="tag ok">已发布</span>':'<span class="tag mut">草稿</span>'}</dd>
+    <dt>发布日期</dt><dd>${w.date}</dd>
+    <dt>最近更新</dt><dd>${w.upd}</dd>`;
+  $('#mForm').innerHTML='';$('#mForm').style.display='none';
+  $('#mOpinionWrap').style.display='none';
+  $('#mEdit').style.display='none';$('#mReject').style.display='none';$('#mApprove').style.display='none';
+  $('#mCancel').textContent='关闭';
+  $('#scrim').classList.add('on');$('#modal').classList.add('on');
+}
+document.addEventListener('click',e=>{
+  const c=e.target.closest('#uWFilters .chip'); if(!c)return;
+  document.querySelectorAll('#uWFilters .chip').forEach(x=>x.classList.toggle('on',x===c));
+  UW_FILTER=c.dataset.f; renderUserWorks();
+});
+$('#uWNew').onclick=()=>alert('原型预览：新建作品将跳转 H5 编辑器（apps/web 5173），选择模板后开始设计');
+
+/* ── 评价弹窗（我的服务商 / 我的订单 · 评价入口） ── */
+function openEvalModal(key,i){
+  const p=PAGES[key];if(!p)return;
+  const r=p.r[i]||[];
+  const isOrder=key==='u-orders';
+  const name=isOrder?(r[1]+' · '+r[2]):(r[0]+' · '+r[1]);
+  const marked=String(isOrder?r[5]:r[5]||'').indexOf('已评价')>=0;
+  const titleTxt=marked?(isOrder?'追评订单':'追评服务商'):(isOrder?'评价订单':'评价服务商');
+  let star=marked?(Number(r[6])||5):5;
+  const preTxt=marked?(String(r[7]||'')):'';
+  $('#modalTag').textContent=marked?'追评':'评价';
+  $('#modalTitle').textContent=titleTxt;
+  $('#mKv').style.cssText='display:block;padding:2px 0 0;gap:0';
+  $('#mKv').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed var(--border);font-size:13px"><span style="color:var(--ink-3)">${isOrder?'订单服务':'服务商'}</span><span>${name}</span></div>
+    <div style="padding:14px 0 2px;font-weight:600;font-size:13px">综合评分<span class="req">*</span></div>
+    <div style="padding:8px 0 6px;display:flex;align-items:center;gap:6px">${[1,2,3,4,5].map(n=>`<span class="evstar" data-s="${n}" style="cursor:pointer;font-size:26px;line-height:1;color:${n<=star?'#f5a623':'#d8d8d8'};transition:color .15s">★</span>`).join('')}<span id="evTip" style="margin-left:10px;color:var(--ink-3);font-size:12.5px">非常满意</span></div>
+    <div class="fd"><label>评语<span class="req">*</span></label><textarea class="field" id="evText" rows="3" placeholder="${isOrder?'对本次订单的服务过程与服务商表现给出真实评价…':'对该服务商的服务质量、响应速度、专业程度给出评价…'}">${preTxt}</textarea></div>`;
+  const paint=()=>{
+    $('#mKv').querySelectorAll('.evstar').forEach(x=>{x.style.color=(+x.dataset.s<=star)?'#f5a623':'#d8d8d8';});
+    const tip=['很不满意','不满意','一般','满意','非常满意'][star-1]||'';
+    const t=$('#evTip');if(t)t.textContent=tip;
+  };
+  $('#mKv').querySelectorAll('.evstar').forEach(s=>s.onclick=()=>{star=+s.dataset.s;paint();});
+  $('#mForm').innerHTML='';$('#mForm').style.display='none';
+  $('#mOpinionWrap').style.display='none';
+  $('#mEdit').style.display='none';$('#mReject').style.display='none';$('#mApprove').style.display='none';
+  $('#mCancel').textContent='取消';
+  const evB=$('#evSubmit');if(evB)evB.remove();
+  const mCancelEl=$('#mCancel');
+  if(mCancelEl)mCancelEl.parentNode.insertAdjacentHTML('beforeend','<button class="btn primary" id="evSubmit">提交评价</button>');
+  $('#evSubmit').onclick=()=>{
+    const txt=$('#evText').value.trim();
+    if(!txt){alert('请填写评语');$('#evText').focus();return;}
+    if(isOrder){r[5]='#ok 已评价';r[6]=star;r[7]=txt;}else{r[5]='#ok 已评价';r[2]='★ '+star+'.0';}
+    closeModal();renderList(key);
+    alert((marked?'追评':'评价')+'已提交（'+star+' 星）\n\n感谢您的反馈，评价将在平台审核后公开展示。');
+  };
+  $('#mCancel').onclick=()=>{const b=$('#evSubmit');if(b)b.remove();closeModal();};
+  $('#scrim').classList.add('on');$('#modal').classList.add('on');
+}
+$('#scrim').onclick=closeModal;
+$('#modalX').onclick=closeModal;
+$('#mCancel').onclick=closeModal;
+/* ── 附件预览 ── */
+function showSingleAttachPreview(name,file){
+  const ext=(file||'').split('.').pop().toLowerCase();
+  const isImg=['jpg','jpeg','png','gif','webp'].indexOf(ext)>=0;
+  const bgGrad=isImg?'linear-gradient(135deg,#e8d5c4,#d4a574)':'linear-gradient(135deg,#d0d0d0,#a0a0a0)';
+  const icon=isImg?'\u{1F5BC}':'\u{1F4C4}';
+  const ftype=isImg?'图片文件':'文档文件';
+  const previewText=isImg?'[ 图片预览区域 ] 实际项目中将在此展示图片原件，支持放大、缩小、旋转、下载':'[ 文档预览区域 ] 实际项目中将在此展示文档内容，支持翻页、缩放、下载';
+  const list=$('#attachList');
+  var html='<div style="padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--panel-2)">';
+  html+='<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">';
+  html+='<div style="width:56px;height:56px;border-radius:8px;background:'+bgGrad+';display:grid;place-items:center;color:#fff;font-size:24px;font-weight:700">'+icon+'</div>';
+  html+='<div><div style="font-size:15px;font-weight:700;color:var(--ink-1)">'+name+'</div><div style="font-size:12px;color:var(--ink-3);margin-top:4px">'+file+' · '+ftype+' · 大小约 1.2MB</div></div>';
+  html+='</div>';
+  html+='<div style="padding:24px;background:#fff;border:1px dashed var(--border);border-radius:6px;text-align:center;color:var(--ink-3);font-size:13px;white-space:pre-wrap">'+previewText+'</div>';
+  html+='<div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">';
+  html+='<button class="btn sm" onclick="alert(\'原型预览：下载功能。实际项目中将下载该附件原件到本地。\')" style="padding:6px 16px;font-size:12px">下载原件</button>';
+  html+='</div>';
+  html+='</div>';
+  list.innerHTML=html;
+  $('#attachScrim').style.display='block';
+  $('#attachModal').style.display='block';
+}
+function showAttachPreview(att){
+  const list=$('#attachList');
+  list.innerHTML=(att.files||[]).map((f,i)=>{
+    const ext=f.split('.').pop().toLowerCase();
+    const isImg=['jpg','jpeg','png','gif','webp'].indexOf(ext)>=0;
+    return `<div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--panel-2)">
+      <div style="width:48px;height:48px;border-radius:6px;background:${isImg?'linear-gradient(135deg,#e8d5c4,#d4a574)':'linear-gradient(135deg,#d0d0d0,#a0a0a0)'};display:grid;place-items:center;color:#fff;font-size:20px;font-weight:700">${isImg?'🖼':'📄'}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink-1)">${f}</div><div style="font-size:11px;color:var(--ink-3);margin-top:2px">${isImg?'图片文件 · 点击可放大查看':'文档文件 · 大小约 1.2MB'}</div></div>
+      <button class="btn sm" onclick="alert('原型预览：${f}\n\n实际项目中将调用图片/文档预览组件，支持放大、下载、旋转等操作。')" style="padding:5px 14px;font-size:12px">预览</button>
+    </div>`;
+  }).join('');
+  $('#attachScrim').style.display='block';
+  $('#attachModal').style.display='block';
+}
+function closeAttachPreview(){$('#attachScrim').style.display='none';$('#attachModal').style.display='none';}
+$('#attachScrim').onclick=closeAttachPreview;
+$('#attachModalX').onclick=closeAttachPreview;
+$('#attachClose').onclick=closeAttachPreview;
+$('#mApprove').onclick=()=>{if(MODAL_ACT==='no')approveModal(false);else approveModal(true);};
+$('#mReject').onclick=()=>{if(MODAL_ACT==='no'){closeModal();return;}approveModal(false);};
+$('#mEdit').onclick=()=>{if(MODAL_ACT==='edit'||MODAL_ACT==='new')saveModal();else openModal(MODAL_KEY,MODAL_I,'edit');};
+
+/* ── 待办直达 ── */
+document.addEventListener('click',e=>{
+  const it=e.target.closest('.todo .it');if(!it)return;
+  const g=it.dataset.goto;if(g)goPage(g);
+});
+
+/* ── 首页动态数据（总台看板：静态示例） ── */
+function renderHome(){
+  const rb=$('#regionBars');const regs=[['乌鲁木齐',128.6,1926],['北京',96.2,1440],['上海',88.4,1312],['广州',71.8,1086],['成都',52.3,804]];
+  const mx=Math.max(...regs.map(r=>r[1]));
+  rb.innerHTML=regs.map(r=>`<div class="bar"><div class="row"><span class="nm">${r[0]}</span>
+    <span class="tr"><span class="fl" style="width:${r[1]/mx*100}%;background:var(--accent)"></span></span>
+    <span class="vl">¥${r[1]}w</span><span class="vl" style="width:56px;color:var(--accent-2)">${r[2]}</span></div></div>`).join('');
+  $('#agentTop').innerHTML=[
+    ['乌鲁木齐天山区','天山区','¥18,320','214'],['乌鲁木齐沙依巴克','沙依巴克区','¥26,480','309'],
+    ['乌鲁木齐高新','高新区','¥21,150','252'],['北京朝阳','朝阳区','¥30,720','368'],['上海浦东','浦东新区','¥24,860','291']
+  ].map(r=>`<tr><td>${r[0]}</td><td class="mut">${r[1]}</td><td class="n num">${r[2]}</td><td class="n num">${r[3]}</td></tr>`).join('');
+  $('#reviewMini').innerHTML=[
+    ['麦麦提·艾力','婚庆主持','天山区','#warn 待审'],['古丽娜尔','摄影摄像','沙依巴克','#warn 待审'],['王磊','宴会设计','高新区','#warn 待审']
+  ].map(r=>`<tr><td>${r[0]}</td><td class="mut">${r[1]}</td><td class="mut">${r[2]}</td><td>${cell(r[3])}</td><td><span class="link" data-goto="review">处理</span></td></tr>`).join('');
+  $('#reviewMini').parentElement.querySelectorAll('.link').forEach(l=>l.onclick=()=>goPage('review'));
+}
+
+/* ── 具体对象数据（代理商/服务商样例，对象视角按此切换） ── */
+const AGENTS=[
+ {id:'AG001',name:'阿依古丽',nick:'天山花姐',phone:'138****2210',region:'天山区',
+  flow:18320,flowPct:'11.6',users:1204,svc:38,orders:214,orderPct:'8.3',pend:5,fb:2,up:1,msg:1,
+  cats:[['婚庆主持',18,6],['摄影摄像',10,4],['花艺布置',6,4],['化妆造型',4,2]],
+  prov:[['麦麦提·艾力','婚庆主持','#ok 已认证','6','¥2,860','#ok 正常'],['阿迪力江','花艺布置','#ok 已认证','4','¥1,520','#ok 正常'],['李婷','乐队演出','#ok 已认证','3','¥980','#ok 正常'],['新入驻·买买提','摄影摄像','#warn 待初审','0','¥0','#warn 待初审']]},
+ {id:'AG002',name:'艾山江',nick:'沙依巴克老艾',phone:'139****7756',region:'沙依巴克区',
+  flow:26480,flowPct:'9.2',users:986,svc:29,orders:309,orderPct:'6.4',pend:3,fb:1,up:0,msg:2,
+  cats:[['婚庆主持',12,5],['摄影摄像',9,3],['花艺布置',4,2],['乐队演出',4,1]],
+  prov:[['古丽娜尔','摄影摄像','#ok 已认证','9','¥3,120','#ok 正常'],['帕提曼','化妆造型','#ok 已认证','7','¥2,140','#ok 正常'],['新入驻·外力','乐队演出','#warn 待初审','0','¥0','#warn 待初审']]},
+ {id:'AG003',name:'买买提江',nick:'高新小买',phone:'137****9023',region:'高新区',
+  flow:21150,flowPct:'14.5',users:1320,svc:44,orders:252,orderPct:'10.1',pend:7,fb:3,up:1,msg:1,
+  cats:[['婚庆主持',22,9],['摄影摄像',12,5],['宴会设计',6,3],['花艺布置',4,2]],
+  prov:[['王磊','宴会设计','#ok 已认证','5','¥2,460','#ok 正常'],['米热古丽','花艺布置','#ok 已认证','6','¥1,880','#ok 正常'],['新入驻·亚森','摄影摄像','#warn 待初审','0','¥0','#warn 待初审']]},
+ {id:'AG004',name:'王芳',nick:'北京朝阳',phone:'186****3311',region:'朝阳区',
+  flow:30720,flowPct:'8.1',users:2204,svc:68,orders:368,orderPct:'7.2',pend:4,fb:1,up:0,msg:1,
+  cats:[['婚庆主持',28,11],['摄影摄像',18,7],['宴会设计',12,5],['化妆造型',10,4]],
+  prov:[['李静','婚庆主持','#ok 已认证','11','¥5,260','#ok 正常'],['张伟','摄影摄像','#ok 已认证','8','¥3,480','#ok 正常']]},
+ {id:'AG005',name:'陈晨',nick:'上海浦东',phone:'189****5588',region:'浦东新区',
+  flow:24860,flowPct:'10.3',users:1890,svc:55,orders:291,orderPct:'9.0',pend:6,fb:2,up:1,msg:0,
+  cats:[['婚庆主持',20,8],['花艺布置',14,6],['乐队演出',10,5],['化妆造型',11,4]],
+  prov:[['周悦','花艺布置','#ok 已认证','9','¥3,960','#ok 正常'],['孙浩','乐队演出','#ok 已认证','6','¥2,380','#ok 正常']]}
+];
+const PROVIDERS=[
+ {id:'SP001',name:'麦麦提·艾力',nick:'喜事管家',phone:'138****2210',type:'婚庆主持',region:'天山区',
+  bal:1240,balPct:'+ ¥860 本月',frozen:320,onSale:6,onSaleF:'3 类服务角色',orders:18,ordersPct:'▲ 4 单',pd:2,dlv:3,income:2860,incomePct:'▲ 12.8%',appeal:1,
+  svc:[['「红绸喜字」','¥29','#ok 在售'],['「鎏金岁月」','¥49','#ok 在售'],['「青梅竹马」','¥19','#mut 草稿']],
+  ord:[['QJ…0013','¥1,280','#warn 待接单'],['QJ…0011','¥880','#ac 履约中'],['QJ…0098','¥520','#ok 已完成']]},
+ {id:'SP002',name:'古丽娜尔',nick:'光影古丽',phone:'135****8044',type:'摄影摄像',region:'沙依巴克区',
+  bal:3260,balPct:'+ ¥1,100 本月',frozen:640,onSale:8,onSaleF:'2 类服务角色',orders:26,ordersPct:'▲ 6 单',pd:1,dlv:4,income:5180,incomePct:'▲ 15.2%',appeal:0,
+  svc:[['「婚礼跟拍」','¥999','#ok 在售'],['「情侣写真」','¥499','#ok 在售'],['「轻写真」','¥299','#mut 草稿']],
+  ord:[['QJ…0021','¥999','#warn 待接单'],['QJ…0018','¥1,680','#ac 履约中'],['QJ…0012','¥899','#ok 已完成']]},
+ {id:'SP003',name:'王磊',nick:'宴会设计王',phone:'186****3302',type:'宴会设计',region:'高新区',
+  bal:980,balPct:'+ ¥420 本月',frozen:210,onSale:4,onSaleF:'2 类服务角色',orders:12,ordersPct:'▲ 2 单',pd:3,dlv:2,income:2460,incomePct:'▲ 7.6%',appeal:1,
+  svc:[['「主题宴会全案」','¥1,880','#ok 在售'],['「甜品台设计」','¥399','#ok 在售']],
+  ord:[['QJ…0033','¥1,880','#warn 待接单'],['QJ…0028','¥799','#ac 履约中']]},
+ {id:'SP004',name:'阿迪力江',nick:'花艺阿迪',phone:'139****1176',type:'花艺布置',region:'天山区',
+  bal:760,balPct:'+ ¥300 本月',frozen:180,onSale:5,onSaleF:'2 类服务角色',orders:15,ordersPct:'▲ 3 单',pd:0,dlv:5,income:1520,incomePct:'▲ 9.4%',appeal:0,
+  svc:[['「婚礼花艺套餐」','¥888','#ok 在售'],['「商务花篮」','¥128','#ok 在售']],
+  ord:[['QJ…0041','¥888','#warn 待接单'],['QJ…0036','¥668','#ac 履约中']]}
+];
+
+/* ── 具体对象视角：渲染某代理商/服务商名下数据 ── */
+function renderAgent(o){
+  $('#aSub').textContent=o.region+' · 辖区经营指标 · 截至今日 08-27';
+  $('#aChip').textContent='代理商 · '+o.region+' · 辖区作用域';
+  $('#aFlow').textContent='¥'+num(o.flow);
+  $('#aFlowPct').textContent='▲ '+o.flowPct+'% 较上周';
+  $('#aFee').textContent='辖区抽成 ¥'+num(Math.round(o.flow*0.1));
+  $('#aUsers').textContent=num(o.users);
+  $('#aSvc').textContent=o.svc;
+  $('#aSvcPend').innerHTML='入驻待初审 <b style="color:var(--accent)">'+o.pend+'</b> 家';
+  $('#aOrd').textContent=o.orders;
+  $('#aPend').textContent=o.pend;$('#aFb').textContent=o.fb;$('#aUp').textContent=o.up;$('#aMsg').textContent=o.msg;
+  const ac=$('#agentCatBars');const amx=Math.max(...o.cats.map(c=>c[1]));
+  ac.innerHTML=o.cats.map(c=>`<div class="bar"><div class="row"><span class="nm">${c[0]}</span>
+    <span class="tr"><span class="fl" style="width:${c[1]/amx*100}%;background:var(--accent)"></span></span>
+    <span class="vl">${c[1]}</span><span class="vl" style="width:36px;color:var(--accent-2)">${c[2]}</span></div></div>`).join('');
+  $('#agentProvList').innerHTML=o.prov.map(r=>`<tr><td>${r[0]}</td><td class="mut">${r[1]}</td><td>${cell(r[2])}</td><td class="n num">${r[3]}</td><td class="n num">${r[4]}</td><td>${cell(r[5])}</td><td><span class="link">查看</span></td></tr>`).join('');
+}
+function renderProvider(o){
+  $('#pSub').textContent=o.type+' · 供给经营 · 截至今日 08-27';
+  $('#pChip').textContent='服务商 · '+o.region+' · 自身作用域';
+  $('#pBal').textContent='¥'+num(o.bal);
+  $('#pBalPct').textContent=o.balPct;
+  $('#pFrozen').textContent='冻结中 ¥'+num(o.frozen);
+  $('#pOnSale').textContent=o.onSale;
+  $('#pOnSaleF').textContent=o.onSaleF;
+  $('#pOrders').textContent=o.orders;
+  $('#pOrdersPct').textContent=o.ordersPct;
+  $('#pOrderF').innerHTML='待接单 <b style="color:var(--accent)">'+o.pd+'</b> · 待交付 <b style="color:var(--accent)">'+o.dlv+'</b>';
+  $('#pIncome').textContent='¥'+num(o.income);
+  $('#pIncomePct').textContent=o.incomePct;
+  $('#pPd').textContent=o.pd;$('#pDlv').textContent=o.dlv;$('#pAppeal').textContent=o.appeal;
+  $('#spServList').innerHTML=o.svc.map(r=>`<tr><td>${r[0]}</td><td class="n num">${r[1]}</td><td>${cell(r[2])}</td></tr>`).join('');
+  $('#spOrdList').innerHTML=o.ord.map(r=>`<tr><td class="num">${r[0]}</td><td class="n num">${r[1]}</td><td>${cell(r[2])}</td></tr>`).join('');
+}
+function renderScope(){ if(CUR.type==='agent')renderAgent(CUR.obj); else if(CUR.type==='provider')renderProvider(CUR.obj); else renderUser(CUR.obj); }
+
+/* ── 用户视角：会员等级 / 用户样例 / 工作台渲染 / 数据调整 ── */
+const TIERS={
+ '普通用户':{cls:'mut',perks:['在线浏览 · 搜索服务商','提交预约申请','基础在线客服','新人礼包 ¥20']},
+ '银卡会员':{cls:'ac',perks:['含普通用户全部权益','全场服务 9.8 折','专属客服','生日当月 ¥50 券','积分加速 ×1.2']},
+ '金卡会员':{cls:'ac',perks:['含银卡会员全部权益','全场服务 9.5 折','优先排期','每年 1 次免费改期','积分加速 ×1.5 · 双倍积分日']},
+ '黑金会员':{cls:'ac',perks:['含金卡会员全部权益','全场服务 9 折','金牌管家 1 对 1','无限次改期','专属 VIP 通道','季度专属礼遇']}
+};
+const USERS=[
+ {id:'U001',name:'买买提·艾山',phone:'137****5521',city:'乌鲁木齐',tier:'普通用户',reg:'2025-11-02',bal:320,pts:860,active:1,spend:2680,
+  ord:[['QD…0312','婚庆主持','麦麦提·艾力','¥6,800','08-20','#warn 待服务'],['QD…0298','摄影摄像','古丽娜尔','¥1,999','08-15','#ac 待支付'],['QD…0260','花艺布置','阿迪力江','¥888','07-30','#ok 已完成']],
+  fav:[['麦麦提·艾力','婚庆主持','4.9','08-02'],['阿迪力江','花艺布置','4.7','07-12']],
+  cp:[['新人礼包','¥20','08-01~09-30','满 0 元可用','#warn 未使用'],['满1000减100','¥100','至 10-31','满 ¥1,000 可用','#ok 已使用']],
+  wal:[['08-21','充值','+¥500','¥820','#ok 成功'],['08-20','消费','-¥6,800','¥320','#ok 成功'],['08-02','新人礼包','+¥20','¥120','#ok 成功']],
+  rev:[['QD…0312','婚庆主持','5.0','主持非常专业，流程很顺','08-25','#ok 已发布']],
+  msg:[['订单待确认收货提醒','订单','08-25 18:20','#warn 待确认收货'],['请为婚庆主持服务评价','评价','08-25 09:00','#warn 待评价'],['售后申请处理中','售后','08-27 09:30','#warn 处理中'],['平台 9 月大促活动预告','平台公告','08-26 10:00','#warn 未读'],['预约待确认提醒','订单','08-21 10:32','#warn 未读'],['新人礼包已到账','权益','08-02 09:00','#ok 已读']],works:[
+   {id:'WK-1001',title:'我要结婚了',emoji:'👰',tag:'新娘风采',date:'2026-09-02',st:'已发布',scene:'婚礼请柬',upd:'08-30 14:20',sub:'诚邀五湖四海的亲朋好友\n前来见证我们的幸福时刻',pink:0,g1:'#f6c3cf',g2:'#ef9db0'},
+   {id:'WK-1002',title:'银婚之喜',emoji:'💍',tag:'银婚之喜',date:'2026-08-29',st:'已发布',scene:'纪念日请柬',upd:'08-28 10:05',sub:'诚邀您来参加我们的银婚之喜',pink:0,g1:'#f5d9a8',g2:'#eec47f'},
+   {id:'WK-1003',title:'我要结婚了',emoji:'🤵',tag:'新郎风采',date:'2026-08-25',st:'草稿',scene:'婚礼请柬',upd:'08-24 21:40',sub:'喜讯同分享，期待您的到来',pink:1,g1:'#c9d8f0',g2:'#a8c0e8'}]},
+ {id:'U002',name:'古再丽',phone:'136****9087',city:'乌鲁木齐',tier:'银卡会员',reg:'2024-06-18',bal:1580,pts:5210,active:2,spend:9860,
+  ord:[['QD…0305','摄影摄像','古丽娜尔','¥2,699','08-18','#warn 待服务'],['QD…0277','化妆造型','帕提曼','¥1,280','08-09','#ac 待支付'],['QD…0241','婚庆主持','麦麦提·艾力','¥6,800','07-22','#ok 已完成'],['QD…0209','花艺布置','阿迪力江','¥888','06-30','#ok 已完成']],
+  fav:[['古丽娜尔','摄影摄像','4.8','08-05'],['帕提曼','化妆造型','4.9','07-18']],
+  cp:[['银卡生日券','¥50','本月有效','生日月使用','#warn 未使用'],['满2000减200','¥200','至 11-30','满 ¥2,000 可用','#warn 未使用']],
+  wal:[['08-19','充值','+¥1,000','¥1,580','#ok 成功'],['08-18','消费','-¥2,699','¥580','#ok 成功'],['08-06','积分兑换','-500 积分','¥520','#ok 成功']],
+  rev:[['QD…0305','摄影摄像','4.8','跟拍很有感觉','08-24','#ok 已发布']],
+  msg:[['订单 QD…0277 待支付','订单','08-20 12:05','#warn 待支付'],['优惠券 满2000减200 已到账','权益','08-19 10:00','#ok 已到账'],['账户安全提醒：异地登录','系统通知','08-22 18:00','#ok 已读'],['银卡生日券已发放','权益','08-01 00:00','#warn 未读'],['预约待确认提醒','订单','08-18 14:05','#ok 已读']],works:[
+   {id:'WK-1004',title:'宝宝满月',emoji:'🍼',tag:'满月之喜',date:'2026-09-05',st:'已发布',scene:'满月宴请柬',upd:'09-03 09:12',sub:'诚邀您共赴满月喜宴',pink:0,g1:'#fbe4b0',g2:'#f6cf7f'},
+   {id:'WK-1005',title:'我要结婚了',emoji:'👰',tag:'新娘风采',date:'2026-08-20',st:'草稿',scene:'婚礼请柬',upd:'08-19 16:30',sub:'婚礼筹备中，敬请期待',pink:1,g1:'#f7d6de',g2:'#efb3c0'}]},
+ {id:'U003',name:'王丽',phone:'139****6688',city:'上海',tier:'金卡会员',reg:'2024-03-12',bal:2480,pts:3260,active:2,spend:18640,
+  ord:[['QD…0301','宴会设计','王磊','¥1,880','08-19','#warn 待服务'],['QD…0286','花艺布置','周悦','¥3,960','08-11','#ac 履约中'],['QD…0264','乐队演出','孙浩','¥2,380','07-28','#ok 已完成']],
+  fav:[['王磊','宴会设计','4.9','08-03'],['周悦','花艺布置','4.8','07-20']],
+  cp:[['金卡优先券','免排期','至 12-31','金卡专享','#warn 未使用'],['满3000减300','¥300','至 10-31','满 ¥3,000 可用','#warn 未使用']],
+  wal:[['08-20','充值','+¥500','¥2,480','#ok 成功'],['08-19','消费','-¥1,880','¥1,980','#ok 成功'],['08-12','消费','-¥3,960','¥980','#ok 成功']],
+  rev:[['QD…0301','宴会设计','5.0','现场效果超出预期','08-27','#ok 已发布'],['QD…0286','花艺布置','4.9','花材新鲜，配色高级','08-15','#ok 已发布']],
+  msg:[['服务商 周悦 给您留言','服务','08-22 15:30','#warn 待回复'],['预约时间变更通知','订单','08-21 09:15','#warn 未读'],['已为您取消订单 QD…0264','订单','07-30 14:00','#ok 已取消'],['金卡权益升级提醒','权益','08-19 09:00','#warn 未读'],['订单履约中通知','订单','08-12 16:20','#ok 已读']],works:[
+   {id:'WK-1006',title:'婚礼邀请',emoji:'💐',tag:'花艺婚礼',date:'2026-09-08',st:'已发布',scene:'婚礼请柬',upd:'09-06 11:20',sub:'以花为约，共赴山海',pink:0,g1:'#d9efe0',g2:'#b5dfc8'},
+   {id:'WK-1007',title:'银婚之喜',emoji:'🎊',tag:'银婚纪念',date:'2026-08-18',st:'已发布',scene:'纪念日请柬',upd:'08-16 15:00',sub:'二十五年风雨同舟，诚邀见证',pink:0,g1:'#f5d9a8',g2:'#eec47f'},
+   {id:'WK-1008',title:'订婚宴',emoji:'💞',tag:'订婚之喜',date:'2026-08-12',st:'草稿',scene:'订婚请柬',upd:'08-10 20:15',sub:'两姓联姻，一堂缔约',pink:1,g1:'#f3c2d2',g2:'#e79cb5'}]},
+ {id:'U004',name:'阿里木江',phone:'135****3344',city:'乌鲁木齐',tier:'黑金会员',reg:'2023-01-20',bal:6800,pts:12800,active:1,spend:52400,
+  ord:[['QD…0295','婚庆主持','麦麦提·艾力','¥12,800','08-16','#warn 待服务'],['QD…0270','摄影摄像','古丽娜尔','¥4,599','08-02','#ok 已完成']],
+  fav:[['麦麦提·艾力','婚庆主持','4.9','08-10'],['古丽娜尔','摄影摄像','4.8','07-25']],
+  cp:[['黑金季度礼','¥1,000','本季度有效','黑金专享','#warn 未使用'],['专属管家券','1次','长期有效','预约管家','#warn 未使用']],
+  wal:[['08-17','充值','+¥2,000','¥6,800','#ok 成功'],['08-16','消费','-¥12,800','¥4,800','#ok 成功'],['08-03','退款','+¥899','¥4,200','#ok 成功']],
+  rev:[['QD…0295','婚庆主持','5.0','管家全程陪同，非常省心','08-22','#ok 已发布']],
+  msg:[['退款 ¥899 已到账','钱包','08-04 10:00','#ok 已到账'],['黑金年度体检权益已发放','权益','08-05 09:00','#ok 已到账'],['黑金季度礼已发放','权益','08-01 00:00','#warn 未读'],['专属管家服务提醒','服务','08-10 10:00','#ok 已读']],works:[
+   {id:'WK-1009',title:'金婚庆典',emoji:'👑',tag:'金婚之喜',date:'2026-09-01',st:'已发布',scene:'庆典请柬',upd:'08-29 09:30',sub:'五十年相守，感恩有您见证',pink:0,g1:'#ecd9a8',g2:'#ddc07f'},
+   {id:'WK-1010',title:'婚礼邀请',emoji:'🕊',tag:'白鸽婚礼',date:'2026-07-30',st:'已发布',scene:'婚礼请柬',upd:'07-28 14:45',sub:'愿执子之手，与子偕老',pink:0,g1:'#d9e6f2',g2:'#b7cfe8'}]},
+ {id:'U005',name:'刘婷婷',phone:'186****1100',city:'北京',tier:'普通用户',reg:'2026-02-08',bal:120,pts:120,active:0,spend:980,
+  ord:[['QD…0320','摄影摄像','李静','¥999','08-22','#ok 已完成']],
+  fav:[['李静','摄影摄像','4.6','08-10']],
+  cp:[['新人礼包','¥20','08-10~09-30','满 0 元可用','#ok 已使用']],
+  wal:[['08-22','消费','-¥999','¥120','#ok 成功'],['08-10','新人礼包','+¥20','¥120','#ok 成功']],
+  rev:[],
+  msg:[['订单 QD…0320 已完成','订单','08-24 18:00','#ok 已完成'],['系统升级维护通知','系统通知','08-20 20:00','#ok 已读'],['新人礼包已到账','权益','08-10 09:00','#ok 已读']],works:[
+   {id:'WK-1011',title:'我要结婚了',emoji:'🤵',tag:'新郎风采',date:'2026-09-06',st:'草稿',scene:'婚礼请柬',upd:'09-05 18:00',sub:'期待与您分享这份喜悦',pink:0,g1:'#c9d8f0',g2:'#a8c0e8'}]},
+ {id:'U006',name:'张伟',phone:'189****7733',city:'上海',tier:'金卡会员',reg:'2024-10-30',bal:1920,pts:2480,active:3,spend:13200,
+  ord:[['QD…0316','乐队演出','孙浩','¥2,000','08-21','#warn 待服务'],['QD…0300','花艺布置','周悦','¥1,680','08-13','#ac 履约中'],['QD…0279','宴会设计','王磊','¥2,880','07-26','#ok 已完成']],
+  fav:[['孙浩','乐队演出','4.7','08-06'],['周悦','花艺布置','4.8','07-22']],
+  cp:[['金卡优先券','免排期','至 12-31','金卡专享','#warn 未使用']],
+  wal:[['08-22','充值','+¥300','¥1,920','#ok 成功'],['08-21','消费','-¥2,000','¥1,620','#ok 成功']],
+  rev:[['QD…0316','乐队演出','4.7','气氛很好','08-24','#ok 已发布']],
+  msg:[['请为乐队演出服务评价','评价','08-25 09:00','#warn 待评价'],['优惠券 金卡优先券 已发放','权益','08-14 09:00','#ok 已到账'],['预约待确认提醒','订单','08-21 11:40','#warn 未读'],['金卡权益升级提醒','权益','08-13 09:00','#ok 已读']],works:[
+   {id:'WK-1012',title:'宝宝满月',emoji:'🎈',tag:'满月之喜',date:'2026-09-03',st:'已发布',scene:'满月宴请柬',upd:'09-01 10:30',sub:'小天使满月，诚邀同乐',pink:0,g1:'#fbe4b0',g2:'#f6cf7f'},
+   {id:'WK-1013',title:'婚礼邀请',emoji:'💒',tag:'教堂婚礼',date:'2026-08-15',st:'已发布',scene:'婚礼请柬',upd:'08-13 12:20',sub:'在爱的殿堂，许下一生承诺',pink:0,g1:'#e6dcf2',g2:'#cfbce8'}]}
+];
+
+/* ── 用户视角子模块列表：按当前选中用户动态构建 ── */
+let FB_NEW_ROWS=[],FB_SEQ=2713;
+const SP_ID={'麦麦提·艾力':'SP001','古丽娜尔':'SP002','王磊':'SP003','阿迪力江':'SP004','李静':'SP005','帕提曼':'SP006','周悦':'SP007','孙浩':'SP008'};
+function userListMeta(id){
+  const o=CUR.obj,t=tierOf(o),b='用户 · '+t;
+  const map={
+   'u-orders':{t:'我的订单',s:`${o.name} 的全部订单`,chip:b,
+     h:[{t:'订单'},{t:'服务'},{t:'服务商'},{t:'金额',n:1},{t:'时间'},{t:'状态'}],r:o.ord,acts:'ueval',evalCol:5,evalOnlyDone:1,
+     f:[{t:'全部'},{t:'待服务'},{t:'已完成'}]},
+   'u-providers':{t:'我的服务商',s:`${o.name} 关注的服务商`,chip:b,
+     h:[{t:'编号'},{t:'服务商'},{t:'服务类型'},{t:'评分',n:1},{t:'关注时间'},{t:'状态'}],
+     r:o.fav.map(x=>[SP_ID[x[0]]||'SP—',x[0],x[1],'★ '+x[2],x[3],'#ok 关注中']),acts:'ueval',evalCol:5,evalMarkCol:6,f:[{t:'全部'},{t:'关注中'}]},
+   'u-coupons':{t:'优惠与权益',s:`${o.name} 的优惠券与会员权益`,chip:b,
+     h:[{t:'编号'},{t:'优惠券'},{t:'面额',n:1},{t:'有效期'},{t:'使用条件'},{t:'状态'}],r:o.cp.map((x,i)=>['CP-'+(2001+i),...x]),acts:'ro',
+     f:[{t:'全部'},{t:'未使用'},{t:'已使用'}]},
+   'u-wallet':{t:'我的钱包',s:`${o.name} 的余额与流水`,chip:b,
+     h:[{t:'流水号'},{t:'时间'},{t:'类型'},{t:'金额',n:1},{t:'变动后余额',n:1},{t:'状态'}],r:o.wal.map((x,i)=>['W-'+(1001+i),...x]),acts:'ro',
+     f:[{t:'全部'},{t:'收入'},{t:'支出'}]},
+   'u-feedback':{t:'我的评价',s:`${o.name} 的评价与反馈记录`,chip:b,
+     h:[{t:'订单编号'},{t:'服务'},{t:'评分',n:1},{t:'评价内容'},{t:'时间'},{t:'状态'}],
+     r:o.rev.map(x=>[x[0],x[1],'★ '+x[2],x[3],x[4],x[5]]),acts:'ro',
+     f:[{t:'全部'},{t:'已发布'}]},
+   'u-messages':{t:'业务消息',s:`${o.name} 的订单与业务消息`,chip:b,
+     h:[{t:'编号'},{t:'标题'},{t:'类型'},{t:'时间'},{t:'状态'}],r:o.msg.map((x,i)=>['M-'+(1001+i),x[0],x[1],x[2],x[3]]),acts:'ro',fcol:4,f:[{t:'全部'},{t:'待处理',v:['未读','待支付','待确认收货','待评价','待回复','处理中']},{t:'已处理',v:['已读','已完成','已到账','已退款','已取消']}]},
+   'u-notices':{t:'通知公告',s:`${o.name} 的平台公告与通知`,chip:b,
+     h:[{t:'编号'},{t:'标题'},{t:'类型'},{t:'时间'},{t:'状态'}],
+     r:[...(o.msg||[]).filter(m=>/公告|通知/.test(m[1])||/公告/.test(m[0])).map((m,i)=>['N-'+(901+i),m[0],m[1],m[2],m[3]]),
+        ['N-902','代理商入驻资格初审通过','资格通知','08-27 10:30','#ok 初审通过'],
+        ['N-901','服务商入驻资格初审通过','资格通知','08-26 16:40','#ok 初审通过']],acts:'notice',fcol:4,
+     f:[{t:'全部'},{t:'未读'},{t:'已读'},{t:'待补资料'}]},
+   'u-complaints':{t:'我的反馈',s:`${o.name} 的投诉与建议`,chip:b,
+     h:[{t:'编号'},{t:'主题'},{t:'类型'},{t:'对象'},{t:'时间'},{t:'状态'}],
+     r:[...FB_NEW_ROWS,['FB-2708','售后申请处理中','售后','服务商 麦麦提·艾力','08-27 09:30','#warn 待回复'],['FB-2704','建议增加电子请柬双语模板','建议','平台','08-20 14:20','#ok 已回复'],['FB-2698','价格咨询','咨询','服务商 古丽娜尔','08-15 10:05','#ok 已回复']],acts:'ro',new:1,newLabel:'＋ 新增反馈',
+     f:[{t:'全部'},{t:'待回复'},{t:'已回复'}]}
+  };
+  return map[id];
+}
+function consoleFeedbackMeta(){
+  return {
+    t:'用户反馈',s:'与用户视角「我的反馈」同源 · 处理流程逐层贯穿',chip:'总台 · 主体中心',
+    h:[{t:'编号'},{t:'主题'},{t:'类型'},{t:'对象'},{t:'时间'},{t:'状态'}],
+    r:[...FB_NEW_ROWS,['FB-2708','售后申请处理中','售后','服务商 麦麦提·艾力','08-27 09:30','#warn 待回复'],['FB-2704','建议增加电子请柬双语模板','建议','平台','08-20 14:20','#ok 已回复'],['FB-2698','价格咨询','咨询','服务商 古丽娜尔','08-15 10:05','#ok 已回复']],
+    acts:'ro',new:1,newLabel:'＋ 新增反馈',
+    f:[{t:'全部'},{t:'待回复'},{t:'已回复'}]
+  };
+}
+
+let TEST_TIER=null;
+function tierOf(o){return TEST_TIER||o.tier;}
+function renderUser(o){
+  const ucard=$('#uCard');
+  ucard.style.cssText='display:flex;flex-direction:column;gap:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:14px 16px';
+  const utop=ucard.querySelector('.ucard-top');
+  if(utop)utop.style.cssText='display:flex;align-items:center;gap:12px';
+  const t=tierOf(o);
+  $('#uSub').textContent=o.name+' · '+t+' · 个人中心预览 · 截至今日 08-27'+(TEST_TIER?'（等级测试中）':'');
+  $('#uChip').textContent='用户 · '+t;
+  $('#uAv').textContent=o.name[0];
+  $('#uName').textContent=o.name;
+  $('#uTier').textContent=t;
+  $('#uTier').className='tag '+TIERS[t].cls;
+  $('#uMeta').textContent='ID '+o.id+' · 手机 '+o.phone+' · '+o.city+' · 注册 '+o.reg;
+  $('#uBal').textContent='¥'+num(o.bal);
+  $('#uPts').textContent=num(o.pts);
+  $('#uActive').textContent=o.active;
+  $('#uSpend').textContent='¥'+num(o.spend);
+  $('#uOrdList').innerHTML=o.ord.map(r=>`<tr><td class="num">${r[0]}</td><td>${r[1]}</td><td class="mut">${r[2]}</td><td class="n num">${r[3]}</td><td>${cell(r[5])}</td></tr>`).join('');
+  $('#uFavList').innerHTML=o.fav.map(r=>`<tr><td>${r[0]}</td><td class="mut">${r[1]}</td><td class="n num">★ ${r[2]}</td></tr>`).join('');
+  $('#uCouponList').innerHTML=o.cp.map(r=>`<tr><td>${r[0]}</td><td class="n num">${r[1]}</td><td>${cell(r[4])}</td></tr>`).join('');
+  $('#uRevList').innerHTML=o.rev.map(r=>`<tr><td>${r[0]}</td><td class="n num">★ ${r[1]}</td><td>${cell(r[4])}</td></tr>`).join('');
+  $('#uTierHint').textContent=t+' · 可享';
+  $('#uPerks').innerHTML=TIERS[t].perks.map(p=>`<div class="pk"><span class="pdot"></span>${p}</div>`).join('');
+  document.querySelectorAll('#ltSwitch button').forEach(b=>b.classList.toggle('on',b.dataset.tier===t));
+  $('#uAdjust').disabled=RO;
+}
+document.querySelectorAll('#ltSwitch button').forEach(b=>b.onclick=()=>{
+  if(TEST_TIER===b.dataset.tier)TEST_TIER=null;else TEST_TIER=b.dataset.tier;
+  renderUser(CUR.obj);
+});
+function openUModal(){
+  if(RO)return;
+  const o=CUR.obj;
+  $('#uAdjWho').textContent=o.name+'（'+o.id+'）· '+o.city+' · 当前等级 '+tierOf(o);
+  $('#uAdjTier').value=tierOf(o);
+  $('#uAdjBal').value=o.bal;
+  $('#uAdjPts').value=o.pts;
+  $('#uAdjNote').value='';
+  $('#scrim').classList.add('on');$('#umodal').classList.add('on');
+}
+function closeUModal(){$('#scrim').classList.remove('on');$('#umodal').classList.remove('on');}
+$('#uAdjust').onclick=openUModal;
+$('#uModalX').onclick=closeUModal;
+$('#uAdjCancel').onclick=closeUModal;
+$('#uAdjSave').onclick=()=>{
+  if(RO)return;
+  const o=CUR.obj;
+  o.bal=+$('#uAdjBal').value||0;
+  o.pts=+$('#uAdjPts').value||0;
+  o.tier=$('#uAdjTier').value;
+  TEST_TIER=null;
+  closeUModal();renderUser(o);syncObjUI();
+};
+
+/* ── 列表搜索：搜索按钮 + 回车 ── */
+function syncListSearch(){const lsi=$('#listSearch');if(lsi)lsi.parentElement.classList.toggle('has-val',!!lsi.value);}
+$('#listSearchBtn').onclick=()=>{LIST_KEY=$('#listSearch').value.trim();renderList(PAGE);};
+$('#listSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){LIST_KEY=e.target.value.trim();renderList(PAGE);}});
+$('#listSearch').addEventListener('input',syncListSearch);
+$('#listSearchClr').onclick=()=>{const lsi=$('#listSearch');lsi.value='';LIST_KEY='';syncListSearch();renderList(PAGE);lsi.focus();};
+
+/* ── 对象选择器：搜索/选择具体代理商或服务商 ── */
+function syncObjUI(){
+  const on=isViewAs();
+  const op=$('#objPick');
+  // 内联设置基础布局：规避浏览器翻译层对 .objpick 基础规则选择器的污染
+  if(on){
+    op.style.cssText='display:flex;align-items:center;gap:12px;margin-top:10px;padding:10px 24px;border-bottom:1px solid var(--border);background:#faf5eb';
+  }else{
+    op.style.cssText='display:none';
+  }
+  $('#objList').classList.remove('on');
+  if(!on)return;
+  const o=CUR.obj;
+  $('#objQ').value='';
+  $('#objTag').textContent=o.name+' · '+(o.region||o.city)+' · '+o.phone;
+  renderObjList();
+}
+function renderObjList(){
+  const q=$('#objQ').value.trim();
+  const src=objSource().filter(o=>!q||[o.id,o.name,o.nick,o.phone,o.region].some(s=>s.includes(q)));
+  $('#objList').innerHTML=src.length?src.map(o=>`<button class="o" data-id="${o.id}">
+    <b>${o.name}</b><span>${o.nick?'昵称 '+o.nick+' · ':''}${o.region||o.city} · ${o.phone}</span>
+    <span class="n">${o.id}${o===CUR.obj?' · 当前':''}</span></button>`).join('')
+    :`<div class="o" style="cursor:default;color:var(--ink-3)">无匹配对象</div>`;
+}
+function setCurObj(o){CUR.obj=o;renderScope();syncObjUI();if(VIEW==='user'&&PAGE!=='dashboard')goPage(PAGE);}
+/* ── 返回总台按钮：右缘对齐当前页 pghead 内 sp 之后元素（角色标签）的右缘 ── */
+function alignExit(){
+  const btn=document.getElementById('objExit');
+  if(!btn||btn.offsetParent===null)return;
+  const pgs=[...document.querySelectorAll('.page.on .pghead')].filter(e=>e.offsetParent!==null);
+  if(!pgs.length)return;
+  const sp=pgs[0].querySelector('.sp');
+  const ref=(sp&&sp.nextElementSibling)?sp.nextElementSibling:sp;
+  if(!ref)return;
+  const target=ref.getBoundingClientRect().right;
+  const b=btn.getBoundingClientRect().right;
+  const cur=parseFloat(getComputedStyle(btn).marginRight)||0;
+  const need=Math.round(cur+(b-target));
+  if(Math.abs(need-cur)>0.5)btn.style.marginRight=need+'px';
+}
+window.addEventListener('resize',()=>requestAnimationFrame(alignExit));
+$('#objQ').addEventListener('focus',()=>{$('#objList').classList.add('on');renderObjList();});
+$('#objQ').addEventListener('input',()=>renderObjList());
+$('#objList').addEventListener('click',e=>{
+  const b=e.target.closest('.o[data-id]');if(!b)return;
+  const o=objSource().find(x=>x.id===b.dataset.id);if(o)setCurObj(o);
+  $('#objList').classList.remove('on');
+});
+/* ── 对象检索：点击「搜索」按 ID/用户名/昵称/手机号/区域检索，唯一命中直接关联对象视角 ── */
+$('#objGo').onclick=()=>{
+  const q=$('#objQ').value.trim();
+  if(!q){alert('请输入检索关键词（ID / 用户名 / 昵称 / 手机号 / 区域）');return;}
+  const hits=objSource().filter(o=>[o.id,o.name,o.nick,o.phone,o.region].some(s=>s.includes(q)));
+  if(hits.length===1){
+    setCurObj(hits[0]);
+    $('#objList').classList.remove('on');
+  }else{
+    $('#objList').classList.add('on');
+    renderObjList();
+  }
+};
+document.addEventListener('click',e=>{if(!e.target.closest('.combobox'))$('#objList').classList.remove('on');});
+$('#objExit').onclick=()=>switchView('console');
+
+/* ── 启动 ── */
+renderSvcScopes();
+renderHome();
+renderNav();
+goPage('dashboard');
+renderAccPanel();
+renderTopActs();
+
+/* ══════════ 关键屏声明（截图器枚举） ══════════ */
+window.__UI_CAPTURE__={
+  reset:async()=>{setMode('super');switchView('console');goPage('dashboard');},
+  states:[
+    {id:'console-home',label:'总台 · 经营总览',go:async()=>{setMode('super');switchView('console');goPage('dashboard');}},
+    {id:'agent-home',label:'代理商 · 辖区经营概览',go:async()=>{setMode('super');switchView('agent');goPage('dashboard');}},
+    {id:'provider-home',label:'服务商 · 我的工作台',go:async()=>{setMode('super');switchView('provider');goPage('dashboard');}},
+    {id:'view-as-agent',label:'对象视角 · 沙依巴克代理商',go:async()=>{setMode('super');switchView('agent');setCurObj(AGENTS[1]);}},
+    {id:'view-as-provider',label:'对象视角 · 摄影服务商',go:async()=>{setMode('super');switchView('provider');setCurObj(PROVIDERS[1]);}},
+    {id:'user-home',label:'用户 · 工作台（金卡）',go:async()=>{setMode('super');switchView('user');setCurObj(USERS[2]);}},
+    {id:'view-as-user',label:'用户视角 · 黑金测试',go:async()=>{setMode('super');switchView('user');setCurObj(USERS[3]);TEST_TIER='黑金会员';renderUser(CUR.obj);}},
+    {id:'review-list',label:'总台 · 服务商入驻审核',go:async()=>{setMode('super');switchView('console');goPage('review');}},
+    {id:'readonly',label:'运维管理员 · 只读锁定',go:async()=>{setMode('ops');switchView('console');goPage('review');}},
+    {id:'modal',label:'审核弹窗',go:async()=>{setMode('super');switchView('console');goPage('review');openModal('review',0,'ok');}},
+  ]};
+
+/* ── 服务商入驻申请页交互 ── */
+document.addEventListener('click',e=>{
+  const ti=e.target.closest('#papTypes .ti');if(!ti)return;
+  document.querySelectorAll('#papTypes .ti').forEach(x=>x.classList.remove('on'));
+  ti.classList.add('on');
+});
+const papLongEl=document.getElementById('papLong');
+if(papLongEl)papLongEl.addEventListener('change',function(){
+  const d=document.getElementById('papExpire');
+  if(d){d.disabled=this.checked;if(this.checked)d.value='';}
+});
+const papFileEl=document.getElementById('papFile');
+if(papFileEl)papFileEl.addEventListener('change',function(){
+  if(this.files&&this.files[0]){
+    const f=this.files[0];
+    const isImg=/\.(jpg|jpeg|png|gif|webp)$/i.test(f.name);
+    const size=(f.size/1024/1024).toFixed(1);
+    const box=document.createElement('div');
+    box.className='upfile';
+    box.innerHTML='<span class="ic">'+(isImg?'\u{1F5BC}':'\u{1F4C4}')+'</span><div style="flex:1;min-width:0"><div class="nm">'+f.name+'</div><div class="mt">'+size+' MB · 已上传</div></div><button class="btn" onclick="this.parentElement.remove()">删除</button>';
+    document.getElementById('papFiles').appendChild(box);
+  }
+  this.value='';
+});
+function submitProviderApply(){
+  const name=(document.getElementById('papName').value||'').trim();
+  const phone=(document.getElementById('papPhone').value||'').trim();
+  if(!name){alert('请填写申请方名称');return;}
+  if(!/^1\d{10}$/.test(phone)){alert('请填写正确的11位手机号');return;}
+  const scopes=document.querySelectorAll('input[name="papScope"]:checked');
+  if(scopes.length===0){alert('请至少选择一项业务范围');return;}
+  const cert=(document.getElementById('papCert').value||'').trim();
+  const expire=document.getElementById('papExpire').value;
+  const long=document.getElementById('papLong')&&document.getElementById('papLong').checked;
+  if(!cert){alert('请填写证件编号');return;}
+  if(!expire&&!long){alert('请选择有效期至或勾选长期有效');return;}
+  const scopeNames=[].map.call(scopes,x=>x.value).join('、');
+  alert('业务申请已提交：'+name+'（'+scopeNames+'）\n\n申请已进入审核队列：辖区代理商初审 → 总台终审，可在「消息中心」关注进度。');
+  setTimeout(()=>goPage('dashboard'),600);
+}
+</script>
+</body>
+</html>

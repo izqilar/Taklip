@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#c24b2e" />
+    <title>庆柬云 · 管理后台</title>
+    <style>
+      /* 与原型 body{background:var(--page)} 对齐：
+         应用底（暖石 #f5f2ec）直接铺到 html/body，避免首屏白闪与滚动区露白。
+         色值与 src/config/theme.ts 的 T.page 保持一致（令牌唯一真值）。 */
+      html,
+      body {
+        background: #f5f2ec;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+import json, io, os
+
+base = r"D:\MyWorkBuddy\2026-08-10-22-39-56\UI_Design\ui-run"
+rp = os.path.join(base, "run.json")
+with io.open(rp, "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+query = ("设计一套分层登录后台原型：一个后端多角色分层登录使用（ADMIN管理总台全盘管理/AGENT代理商中心/SP服务商中心）。"
+         "总台13项超集+页头角色视角切换（超级管理员可写可代操作，运维管理员只读默认只读+单独授权可写）；"
+         "服务商入驻审核进总台审核队列；三层各自首页（总台=经营总览/代理=辖区概览/服务商=我的工作台）。"
+         "包含评价与反馈中心、消息中心、财务中心、区域管理、代理商管理、服务商管理、模板审核、用户管理、订单管理、角色与权限、系统设置。"
+         "请柬/庆典一站式平台'庆柬云'管理后台")
+title = "设计一套分层登录后台原型：一个后端多角色… · 设计方案"
+
+data["query"] = query
+data["contract"]["query"] = query
+data["contract"]["title"] = title
+data["title"] = title
+data["contract"]["ledger"] = [
+    {"kind": "文案", "value": "庆柬云", "block": True},
+    {"kind": "必须", "value": "评价与反馈中心、消息中心、财务中心、区域管理、代理商管理、服务商管理、模板审核、用户管理、订单管理、角色与权限、系统设置", "block": False},
+]
+data["contract"]["workdir"] = base
+data["style"]["query"] = query
+
+with io.open(rp, "w", encoding="utf-8") as f:
+    json.dump(data, f, ensure_ascii=False, indent=2)
+
+print("fixed:", os.path.getsize(rp))
+print("workdir:", data["contract"]["workdir"])

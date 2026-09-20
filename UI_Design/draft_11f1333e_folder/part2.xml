@@ -1,0 +1,112 @@
+<h1 seq="auto">运营端 Refine 工程装配</h1>
+<h2 seq="auto">应用初始化</h2>
+<pre lang="tsx" caption="apps/admin/src/App.tsx"><code>import { Refine, Authenticated } from '@refinedev/core';
+import { RefineThemedLayoutV2, ErrorComponent } from '@refinedev/antd';
+import { dataProvider } from './providers/dataProvider';
+import { authProvider } from './providers/authProvider';
+import { accessControlProvider } from './providers/accessControlProvider';
+import { i18nProvider } from './providers/i18n';
+import { resources } from './config/resources';
+import { App as AntdApp, ConfigProvider } from 'antd';
+import { antdTheme } from './config/theme';
+
+export default function App() {
+  return (
+    &lt;ConfigProvider theme={antdTheme}&gt;
+      &lt;AntdApp&gt;
+        &lt;Refine
+          dataProvider={dataProvider}
+          authProvider={authProvider}
+          accessControlProvider={accessControlProvider}
+          i18nProvider={i18nProvider}
+          resources={resources}
+          options={{ syncWithLocation: true, warnWhenUnsavedChanges: true }}
+        &gt;
+          &lt;Authenticated key="app"&gt;
+            &lt;RefineThemedLayoutV2 Sider={LayerSider} Header={LayerHeader}&gt;
+              &lt;Routes /&gt;
+            &lt;/RefineThemedLayoutV2&gt;
+          &lt;/Authenticated&gt;
+        &lt;/Refine&gt;
+      &lt;/AntdApp&gt;
+    &lt;/ConfigProvider&gt;
+  );
+}</code></pre>
+<p>要点：<code>LayerSider</code> 按当前视角（console / agent / provider / user）过滤资源菜单并渲染分组与角标；<code>LayerHeader</code> 承载视角切换 segmented、账号模式（可写 / 只读）与「返回总台」按钮。</p>
+<h2 seq="auto">dataProvider 设计</h2>
+<p>自定义 dataProvider 直连 <code>/api</code>，实现 Refine 标准方法并追加 <code>custom</code> 用于审核、导出与对象视角聚合。</p>
+<table>
+<thead><tr><th><p>方法</p></th><th><p>HTTP</p></th><th><p>路径</p></th><th><p>说明</p></th></tr></thead>
+<tbody>
+<tr><td><p>getList</p></td><td><p>GET</p></td><td><p>/api/:resource</p></td><td><p>分页 / 排序 / 筛选 / 关键词；返回 items + total</p></td></tr>
+<tr><td><p>getOne</p></td><td><p>GET</p></td><td><p>/api/:resource/:id</p></td><td><p>详情</p></td></tr>
+<tr><td><p>create</p></td><td><p>POST</p></td><td><p>/api/:resource</p></td><td><p>新建（含「＋新建」入口页面）</p></td></tr>
+<tr><td><p>update</p></td><td><p>PATCH</p></td><td><p>/api/:resource/:id</p></td><td><p>编辑保存</p></td></tr>
+<tr><td><p>deleteOne</p></td><td><p>DELETE</p></td><td><p>/api/:resource/:id</p></td><td><p>按需启用</p></td></tr>
+<tr><td><p>custom</p></td><td><p>POST</p></td><td><p>按 action 映射</p></td><td><p>approve / reject / export / view-scope / adjust-user</p></td></tr>
+</tbody>
+</table>
+<pre lang="ts" caption="getList 实现骨架"><code>async getList({ resource, pagination, sorters, filters, meta }) {
+  const params = buildQuery({ pagination, sorters, filters, meta }); // 见 API 契约章
+  const res = await http.get(`/api/${resource}`, { params });
+  return { data: res.data.items, total: res.data.total };
+}</code></pre>
+<h2 seq="auto">authProvider（JWT）</h2>
+<pre lang="ts" caption="authProvider 骨架"><code>export const authProvider: AuthProvider = {
+  login: async ({ username, password }) => {
+    const { data } = await http.post('/api/auth/login', { username, password });
+    localStorage.setItem('token', data.accessToken);
+    localStorage.setItem('me', JSON.stringify(data.user)); // role / scope / layer
+    return { success: true, redirectTo: '/' };
+  },
+  logout: async () => { localStorage.clear(); return { success: true }; },
+  check: async () => {
+    const token = localStorage.getItem('token');
+    return token ? { authenticated: true } : { authenticated: false, redirectTo: '/login' };
+  },
+  getIdentity: async () => JSON.parse(localStorage.getItem('me') || 'null'),
+  getPermissions: async () => {
+    const me = JSON.parse(localStorage.getItem('me') || '{}');
+    return me.role; // 或 me.permissions 权限点数组
+  },
+};</code></pre>
+<h2 seq="auto">accessControlProvider（RBAC / ABAC）</h2>
+<pre lang="ts" caption="accessControlProvider 骨架"><code>export const accessControlProvider: AccessControlProvider = {
+  can: async ({ resource, action, params }) =&gt; {
+    const me = getIdentity();
+    // 数据作用域维度：resource 是否在该层菜单可见
+    if (!inLayer(me.layer, resource)) return { can: false, reason: '当前层级无权访问' };
+    // 功能权限维度：权限点检查（如导出需 data:export）
+    if (action === 'export' &amp;&amp; !me.permissions.includes('data:export')) {
+      return { can: false, reason: '缺少导出权限' };
+    }
+    // 位阶维度：只读账号仅允许 list / show
+    if (me.readonly &amp;&amp; !['list', 'show'].includes(action)) {
+      return { can: false, reason: '当前账号为只读，不可写操作' };
+    }
+    return { can: true };
+  },
+};</code></pre>
+<h2 seq="auto">resources 与动态菜单</h2>
+<p>resources 为「总台 13 项超集」，每项带 <code>meta.layer</code> 与 <code>meta.group</code>；<code>LayerSider</code> 按当前视角过滤渲染。</p>
+<pre lang="ts" caption="apps/admin/src/config/resources.ts（节选）"><code>export const resources: ResourceProps[] = [
+  { name: 'dashboard', list: '/', meta: { label: '经营总览', layer: 'console', group: '总览与治理', icon: 'Layout' } },
+  { name: 'regions', list: '/regions', meta: { label: '区域管理', layer: 'console', group: '总览与治理', icon: 'Environment' } },
+  { name: 'agents', list: '/agents', meta: { label: '代理商管理', layer: 'console', group: '总览与治理' } },
+  { name: 'providers', list: '/providers', meta: { label: '服务商管理', layer: 'console', group: '总览与治理', badge: 12 } },
+  { name: 'users', list: '/users', meta: { label: '用户管理', layer: 'console', group: '运营监管' } },
+  { name: 'templates', list: '/templates', meta: { label: '模板审核', layer: 'console', group: '运营监管' } },
+  { name: 'orders', list: '/orders', meta: { label: '订单管理', layer: 'console', group: '运营监管' } },
+  { name: 'wallets', list: '/wallets', meta: { label: '钱包总览', layer: 'console', group: '财务中心' } },
+  { name: 'withdrawals', list: '/withdrawals', meta: { label: '提现审核', layer: 'console', group: '财务中心', badge: 3 } },
+  { name: 'feedback', list: '/feedback', meta: { label: '评价与反馈中心', layer: 'console', group: '评价与反馈中心' } },
+  { name: 'messages', list: '/messages', meta: { label: '消息中心', layer: 'console', group: '消息中心' } },
+  { name: 'roles', list: '/roles', meta: { label: '角色与权限', layer: 'console', group: '系统' } },
+  { name: 'settings', list: '/settings', meta: { label: '系统设置', layer: 'console', group: '系统' } },
+  // 代理商 / 服务商 / 用户层资源（layer: agent | provider | user）
+  { name: 'a-users', list: '/agent/users', meta: { label: '辖区用户', layer: 'agent', group: '代理商中心' } },
+  { name: 'a-providers', list: '/agent/providers', meta: { label: '辖区服务商', layer: 'agent', group: '代理商中心' } },
+  // ... 完整 36 个资源见附录「四层资源清单」
+];</code></pre>
+<h2 seq="auto">路由与页面挂载</h2>
+<p>采用 <code>react-router-dom</code> + Refine 布局：登录页 <code>/login</code>；四层首页与列表页按资源注册；对象视角页复用同一路由组件，读取 <code>?object=AG001&amp;layer=agent</code> 查询参数并请求聚合接口。页面级懒加载（<code>React.lazy</code>）控制首屏体积。</p>

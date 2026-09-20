@@ -1,0 +1,106 @@
+/* ============================================================================
+ * 编辑器内核自包含基础重置（作用域限 .editor-canvas-wrap 子树）
+ * ----------------------------------------------------------------------------
+ * 内核纯 Tailwind，依赖以下基础重置（box-sizing:border-box / border 默认 solid /
+ * 按钮·图片·标题去默认样式 / 统一字体与文字色）。本段仅作用于画布子树：
+ *   1) 不污染宿主全局（web 自身 preflight、admin 的 antd 全局样式）；
+ *   2) web 与 admin import 同一份本文件 → 两端画布视觉像素级一致。
+ *
+ * 顺序关键：本段必须放在 `@tailwind utilities` 之前。两者选择器特异性同为 (0,1,0)，
+ * 靠后声明的工具类胜出 → .border 的 1px 宽、.border-gray-200 的颜色都应由工具类决定，
+ * 本段只提供「默认 solid + 默认灰边框色」兜底。若把 utilities 放前面，preflight 的
+ * border-width:0 会反过来覆盖 .border，导致边框不可见。
+ * ==========================================================================*/
+.editor-canvas-wrap,
+.editor-canvas-wrap *,
+.editor-canvas-wrap *::before,
+.editor-canvas-wrap *::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: #e5e7eb;
+}
+
+.editor-canvas-wrap {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* 统一字体栈，覆盖宿主 body 字体（web system-ui / admin antd），保证两端一致 */
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  color: #1f2937; /* gray-800，覆盖 antd 默认文字色 */
+}
+
+.editor-canvas-wrap button,
+.editor-canvas-wrap [type='button'],
+.editor-canvas-wrap [type='reset'],
+.editor-canvas-wrap [type='submit'] {
+  -webkit-appearance: button;
+  appearance: button;
+  background-color: transparent;
+  background-image: none;
+}
+
+.editor-canvas-wrap button {
+  font-family: inherit;
+  font-size: 100%;
+  font-weight: inherit;
+  line-height: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  text-transform: none;
+}
+
+.editor-canvas-wrap img,
+.editor-canvas-wrap video,
+.editor-canvas-wrap canvas,
+.editor-canvas-wrap svg {
+  display: block;
+  vertical-align: middle;
+}
+
+.editor-canvas-wrap img,
+.editor-canvas-wrap video {
+  max-width: 100%;
+  height: auto;
+}
+
+.editor-canvas-wrap input,
+.editor-canvas-wrap select,
+.editor-canvas-wrap textarea {
+  font-family: inherit;
+  font-size: 100%;
+  font-weight: inherit;
+  line-height: inherit;
+  color: inherit;
+  margin: 0;
+}
+
+.editor-canvas-wrap p,
+.editor-canvas-wrap h1,
+.editor-canvas-wrap h2,
+.editor-canvas-wrap h3,
+.editor-canvas-wrap h4,
+.editor-canvas-wrap h5,
+.editor-canvas-wrap h6,
+.editor-canvas-wrap figure,
+.editor-canvas-wrap blockquote,
+.editor-canvas-wrap dl,
+.editor-canvas-wrap dd {
+  margin: 0;
+}
+
+.editor-canvas-wrap ul,
+.editor-canvas-wrap ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editor-canvas-wrap [hidden] {
+  display: none !important;
+}
+
+@tailwind utilities;

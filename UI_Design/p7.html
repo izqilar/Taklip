@@ -1,0 +1,143 @@
+<script>
+/* ══════════ 四层菜单（一个后端 · 分层治理 · 总台统筹） ══════════ */
+const MENU={
+console:[
+ {g:'数据看板',items:[
+  {id:'dashboard',l:'经营总览',i:'layout'}]},
+ {g:'主体中心',items:[
+  {group:'代理商中心',i:'building',collapsed:false,items:[
+   {id:'agents',l:'代理商管理',i:'building'},
+   {id:'agent-apply',l:'入驻审批',i:'clipboard',badge:5},
+   {id:'agent-qual',l:'资格审核',i:'idcard',badge:3},
+   {id:'agent-contract',l:'合同管理',i:'file',badge:2},
+   {id:'agent-kpi',l:'考核与分佣',i:'coins'}]},
+  {group:'服务商中心',i:'bag',collapsed:false,items:[
+   {id:'review',l:'服务商管理',i:'bag',badge:12},
+   {id:'provider-apply',l:'入驻审批',i:'clipboard',badge:8},
+   {id:'provider-qual',l:'资质审核',i:'idcard',badge:4},
+   {id:'provider-contract',l:'合同管理',i:'file',badge:2},
+   {id:'provider-supervise',l:'服务监管',i:'desktop'}]},
+  {group:'用户中心',i:'users',collapsed:false,items:[
+   {id:'users',l:'用户管理',i:'users'},
+   {id:'user-orders',l:'用户订单',i:'receipt'},
+   {id:'user-feedback',l:'用户反馈',i:'star'}]}]},
+ {g:'招商管理',items:[
+  {id:'agent-invest',l:'招商申请',i:'clipboard',badge:8},
+  {id:'agent-pool',l:'意向池',i:'users'}]},
+ {g:'业务中心',items:[
+  {id:'regions',l:'区域管理',i:'map'},
+  {id:'templates',l:'模板审核',i:'squares'},
+  {id:'orders',l:'订单管理',i:'receipt'},
+  {id:'feedback',l:'服务评价',i:'star',badge:2},
+  {id:'complaints',l:'意见反馈',i:'file'}]},
+ {g:'财务中心',items:[
+  {id:'fin-overview',l:'财务总览',i:'wallet'},
+  {id:'withdrawals',l:'提现审核',i:'coins',badge:3},
+  {id:'settlements',l:'结算管理',i:'receipt'}]},
+ {g:'内容与营销',items:[
+  {id:'announcements',l:'公告管理',i:'megaphone'},
+  {id:'coupons',l:'券与权益',i:'bag'}]},
+ {g:'消息中心',items:[
+  {id:'messages',l:'通知公告',i:'megaphone',badge:1},
+  {id:'biz-msgs',l:'业务消息',i:'bell'}]},
+ {g:'系统管理',items:[
+  {id:'roles',l:'角色与权限',i:'shield'},
+  {id:'svc-dict',l:'服务字典',i:'stack'},
+  {id:'biz-settings',l:'业务设置',i:'gear'},
+  {id:'settings',l:'系统设置',i:'gear'},
+  {id:'audit-logs',l:'审计日志',i:'file'},
+  {id:'account',l:'账户详情',i:'idcard'}]}
+],
+agent:[
+ {g:'数据看板',items:[
+  {id:'dashboard',l:'辖区经营概览',i:'house'}]},
+ {group:'辖区服务商',i:'building',collapsed:false,items:[
+  {id:'a-providers',l:'辖区服务商',i:'building'},
+  {id:'a-apply',l:'入驻审批',i:'clipboard',badge:3},
+  {id:'a-qual',l:'资质审核',i:'idcard',badge:1},
+  {id:'a-contract',l:'合同管理',i:'file'},
+  {id:'a-supervise',l:'服务监管',i:'desktop'}]},
+ {g:'辖区运营',items:[
+  {id:'a-users',l:'辖区用户',i:'users'},
+  {id:'a-orders',l:'辖区订单',i:'receipt'},
+  {id:'a-feedback',l:'服务评价',i:'star',badge:2},
+  {id:'a-complaints',l:'意见反馈',i:'file'}]},
+ {g:'招商拓展',items:[
+  {id:'a-invest',l:'招商申请',i:'megaphone'},
+  {id:'a-pool',l:'意向池',i:'users'}]},
+ {g:'财务中心',items:[
+  {id:'a-settle',l:'结算总览',i:'wallet'},
+  {id:'a-withdraw',l:'提现初审',i:'coins'}]},
+ {g:'消息中心',items:[
+  {id:'a-notices',l:'通知公告',i:'megaphone'},
+  {id:'a-messages',l:'业务消息',i:'bell',badge:1}]},
+ {g:'系统设置',items:[
+  {id:'a-roles',l:'角色与权限',i:'shield'},
+  {id:'a-biz',l:'业务设置',i:'gear'},
+  {id:'account',l:'账户详情',i:'idcard'}]}
+],
+provider:[
+ {g:'数据看板',items:[
+  {id:'dashboard',l:'经营概览',i:'desktop'}]},
+ {g:'订单履约',items:[
+  {id:'p-orders',l:'我的订单',i:'package'},
+  {id:'p-schedule',l:'档期管理',i:'stack'}]},
+ {g:'服务与内容',items:[
+  {id:'p-services',l:'服务管理',i:'stack'},
+  {id:'p-templates',l:'模板发布',i:'squares'},
+  {id:'p-feedback',l:'我的评价',i:'star'},
+  {id:'p-complaints',l:'意见反馈',i:'file'}]},
+ {g:'资质中心',items:[
+  {id:'p-apply',l:'业务申请',i:'clipboard'},
+  {id:'p-qualification',l:'资质管理',i:'idcard'},
+  {id:'p-contract',l:'合同管理',i:'file'}]},
+ {g:'财务中心',items:[
+  {id:'p-income',l:'收入明细',i:'wallet'},
+  {id:'p-withdraw',l:'提现管理',i:'coins'},
+  {id:'p-wallet',l:'我的钱包',i:'coins'}]},
+ {g:'消息中心',items:[
+  {id:'p-notices',l:'通知公告',i:'megaphone'},
+  {id:'p-messages',l:'业务消息',i:'bell'}]},
+ {g:'团队与设置',items:[
+  {id:'p-team',l:'我的团队',i:'users'},
+  {id:'p-clients',l:'我的客户',i:'building'},
+  {id:'account',l:'账户详情',i:'idcard'}]}
+],
+user:[
+ {g:'交易中心',items:[
+  {id:'dashboard',l:'我的工作台',i:'house'},
+  {id:'u-providers',l:'我的服务商',i:'building'},
+  {id:'u-orders',l:'我的订单',i:'receipt'},
+  {id:'u-works',l:'我的作品',i:'squares'}]},
+ {g:'评价与反馈',items:[
+  {id:'u-feedback',l:'我的评价',i:'star'},
+  {id:'u-complaints',l:'我的反馈',i:'file'}]},
+ {g:'消息中心',items:[
+  {id:'u-notices',l:'通知公告',i:'megaphone'},
+  {id:'u-messages',l:'业务消息',i:'bell'}]},
+ {g:'个人中心',items:[
+  {id:'u-wallet',l:'我的钱包',i:'coins'},
+  {id:'u-coupons',l:'优惠与权益',i:'bag'},
+  {id:'account',l:'账户详情',i:'idcard'}]}
+]};
+/* ══════════ 服务类型字典（标准化 · 全平台业务种类唯一取值源） ══════════ */
+const SVC_DICT=[
+ {code:'SVC-01',name:'摄影摄像',cat:'影像服务',status:'启用',sort:1,note:'跟拍/摄像/后期制作'},
+ {code:'SVC-02',name:'插花礼仪',cat:'花艺服务',status:'启用',sort:2,note:'婚庆花艺/桌花布置'},
+ {code:'SVC-03',name:'乐队演出',cat:'演出服务',status:'启用',sort:3,note:'现场乐队/氛围演出'},
+ {code:'SVC-04',name:'礼仪执事',cat:'礼仪服务',status:'启用',sort:4,note:'迎宾执事/流程引导'},
+ {code:'SVC-05',name:'主持人',cat:'礼仪服务',status:'启用',sort:5,note:'婚礼司仪/活动主持'},
+ {code:'SVC-06',name:'婚庆主持',cat:'礼仪服务',status:'启用',sort:6,note:'婚礼全流程主持'},
+ {code:'SVC-07',name:'宴会设计',cat:'设计服务',status:'启用',sort:7,note:'宴会厅/舞台设计'},
+ {code:'SVC-08',name:'花艺布置',cat:'花艺服务',status:'启用',sort:8,note:'会场花艺/路引布置'},
+ {code:'SVC-09',name:'化妆造型',cat:'妆造服务',status:'启用',sort:9,note:'新娘妆/伴娘妆/造型'},
+ {code:'SVC-10',name:'司仪培训',cat:'培训服务',status:'启用',sort:10,note:'司仪技能/话术培训'},
+ {code:'SVC-11',name:'婚礼策划',cat:'策划服务',status:'启用',sort:11,note:'婚礼全案策划/执行'}
+];
+const VIEWMETA={
+ console:{crumb:'管理总台',chip:'总台 · 全盘治理'},
+ agent:{crumb:'代理商中心',chip:'代理商 · 天山区'},
+ provider:{crumb:'服务商中心',chip:'服务商 · 特约设计'},
+ user:{crumb:'用户视角',chip:'用户 · 会员权益'}
+};
+</script>

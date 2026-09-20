@@ -1,0 +1,5 @@
+
+> @h5design/web@0.1.0 typecheck D:\MyWorkBuddy\2026-08-10-22-39-56\apps\web
+> tsc --noEmit
+
+web_exit=0

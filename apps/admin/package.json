@@ -1,0 +1,48 @@
+{
+  "name": "@h5design/admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.5.1",
+    "@h5design/core": "workspace:*",
+    "@h5design/editor": "workspace:*",
+    "@h5design/render": "workspace:*",
+    "@h5design/ui": "workspace:*",
+    "@refinedev/antd": "^5.45.0",
+    "@refinedev/core": "^4.57.0",
+    "@refinedev/react-router-v6": "^4.5.0",
+    "antd": "^5.21.6",
+    "gifenc": "^1.0.3",
+    "gsap": "^3.12.5",
+    "html-to-image": "^1.11.13",
+    "i18next": "^23.16.8",
+    "i18next-browser-languagedetector": "^8.2.1",
+    "konva": "^9.3.20",
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-i18next": "^15.7.4",
+    "react-konva": "^18.2.10",
+    "react-router-dom": "^6.26.2",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}

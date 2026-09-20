@@ -1,0 +1,152 @@
+<h1 seq="auto">详情对话框实现（AntD）</h1>
+<h2 seq="auto">四种操作类型</h2>
+<table>
+<thead><tr><th><p>类型</p></th><th><p>适用</p></th><th><p>实现</p></th><th><p>按钮</p></th></tr></thead>
+<tbody>
+<tr><td><p>A 仅查看</p></td><td><p>辖区用户等监督型</p></td><td><p>Drawer + Descriptions 只读</p></td><td><p>关闭</p></td></tr>
+<tr><td><p>B 查看 + 审核</p></td><td><p>入驻 / 模板 / 提现 / 公告 / 初审复审 / 业务升级</p></td><td><p>Drawer + Descriptions + Form（审核意见）</p></td><td><p>通过 / 驳回（驳回必填）</p></td></tr>
+<tr><td><p>C 查看 + 编辑</p></td><td><p>区域 / 代理 / 用户 / 反馈 / 角色 / 服务 / 资质 / 配置</p></td><td><p>Drawer 内 Descriptions ↔ Form 切换</p></td><td><p>查看态「编辑」→ 编辑态「保存 / 取消」</p></td></tr>
+<tr><td><p>D 仅编辑</p></td><td><p>系统设置</p></td><td><p>Drawer + Form 直开</p></td><td><p>保存 / 取消</p></td></tr>
+</tbody>
+</table>
+<h2 seq="auto">Drawer + Form 规格</h2>
+<pre lang="tsx" caption="components/DetailDrawer.tsx（骨架）"><code>export function DetailDrawer({ resource, id, config, onClose }) {
+  const { queryResult } = useShow({ resource, id });      // 详情
+  const { mutate } = useUpdate();                          // 编辑保存
+  const [mode, setMode] = useState&lt;'view' | 'edit'&gt;('view');
+  const [form] = Form.useForm();
+  useEffect(() =&gt; { if (queryResult.data?.data) form.setFieldsValue(queryResult.data.data); }, [queryResult.data]);
+  return (
+    &lt;Drawer open title={config.title} width={560} extra={config.actions}&gt;
+      {mode === 'view'
+        ? &lt;Descriptions column={1} items={buildView(config, queryResult.data?.data)} /&gt;
+        : &lt;Form form={form} onFinish={save} layout="vertical"&gt;{buildForm(config)}&lt;/Form&gt;}
+    &lt;/Drawer&gt;
+  );
+}</code></pre>
+<p>要点：编辑态预填当前记录（杜绝空白表单）；保存调 <code>update</code> 成功后 invalidate 刷新列表并回查看态；只读账号下编辑 / 保存按钮禁用。</p>
+<h2 seq="auto">审核交互</h2>
+<pre lang="tsx" caption="审核通过 / 驳回"><code>const { mutate: approve } = useCustomMutation();
+const approveIt = () =&gt; approve({
+  url: `/api/${resource}/${id}/approve`,
+  method: 'post', values: { comment: form.getFieldValue('comment') },
+}, { onSuccess: () =&gt; { message.success('已通过'); invalidate(); onClose(); } });
+
+// 驳回：AntD Modal.confirm 内嵌 Form，comment 必填校验，不满足拦截
+const rejectIt = () =&gt; Modal.confirm({
+  title: '驳回确认', content: &lt;Form form={rejForm}&gt;&lt;Form.Item name="comment"
+    rules={[{ required: true, message: '请填写驳回原因' }]}&gt;
+    &lt;Input.TextArea /&gt;&lt;/Form.Item&gt;&lt;/Form&gt;,
+  onOk: () =&gt; approve({ url: `/api/${resource}/${id}/reject`, method: 'post', values: rejForm.getFieldsValue() }),
+});</code></pre>
+<p>审核按钮随只读态锁定；通过 / 驳回后列表状态即时刷新（<code>useInvalidate</code>）。</p>
+<h2 seq="auto">角色权限编辑（分层复选框组）</h2>
+<pre lang="tsx" caption="角色详情 · 功能权限复选框组"><code>const PERM_GROUPS = [
+  { domain: '用户与账号', key: 'user', perms: [{ label: '用户查询', key: 'user:view' }, { label: '用户编辑', key: 'user:edit' }] },
+  { domain: '入驻与服务商', key: 'provider', perms: [/* provider:review / qualification / upgrade */] },
+  // ... 10 域 28 点（见角色与权限章）
+];
+
+function PermCheckGroup({ layer, value, onChange }) {
+  const groups = PERM_GROUPS.filter(g =&gt; layerDomains[layer].includes(g.key)); // 按层过滤
+  return (
+    &lt;div className="perm-groups"&gt;
+      {groups.map(g =&gt; (
+        &lt;Card key={g.key} size="small" title={g.domain}&gt;
+          &lt;Checkbox.Group options={g.perms} value={value} onChange={onChange} /&gt;
+        &lt;/Card&gt;
+      ))}
+    &lt;/div&gt;
+  );
+}</code></pre>
+<p>功能权限按角色层过滤作用域：总台 10 域、代理商 9 域（隐③）、服务商 6 域（①②⑥⑨ 隐）；编辑回显已勾选权限点，保存写回 <code>perms</code> 数组。</p>
+
+<h1 seq="auto">设计系统（AntD 主题）</h1>
+<h2 seq="auto">主题 token</h2>
+<pre lang="ts" caption="apps/admin/src/config/theme.ts"><code>import type { ThemeConfig } from 'antd';
+export const antdTheme: ThemeConfig = {
+  token: {
+    colorPrimary: '#c24b2e',        // 朱砂：品牌 / 主按钮 / KPI 高亮
+    colorInfo: '#14676b',           // 青：次级强调 / 数值
+    colorBgLayout: '#faf5eb',       // 暖石底色
+    colorBgContainer: '#ffffff',
+    borderRadius: 6,
+    controlHeight: 34,
+    fontFamily: "'PingFang SC', 'Microsoft YaHei', sans-serif",
+  },
+  components: {
+    Table: { headerBg: '#faf5eb', headerColor: '#5b4632' },
+    Tag: { borderRadiusSM: 999 },
+    Button: { primaryShadow: 'none' },
+  },
+};</code></pre>
+<h2 seq="auto">状态标签映射</h2>
+<table>
+<thead><tr><th><p>原型前缀</p></th><th><p>AntD Tag color</p></th><th><p>语义示例</p></th></tr></thead>
+<tbody>
+<tr><td><p>#ok</p></td><td><p>success</p></td><td><p>正常 / 已通过 / 已上架 / 已发布</p></td></tr>
+<tr><td><p>#warn</p></td><td><p>warning</p></td><td><p>待审核 / 待复核 / 待处理</p></td></tr>
+<tr><td><p>#bad</p></td><td><p>error</p></td><td><p>停用 / 已驳回 / 售后</p></td></tr>
+<tr><td><p>#mut</p></td><td><p>default</p></td><td><p>草稿 / 待复审 / 未激活</p></td></tr>
+<tr><td><p>#ac</p></td><td><p>processing</p></td><td><p>履约中 / 升级仲裁 / 内置角色</p></td></tr>
+</tbody>
+</table>
+<p>状态文案全部中文化，无英文键值残留；列表与详情对话框共用同一 <code>StatusTag</code> 组件。</p>
+
+<h1 seq="auto">国际化与 RTL</h1>
+<p>运营端复用 <code>react-i18next</code>：<code>zh-CN</code> 为默认，后续按需接入 6 语言。i18nProvider 将 Refine 内置文案与业务资源（菜单、列头、按钮、状态）统一走字典；<code>dir</code> 由 <code>i18n.language</code> 推导，RTL（阿语等 4 种）下 AntD <code>ConfigProvider direction="rtl"</code> 自动翻转布局，运营端表格 / 抽屉 / 表单默认兼容。</p>
+
+<h1 seq="auto">API 契约（dataProvider → /api）</h1>
+<h2 seq="auto">通用列表参数</h2>
+<pre lang="text" caption="GET /api/:resource 查询参数"><code>page=1&amp;pageSize=10
+sort=field:asc|desc
+filter[status]=PENDING_REVIEW
+filter[role]=AGENT
+q=关键词           # 覆盖 id/名称/昵称/手机号/区域 模糊匹配
+scope=agent:AG001 # 对象视角：强制按对象过滤（总台管理员）
+导出：GET /api/:resource/export（鉴权 + data:export）</code></pre>
+<h2 seq="auto">方法 → 端点映射</h2>
+<table>
+<thead><tr><th><p>动作</p></th><th><p>方法与端点</p></th><th><p>说明</p></th></tr></thead>
+<tbody>
+<tr><td><p>登录</p></td><td><p>POST /api/auth/login</p></td><td><p>返回 accessToken + user(role/scope/perms)</p></td></tr>
+<tr><td><p>我的信息</p></td><td><p>GET /api/auth/me</p></td><td><p>刷新身份与权限</p></td></tr>
+<tr><td><p>列表 / 详情</p></td><td><p>GET /api/:resource[/:id]</p></td><td><p>dataProvider getList / getOne</p></td></tr>
+<tr><td><p>新建 / 编辑 / 删除</p></td><td><p>POST / PATCH / DELETE /api/:resource[/:id]</p></td><td><p>create / update / deleteOne</p></td></tr>
+<tr><td><p>审核通过 / 驳回</p></td><td><p>POST /api/:resource/:id/approve|reject</p></td><td><p>驳回 body.comment 必填；幂等（Redis 幂等键）</p></td></tr>
+<tr><td><p>反馈处理</p></td><td><p>POST /api/feedback/:id/handle</p></td><td><p>处理意见 + 状态流转</p></td></tr>
+<tr><td><p>公告审核发布</p></td><td><p>POST /api/messages/:id/approve</p></td><td><p>通过即发布到接收范围</p></td></tr>
+<tr><td><p>角色权限保存</p></td><td><p>PATCH /api/roles/:id</p></td><td><p>perms 权限点数组 + 数据作用域</p></td></tr>
+<tr><td><p>对象视角聚合</p></td><td><p>GET /api/view-scope?layer=agent&amp;object=AG001</p></td><td><p>返回对象 KPI + 各列表摘要，总台管理员专用</p></td></tr>
+<tr><td><p>用户数据调整</p></td><td><p>POST /api/users/:id/adjust</p></td><td><p>等级测试 / 余额 / 积分调整，仅可写账号</p></td></tr>
+</tbody>
+</table>
+<h2 seq="auto">错误码</h2>
+<table>
+<thead><tr><th><p>HTTP</p></th><th><p>业务码</p></th><th><p>场景</p></th><th><p>前端处理</p></th></tr></thead>
+<tbody>
+<tr><td><p>401</p></td><td><p>AUTH_INVALID</p></td><td><p>令牌失效 / 未登录</p></td><td><p>跳转 /login</p></td></tr>
+<tr><td><p>403</p></td><td><p>FORBIDDEN / READONLY</p></td><td><p>越层访问 / 只读写操作</p></td><td><p>提示 + 禁用操作</p></td></tr>
+<tr><td><p>409</p></td><td><p>STATE_CONFLICT</p></td><td><p>状态机冲突（重复审核等）</p></td><td><p>刷新列表重试</p></td></tr>
+<tr><td><p>422</p></td><td><p>VALIDATION</p></td><td><p>驳回原因缺失 / 字段非法</p></td><td><p>表单错误提示</p></td></tr>
+<tr><td><p>429</p></td><td><p>RATE_LIMIT</p></td><td><p>频控</p></td><td><p>退避重试</p></td></tr>
+<tr><td><p>500</p></td><td><p>INTERNAL</p></td><td><p>服务异常</p></td><td><p>异常态提示 + 重试</p></td></tr>
+</tbody>
+</table>
+
+<h1 seq="auto">验收清单</h1>
+<ol>
+<li>pnpm monorepo 可一键启动：<code>pnpm -F server dev</code>、<code>pnpm -F admin dev</code>，Docker 起 PG / Redis。</li>
+<li>四层登录与菜单投影正确：总台 13 项全量，低层无高层入口；JWT 角色 / 作用域正确注入。</li>
+<li>视角切换联动侧栏 / 面包屑 / 首页 / 数据作用域；三视角「返回总台」按钮右缘对齐、绿色。</li>
+<li>对象视角按 ID / 用户名 / 昵称 / 手机号 / 区域检索，整页数据联动；总台管理员可代操作。</li>
+<li>超级管理员可写；运维管理员只读（黄条 + 操作禁用 + 后端 403）。</li>
+<li>角色与权限：总台展开 5 职能角色位阶正确；功能权限复选框按层过滤（代理 9 域 / 服务商 6 域）；编辑保存权限组合并回显。</li>
+<li>服务商入驻进总台审核队列；代理商辖区服务商支持初审 / 复审 / 业务升级审核。</li>
+<li>各页筛选按钮可点击检索；搜索框支持回车与清空叉；导出受 data:export 控制。</li>
+<li>详情对话框按 A/B/C/D 实现，驳回原因必填，编辑预填不空白；状态字段全中文无英文键值。</li>
+<li>四态（加载 / 空 / 异常 / 只读）齐全；国际化字典与 RTL 方向可切换。</li>
+</ol>
+
+<h1 seq="auto">未决事项</h1>
+<p>真实密码策略与令牌刷新机制；数据库 DDL 迁移基线（prisma migrate 首批脚本）；消息推送通道（短信 / IM / 推送）接入；资金账户与支付网关对接；多语言文案与 4 种 RTL 语言包完整性。以上不影响本文档页面与接口契约的实施，由技术选型 / 排期阶段确认。</p>

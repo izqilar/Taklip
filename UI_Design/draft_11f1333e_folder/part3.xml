@@ -1,0 +1,211 @@
+<h1 seq="auto">角色与权限</h1>
+<h2 seq="auto">角色类型与位阶</h2>
+<p>总台管理员展开为 5 个职能角色，位阶从高到低：超级管理员 → 运维管理员 → 服务审核员 = 财务管理员 → 在线客服。其他决策层可在管辖范围内设立同类职能角色，并支持自定义角色。</p>
+<ul>
+<li>超级管理员：所有内容可读可写，可创建 / 授权角色。</li>
+<li>运维管理员：所有内容默认可读，部分可写（开通权限）。</li>
+<li>服务审核员：只读 + 总台审核类内容（入驻 / 模板 / 公告 / 申诉）。</li>
+<li>财务管理员：全权处理提现等财务内容（提现 / 钱包 / 流水 / 对账）。</li>
+<li>在线客服：答复各类问题，除查询回复外无实质业务权限。</li>
+</ul>
+<h2 seq="auto">权限三要素</h2>
+<p>每条角色记录：归属层级 × 类型（内置 / 自定义）× 职能，叠加数据作用域（ALL / REGION / SELF）、功能权限（权限点勾选集合）、授权边界（数据 / 功能 / 位阶）。底层角色权限不得触达高层权限范围。</p>
+<h2 seq="auto">功能权限点（10 域 28 点）</h2>
+<table>
+<thead><tr><th><p>#</p></th><th><p>功能域</p></th><th><p>权限点 key（checkbox）</p></th></tr></thead>
+<tbody>
+<tr><td><p>①</p></td><td><p>用户与账号</p></td><td><p>user:view / user:edit</p></td></tr>
+<tr><td><p>②</p></td><td><p>入驻与服务商</p></td><td><p>provider:review / provider:qualification / provider:upgrade</p></td></tr>
+<tr><td><p>③</p></td><td><p>服务与内容</p></td><td><p>template:publish / content:offline / template:review / qualification:manage</p></td></tr>
+<tr><td><p>④</p></td><td><p>订单与履约</p></td><td><p>order:view / order:handle / order:after-sale</p></td></tr>
+<tr><td><p>⑤</p></td><td><p>财务</p></td><td><p>finance:view / withdrawal:review / withdrawal:operate / finance:reconcile</p></td></tr>
+<tr><td><p>⑥</p></td><td><p>优惠券与权益</p></td><td><p>coupon:config / coupon:issue / coupon:view</p></td></tr>
+<tr><td><p>⑦</p></td><td><p>评价与申诉</p></td><td><p>feedback:handle / appeal:arbitrate</p></td></tr>
+<tr><td><p>⑧</p></td><td><p>消息与公告</p></td><td><p>announce:publish / announce:review / message:send</p></td></tr>
+<tr><td><p>⑨</p></td><td><p>组织与系统</p></td><td><p>role:manage / region:manage / settings:manage</p></td></tr>
+<tr><td><p>⑩</p></td><td><p>数据导出</p></td><td><p>data:export</p></td></tr>
+</tbody>
+</table>
+<h2 seq="auto">三层功能域映射</h2>
+<table>
+<thead><tr><th><p>层级</p></th><th><p>展示功能域</p></th><th><p>隐藏</p></th></tr></thead>
+<tbody>
+<tr><td><p>总台</p></td><td><p>①~⑩ 全 10 域</p></td><td><p>—</p></td></tr>
+<tr><td><p>代理商</p></td><td><p>①②④⑤⑥⑦⑧⑨⑩</p></td><td><p>③ 服务与内容</p></td></tr>
+<tr><td><p>服务商</p></td><td><p>③④⑤⑦⑧⑩</p></td><td><p>①②⑥⑨</p></td></tr>
+</tbody>
+</table>
+<h2 seq="auto">权限落地（ABAC 策略）</h2>
+<pre lang="ts" caption="后端守卫（NestJS guard）"><code>@Injectable()
+export class AbacGuard implements CanActivate {
+  async canActivate(ctx: ExecutionContext) {
+    const req = ctx.switchToHttp().getRequest();
+    const user = req.user;                 // role / scope(regionPath|selfId) / perms[]
+    const { resource, action } = metaOf(ctx); // 由 @Abac('providers', 'review') 注入
+    // 1 位阶：只读账号拒绝写动作
+    if (user.readonly &amp;&amp; !READONLY_OK.has(action)) return false;
+    // 2 功能权限
+    if (!user.perms.includes(permKey(resource, action))) return false;
+    // 3 数据作用域：注入 where（regionPath 前缀 / selfId）
+    req.scopeWhere = buildScopeWhere(user);
+    return true;
+  }
+}</code></pre>
+
+<h1 seq="auto">数据模型（Prisma）</h1>
+<h2 seq="auto">核心模型概览</h2>
+<p>模型按「主体（User/Agent/ServiceProvider）→ 业务（Service/Template/Order）→ 资金（Wallet/Ledger/Withdrawal）→ 治理（Feedback/Message/Announcement）→ 权限（Role/Permission/UserRole）→ 权益（Coupon/UserCoupon）」组织；<code>regionPath</code> 为字符串前缀路径，是数据隔离的唯一权威字段。</p>
+<h2 seq="auto">Prisma schema（节选）</h2>
+<pre lang="prisma" caption="prisma/schema.prisma（核心表）"><code>enum RoleType { USER SERVICE_PROVIDER AGENT ADMIN }
+
+model User {
+  id          String   @id @default(cuid())
+  username    String   @unique
+  password    String
+  role        RoleType
+  name        String
+  phone       String?
+  regionPath  String?           // 隔离前缀，如 '乌鲁木齐/天山区'
+  status      Status
+  tier        MemberTier        // USER 的会员等级
+  balance     Int      @default(0)
+  points      Int      @default(0)
+  createdAt   DateTime @default(now())
+  agent       Agent?
+  provider    ServiceProvider?
+}
+
+model Region {
+  id         String   @id @default(cuid())
+  name       String
+  level      RegionLevel        // PROVINCE / CITY / DISTRICT
+  regionPath String   @unique   // '乌鲁木齐/天山区'
+  agentId    String?
+  agent      Agent?   @relation(fields: [agentId], references: [id])
+}
+
+model Agent {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  regionId  String
+  region    Region   @relation(fields: [regionId], references: [id])
+  status    AgentStatus         // NORMAL / REVIEW / DISABLED
+  monthlyFlow Int    @default(0)
+}
+
+model ServiceProvider {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  type        String   // 婚庆主持 / 摄影摄像 ...
+  regionPath  String
+  status      ProviderStatus    // PENDING_REVIEW / APPROVED / REJECTED / REVIEWING / UPGRADING
+  qualification Json?            // 资质项数组
+}
+
+model Service {
+  id          String  @id @default(cuid())
+  providerId  String
+  name        String
+  type        String
+  price       Int
+  status      ServiceStatus      // ON_SALE / DRAFT / OFF_SHELF
+  template    Boolean @default(false) // 模板审核复用
+}
+
+model Order {
+  id        String   @id @default(cuid())
+  orderNo   String   @unique
+  userId    String
+  providerId String
+  serviceId String
+  amount    Int
+  status    OrderStatus          // PENDING_ACCEPT / IN_PROGRESS / DONE / AFTER_SALE
+  createdAt DateTime @default(now())
+}
+
+model Wallet {
+  id        String  @id @default(cuid())
+  ownerType String  // AGENT / PROVIDER
+  ownerId   String
+  balance   Int
+  frozen    Int
+  totalFlow Int
+}
+
+model Ledger {
+  id        String   @id @default(cuid())
+  walletId  String
+  type      LedgerType // IN / PENDING / OUT
+  amount    Int
+  balanceAfter Int
+  createdAt DateTime @default(now())
+}
+
+model Withdrawal {
+  id         String  @id @default(cuid())
+  providerId String
+  amount     Int
+  account    String
+  status     ReviewStatus   // PENDING / APPROVED / REJECTED
+  createdAt  DateTime @default(now())
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  no        String   @unique
+  kind      String   // 服务投诉 / 价格争议 / 服务满意 ...
+  userId    String
+  targetId  String
+  status    FeedbackStatus  // NEGOTIATING / HANDLED / UPGRADED / CLOSED
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model Message {
+  id        String    @id @default(cuid())
+  title     String
+  kind      MessageKind  // 订单 / 服务 / 评价 / 权益 / 公告 / 系统通知
+  scope     String       // 全平台 / 区域 / 指定用户
+  status    MessageStatus // UNREAD / READ / PENDING_REVIEW / PUBLISHED
+  body      String?
+  createdAt DateTime  @default(now())
+}
+
+model Role {
+  id        String  @id @default(cuid())
+  name      String
+  layer     LayerType      // CONSOLE / AGENT / PROVIDER
+  type      RoleKind       // BUILTIN / CUSTOM
+  scope     ScopeType      // ALL / REGION / SELF
+  perms     String[]       // 权限点 key 数组（10 域 28 点）
+  level     Int            // 位阶：100 超级 / 90 运维 / 80 审核 / 80 财务 / 60 客服
+  accountCount Int @default(0)
+}
+
+model UserRole {
+  userId String
+  roleId String
+  @@id([userId, roleId])
+}
+
+model Coupon {
+  id        String  @id @default(cuid())
+  title     String
+  amount    Int
+  validFrom DateTime
+  validTo   DateTime
+  condition String?
+  status    CouponStatus
+}
+
+model UserCoupon {
+  id      String  @id @default(cuid())
+  userId  String
+  coupon  Coupon  @relation(fields: [couponId], references: [id])
+  couponId String
+  used    Boolean @default(false)
+}</code></pre>
+<h2 seq="auto">packages/core 类型</h2>
+<p>共享包导出：角色 / 状态 / 层级枚举、权限点常量表、<code>StatusTag</code> 映射（<code>#ok→success、#warn→warning、#bad→error、#mut→default、#ac→processing</code>）、<code>createListQuery</code> / <code>parseListResult</code> 工厂函数，运营端与用户端共用，保证状态渲染一致。</p>

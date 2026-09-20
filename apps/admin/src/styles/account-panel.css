@@ -1,0 +1,425 @@
+/**
+ * 账号胶囊 + 账号下拉面板 —— 逐条还原 UI_Design/index.html 原型。
+ *
+ * 原型锚点：
+ *   .acc / .acc-trigger / .acc-av / .acc-tinfo / .dd          （顶栏触发器）
+ *   .accpanel / .ap-head / .ap-avatar / .ap-name / .ap-id      （下拉：①账号头部）
+ *   .ap-section / .ap-sec-title / .ap-modes / .ap-mode         （②权限模式）
+ *   .ap-todos / .ap-todo / .ap-todo .n(.hot) / .ap-todo .l     （③待办事项）
+ *   .ap-links / .ap-link / .ap-link .ic                        （④快捷入口）
+ *   .ap-footer / .ap-tools / .ap-tool / .ap-logout             （⑤底部工具 + 退出）
+ *
+ * 约定：
+ *  1. 所有颜色只写 var(--*)，由组件经 `accountCssVars` 从 config/theme 的 T.* 注入，
+ *     禁止在本文件硬编码色值（与 profile.css 同款做法）。
+ *  2. 上述类名同时是端到端断言锚点，不要删改。
+ *  3. 定位由 antd Dropdown 的 portal（placement=bottomRight）负责，
+ *     故这里不写 position/right/top —— 原型那三条是为了 .acc{position:relative} 的自定位。
+ */
+
+/* 原型全局 `*{box-sizing:border-box}`：本项目只有 antd 组件被 reset 覆盖到，
+   自定义类仍是 content-box，会让 width:340 加上 1px 边框实测成 342。这里显式补上。 */
+.acc,
+.accpanel,
+.accpanel *,
+.acc * {
+  box-sizing: border-box;
+}
+
+/* ── 触发器（原型 .acc） ─────────────────────────── */
+.acc {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 4px 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  cursor: pointer;
+  flex: none;
+  user-select: none;
+  transition: border-color 0.15s;
+}
+.acc:hover {
+  border-color: var(--ink3);
+}
+.acc.on {
+  border-color: var(--accent);
+}
+.acc-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.acc-av {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--avatar-grad);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex: none;
+  overflow: hidden;
+}
+.acc-av img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.acc-tinfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.acc-tinfo > span:first-child {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink1);
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 触发器状态标签：write=角色（朱砂）/ ro=只读（灰）—— 原型 .acc .tag */
+.acc .tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.acc .tag.write {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.acc .tag.ro {
+  background: var(--panel-2);
+  color: var(--ink3);
+}
+.acc .dd {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--panel-2);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: var(--ink2);
+  flex: none;
+  transition: transform 0.15s;
+}
+.acc.on .dd {
+  transform: rotate(180deg);
+}
+
+/* ── 下拉面板（原型 .accpanel） ───────────────────── */
+.accpanel {
+  width: 340px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  font-family: var(--font);
+}
+
+/* ① 账号头部 */
+.ap-head {
+  display: flex;
+  gap: 14px;
+  padding: 18px 18px 16px;
+  background: var(--head-grad);
+  border-bottom: 1px solid var(--line);
+}
+.ap-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--avatar-grad);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 700;
+  flex: none;
+  overflow: hidden;
+}
+.ap-avatar img {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.ap-user {
+  flex: 1;
+  min-width: 0;
+}
+.ap-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink1);
+  margin-bottom: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ap-id {
+  font-size: 12px;
+  color: var(--ink3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.ap-copy {
+  cursor: pointer;
+  opacity: 0.5;
+  transition:
+    opacity 0.15s,
+    color 0.15s;
+  font-size: 13px;
+}
+.ap-copy:hover {
+  opacity: 1;
+  color: var(--accent);
+}
+.ap-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ap-tags .tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.tag.ac {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.tag.ok {
+  background: var(--up-bg);
+  color: var(--up-ink);
+}
+.tag.warn {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+.tag.bad {
+  background: var(--down-bg);
+  color: var(--down-ink);
+}
+.tag.mut {
+  background: var(--panel-2);
+  color: var(--ink3);
+}
+
+/* ② 权限模式 / ③ 待办 / ④ 快捷入口 通用分区 */
+.ap-section {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.ap-sec-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink3);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* ② 权限模式（原型 .ap-modes / .ap-mode） */
+.ap-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ap-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 12px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.ap-mode:hover {
+  background: var(--panel-2);
+}
+.ap-mode.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.ap-mode b {
+  font-size: 13px;
+  color: var(--ink1);
+  font-weight: 600;
+}
+.ap-mode.on b {
+  color: var(--accent);
+}
+.ap-mode span {
+  font-size: 11px;
+  color: var(--ink3);
+}
+
+/* ③ 待办事项（原型 .ap-todos / .ap-todo） */
+.ap-todos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.ap-todo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 4px;
+  border-radius: var(--r-sm);
+  background: var(--panel-2);
+  cursor: pointer;
+  transition: background 0.15s;
+  border: 0;
+  font: inherit;
+}
+.ap-todo:hover {
+  background: var(--accent-soft);
+}
+.ap-todo .n {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink1);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.ap-todo .n.hot {
+  color: var(--accent);
+}
+.ap-todo .l {
+  font-size: 10.5px;
+  color: var(--ink3);
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* ④ 快捷入口（原型 .ap-links / .ap-link） */
+.ap-links {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.ap-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink2);
+  transition:
+    background 0.15s,
+    color 0.15s;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  min-width: 0;
+}
+.ap-link:hover {
+  background: var(--panel-2);
+  color: var(--accent);
+}
+.ap-link .ic {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  opacity: 0.6;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+}
+.ap-link > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ⑤ 底部工具 + 退出（原型 .ap-footer / .ap-tools / .ap-logout） */
+.ap-footer {
+  padding: 10px 18px 14px;
+}
+.ap-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-bottom: 10px;
+}
+.ap-tool {
+  font-size: 12.5px;
+  color: var(--ink2);
+  cursor: pointer;
+  transition: color 0.15s;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-family: inherit;
+}
+.ap-tool:hover {
+  color: var(--accent);
+}
+.ap-logout {
+  text-align: center;
+  padding: 9px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--logout-ink);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s;
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  /* 抵消 .ap-footer 的左右下内边距，让退出条铺满面板底部（原型同款负 margin） */
+  margin: 0 -18px -14px;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  display: block;
+  width: calc(100% + 36px);
+  font-family: inherit;
+}
+.ap-logout:hover {
+  background: var(--logout-soft);
+}
+
+/* 监督视角：当前对象速览（本 app 扩展，原型无） */
+.ap-object {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: var(--r-sm);
+  background: var(--accent-2-soft);
+  color: var(--accent-2);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.ap-object .ap-object-btn {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  white-space: nowrap;
+}

@@ -1,0 +1,131 @@
+/* ── 首页动态数据（总台看板：静态示例） ── */
+function renderHome(){
+  const rb=$('#regionBars');const regs=[['乌鲁木齐',128.6,1926],['北京',96.2,1440],['上海',88.4,1312],['广州',71.8,1086],['成都',52.3,804]];
+  const mx=Math.max(...regs.map(r=>r[1]));
+  rb.innerHTML=regs.map(r=>`<div class="bar"><div class="row"><span class="nm">${r[0]}</span>
+    <span class="tr"><span class="fl" style="width:${r[1]/mx*100}%;background:var(--accent)"></span></span>
+    <span class="vl">¥${r[1]}w</span><span class="vl" style="width:56px;color:var(--accent-2)">${r[2]}</span></div></div>`).join('');
+  $('#agentTop').innerHTML=[
+    ['乌鲁木齐天山区','天山区','¥18,320','214'],['乌鲁木齐沙依巴克','沙依巴克区','¥26,480','309'],
+    ['乌鲁木齐高新','高新区','¥21,150','252'],['北京朝阳','朝阳区','¥30,720','368'],['上海浦东','浦东新区','¥24,860','291']
+  ].map(r=>`<tr><td>${r[0]}</td><td class="mut">${r[1]}</td><td class="n num">${r[2]}</td><td class="n num">${r[3]}</td></tr>`).join('');
+  $('#reviewMini').innerHTML=[
+    ['麦麦提·艾力','婚庆主持','天山区','#warn 待审'],['古丽娜尔','摄影摄像','沙依巴克','#warn 待审'],['王磊','宴会设计','高新区','#warn 待审']
+  ].map(r=>`<tr><td>${r[0]}</td><td class="mut">${r[1]}</td><td class="mut">${r[2]}</td><td>${cell(r[3])}</td><td><span class="link" data-goto="review">处理</span></td></tr>`).join('');
+  $('#reviewMini').parentElement.querySelectorAll('.link').forEach(l=>l.onclick=()=>goPage('review'));
+}
+
+/* ── 具体对象数据（代理商/服务商样例，对象视角按此切换） ── */
+const AGENTS=[
+ {id:'AG001',name:'阿依古丽',nick:'天山花姐',phone:'138****2210',region:'天山区',
+  flow:18320,flowPct:'11.6',users:1204,svc:38,orders:214,orderPct:'8.3',pend:5,fb:2,up:1,msg:1,
+  cats:[['婚庆主持',18,6],['摄影摄像',10,4],['花艺布置',6,4],['化妆造型',4,2]],
+  prov:[['麦麦提·艾力','婚庆主持','#ok 已认证','6','¥2,860','#ok 正常'],['阿迪力江','花艺布置','#ok 已认证','4','¥1,520','#ok 正常'],['李婷','乐队演出','#ok 已认证','3','¥980','#ok 正常'],['新入驻·买买提','摄影摄像','#warn 待初审','0','¥0','#warn 待初审']]},
+ {id:'AG002',name:'艾山江',nick:'沙依巴克老艾',phone:'139****7756',region:'沙依巴克区',
+  flow:26480,flowPct:'9.2',users:986,svc:29,orders:309,orderPct:'6.4',pend:3,fb:1,up:0,msg:2,
+  cats:[['婚庆主持',12,5],['摄影摄像',9,3],['花艺布置',4,2],['乐队演出',4,1]],
+  prov:[['古丽娜尔','摄影摄像','#ok 已认证','9','¥3,120','#ok 正常'],['帕提曼','化妆造型','#ok 已认证','7','¥2,140','#ok 正常'],['新入驻·外力','乐队演出','#warn 待初审','0','¥0','#warn 待初审']]},
+ {id:'AG003',name:'买买提江',nick:'高新小买',phone:'137****9023',region:'高新区',
+  flow:21150,flowPct:'14.5',users:1320,svc:44,orders:252,orderPct:'10.1',pend:7,fb:3,up:1,msg:1,
+  cats:[['婚庆主持',22,9],['摄影摄像',12,5],['宴会设计',6,3],['花艺布置',4,2]],
+  prov:[['王磊','宴会设计','#ok 已认证','5','¥2,460','#ok 正常'],['米热古丽','花艺布置','#ok 已认证','6','¥1,880','#ok 正常'],['新入驻·亚森','摄影摄像','#warn 待初审','0','¥0','#warn 待初审']]},
+ {id:'AG004',name:'王芳',nick:'北京朝阳',phone:'186****3311',region:'朝阳区',
+  flow:30720,flowPct:'8.1',users:2204,svc:68,orders:368,orderPct:'7.2',pend:4,fb:1,up:0,msg:1,
+  cats:[['婚庆主持',28,11],['摄影摄像',18,7],['宴会设计',12,5],['化妆造型',10,4]],
+  prov:[['李静','婚庆主持','#ok 已认证','11','¥5,260','#ok 正常'],['张伟','摄影摄像','#ok 已认证','8','¥3,480','#ok 正常']]},
+ {id:'AG005',name:'陈晨',nick:'上海浦东',phone:'189****5588',region:'浦东新区',
+  flow:24860,flowPct:'10.3',users:1890,svc:55,orders:291,orderPct:'9.0',pend:6,fb:2,up:1,msg:0,
+  cats:[['婚庆主持',20,8],['花艺布置',14,6],['乐队演出',10,5],['化妆造型',11,4]],
+  prov:[['周悦','花艺布置','#ok 已认证','9','¥3,960','#ok 正常'],['孙浩','乐队演出','#ok 已认证','6','¥2,380','#ok 正常']]}
+];
+const PROVIDERS=[
+ {id:'SP001',name:'麦麦提·艾力',nick:'喜事管家',phone:'138****2210',type:'婚庆主持',region:'天山区',
+  bal:1240,balPct:'+ ¥860 本月',frozen:320,onSale:6,onSaleF:'3 类服务角色',orders:18,ordersPct:'▲ 4 单',pd:2,dlv:3,income:2860,incomePct:'▲ 12.8%',appeal:1,
+  svc:[['「红绸喜字」','¥29','#ok 在售'],['「鎏金岁月」','¥49','#ok 在售'],['「青梅竹马」','¥19','#mut 草稿']],
+  ord:[['QJ…0013','¥1,280','#warn 待接单'],['QJ…0011','¥880','#ac 履约中'],['QJ…0098','¥520','#ok 已完成']]},
+ {id:'SP002',name:'古丽娜尔',nick:'光影古丽',phone:'135****8044',type:'摄影摄像',region:'沙依巴克区',
+  bal:3260,balPct:'+ ¥1,100 本月',frozen:640,onSale:8,onSaleF:'2 类服务角色',orders:26,ordersPct:'▲ 6 单',pd:1,dlv:4,income:5180,incomePct:'▲ 15.2%',appeal:0,
+  svc:[['「婚礼跟拍」','¥999','#ok 在售'],['「情侣写真」','¥499','#ok 在售'],['「轻写真」','¥299','#mut 草稿']],
+  ord:[['QJ…0021','¥999','#warn 待接单'],['QJ…0018','¥1,680','#ac 履约中'],['QJ…0012','¥899','#ok 已完成']]},
+ {id:'SP003',name:'王磊',nick:'宴会设计王',phone:'186****3302',type:'宴会设计',region:'高新区',
+  bal:980,balPct:'+ ¥420 本月',frozen:210,onSale:4,onSaleF:'2 类服务角色',orders:12,ordersPct:'▲ 2 单',pd:3,dlv:2,income:2460,incomePct:'▲ 7.6%',appeal:1,
+  svc:[['「主题宴会全案」','¥1,880','#ok 在售'],['「甜品台设计」','¥399','#ok 在售']],
+  ord:[['QJ…0033','¥1,880','#warn 待接单'],['QJ…0028','¥799','#ac 履约中']]},
+ {id:'SP004',name:'阿迪力江',nick:'花艺阿迪',phone:'139****1176',type:'花艺布置',region:'天山区',
+  bal:760,balPct:'+ ¥300 本月',frozen:180,onSale:5,onSaleF:'2 类服务角色',orders:15,ordersPct:'▲ 3 单',pd:0,dlv:5,income:1520,incomePct:'▲ 9.4%',appeal:0,
+  svc:[['「婚礼花艺套餐」','¥888','#ok 在售'],['「商务花篮」','¥128','#ok 在售']],
+  ord:[['QJ…0041','¥888','#warn 待接单'],['QJ…0036','¥668','#ac 履约中']]}
+];
+
+/* ── 具体对象视角：渲染某代理商/服务商名下数据 ── */
+function renderAgent(o){
+  $('#aSub').textContent=o.region+' · 辖区经营指标 · 截至今日 08-27';
+  $('#aChip').textContent='代理商 · '+o.region+' · 辖区作用域';
+  $('#aFlow').textContent='¥'+num(o.flow);
+  $('#aFlowPct').textContent='▲ '+o.flowPct+'% 较上周';
+  $('#aFee').textContent='辖区抽成 ¥'+num(Math.round(o.flow*0.1));
+  $('#aUsers').textContent=num(o.users);
+  $('#aSvc').textContent=o.svc;
+  $('#aSvcPend').innerHTML='入驻待初审 <b style="color:var(--accent)">'+o.pend+'</b> 家';
+  $('#aOrd').textContent=o.orders;
+  $('#aPend').textContent=o.pend;$('#aFb').textContent=o.fb;$('#aUp').textContent=o.up;$('#aMsg').textContent=o.msg;
+  const ac=$('#agentCatBars');const amx=Math.max(...o.cats.map(c=>c[1]));
+  ac.innerHTML=o.cats.map(c=>`<div class="bar"><div class="row"><span class="nm">${c[0]}</span>
+    <span class="tr"><span class="fl" style="width:${c[1]/amx*100}%;background:var(--accent)"></span></span>
+    <span class="vl">${c[1]}</span><span class="vl" style="width:36px;color:var(--accent-2)">${c[2]}</span></div></div>`).join('');
+  $('#agentProvList').innerHTML=o.prov.map(r=>`<tr><td>${r[0]}</td><td class="mut">${r[1]}</td><td>${cell(r[2])}</td><td class="n num">${r[3]}</td><td class="n num">${r[4]}</td><td>${cell(r[5])}</td><td><span class="link">查看</span></td></tr>`).join('');
+}
+function renderProvider(o){
+  $('#pSub').textContent=o.type+' · 供给经营 · 截至今日 08-27';
+  $('#pChip').textContent='服务商 · '+o.region+' · 自身作用域';
+  $('#pBal').textContent='¥'+num(o.bal);
+  $('#pBalPct').textContent=o.balPct;
+  $('#pFrozen').textContent='冻结中 ¥'+num(o.frozen);
+  $('#pOnSale').textContent=o.onSale;
+  $('#pOnSaleF').textContent=o.onSaleF;
+  $('#pOrders').textContent=o.orders;
+  $('#pOrdersPct').textContent=o.ordersPct;
+  $('#pOrderF').innerHTML='待接单 <b style="color:var(--accent)">'+o.pd+'</b> · 待交付 <b style="color:var(--accent)">'+o.dlv+'</b>';
+  $('#pIncome').textContent='¥'+num(o.income);
+  $('#pIncomePct').textContent=o.incomePct;
+  $('#pPd').textContent=o.pd;$('#pDlv').textContent=o.dlv;$('#pAppeal').textContent=o.appeal;
+  $('#spServList').innerHTML=o.svc.map(r=>`<tr><td>${r[0]}</td><td class="n num">${r[1]}</td><td>${cell(r[2])}</td></tr>`).join('');
+  $('#spOrdList').innerHTML=o.ord.map(r=>`<tr><td class="num">${r[0]}</td><td class="n num">${r[1]}</td><td>${cell(r[2])}</td></tr>`).join('');
+}
+function renderScope(){ if(CUR.type==='agent')renderAgent(CUR.obj); else renderProvider(CUR.obj); }
+
+/* ── 对象选择器：搜索/选择具体代理商或服务商 ── */
+function syncObjUI(){
+  const on=isViewAs();
+  $('#objPick').style.display=on?'flex':'none';
+  if(!on)return;
+  const o=CUR.obj;
+  $('#objQ').value='';
+  $('#objTag').textContent=o.name+' · '+o.region+' · '+o.phone;
+  $('#objNote').textContent='以「'+o.name+'」'+objTagName()+'身份查看 · 数据仅限该对象 · 总台'+(RO?'只读':'可写');
+  renderObjList();
+}
+function renderObjList(){
+  const q=$('#objQ').value.trim();
+  const src=objSource().filter(o=>!q||[o.id,o.name,o.nick,o.phone,o.region].some(s=>s.includes(q)));
+  $('#objList').innerHTML=src.length?src.map(o=>`<button class="o" data-id="${o.id}">
+    <b>${o.name}</b><span>${o.nick?'昵称 '+o.nick+' · ':''}${o.region} · ${o.phone}</span>
+    <span class="n">${o.id}${o===CUR.obj?' · 当前':''}</span></button>`).join('')
+    :`<div class="o" style="cursor:default;color:var(--ink-3)">无匹配对象</div>`;
+}
+function setCurObj(o){CUR.obj=o;renderScope();syncObjUI();}
+$('#objQ').addEventListener('focus',()=>{$('#objList').classList.add('on');renderObjList();});
+$('#objQ').addEventListener('input',()=>renderObjList());
+$('#objList').addEventListener('click',e=>{
+  const b=e.target.closest('.o[data-id]');if(!b)return;
+  const o=objSource().find(x=>x.id===b.dataset.id);if(o)setCurObj(o);
+  $('#objList').classList.remove('on');
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.combobox'))$('#objList').classList.remove('on');});
+$('#objExit').onclick=()=>switchView('console');
+
+/* ── 启动 ── */
+renderHome();
+renderNav();
+goPage('dashboard');
+

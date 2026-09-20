@@ -1,0 +1,27 @@
+[
+  {
+    "name": "温馨时光",
+    "url": "/public/music/warm.wav",
+    "icon": "data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%23f59e0b%27%20stroke-width=%272%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M9%2018V5l12-2v13%27/%3E%3Ccircle%20cx=%276%27%20cy=%2718%27%20r=%273%27/%3E%3Ccircle%20cx=%2718%27%20cy=%2716%27%20r=%273%27/%3E%3C/svg%3E"
+  },
+  {
+    "name": "轻快律动",
+    "url": "/public/music/bright.wav",
+    "icon": "data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%2310b981%27%20stroke-width=%272%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M9%2018V5l12-2v13%27/%3E%3Ccircle%20cx=%276%27%20cy=%2718%27%20r=%273%27/%3E%3Ccircle%20cx=%2718%27%20cy=%2716%27%20r=%273%27/%3E%3C/svg%3E"
+  },
+  {
+    "name": "浪漫之夜",
+    "url": "/public/music/romantic.wav",
+    "icon": "data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%23ec4899%27%20stroke-width=%272%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M9%2018V5l12-2v13%27/%3E%3Ccircle%20cx=%276%27%20cy=%2718%27%20r=%273%27/%3E%3Ccircle%20cx=%2718%27%20cy=%2716%27%20r=%273%27/%3E%3C/svg%3E"
+  },
+  {
+    "name": "静谧星空",
+    "url": "/public/music/calm.wav",
+    "icon": "data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%233b82f6%27%20stroke-width=%272%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M9%2018V5l12-2v13%27/%3E%3Ccircle%20cx=%276%27%20cy=%2718%27%20r=%273%27/%3E%3Ccircle%20cx=%2718%27%20cy=%2716%27%20r=%273%27/%3E%3C/svg%3E"
+  },
+  {
+    "name": "欢乐庆典",
+    "url": "/public/music/festival.wav",
+    "icon": "data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%238b5cf6%27%20stroke-width=%272%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M9%2018V5l12-2v13%27/%3E%3Ccircle%20cx=%276%27%20cy=%2718%27%20r=%273%27/%3E%3Ccircle%20cx=%2718%27%20cy=%2716%27%20r=%273%27/%3E%3C/svg%3E"
+  }
+]

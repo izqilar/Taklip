@@ -1,0 +1,733 @@
+[31m[Nest] 37156  - [39m2026/09/14 20:54:59 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 34360  - [39m2026/09/14 20:55:04 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 35032  - [39m2026/09/14 20:55:09 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 21904  - [39m2026/09/14 20:55:14 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 35064  - [39m2026/09/14 20:55:19 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 31224  - [39m2026/09/14 20:55:24 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 36268  - [39m2026/09/14 20:55:29 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 37544  - [39m2026/09/14 20:55:34 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 29100  - [39m2026/09/14 20:55:39 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 21720  - [39m2026/09/14 20:55:44 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 23344  - [39m2026/09/14 20:55:49 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 31596  - [39m2026/09/14 20:55:54 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 32656  - [39m2026/09/14 20:55:59 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 22728  - [39m2026/09/14 20:56:04 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 17152  - [39m2026/09/14 20:56:09 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 8408  - [39m2026/09/14 20:56:14 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+[31m[Nest] 19188  - [39m2026/09/14 20:56:19 [31m  ERROR[39m [38;5;3m[ExceptionHandler] [39m[31mNest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+[39m
+Error: Nest can't resolve dependencies of the ProviderConsoleController (PrismaService, ?). Please make sure that the argument PublishService at index [1] is available in the ConsoleModule context.
+
+Potential solutions:
+- Is ConsoleModule a valid NestJS module?
+- If PublishService is a provider, is it part of the current ConsoleModule?
+- If PublishService is exported from a separate @Module, is that module imported within ConsoleModule?
+  @Module({
+    imports: [ /* the Module containing PublishService */ ]
+  })
+
+    at Injector.lookupComponentInParentModules (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:262:19)
+    at async Injector.resolveComponentInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:215:33)
+    at async resolveParam (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:129:38)
+    at async Promise.all (index 1)
+    at async Injector.resolveConstructorParams (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:144:27)
+    at async Injector.loadInstance (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:70:13)
+    at async Injector.loadController (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\injector.js:89:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:68:13
+    at async Promise.all (index 1)
+    at async InstanceLoader.createInstancesOfControllers (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\injector\instance-loader.js:67:9)
+node:internal/modules/cjs/loader:1424
+  throw err;
+  ^
+
+Error: Cannot find module './auth.service'
+Require stack:
+- D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\auth\auth.module.js
+- D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\app.module.js
+- D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\main.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1421:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)
+    at Module._load (node:internal/modules/cjs/loader:1227:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.require (node:internal/modules/cjs/loader:1504:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\auth\auth.module.js:13:24)
+    at Module._compile (node:internal/modules/cjs/loader:1761:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'D:\\MyWorkBuddy\\2026-08-10-22-39-56\\apps\\server\\dist\\auth\\auth.module.js',
+    'D:\\MyWorkBuddy\\2026-08-10-22-39-56\\apps\\server\\dist\\app.module.js',
+    'D:\\MyWorkBuddy\\2026-08-10-22-39-56\\apps\\server\\dist\\main.js'
+  ]
+}
+
+Node.js v24.13.0
+[31m[Nest] 42684  - [39m2026/09/15 01:28:16 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31mnet::ERR_CONNECTION_REFUSED at http://127.0.0.1:5173/export-render?token=fa40e59b6a4373a634a72083f1d10d99&mode=current&page=0[39m
+Error: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5173/export-render?token=fa40e59b6a4373a634a72083f1d10d99&mode=current&page=0
+    at navigate (file:///D:/MyWorkBuddy/2026-08-10-22-39-56/node_modules/.pnpm/puppeteer-core@25.11.0/node_modules/puppeteer-core/lib/puppeteer/cdp/Frame.js:187:27)
+    at async Deferred.race (file:///D:/MyWorkBuddy/2026-08-10-22-39-56/node_modules/.pnpm/puppeteer-core@25.11.0/node_modules/puppeteer-core/lib/puppeteer/util/Deferred.js:33:20)
+    at async CdpFrame.goto (file:///D:/MyWorkBuddy/2026-08-10-22-39-56/node_modules/.pnpm/puppeteer-core@25.11.0/node_modules/puppeteer-core/lib/puppeteer/cdp/Frame.js:153:25)
+    at async CdpPage.goto (file:///D:/MyWorkBuddy/2026-08-10-22-39-56/node_modules/.pnpm/puppeteer-core@25.11.0/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:582:20)
+    at async ExportService.renderImage (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\export\export.service.js:114:13)
+    at async ExportController.exportImage (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\export\export.controller.js:38:41)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[31m[Nest] 21724  - [39m2026/09/15 10:17:14 [31m  ERROR[39m [38;5;3m[NestApplication] [39m[31mError: listen EADDRINUSE: address already in use :::3000[39m[38;5;3m +1ms[39m
+node:net:1940
+    const ex = new UVExceptionWithHostPort(err, 'listen', address, port);
+               ^
+
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at ExpressAdapter.listen (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+platform-express@10_670e7259e4a0c5dae5865f99b0c93dc0\node_modules\@nestjs\platform-express\adapters\express-adapter.js:95:32)
+    at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\nest-application.js:183:30
+    at new Promise (<anonymous>)
+    at NestApplication.listen (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\nest-application.js:173:16)
+    at async bootstrap (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\main.js:76:5) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3000
+}
+
+Node.js v22.22.2
+[31m[Nest] 30760  - [39m2026/09/15 10:19:59 [31m  ERROR[39m [38;5;3m[NestApplication] [39m[31mError: listen EADDRINUSE: address already in use :::3000[39m[38;5;3m +1ms[39m
+node:net:1940
+    const ex = new UVExceptionWithHostPort(err, 'listen', address, port);
+               ^
+
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at ExpressAdapter.listen (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+platform-express@10_670e7259e4a0c5dae5865f99b0c93dc0\node_modules\@nestjs\platform-express\adapters\express-adapter.js:95:32)
+    at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\nest-application.js:183:30
+    at new Promise (<anonymous>)
+    at NestApplication.listen (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\nest-application.js:173:16)
+    at async bootstrap (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\main.js:81:5) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3000
+}
+
+Node.js v22.22.2
+[31m[Nest] 43544  - [39m2026/09/15 10:40:02 [31m  ERROR[39m [38;5;3m[NestApplication] [39m[31mError: listen EADDRINUSE: address already in use :::3000[39m[38;5;3m +1ms[39m
+node:net:1940
+    const ex = new UVExceptionWithHostPort(err, 'listen', address, port);
+               ^
+
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at ExpressAdapter.listen (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+platform-express@10_670e7259e4a0c5dae5865f99b0c93dc0\node_modules\@nestjs\platform-express\adapters\express-adapter.js:95:32)
+    at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\nest-application.js:183:30
+    at new Promise (<anonymous>)
+    at NestApplication.listen (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\nest-application.js:173:16)
+    at async bootstrap (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\main.js:81:5) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3000
+}
+
+Node.js v22.22.2
+[31m[Nest] 43556  - [39m2026/09/15 11:42:31 [31m  ERROR[39m [38;5;3m[NestApplication] [39m[31mError: listen EADDRINUSE: address already in use :::3000[39m[38;5;3m +1ms[39m
+node:net:1940
+    const ex = new UVExceptionWithHostPort(err, 'listen', address, port);
+               ^
+
+Error: listen EADDRINUSE: address already in use :::3000
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at ExpressAdapter.listen (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+platform-express@10_670e7259e4a0c5dae5865f99b0c93dc0\node_modules\@nestjs\platform-express\adapters\express-adapter.js:95:32)
+    at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\nest-application.js:183:30
+    at new Promise (<anonymous>)
+    at NestApplication.listen (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\nest-application.js:173:16)
+    at async bootstrap (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\main.js:81:5) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3000
+}
+
+Node.js v22.22.2
+node:internal/modules/cjs/loader:533
+      throw err;
+      ^
+
+Error: Cannot find module 'D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\index.js'. Please verify that the package.json has a valid "main" entry
+    at tryPackage (node:internal/modules/cjs/loader:525:19)
+    at Module._findPath (node:internal/modules/cjs/loader:793:18)
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1406:27)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)
+    at Module._load (node:internal/modules/cjs/loader:1227:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.require (node:internal/modules/cjs/loader:1504:12)
+    at require (node:internal/modules/helpers:152:16) {
+  code: 'MODULE_NOT_FOUND',
+  path: '\\\\?\\D:\\MyWorkBuddy\\2026-08-10-22-39-56\\apps\\server\\prisma\\prisma-client\\package.json',
+  requestPath: '../../prisma/prisma-client'
+}
+
+Node.js v24.13.0
+[31m[Nest] 18660  - [39m2026/09/18 14:33:51 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.template.delete()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\provider-console.controller.js:312:42
+
+  309 const cur = await this.prisma.template.findFirst({ where: { id, authorId: req.user.id } });
+  310 if (!cur)
+  311     throw new common_1.NotFoundException('模板不存在或无权操作');
+→ 312 await this.prisma.template.delete(
+Foreign key constraint violated: `TemplateOrder_templateId_fkey (index)`[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.template.delete()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\provider-console.controller.js:312:42
+
+  309 const cur = await this.prisma.template.findFirst({ where: { id, authorId: req.user.id } });
+  310 if (!cur)
+  311     throw new common_1.NotFoundException('模板不存在或无权操作');
+→ 312 await this.prisma.template.delete(
+Foreign key constraint violated: `TemplateOrder_templateId_fkey (index)`
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+    at async ProviderConsoleController.deleteService (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\provider-console.controller.js:312:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[31m[Nest] 18660  - [39m2026/09/18 14:34:01 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.template.delete()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\provider-console.controller.js:312:42
+
+  309 const cur = await this.prisma.template.findFirst({ where: { id, authorId: req.user.id } });
+  310 if (!cur)
+  311     throw new common_1.NotFoundException('模板不存在或无权操作');
+→ 312 await this.prisma.template.delete(
+Foreign key constraint violated: `TemplateOrder_templateId_fkey (index)`[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.template.delete()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\provider-console.controller.js:312:42
+
+  309 const cur = await this.prisma.template.findFirst({ where: { id, authorId: req.user.id } });
+  310 if (!cur)
+  311     throw new common_1.NotFoundException('模板不存在或无权操作');
+→ 312 await this.prisma.template.delete(
+Foreign key constraint violated: `TemplateOrder_templateId_fkey (index)`
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+    at async ProviderConsoleController.deleteService (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\provider-console.controller.js:312:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[31m[Nest] 25700  - [39m2026/09/19 15:09:02 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.providerWallet.findUnique()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\provider-console.controller.js:62:40
+
+  59 async dashboard(req) {
+  60     const id = req.user.id;
+  61     const [wallet, orderTotal, dealOrders, refundedOrders, payAgg, refundAgg, refundRevRows, serviceCount, feedbackCount, catAgg, revRows,] = await this.prisma.$transaction([
+→ 62         this.prisma.providerWallet.findUnique(
+Can't reach database server at `localhost:5432`
+
+Please make sure your database server is running at `localhost:5432`.[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.providerWallet.findUnique()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\provider-console.controller.js:62:40
+
+  59 async dashboard(req) {
+  60     const id = req.user.id;
+  61     const [wallet, orderTotal, dealOrders, refundedOrders, payAgg, refundAgg, refundRevRows, serviceCount, feedbackCount, catAgg, revRows,] = await this.prisma.$transaction([
+→ 62         this.prisma.providerWallet.findUnique(
+Can't reach database server at `localhost:5432`
+
+Please make sure your database server is running at `localhost:5432`.
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)

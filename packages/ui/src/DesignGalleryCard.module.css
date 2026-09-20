@@ -1,0 +1,128 @@
+.root {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--dg-aspect, 375 / 667);
+  overflow: hidden;
+  border-radius: var(--dg-radius, 10px);
+  background: #f1f2f4;
+}
+
+.cover {
+  position: absolute;
+  inset: 0;
+}
+
+.badge {
+  position: absolute;
+  top: 8px;
+  inset-inline-start: 8px;
+  z-index: 5;
+  font-size: 12px;
+  line-height: 1;
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0.12) 30%,
+    rgba(0, 0, 0, 0.12) 60%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+}
+
+.top,
+.center,
+.bottom {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  z-index: 6;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  /* 容器本身永不拦截点击：.center 覆盖整卡（top:0;bottom:0），若 hover 时整体
+     pointer-events:auto 会挡住 .top/.bottom 的按钮 —— 只让按钮自身可点。 */
+  pointer-events: none;
+}
+
+.top {
+  top: 0;
+}
+
+.center {
+  top: 0;
+  bottom: 0;
+  align-items: center;
+}
+
+.bottom {
+  bottom: 0;
+}
+
+.root:hover .scrim,
+.root.active .scrim,
+.root:hover .top,
+.root.active .top,
+.root:hover .center,
+.root.active .center,
+.root:hover .bottom,
+.root.active .bottom {
+  opacity: 1;
+}
+
+/* 按钮才是点击目标：仅 hover/active 态放行指针事件，其余区域点击穿透到卡片本身 */
+.root:hover .top button,
+.root.active .top button,
+.root:hover .center button,
+.root.active .center button,
+.root:hover .bottom button,
+.root.active .bottom button {
+  pointer-events: auto;
+}
+
+.btn {
+  font-size: 12px;
+  line-height: 1;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.btn:hover {
+  filter: brightness(0.96);
+}
+
+.primary {
+  background: var(--dg-primary, #c24b2e);
+  color: #fff;
+}
+
+.danger {
+  background: var(--dg-danger, #cf1322);
+  color: #fff;
+}
+
+.ghost {
+  background: rgba(255, 255, 255, 0.92);
+  color: #1f2329;
+}

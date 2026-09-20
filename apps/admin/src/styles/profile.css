@@ -1,0 +1,71 @@
+/**
+ * 账户详情页（原「个人资料」）局部样式。
+ * 对齐 UI_Design/index.html 的 .profile-hero / .profile-sections / .profile-grid / .pfield / .perm-tags。
+ * 颜色一律取自 CSS 变量（由 ProfilePage 根节点用 theme.ts 的 T.* 令牌注入），禁止在此硬编码色值。
+ */
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.profile-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* 原型：2 列网格，仅奇数列（左列）带右边框，末行不重复下边框 */
+.profile-grid > .pfield {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+
+.profile-grid > .pfield:nth-child(odd) {
+  border-inline-end: 1px solid var(--line);
+}
+
+.pfield > .pf-label {
+  font-size: 11.5px;
+  color: var(--ink3);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.pfield > .pf-val {
+  font-size: 13.5px;
+  color: var(--ink1);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 权限标签云（管理员「职能与权限」分区）：数值取自原型 .perm-tags */
+.perm-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 14px 16px 4px;
+  border-top: 1px solid var(--line);
+}
+
+.perm-tags > .pt {
+  font-size: 11.5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+  line-height: 1.7;
+}

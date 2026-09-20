@@ -1,0 +1,643 @@
+      <!-- ════════════ 代理商 · 辖区经营概览 ════════════ -->
+      <section class="page" id="pg-agent-home">
+        <div class="pghead">
+          <div>
+            <h2>辖区经营概览</h2>
+            <div class="sub" id="aSub">天山区 · 辖区经营指标 · 截至今日 08-27</div>
+          </div>
+          <span class="sp"></span>
+          <span class="rolechip" id="aChip">代理商 · 天山区 · 辖区作用域</span>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi main">
+            <div class="k">辖区流水</div>
+            <div class="v num" id="aFlow">¥18,320</div>
+            <div class="d up" id="aFlowPct">▲ 11.6% 较上周</div>
+            <div class="f" id="aFee">辖区抽成 ¥1,832</div>
+          </div>
+          <div class="kpi">
+            <div class="k">辖区用户</div>
+            <div class="v num" id="aUsers">1,204</div>
+            <div class="d up">▲ 5.2%</div>
+          </div>
+          <div class="kpi">
+            <div class="k">辖区服务商</div>
+            <div class="v num" id="aSvc">38</div>
+            <div class="d up">▲ 2.1%</div>
+            <div class="f" id="aSvcPend">入驻待初审 <b style="color:var(--accent)">5</b> 家</div>
+          </div>
+          <div class="kpi">
+            <div class="k">辖区订单</div>
+            <div class="v num" id="aOrd">214</div>
+            <div class="d up">▲ 8.3%</div>
+          </div>
+        </div>
+
+        <div class="duo">
+          <div class="panel">
+            <header>待办事项<span class="hint">辖区可办 · 点按直达</span></header>
+            <div class="todo">
+              <div class="it" data-goto="providers"><span class="icn b">审</span><div class="tx"><b>服务商入驻待初审</b><span>辖区服务商 · 入驻初审</span></div><span class="cnt num" id="aPend">5</span></div>
+              <div class="it" data-goto="feedback"><span class="icn a">⭐</span><div class="tx"><b>辖区协商反馈</b><span>评价与反馈中心 · 协商中</span></div><span class="cnt num" id="aFb">2</span></div>
+              <div class="it" data-goto="feedback"><span class="icn c">▲</span><div class="tx"><b>升级提醒</b><span>超出辖区协商时限，将升级总台</span></div><span class="cnt num" id="aUp">1</span></div>
+              <div class="it" data-goto="messages"><span class="icn a">✉</span><div class="tx"><b>我的待审公告</b><span>消息中心 · 发布待审</span></div><span class="cnt num" id="aMsg">1</span></div>
+            </div>
+          </div>
+          <div class="chart">
+            <h4>辖区服务商构成<span class="hint">按服务类型</span></h4>
+            <div class="bars" id="agentCatBars"></div>
+            <div class="legend"><span><i style="background:var(--accent)"></i>数量</span><span><i style="background:var(--accent-2)"></i>本月接单</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <header>辖区服务商<span class="hint">regionPath 数据隔离 · 仅本辖区</span></header>
+          <div class="wrap"><table>
+            <thead><tr><th>服务商</th><th>服务类型</th><th>资质</th><th class="n">本月接单</th><th class="n">本月收益</th><th>状态</th><th></th></tr></thead>
+            <tbody id="agentProvList"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- ════════════ 服务商 · 我的工作台 ════════════ -->
+      <section class="page" id="pg-provider-home">
+        <div class="pghead">
+          <div>
+            <h2>我的工作台</h2>
+            <div class="sub" id="pSub">特约设计 · 供给经营 · 截至今日 08-27</div>
+          </div>
+          <span class="sp"></span>
+          <span class="rolechip" id="pChip">服务商 · 自身作用域</span>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi main">
+            <div class="k">可提现收益</div>
+            <div class="v num" id="pBal">¥1,240</div>
+            <div class="d up" id="pBalPct">+ ¥860 本月</div>
+            <div class="f" id="pFrozen">冻结中 ¥320</div>
+          </div>
+          <div class="kpi">
+            <div class="k">在售服务</div>
+            <div class="v num" id="pOnSale">6</div>
+            <div class="d" id="pOnSaleF">3 类服务角色</div>
+          </div>
+          <div class="kpi">
+            <div class="k">本月接单</div>
+            <div class="v num" id="pOrders">18</div>
+            <div class="d up" id="pOrdersPct">▲ 4 单</div>
+            <div class="f" id="pOrderF">待接单 <b style="color:var(--accent)">2</b> · 待交付 <b style="color:var(--accent)">3</b></div>
+          </div>
+          <div class="kpi">
+            <div class="k">本月收益</div>
+            <div class="v num" id="pIncome">¥2,860</div>
+            <div class="d up" id="pIncomePct">▲ 12.8%</div>
+          </div>
+        </div>
+
+        <div class="trio">
+          <div class="panel">
+            <header>订单待办<span class="hint">点按直达</span></header>
+            <div class="todo">
+              <div class="it" data-goto="orders"><span class="icn a">接</span><div class="tx"><b>待接单</b><span>订单处理</span></div><span class="cnt num" id="pPd">2</span></div>
+              <div class="it" data-goto="orders"><span class="icn c">交</span><div class="tx"><b>待交付</b><span>履约中订单</span></div><span class="cnt num" id="pDlv">3</span></div>
+              <div class="it" data-goto="feedback"><span class="icn b">⭐</span><div class="tx"><b>被诉回应</b><span>评价与反馈中心</span></div><span class="cnt num" id="pAppeal">1</span></div>
+            </div>
+          </div>
+          <div class="panel">
+            <header>我的服务<span class="hint">服务管理</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>服务</th><th class="n">价格</th><th>状态</th></tr></thead>
+              <tbody id="spServList"></tbody>
+            </table></div>
+          </div>
+          <div class="panel">
+            <header>最近订单<span class="hint">订单处理</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>订单</th><th class="n">金额</th><th>状态</th></tr></thead>
+              <tbody id="spOrdList"></tbody>
+            </table></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════ 用户 · 工作台（观察/调整用户数据 + 会员等级测试） ════════════ -->
+      <section class="page" id="pg-user-home">
+        <div class="pghead">
+          <div>
+            <h2>用户工作台</h2>
+            <div class="sub" id="uSub">王丽 · 金卡会员 · 个人中心预览 · 截至今日 08-27</div>
+          </div>
+          <span class="sp"></span>
+          <span class="rolechip" id="uChip">用户 · 金卡会员</span>
+        </div>
+
+        <!-- 用户资料卡 + 等级测试 + 调整 -->
+        <div class="ucard" id="uCard">
+          <div class="ucard-top">
+            <span class="uav" id="uAv">王</span>
+            <div class="uname"><b id="uName">王丽</b><span class="tag ac" id="uTier">金卡会员</span></div>
+          </div>
+          <div class="umeta" id="uMeta">ID U003 · 手机 139****6688 · 上海 · 注册 2024-03-12</div>
+          <div class="leveltest">
+            <span class="lt-label">会员等级</span>
+            <div class="lt-switch" id="ltSwitch">
+              <button data-tier="普通用户">普通</button>
+              <button data-tier="银卡会员">银卡</button>
+              <button data-tier="金卡会员">金卡</button>
+              <button data-tier="黑金会员">黑金</button>
+            </div>
+            <span class="sp"></span>
+            <button class="btn" id="uAdjust">调整用户数据</button>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi main">
+            <div class="k">账户余额</div>
+            <div class="v num" id="uBal">¥2,480</div>
+            <div class="d up">+ ¥500 本月充值</div>
+          </div>
+          <div class="kpi">
+            <div class="k">积分</div>
+            <div class="v num" id="uPts">3,260</div>
+            <div class="d up">可兑换 8 张券</div>
+          </div>
+          <div class="kpi">
+            <div class="k">进行中订单</div>
+            <div class="v num" id="uActive">2</div>
+            <div class="d up">待服务 1 · 待评价 1</div>
+          </div>
+          <div class="kpi">
+            <div class="k">累计消费</div>
+            <div class="v num" id="uSpend">¥18,640</div>
+            <div class="d up">共 12 笔</div>
+          </div>
+        </div>
+
+        <div class="duo">
+          <div class="panel">
+            <header>我的订单<span class="hint">最近订单 · 用户视角</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>订单</th><th>服务</th><th>服务商</th><th class="n">金额</th><th>状态</th></tr></thead>
+              <tbody id="uOrdList"></tbody>
+            </table></div>
+          </div>
+          <div class="chart">
+            <h4>会员权益<span class="hint" id="uTierHint">金卡会员 · 可享</span></h4>
+            <div class="perks" id="uPerks"></div>
+          </div>
+        </div>
+
+        <div class="trio">
+          <div class="panel">
+            <header>关注的服务商<span class="hint">我的服务商</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>服务商</th><th>类型</th><th class="n">评分</th></tr></thead>
+              <tbody id="uFavList"></tbody>
+            </table></div>
+          </div>
+          <div class="panel">
+            <header>我的优惠券<span class="hint">优惠与权益</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>券</th><th class="n">面额</th><th>状态</th></tr></thead>
+              <tbody id="uCouponList"></tbody>
+            </table></div>
+          </div>
+          <div class="panel">
+            <header>我的评价<span class="hint">评价与反馈</span></header>
+            <div class="wrap"><table>
+              <thead><tr><th>服务</th><th class="n">评分</th><th>状态</th></tr></thead>
+              <tbody id="uRevList"></tbody>
+            </table></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════ 账户详情（四层通用 · 按角色分层动态渲染） ════════════ -->
+      <section class="page" id="pg-account">
+        <div class="pghead">
+          <div><h2>账户详情</h2><div class="sub" id="accSub">当前登录账号的完整资料</div></div>
+          <span class="sp"></span><span class="rolechip" id="accChip">总台 · 账户详情</span>
+        </div>
+
+        <!-- 顶部：头像 + 姓名 + 角色标签 -->
+        <div class="profile-hero">
+          <div class="pav" id="accAv">—</div>
+          <div class="pinfo">
+            <div class="pname"><b id="accName">—</b><span class="tag ac" id="accHeroRole">—</span></div>
+            <div class="pmeta" id="accMeta">—</div>
+          </div>
+          <div class="acc-actions">
+            <button class="btn" id="accCancel" style="display:none">取消</button>
+            <button class="btn primary" id="accEdit">编辑</button>
+          </div>
+        </div>
+
+        <!-- 分区内容由 JS 根据当前视角动态渲染 -->
+        <div class="profile-sections" id="accSections"></div>
+      </section>
+
+
+      <!-- ════════════ 服务商入驻申请（从服务商视角填写） ════════════ -->
+      <section class="page" id="pg-p-apply">
+        <div class="pghead">
+          <div><h2>业务申请</h2><div class="sub">入驻申请 / 业务新增 / 业务升级 · 提交后进入代理商初审、总台终审</div></div>
+          <span class="sp"></span><span class="rolechip">服务商 · 入驻申请</span>
+        </div>
+        <div class="ap-grid">
+          <div>
+            <!-- 申请主体信息 -->
+            <div class="panel">
+              <header>申请主体信息<span class="hint">新申请 / 业务变更均可填写</span></header>
+              <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <label class="flabel">申请方名称<span class="req">*</span>
+                  <input class="field" id="papName" value="麦麦提·艾力" placeholder="企业全称或个人姓名">
+                  <span class="hint">企业填营业执照全称，个人填真实姓名</span>
+                </label>
+                <label class="flabel">手机号<span class="req">*</span>
+                  <input class="field" id="papPhone" value="13812345678" maxlength="11" placeholder="11位手机号">
+                  <span class="hint">用于接收审核进度通知</span>
+                </label>
+                <label class="flabel" style="grid-column:1/-1">所属区域<span class="req">*</span>
+                  <div style="display:flex;gap:8px">
+                    <select class="field" id="papProv" style="flex:1"><option>新疆维吾尔自治区</option></select>
+                    <select class="field" id="papCity" style="flex:1"><option>乌鲁木齐市</option><option>昌吉回族自治州</option><option>伊犁哈萨克自治州</option><option>喀什地区</option></select>
+                    <select class="field" id="papDist" style="flex:1"><option>天山区</option><option>沙依巴克区</option><option>新市区</option><option>水磨沟区</option></select>
+                  </div>
+                  <span class="hint">三级联动选择，决定所属辖区与对应代理商</span>
+                </label>
+                <label class="flabel" style="grid-column:1/-1">业务范围<span class="req">*</span><span style="font-weight:400;color:var(--ink-3);font-size:11.5px">（可多选）</span>
+                  <div class="scope-chk" id="papScopes"></div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 资质信息 -->
+            <div class="panel">
+              <header>资质信息<span class="hint">按所选业务范围上传对应资质</span></header>
+              <div style="padding:16px">
+                <label class="flabel" style="margin-bottom:14px">资质类型<span class="req">*</span>
+                  <div class="type-grid" id="papTypes">
+                    <div class="ti on" data-t="营业执照"><span class="ic">📋</span><span class="nm">营业执照</span><span class="ds">企业/个体</span></div>
+                    <div class="ti" data-t="经营许可证"><span class="ic">📜</span><span class="nm">经营许可证</span><span class="ds">行业许可</span></div>
+                    <div class="ti" data-t="居民身份证"><span class="ic">🪪</span><span class="nm">居民身份证</span><span class="ds">个人身份</span></div>
+                    <div class="ti" data-t="演出许可"><span class="ic">🎭</span><span class="nm">演出许可</span><span class="ds">演出资质</span></div>
+                    <div class="ti" data-t="资质证书"><span class="ic">🏅</span><span class="nm">资质证书</span><span class="ds">技能认证</span></div>
+                    <div class="ti" data-t="其他"><span class="ic">📁</span><span class="nm">其他</span><span class="ds">证明材料</span></div>
+                  </div>
+                </label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+                  <label class="flabel">证件编号<span class="req">*</span>
+                    <input class="field" id="papCert" value="91650102MA77XXXX">
+                    <span class="hint">与证件完全一致</span>
+                  </label>
+                  <label class="flabel">有效期至<span class="req">*</span>
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <input class="field" type="date" id="papExpire" value="2028-06-30" style="flex:1">
+                      <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:400;color:var(--ink-2);white-space:nowrap;cursor:pointer"><input type="checkbox" id="papLong" style="accent-color:var(--accent)">长期有效</label>
+                    </div>
+                  </label>
+                </div>
+                <label class="flabel" style="margin-bottom:14px">发证机关
+                  <input class="field" id="papIssuer" placeholder="选填，如：乌鲁木齐市市场监督管理局">
+                </label>
+                <div class="flabel">资质附件<span class="req">*</span>
+                  <div class="upzone" id="papUpzone" onclick="document.getElementById('papFile').click()">
+                    <div class="ic">📤</div>
+                    <div class="tx">点击或拖拽文件到此处上传</div>
+                    <div class="sb">支持 JPG / PNG / PDF · 单文件 ≤ 10MB</div>
+                  </div>
+                  <input type="file" id="papFile" style="display:none" accept=".jpg,.jpeg,.png,.pdf">
+                  <div class="tipbox" style="margin-top:10px"><span>💡</span><span>建议上传清晰彩色扫描件，分辨率 ≥ 300dpi，确保文字可辨认</span></div>
+                  <div id="papFiles" style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+                    <div class="upfile"><span class="ic">🖼</span><div style="flex:1;min-width:0"><div class="nm">营业执照_正面.jpg</div><div class="mt">2.4 MB · 已上传</div></div><button class="btn" onclick="this.closest('.upfile').remove()">删除</button></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ap-foot">
+              <button class="btn" onclick="alert('草稿已保存')">保存草稿</button>
+              <button class="btn primary" onclick="submitProviderApply()">提交入驻申请</button>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="panel">
+              <header>申请流程</header>
+              <div style="padding:14px 16px" class="flow">
+                <div class="fstep"><span class="fnum">1</span><div><div class="ft">填写资料</div><div class="fd">主体信息与业务范围</div></div></div>
+                <div class="fstep"><span class="fnum">2</span><div><div class="ft">上传资质</div><div class="fd">营业执照等证照附件</div></div></div>
+                <div class="fstep"><span class="fnum">3</span><div><div class="ft">提交审核</div><div class="fd">进入服务商审核队列</div></div></div>
+                <div class="fstep"><span class="fnum">4</span><div><div class="ft">辖区初审</div><div class="fd">所属辖区代理商初审</div></div></div>
+                <div class="fstep"><span class="fnum">5</span><div><div class="ft">总台终审</div><div class="fd">总台服务商管理审核</div></div></div>
+                <div class="fstep"><span class="fnum">6</span><div><div class="ft">签约开通</div><div class="fd">签订合同后开通服务</div></div></div>
+              </div>
+            </div>
+            <div class="tipbox"><span>ℹ️</span><span>提交后可在「代理商中心 → 服务商管理」查看审批进度</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════ 资料填写页（通知公告·初审通过 → 填写资料） ════════════ -->
+      <section class="page" id="pg-fill">
+        <div class="pghead">
+          <div><h2 id="fillTitle">服务商入驻资料填写</h2><div class="sub" id="fillSub">初审已通过 · 补充完整资料后进入终审</div></div>
+          <span class="sp"></span>
+          <button class="btn" id="fillBack">← 返回通知公告</button>
+        </div>
+        <div class="ap-grid">
+          <div>
+            <!-- 申请主体信息 -->
+            <div class="panel">
+              <header>申请主体信息<span class="hint">初审已通过 · 请补充完整资料</span></header>
+              <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <label class="flabel">申请方类型<span class="req">*</span>
+                  <input class="field" id="ffType" readonly style="background:var(--bg);color:var(--ink-3);cursor:not-allowed">
+                  <span class="hint">按初审通过时申请的资格类型固定 · 不可更改</span>
+                </label>
+                <label class="flabel">申请方名称<span class="req">*</span>
+                  <input class="field" id="ffName" placeholder="企业全称或个人姓名">
+                  <span class="hint">企业填营业执照全称，个人填真实姓名</span>
+                </label>
+                <label class="flabel">手机号<span class="req">*</span>
+                  <input class="field" id="ffPhone" maxlength="11" placeholder="11位手机号">
+                  <span class="hint">用于接收审核进度通知</span>
+                </label>
+                <label class="flabel">所属区域<span class="req">*</span>
+                  <div style="display:flex;gap:8px">
+                    <select class="field" style="flex:1"><option>新疆维吾尔自治区</option></select>
+                    <select class="field" style="flex:1"><option>乌鲁木齐市</option><option>昌吉回族自治州</option><option>伊犁哈萨克自治州</option></select>
+                    <select class="field" style="flex:1"><option>天山区</option><option>沙依巴克区</option><option>新市区</option></select>
+                  </div>
+                </label>
+                <label class="flabel" style="grid-column:1/-1">业务范围<span class="req">*</span><span style="font-weight:400;color:var(--ink-3);font-size:11.5px">（可多选）</span>
+                  <div class="scope-chk" id="ffScopes"></div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 资质信息 -->
+            <div class="panel">
+              <header>资质信息<span class="hint">按申请类型上传对应资质</span></header>
+              <div style="padding:16px">
+                <label class="flabel" style="margin-bottom:14px">资质类型<span class="req">*</span>
+                  <div class="type-grid" id="ffTypes">
+                    <div class="ti on" data-t="营业执照"><span class="ic">📋</span><span class="nm">营业执照</span><span class="ds">企业/个体</span></div>
+                    <div class="ti" data-t="经营许可证"><span class="ic">📜</span><span class="nm">经营许可证</span><span class="ds">行业许可</span></div>
+                    <div class="ti" data-t="居民身份证"><span class="ic">🪪</span><span class="nm">居民身份证</span><span class="ds">个人身份</span></div>
+                    <div class="ti" data-t="演出许可"><span class="ic">🎭</span><span class="nm">演出许可</span><span class="ds">演出资质</span></div>
+                    <div class="ti" data-t="资质证书"><span class="ic">🏅</span><span class="nm">资质证书</span><span class="ds">技能认证</span></div>
+                    <div class="ti" data-t="其他"><span class="ic">📁</span><span class="nm">其他</span><span class="ds">证明材料</span></div>
+                  </div>
+                </label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+                  <label class="flabel">证件编号<span class="req">*</span>
+                    <input class="field" id="ffCert" placeholder="与证件完全一致">
+                  </label>
+                  <label class="flabel">有效期至<span class="req">*</span>
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <input class="field" type="date" id="ffExpire" style="flex:1">
+                      <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:400;color:var(--ink-2);white-space:nowrap;cursor:pointer"><input type="checkbox" id="ffLong" style="accent-color:var(--accent)">长期有效</label>
+                    </div>
+                  </label>
+                </div>
+                <label class="flabel" style="margin-bottom:14px">发证机关
+                  <input class="field" id="ffIssuer" placeholder="选填，如：乌鲁木齐市市场监督管理局">
+                </label>
+                <div class="flabel">资质附件<span class="req">*</span>
+                  <div class="upzone" id="ffUpzone" onclick="document.getElementById('ffFile').click()">
+                    <div class="ic">📤</div>
+                    <div class="tx">点击或拖拽文件到此处上传</div>
+                    <div class="sb">支持 JPG / PNG / PDF · 单文件 ≤ 10MB</div>
+                  </div>
+                  <input type="file" id="ffFile" style="display:none" accept=".jpg,.jpeg,.png,.pdf">
+                  <div id="ffFiles" style="margin-top:10px;display:flex;flex-direction:column;gap:8px"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ap-foot">
+              <button class="btn" id="ffSave">保存草稿</button>
+              <button class="btn primary" id="ffSubmit">提交资料</button>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="panel">
+              <header>审核进度</header>
+              <div style="padding:14px 16px" class="flow">
+                <div class="fstep"><span class="fnum ok">✓</span><div><div class="ft">资格初审</div><div class="fd">已通过</div></div></div>
+                <div class="fstep"><span class="fnum">2</span><div><div class="ft">完善资料</div><div class="fd">当前步骤 · 填写详细资料</div></div></div>
+                <div class="fstep"><span class="fnum">3</span><div><div class="ft">终审</div><div class="fd">管理总台审核</div></div></div>
+                <div class="fstep"><span class="fnum">4</span><div><div class="ft">签约开通</div><div class="fd">签订合同后开通</div></div></div>
+              </div>
+            </div>
+            <div class="tipbox"><span>ℹ️</span><span>资料提交后进入终审，可在「通知公告」关注审核结果</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════ 新增反馈页（我的反馈 · ＋新增反馈 → 表单页） ════════════ -->
+      <section class="page" id="pg-fbnew">
+        <div class="pghead">
+          <div><h2>新增反馈</h2><div class="sub">提交后进入反馈处理流程 · 可随时在详情页补充消息</div></div>
+          <span class="sp"></span>
+          <button class="btn" id="fbnBack">← 返回我的反馈</button>
+        </div>
+        <div class="panel">
+          <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <label class="flabel" style="grid-column:1/-1">反馈主题<span class="req">*</span>
+              <input class="field" id="fbnTitle" placeholder="一句话描述你的反馈，如：服务与描述不符">
+            </label>
+            <label class="flabel">反馈类型<span class="req">*</span>
+              <select class="field" id="fbnType"><option>售后</option><option>建议</option><option>咨询</option><option>投诉</option><option>其他</option></select>
+            </label>
+            <label class="flabel">反馈部门<span class="req">*</span>
+              <select class="field" id="fbnDept">
+                <option value="服务商负责人">服务商负责人</option>
+                <option value="代理商">代理商</option>
+                <option value="平台">平台（直接上报）</option>
+              </select>
+              <span class="hint">处理层次自下而上：服务商负责人 → 代理商 → 平台</span>
+            </label>
+            <label class="flabel" style="grid-column:1/-1">反馈对象<span class="req">*</span>
+              <select class="field" id="fbnTarget"><option>平台</option><option>服务商 麦麦提·艾力</option><option>服务商 古丽娜尔</option><option>其他</option></select>
+            </label>
+            <label class="flabel" style="grid-column:1/-1">反馈内容<span class="req">*</span>
+              <textarea class="field" id="fbnContent" rows="4" placeholder="详细描述问题发生的时间、经过与期望的处理方式…"></textarea>
+            </label>
+            <div class="flabel" style="grid-column:1/-1">附件
+              <div class="upzone" id="fbnUpzone" onclick="document.getElementById('fbnFile').click()">
+                <div class="ic">📎</div>
+                <div class="tx">点击上传图片 / 截图等凭证（选填）</div>
+                <div class="sb">支持 JPG / PNG · 单文件 ≤ 5MB</div>
+              </div>
+              <input type="file" id="fbnFile" style="display:none" accept=".jpg,.jpeg,.png">
+            </div>
+          </div>
+          <div class="ap-foot">
+            <button class="btn" id="fbnSave">保存草稿</button>
+            <button class="btn primary" id="fbnSubmit">提交反馈</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════ 反馈详情页（我的反馈 · 查看 → 详情页 + 发送消息） ════════════ -->
+      <section class="page" id="pg-fbdetail">
+        <div class="pghead">
+          <div><h2>反馈详情</h2><div class="sub">反馈处理全程留痕 · 可继续补充消息</div></div>
+          <span class="sp"></span>
+          <button class="btn" id="fbdBack">← 返回我的反馈</button>
+        </div>
+        <div class="panel" id="fbdBody"></div>
+      </section>
+
+      <!-- ════════════ 我的作品（用户视角 · 请柬作品卡片） ════════════ -->
+      <section class="page" id="pg-u-works">
+        <div class="pghead">
+          <div><h2>我的作品</h2><div class="sub" id="uWSub">当前用户创建的电子请柬作品 · 编辑请柬跳转 H5 编辑器</div></div>
+          <span class="sp"></span><span class="rolechip" id="uWChip">用户 · 我的作品</span>
+        </div>
+        <div class="toolbar">
+          <div class="filters" id="uWFilters">
+            <button class="chip on" data-f="all">全部</button>
+            <button class="chip" data-f="已发布">已发布</button>
+            <button class="chip" data-f="草稿">草稿</button>
+          </div>
+          <span class="sp"></span>
+          <button class="btn primary" id="uWNew">＋ 新建作品</button>
+        </div>
+        <div class="workgrid" id="uWorksGrid"></div>
+      </section>
+
+      <!-- ════════════ 通用列表页（由 JS 渲染） ════════════ -->
+      <section class="page" id="pg-list">
+        <div class="pghead">
+          <div><h2 id="listTitle"></h2><div class="sub" id="listSub"></div></div>
+          <span class="sp"></span><span class="rolechip" id="listChip"></span>
+        </div>
+        <div class="toolbar">
+          <div class="filters" id="listFilters"></div>
+          <span class="sp"></span>
+          <span class="searchbox">
+            <input class="field" id="listSearch" placeholder="搜索关键词…" style="min-width:200px">
+            <button class="clr" id="listSearchClr" type="button" title="清除">✕</button>
+          </span>
+          <button class="btn" id="listSearchBtn">搜索</button>
+          <button class="btn" id="listExport">导出</button>
+          <button class="btn primary" id="listNew" style="display:none">＋ 新建</button>
+        </div>
+        <div class="panel">
+          <header id="listPanelHead"><span>数据列表</span><span class="hint" id="listCount"></span></header>
+          <div class="wrap"><table id="listTable"></table></div>
+          <div class="pager">
+            <span>共 <b class="num" id="listTotal">0</b> 条</span>
+            <button class="btn" disabled>‹ 上一页</button><button class="btn" disabled>下一页 ›</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════ 四态 ════════════ -->
+      <section class="page" id="pg-states">
+        <div class="panel" data-state="empty">
+          <div class="empty">
+            <svg class="ic" viewBox="0 0 256 256" fill="currentColor"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200Zm-68-56a12,12,0,1,1-12-12A12,12,0,0,1,148,144Z"/></svg>
+            <b>暂无待处理数据</b>
+            <span>当前筛选条件下没有记录。可切换筛选条件，或点击下方按钮创建第一条。</span>
+            <button class="btn primary">＋ 新建</button>
+          </div>
+        </div>
+        <div class="panel" data-state="loading">
+          <div class="loading"><div style="width:100%">
+            <div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div>
+            <div class="skel" style="width:60%"></div>
+          </div></div>
+        </div>
+        <div class="panel" data-state="error">
+          <div class="error">
+            <svg class="ic" viewBox="0 0 256 256" fill="currentColor"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,172Z"/></svg>
+            <b>数据加载失败</b>
+            <span>接口请求超时，可能是网络波动或服务暂不可用。请重试，或联系运维管理员。</span>
+            <button class="btn" id="retryBtn">↻ 重试</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- ══ 审核弹窗 ══ -->
+<div class="scrim" id="scrim"></div>
+<div class="modal" id="modal">
+  <h3><span class="rolechip" style="background:var(--accent-soft);color:var(--accent)" id="modalTag">审核</span> <span id="modalTitle">服务商入驻审核</span><span id="modalAttach" style="display:none;margin-left:12px"><span class="attach-tag" style="display:inline-block;padding:3px 10px;border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--ink-2);margin-right:6px">附件</span><button class="btn sm" id="modalAttachBtn" style="padding:4px 12px;font-size:12px">点击预览</button></span><span class="x" id="modalX">✕</span></h3>
+  <dl class="kv" id="mKv"></dl>
+  <div id="mForm"></div>
+  <div class="fd" id="mOpinionWrap" style="display:none">
+    <label>审核意见（驳回必填）</label>
+    <textarea rows="3" placeholder="填写通过 / 驳回的理由，将同步通知申请人…" id="mOpinion"></textarea>
+  </div>
+  <div class="acts">
+    <button class="btn" id="mEdit" style="display:none">编辑</button>
+    <button class="btn" id="mCancel">关闭</button>
+    <button class="btn" id="mReject" style="display:none">驳回</button>
+    <button class="btn primary" id="mApprove" style="display:none">通过</button>
+  </div>
+</div>
+
+<!-- ══ 附件预览层 ══ -->
+<div class="scrim" id="attachScrim" style="display:none;z-index:100"></div>
+<div class="modal" id="attachModal" style="display:none;z-index:101;max-width:560px">
+  <h3><span class="rolechip" style="background:var(--accent-soft);color:var(--accent)">附件</span> 资质附件预览<span class="x" id="attachModalX">✕</span></h3>
+  <div id="attachList" style="display:flex;flex-direction:column;gap:10px;padding:8px 0"></div>
+  <div class="acts"><button class="btn" id="attachClose">关闭</button></div>
+</div>
+
+<!-- ══ 用户数据调整弹窗 ══ -->
+<div class="modal" id="umodal">
+  <h3><span class="rolechip" style="background:var(--accent-soft);color:var(--accent)">调整</span> 用户数据调整<span class="x" id="uModalX">✕</span></h3>
+  <div class="fd"><label>目标用户</label><div class="uadjwho" id="uAdjWho">—</div></div>
+  <div class="duo-inline">
+    <div class="fd"><label>会员等级</label>
+      <select class="field" id="uAdjTier">
+        <option>普通用户</option><option>银卡会员</option><option>金卡会员</option><option>黑金会员</option>
+      </select>
+    </div>
+    <div class="fd"><label>账户余额（元）</label><input class="field" id="uAdjBal"></div>
+  </div>
+  <div class="duo-inline">
+    <div class="fd"><label>积分</label><input class="field" id="uAdjPts"></div>
+    <div class="fd"><label>调整类型</label>
+      <select class="field" id="uAdjType"><option>客服补偿</option><option>等级复核</option><option>功能/服务测试</option><option>人工修正</option></select>
+    </div>
+  </div>
+  <div class="fd"><label>调整说明（留痕）</label><textarea rows="2" id="uAdjNote" placeholder="记录调整原因，将同步写入用户操作日志…"></textarea></div>
+  <div class="acts">
+    <button class="btn" id="uAdjCancel">取消</button>
+    <button class="btn primary" id="uAdjSave">保存调整</button>
+  </div>
+</div>
+
+<!-- ══ 入驻申请引导弹窗（成为代理商 / 成为服务商） ══ -->
+<div class="modal" id="upModal">
+  <h3><span class="rolechip" style="background:var(--accent-soft);color:var(--accent)">入驻</span> <span id="upModalTitle">申请成为代理商</span><span class="x" id="upModalX">✕</span></h3>
+  <div class="fd"><div id="upModalDesc" style="font-size:13px;line-height:1.7;color:var(--ink-2)"></div></div>
+  <div class="fd"><label>申请理由<span class="req">*</span></label><textarea rows="3" id="upReason" placeholder="简要说明入驻理由与自身条件（如从业经验、团队规模、服务区域、资源优势等）…"></textarea></div>
+  <div class="fd" id="upScopeWrap" style="display:none"><label>服务类型<span class="req">*</span><span style="font-weight:400;color:var(--ink-3);font-size:11.5px">（可多选）</span></label>
+    <div class="scope-chk" id="upScopes"></div>
+  </div>
+  <div class="fd" id="upRegionWrap" style="display:none"><label id="upRegionLabel">开展服务区域<span class="req">*</span><span style="font-weight:400;color:var(--ink-3);font-size:11.5px">（三级联动选择）</span></label>
+    <div style="display:flex;gap:8px">
+      <select class="field" id="upProv"><option value="">省份</option><option>新疆维吾尔自治区</option><option>甘肃省</option><option>青海省</option></select>
+      <select class="field" id="upCity"><option value="">城市</option></select>
+      <select class="field" id="upDist"><option value="">区县</option></select>
+    </div>
+  </div>
+  <dl class="kv" id="upModalKv"></dl>
+  <div class="acts">
+    <button class="btn" id="upCancel">取消</button>
+    <button class="btn primary" id="upSubmit">提交申请</button>
+  </div>
+</div>

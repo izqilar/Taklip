@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>请柬云在线设计平台 · 首页原型</title>
+<style>
+/* ============ 基础 ============ */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand-50:#FFF1F4;--brand-100:#FFE0E7;--brand-200:#FFC5D3;--brand-300:#FF9DB2;
+  --brand-500:#FF4D6D;--brand-600:#F22E56;--brand-700:#C81E42;--brand-800:#A81637;
+  --emerald:#10b981;--emerald-h:#059669;
+  --gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-400:#9ca3af;
+  --gray-500:#6b7280;--gray-600:#4b5563;--gray-700:#374151;--gray-800:#1f2937;--gray-900:#111827;
+}
+html{scroll-behavior:smooth}
+body{font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:14px;line-height:1.6;color:var(--gray-900);background:#fff;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+svg{flex:none}
+.num{font-variant-numeric:tabular-nums}
+/* ============ 顶部导航 ============ */
+.site-header{position:fixed;top:0;left:0;right:0;z-index:60;background:var(--brand-700);color:#fff;box-shadow:0 4px 6px -1px rgba(0,0,0,.12)}
+.header-inner{max-width:1280px;margin:0 auto;height:64px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{display:flex;align-items:center;font-size:24px;font-weight:800;letter-spacing:-.025em;cursor:pointer;flex-shrink:0}
+.logo .gold{color:#facc15;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.logo .white{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.nav-main{display:none;align-items:center;font-size:14px;font-weight:500}
+@media(min-width:1024px){.nav-main{display:flex}}
+.nav-item{position:relative;padding:8px 12px;transition:color .15s;white-space:nowrap}
+.nav-item:hover{color:#fde68a}
+.nav-item.divider{border-right:1px solid rgba(255,255,255,.2)}
+.nav-item .caret{display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-left:2px;opacity:.7}
+.drop-menu{display:none;position:absolute;top:100%;left:0;width:168px;background:var(--brand-700);
+  border:1px solid rgba(255,255,255,.1);border-radius:0 0 8px 8px;padding:8px 0;
+  box-shadow:0 20px 25px -5px rgba(0,0,0,.25);z-index:70}
+.nav-item:hover .drop-menu{display:block}
+.drop-item{display:flex;align-items:center;gap:8px;width:100%;padding:8px 16px;color:#fff;font-size:14px;font-weight:400;text-align:left;transition:all .15s}
+.drop-item:hover{background:rgba(255,255,255,.1);color:#fde68a}
+.drop-item .di{display:flex;height:20px;width:20px;align-items:center;justify-content:center;opacity:.9}
+.my-works{display:inline-flex;align-items:center;gap:6px;margin-left:4px;border-radius:9999px;background:#fff;
+  color:var(--brand-700);padding:6px 16px;font-size:14px;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.1);white-space:nowrap;transition:background .15s}
+.my-works:hover{background:#f3f4f6}
+.header-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.btn-login{border:1px solid rgba(255,255,255,.6);border-radius:9999px;padding:6px 16px;font-size:14px;font-weight:500;transition:background .15s}
+.btn-login:hover{background:rgba(255,255,255,.1)}
+.btn-register{border-radius:9999px;background:#fff;color:var(--brand-700);padding:6px 16px;font-size:14px;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.1);transition:background .15s}
+.btn-register:hover{background:#f3f4f6}
+.icon-btn{display:flex;height:32px;width:32px;align-items:center;justify-content:center;border-radius:9999px;color:rgba(255,255,255,.85);transition:background .15s}
+.icon-btn:hover{background:rgba(255,255,255,.12)}
+.hamburger{display:flex;flex-direction:column;gap:5px;padding:8px}
+.hamburger span{display:block;width:22px;height:2px;background:#fff;border-radius:2px}
+@media(min-width:1024px){.hamburger{display:none}}
+.mobile-panel{display:none;position:fixed;top:64px;left:0;right:0;z-index:55;background:var(--brand-700);border-top:1px solid rgba(255,255,255,.12);padding:8px 16px 16px;box-shadow:0 10px 15px -3px rgba(0,0,0,.25)}
+.mobile-panel.open{display:block}
+.mobile-panel a,.mobile-panel button{display:flex;width:100%;align-items:center;justify-content:space-between;padding:12px 8px;color:#fff;font-size:15px;border-bottom:1px solid rgba(255,255,255,.08)}
+.mobile-panel a:last-child,.mobile-panel button:last-child{border-bottom:0}
+.mobile-panel .sub{font-size:13px;color:rgba(255,255,255,.8)}
+/* ============ 首屏：红色渐变区 ============ */
+.hero-wrap{background:linear-gradient(to bottom,var(--brand-700),#d32f4f 50%,#e75d6f);position:relative}
+.deco{pointer-events:none;position:absolute;inset:0;overflow:hidden;opacity:.2}
+.deco i{position:absolute;border-radius:9999px;filter:blur(64px)}
+.deco .b1{left:-80px;top:40px;height:256px;width:256px;background:#fde047}
+.deco .b2{right:40px;top:80px;height:192px;width:192px;background:#fdba74}
+.deco .b3{left:33%;bottom:160px;height:224px;width:224px;background:#fca5a5}
+/* 轮播 */
+.banner{position:relative;width:100%;overflow:hidden;background:rgba(0,0,0,.1);box-shadow:0 25px 50px -12px rgba(0,0,0,.3)}
+.track{display:flex;transition:transform .7s ease-out}
+.slide{flex:0 0 100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  color:#fff;background:linear-gradient(to right,#b91c3c,#e11d48);padding:128px 24px;min-height:380px}
+.slide .s-icon{font-size:48px;margin-bottom:16px}
+.eyebrow{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);border-radius:9999px;padding:2px 12px;font-size:12px;font-weight:500;margin-bottom:16px;backdrop-filter:blur(4px)}
+.slide h1{font-size:30px;font-weight:800;letter-spacing:.025em;margin-bottom:4px}
+@media(min-width:768px){.slide h1{font-size:36px}}
+.slide .sub{font-size:14px;letter-spacing:.06em;color:rgba(255,255,255,.8)}
+.cta-row{margin-top:20px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.btn-white{border-radius:9999px;background:#fff;color:var(--brand-700);padding:8px 24px;font-size:14px;font-weight:700;box-shadow:0 10px 15px -3px rgba(0,0,0,.15);transition:background .15s}
+.btn-white:hover{background:#f3f4f6}
+.btn-ghost{border-radius:9999px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.1);color:#fff;padding:8px 24px;font-size:14px;font-weight:700;backdrop-filter:blur(4px);transition:background .15s}
+.btn-ghost:hover{background:rgba(255,255,255,.2)}
+.arr{position:absolute;top:50%;transform:translateY(-50%);border-radius:9999px;background:rgba(255,255,255,.1);color:#fff;font-size:20px;line-height:1;padding:8px 12px;backdrop-filter:blur(4px);transition:background .15s;z-index:5}
+.arr:hover{background:rgba(255,255,255,.25)}
+.arr-l{left:12px}.arr-r{right:12px}
+.dots{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:5}
+.dot{height:8px;border-radius:9999px;transition:all .25s}
+.dot.on{width:24px;background:#fff}
+.dot.off{width:8px;background:rgba(255,255,255,.4)}
+/* 核心引导 */
+.guide-wrap{max-width:1280px;margin:0 auto;padding:0 16px 16px;position:relative}
+.guide{display:grid;grid-template-columns:1fr;gap:12px;background:#fff;border-radius:12px;padding:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,.15)}
+@media(min-width:640px){.guide{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1024px){.guide{grid-template-columns:repeat(4,1fr)}}
+.guide-card{display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;transition:background .15s;cursor:default}
+.guide-card:hover{background:var(--gray-50)}
+.guide-ico{width:40px;height:40px;flex-shrink:0;border-radius:9999px;background:var(--brand-50);display:flex;align-items:center;justify-content:center;font-size:20px}
+.guide-card h3{font-size:14px;font-weight:700;color:var(--gray-900)}
+.guide-card p{font-size:11px;color:var(--gray-500)}
+/* 搜索 */
+.search-wrap{max-width:768px;margin:0 auto;padding:0 16px 24px;position:relative}
+.search-bar{display:flex;overflow:hidden;border-radius:9999px;background:#fff;box-shadow:0 10px 15px -3px rgba(0,0,0,.15)}
+.search-bar input{flex:1;min-width:0;padding:12px 20px;font-size:14px;color:var(--gray-700);outline:none;border:none;background:transparent}
+.search-bar button{background:var(--emerald);padding:12px 28px;font-size:14px;font-weight:500;color:#fff;transition:background .15s;white-space:nowrap}
+.search-bar button:hover{background:var(--emerald-h)}
+.hot-tags{margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.8)}
+.tag-pill{border:1px solid rgba(255,255,255,.3);border-radius:9999px;padding:2px 8px;transition:background .15s}
+.tag-pill:hover{background:rgba(255,255,255,.1)}
+/* ============ 模板区 ============ */
+.tpl-sec{max-width:1280px;margin:0 auto;padding:48px 24px;scroll-margin-top:64px}
+.cats{display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--gray-100);padding-bottom:16px;margin-bottom:32px}
+.cat-btn{border-radius:2px;padding:8px 20px;font-size:14px;font-weight:500;transition:all .15s;white-space:nowrap}
+.cat-btn.on{background:var(--emerald);color:#fff}
+.cat-btn.off{color:var(--gray-600)}
+.cat-btn.off:hover{background:var(--gray-100)}
+.tpl-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(min-width:640px){.tpl-grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:768px){.tpl-grid{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:1024px){.tpl-grid{grid-template-columns:repeat(5,1fr)}}
+.tcard{position:relative;cursor:pointer;border:1px solid var(--gray-100);background:#fff;border-radius:12px;
+  box-shadow:0 1px 2px 0 rgba(0,0,0,.05);overflow:hidden;transition:transform .2s,box-shadow .2s}
+.tcard:hover{transform:translateY(-4px);box-shadow:0 10px 15px -3px rgba(0,0,0,.12)}
+.cover{position:relative;aspect-ratio:375/667;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.c-ring{position:absolute;width:76%;height:76%;border:1px dashed rgba(0,0,0,.08);border-radius:9999px}
+.c-ring.c2{width:56%;height:56%;border-style:solid;opacity:.5}
+.c-title{position:relative;z-index:2;font-weight:700;font-size:16px;text-align:center;padding:0 10px;line-height:1.5;word-break:break-all}
+.fav{position:absolute;top:8px;right:8px;z-index:10;border-radius:9999px;background:rgba(255,255,255,.85);padding:5px;font-size:17px;line-height:1;box-shadow:0 1px 2px rgba(0,0,0,.08);backdrop-filter:blur(4px);transition:background .15s}
+.fav:hover{background:#fff}
+.info-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 12px 0}
+.tname{font-size:14px;font-weight:500;color:var(--gray-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.official{flex-shrink:0;background:var(--brand-50);color:var(--brand-600);border-radius:2px;padding:2px 6px;font-size:12px;font-weight:500}
+.info-bot{display:flex;align-items:center;justify-content:space-between;padding:4px 12px 12px;font-size:12px;color:var(--gray-400)}
+.price{color:var(--brand-700);font-weight:600}
+.free{color:#16a34a}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:12px;background:rgba(0,0,0,.4);opacity:0;transition:opacity .2s;z-index:8}
+.tcard:hover .overlay{opacity:1}
+.o-preview{border:1px solid rgba(255,255,255,.7);background:rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:500;backdrop-filter:blur(4px);transition:background .15s}
+.o-preview:hover{background:rgba(255,255,255,.2)}
+.o-create{background:var(--brand-500);color:#fff;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:background .15s}
+.o-create:hover{background:var(--brand-600)}
+.empty{grid-column:1/-1;padding:80px 0;text-align:center;color:var(--gray-400)}
+/* ============ 服务商专区 ============ */
+.prov-sec{max-width:1280px;margin:0 auto;padding:16px 24px;scroll-margin-top:64px}
+.prov-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px}
+.prov-head h2{font-size:24px;font-weight:800;color:var(--gray-900)}
+.prov-head p{margin-top:4px;font-size:14px;color:var(--gray-500)}
+.prov-more{font-size:14px;font-weight:600;color:var(--brand-600);transition:color .15s}
+.prov-more:hover{color:var(--brand-700)}
+.prov-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(min-width:640px){.prov-grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1024px){.prov-grid{grid-template-columns:repeat(6,1fr)}}
+.prov-card{display:block;border:1px solid var(--gray-100);background:#fff;border-radius:16px;padding:20px;
+  box-shadow:0 1px 2px rgba(0,0,0,.05);transition:transform .15s,box-shadow .15s,border-color .15s}
+.prov-card:hover{transform:translateY(-4px);border-color:var(--brand-200);box-shadow:0 4px 6px -1px rgba(0,0,0,.1)}
+.prov-ico{width:48px;height:48px;border-radius:12px;background:var(--brand-50);display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:12px}
+.prov-name{font-size:16px;font-weight:700;color:var(--gray-900)}
+.prov-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.prov-tag{background:var(--gray-50);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--gray-500);transition:all .15s}
+.prov-card:hover .prov-tag{background:var(--brand-50);color:var(--brand-600)}
+.prov-link{margin-top:12px;display:inline-block;font-size:12px;font-weight:600;color:var(--brand-600)}
+.prov-note{margin-top:16px;text-align:center;font-size:12px;color:var(--gray-400)}
+/* ============ 页脚 ============ */
+.footer{margin-top:40px;background:linear-gradient(to bottom,#a3163a,#7d1029);color:#fff;padding:48px 24px}
+.footer-inner{max-width:1280px;margin:0 auto;display:grid;gap:32px}
+@media(min-width:768px){.footer-inner{grid-template-columns:repeat(3,1fr)}}
+.f-brand-name{font-size:20px;font-weight:800;letter-spacing:-.025em}
+.f-tagline{margin-top:12px;max-width:320px;font-size:14px;color:rgba(255,255,255,.7)}
+.f-col h4{font-size:14px;font-weight:700;margin-bottom:12px}
+.f-col ul{list-style:none}
+.f-col li{margin-bottom:8px}
+.f-col a{font-size:14px;color:rgba(255,255,255,.7);transition:color .15s}
+.f-col a:hover{color:#fff}
+.f-bottom{max-width:1280px;margin:32px auto 0;border-top:1px solid rgba(255,255,255,.15);padding-top:20px;text-align:center;font-size:12px;color:rgba(255,255,255,.5)}
+/* ============ 弹窗 / Toast ============ */
+.modal{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);padding:16px}
+.modal.open{display:flex}
+.modal-box{width:100%;max-width:384px;background:#fff;border-radius:16px;padding:20px;box-shadow:0 20px 25px -5px rgba(0,0,0,.2)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.modal-head h3{font-size:16px;font-weight:600;color:var(--gray-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-right:12px}
+.modal-close{border-radius:9999px;padding:4px 8px;color:var(--gray-400);font-size:15px;transition:all .15s}
+.modal-close:hover{background:var(--gray-100);color:var(--gray-600)}
+.phone{width:160px;margin:0 auto;border-radius:12px;border:1px solid var(--gray-100);background:var(--gray-50);overflow:hidden;box-shadow:inset 0 2px 4px 0 rgba(0,0,0,.06)}
+.phone .p-cover{aspect-ratio:375/667;display:flex;align-items:center;justify-content:center;position:relative}
+.use-btn{width:100%;margin-top:16px;background:var(--brand-500);color:#fff;border-radius:8px;padding:10px;font-size:14px;font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.15);transition:background .15s}
+.use-btn:hover{background:var(--brand-600)}
+#toast{position:fixed;top:80px;left:50%;z-index:200;transform:translateX(-50%) translateY(-16px);background:var(--gray-900);color:#fff;
+  padding:10px 20px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;box-shadow:0 10px 15px -3px rgba(0,0,0,.3);max-width:80vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:640px){.slide{padding:96px 20px;min-height:340px}.slide .s-icon{font-size:40px}}
+/* ============ 服务云专区视图（页内覆盖层） ============ */
+.svc-view{position:fixed;inset:0;z-index:90;background:var(--gray-50);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.svc-view[hidden]{display:none}
+.svc-topbar{position:sticky;top:0;z-index:10;background:var(--brand-700);color:#fff;box-shadow:0 4px 6px -1px rgba(0,0,0,.12)}
+.svc-top-inner{max-width:1280px;margin:0 auto;height:60px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.svc-back{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:9999px;border:1px solid rgba(255,255,255,.4);font-size:14px;font-weight:500;color:#fff;transition:background .15s;white-space:nowrap}
+.svc-back:hover{background:rgba(255,255,255,.12)}
+.svc-top-title{font-size:16px;font-weight:700}
+.svc-top-crumb{font-size:12px;color:rgba(255,255,255,.75)}
+.svc-kefu-top{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:9999px;background:#fff;color:var(--brand-700);font-size:13px;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.15);transition:background .15s;white-space:nowrap}
+.svc-kefu-top:hover{background:#fde68a}
+.svc-body{max-width:1280px;margin:0 auto;padding:24px 20px 80px}
+.svc-hero{display:flex;align-items:center;gap:16px;background:linear-gradient(to right,#c81e42,#e11d48);color:#fff;border-radius:16px;padding:24px;box-shadow:0 10px 15px -3px rgba(0,0,0,.15)}
+.svc-hero.ov{flex-direction:column;align-items:flex-start;gap:8px}
+.svc-hero-icon{width:56px;height:56px;flex-shrink:0;border-radius:14px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:30px}
+.svc-hero h1{font-size:24px;font-weight:800;letter-spacing:.01em}
+.svc-hero p{margin-top:4px;font-size:14px;color:rgba(255,255,255,.85);max-width:640px}
+.svc-count{margin-left:auto;flex-shrink:0;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);border-radius:9999px;padding:4px 14px;font-size:13px;white-space:nowrap}
+.svc-guarantee{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:16px;padding:12px 16px;background:#fff;border:1px solid var(--gray-100);border-radius:12px;font-size:13px;color:var(--gray-600);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.svc-guarantee b{color:var(--brand-600);font-weight:600}
+.svc-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:20px}
+.svc-chips{display:flex;flex-wrap:wrap;gap:8px}
+.svc-chip{border:1px solid var(--gray-200);background:#fff;border-radius:9999px;padding:6px 14px;font-size:13px;color:var(--gray-600);transition:all .15s}
+.svc-chip.on{background:var(--emerald);border-color:var(--emerald);color:#fff}
+.svc-chip:hover{border-color:var(--gray-400)}
+.svc-search{margin-left:auto;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--gray-200);border-radius:9999px;padding:6px 14px;font-size:13px;color:var(--gray-500)}
+.svc-search input{width:190px;border:none;outline:none;font-size:13px;color:var(--gray-700);background:transparent}
+@media(max-width:640px){.svc-search{margin-left:0;width:100%}.svc-search input{width:100%}}
+.svc-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:20px}
+@media(min-width:640px){.svc-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1024px){.svc-grid{grid-template-columns:repeat(3,1fr)}}
+.svc-card{display:flex;flex-direction:column;background:#fff;border:1px solid var(--gray-100);border-radius:14px;padding:18px;box-shadow:0 1px 2px rgba(0,0,0,.05);transition:transform .15s,box-shadow .15s}
+.svc-card:hover{transform:translateY(-3px);box-shadow:0 10px 15px -3px rgba(0,0,0,.1)}
+.svc-head{display:flex;align-items:center;gap:12px;background:#f5f6f8;margin:-18px -18px 0;padding:14px 18px;border-radius:14px 14px 0 0;border-bottom:1px solid #eceef1}
+.svc-avatar{width:46px;height:46px;flex-shrink:0;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff}
+.svc-name-line{min-width:0;flex:1}
+.svc-name{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:var(--gray-900);white-space:nowrap;overflow:hidden}
+.svc-name .tn{overflow:hidden;text-overflow:ellipsis}
+.svc-badge{flex-shrink:0;font-size:11px;font-weight:500;color:var(--brand-600);background:var(--brand-50);border:1px solid var(--brand-100);border-radius:4px;padding:1px 6px;white-space:nowrap}
+.svc-badge.gold{color:#92610a;background:#fef3c7;border-color:#fde68a}
+.svc-sub{display:flex;align-items:center;gap:6px;margin-top:3px;font-size:12px;color:var(--gray-500)}
+.svc-dot{width:7px;height:7px;border-radius:9999px;background:#22c55e;flex-shrink:0}
+.svc-rating{flex-shrink:0;text-align:right;font-size:13px;color:var(--gray-500)}
+.svc-rating b{display:block;font-size:17px;font-weight:800;color:#f59e0b}
+.svc-desc{margin-top:12px;font-size:13px;color:var(--gray-500);line-height:1.6}
+.svc-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.svc-tag{background:var(--gray-50);border:1px solid var(--gray-100);border-radius:6px;padding:3px 8px;font-size:12px;color:var(--gray-600)}
+.svc-meta{margin-top:12px;padding-top:12px;border-top:1px dashed var(--gray-200);display:flex;justify-content:space-between;font-size:12px;color:var(--gray-500)}
+.svc-meta b{color:var(--gray-800);font-weight:600}
+.svc-foot{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.svc-price{font-size:16px;font-weight:800;color:var(--brand-700)}
+.svc-price small{font-size:12px;font-weight:500;color:var(--gray-400)}
+.svc-actions{display:flex;gap:8px}
+.svc-btn{border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;transition:all .15s;white-space:nowrap}
+.svc-btn.ghost{border:1px solid var(--gray-300);color:var(--gray-700);background:#fff}
+.svc-btn.ghost:hover{border-color:var(--brand-500);color:var(--brand-600)}
+.svc-btn.solid{background:var(--brand-500);color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.svc-btn.solid:hover{background:var(--brand-600)}
+.svc-ov-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:20px}
+@media(min-width:640px){.svc-ov-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1024px){.svc-ov-grid{grid-template-columns:repeat(3,1fr)}}
+.svc-ov-card{display:flex;flex-direction:column;background:#fff;border:1px solid var(--gray-100);border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(0,0,0,.05);transition:transform .15s,box-shadow .15s,border-color .15s}
+.svc-ov-card:hover{transform:translateY(-3px);border-color:var(--brand-200);box-shadow:0 10px 15px -3px rgba(0,0,0,.1)}
+.svc-ov-head{display:flex;align-items:center;justify-content:space-between}
+.svc-ov-ico{width:48px;height:48px;border-radius:12px;background:var(--brand-50);display:flex;align-items:center;justify-content:center;font-size:24px}
+.svc-ov-count{font-size:12px;color:var(--gray-500);background:var(--gray-50);border-radius:9999px;padding:3px 10px}
+.svc-ov-card h3{margin-top:12px;font-size:17px;font-weight:800;color:var(--gray-900)}
+.svc-ov-card p{margin-top:4px;font-size:13px;color:var(--gray-500);line-height:1.6}
+.svc-ov-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.svc-ov-tag{background:var(--gray-50);border-radius:6px;padding:3px 8px;font-size:12px;color:var(--gray-500)}
+.svc-ov-link{margin-top:14px;display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--brand-600)}
+.svc-ov-card:hover .svc-ov-link{color:var(--brand-700)}
+.svc-empty{padding:60px 0;text-align:center;color:var(--gray-400)}
+/* ============ 预约服务视图 ============ */
+.book-view{position:fixed;inset:0;z-index:95;background:var(--gray-50);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.book-view[hidden]{display:none}
+.book-topbar{position:sticky;top:0;z-index:10;background:var(--brand-700);color:#fff;box-shadow:0 4px 6px -1px rgba(0,0,0,.12)}
+.book-top-inner{max-width:1280px;margin:0 auto;height:60px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.book-body{max-width:760px;margin:0 auto;padding:24px 20px 80px}
+.bk-card{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--gray-100);border-radius:14px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.bk-avatar{width:48px;height:48px;flex-shrink:0;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff}
+.bk-card-name{font-size:16px;font-weight:700;color:var(--gray-900)}
+.bk-card-sub{margin-top:2px;font-size:12px;color:var(--gray-500)}
+.bk-card-price{margin-left:auto;text-align:right;flex-shrink:0}
+.bk-card-price b{display:block;font-size:16px;font-weight:800;color:var(--brand-700)}
+.bk-card-price small{font-size:12px;color:var(--gray-400)}
+.bk-form{background:#fff;border:1px solid var(--gray-100);border-radius:14px;padding:20px;margin-top:16px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.bk-field{margin-bottom:18px}
+.bk-field label{display:block;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--gray-700)}
+.bk-field label em{color:var(--brand-600);font-style:normal}
+.bk-field input[type=text],.bk-field input[type=tel],.bk-field input[type=number],.bk-field input[type=date],.bk-field textarea{width:100%;border:1px solid var(--gray-200);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--gray-800);outline:none;background:#fff;font-family:inherit;transition:border-color .15s}
+.bk-field input:focus,.bk-field textarea:focus{border-color:var(--brand-500)}
+.bk-field textarea{min-height:76px;resize:vertical}
+.bk-field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.bk-field-row{grid-template-columns:1fr}}
+.bk-chips{display:flex;flex-wrap:wrap;gap:8px}
+.bk-chip{border:1px solid var(--gray-200);background:#fff;border-radius:8px;padding:7px 14px;font-size:13px;color:var(--gray-600);transition:all .15s}
+.bk-chip.on{background:var(--emerald);border-color:var(--emerald);color:#fff}
+.bk-chip:hover{border-color:var(--gray-400)}
+.bk-agree{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--gray-500);margin:2px 0 18px;cursor:pointer}
+.bk-agree input{margin-top:2px;accent-color:var(--brand-600)}
+.bk-submit{width:100%;background:var(--brand-500);color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:700;box-shadow:0 4px 8px -2px rgba(242,46,86,.4);transition:background .15s}
+.bk-submit:hover{background:var(--brand-600)}
+.bk-ok{background:#fff;border:1px solid var(--gray-100);border-radius:14px;padding:40px 20px;margin-top:16px;text-align:center;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.bk-ok-icon{width:64px;height:64px;margin:0 auto;border-radius:9999px;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800}
+.bk-ok h2{margin-top:16px;font-size:20px;font-weight:800;color:var(--gray-900)}
+.bk-ok .ok-no{margin-top:8px;display:inline-block;background:var(--gray-50);border:1px dashed var(--gray-300);border-radius:8px;padding:6px 14px;font-size:13px;color:var(--gray-600)}
+.bk-ok p{margin-top:10px;font-size:13px;color:var(--gray-500);line-height:1.7}
+.bk-ok p b{color:var(--gray-800)}
+.bk-ok-actions{display:flex;gap:12px;margin-top:22px;justify-content:center;flex-wrap:wrap}
+.bk-note{font-size:11px;color:var(--gray-400);text-align:center;margin-top:14px;line-height:1.6}
+/* 客服悬浮按钮与弹窗 */
+.kefu-fab{position:fixed;right:22px;bottom:26px;z-index:130;display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#e11d48,#c81e42);color:#fff;border-radius:9999px;padding:12px 20px;font-size:14px;font-weight:700;box-shadow:0 10px 20px -5px rgba(200,30,66,.5);transition:transform .15s,box-shadow .15s}
+.kefu-fab:hover{transform:translateY(-2px);box-shadow:0 14px 24px -5px rgba(200,30,66,.55)}
+.kefu-body{padding:4px 0}
+.kefu-item{display:flex;align-items:center;gap:12px;width:100%;padding:13px 12px;border-radius:10px;font-size:14px;color:var(--gray-800);transition:background .15s;text-align:left}
+.kefu-item:hover{background:var(--gray-50)}
+.kefu-item .ki{display:flex;width:38px;height:38px;flex-shrink:0;align-items:center;justify-content:center;border-radius:10px;background:var(--brand-50);color:var(--brand-600)}
+.kefu-item .ki-sub{font-size:12px;color:var(--gray-400);font-weight:400}
+.kefu-item .ki-name{font-weight:600}
+.kefu-note{margin-top:10px;padding-top:12px;border-top:1px solid var(--gray-100);font-size:12px;color:var(--gray-400);text-align:center}
+</style>
+</head>
+<body>
+<!-- ===== 顶部导航 ===== -->
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo" data-act="goto:top"><span class="gold">庆柬</span><span class="white">云</span></a>
+
+    <nav class="nav-main">
+      <a class="nav-item divider" data-act="goto:top">首页</a>
+      <a class="nav-item divider" data-act="goto:templates">模板库</a>
+      <button class="nav-item divider" data-act="toast:设计工坊需登录后使用（演示）">设计工坊</button>
+      <div class="nav-item divider">
+        <button class="nav-item" data-act="goto:providers" style="padding:0;border-right:0">
+          服务云
+          <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="drop-menu">
+          <button class="drop-item" data-act="svc:design"><span class="di"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg></span>特约设计</button>
+          <button class="drop-item" data-act="svc:photo"><span class="di"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></span>光影纪录</button>
+          <button class="drop-item" data-act="svc:venue"><span class="di"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 18v-7"/><path d="M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/></svg></span>宴会场地</button>
+          <button class="drop-item" data-act="svc:floral"><span class="di"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M20 11v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="M7.5 7a1 1 0 0 1 0-5A4.8 8 0 0 1 12 7a4.8 8 0 0 1 4.5-5 1 1 0 0 1 0 5"/><rect x="3" y="7" width="18" height="4" rx="1"/></svg></span>花艺礼赠</button>
+          <button class="drop-item" data-act="svc:ritual"><span class="di"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402"/><path d="m20 9-3 9"/><path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34"/><path d="M7 18 4 9"/><circle cx="12" cy="4" r="2"/><circle cx="20" cy="7" r="2"/><circle cx="4" cy="7" r="2"/></svg></span>仪式执事</button>
+          <button class="drop-item" data-act="svc:show"><span class="di"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>演艺星团</button>
+        </div>
+      </div>
+      <button class="nav-item" data-act="toast:一键制作即将上线（演示）">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:2px"><path d="m12 8 6-3-6-3v10"/><path d="m8 11.99-5.5 3.14a1 1 0 0 0 0 1.74l8.5 4.86a2 2 0 0 0 2 0l8.5-4.86a1 1 0 0 0 0-1.74L16 12"/><path d="m6.49 12.85 11.02 6.3"/><path d="M17.51 12.85 6.5 19.15"/></svg>
+        <span style="color:#fde68a;font-weight:600">一键制作</span>
+      </button>
+      <button class="my-works" data-act="toast:演示：请先登录查看我的作品">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/><circle cx="14" cy="15" r="1"/></svg>
+        我的作品
+      </button>
+    </nav>
+
+    <div class="header-right">
+      <button class="btn-login" data-act="toast:演示：登录页面">登录</button>
+      <button class="btn-register" data-act="toast:演示：注册页面">注册</button>
+      <button class="icon-btn" data-act="toast:演示：语言切换" title="语言切换" aria-label="语言切换">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      </button>
+      <button class="hamburger" id="hamburger" aria-label="菜单"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<!-- 移动端菜单 -->
+<div class="mobile-panel" id="mobilePanel">
+  <a data-act="goto:top">首页</a>
+  <a data-act="goto:templates">模板库</a>
+  <button data-act="toast:设计工坊需登录后使用（演示）">设计工坊</button>
+  <button data-act="goto:providers">服务云 <span class="sub">6 类服务商</span></button>
+  <button data-act="toast:一键制作即将上线（演示）">一键制作</button>
+  <button data-act="toast:演示：请先登录查看我的作品">我的作品</button>
+  <button data-act="toast:演示：登录页面">登录 / 注册</button>
+</div>
+
+<main style="padding-top:64px">
+  <!-- ===== 首屏：红色渐变 + 轮播 + 引导 + 搜索 ===== -->
+  <div class="hero-wrap">
+    <div class="deco"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
+
+    <section class="banner">
+      <div class="track" id="track">
+        <div class="slide">
+          <div class="s-icon">💒</div>
+          <div class="eyebrow">婚礼季</div>
+          <h1>精选婚礼邀请函</h1>
+          <p class="sub">YOU MUST MARRY ME TODAY</p>
+          <div class="cta-row">
+            <button class="btn-white" data-act="goto:templates">浏览模板</button>
+            <button class="btn-ghost" data-act="goto:providers">服务云</button>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="s-icon">🏢</div>
+          <div class="eyebrow">企业宣传</div>
+          <h1>品牌活动轻松发布</h1>
+          <p class="sub">PROFESSIONAL H5 MARKETING</p>
+          <div class="cta-row">
+            <button class="btn-white" data-act="goto:templates">浏览模板</button>
+            <button class="btn-ghost" data-act="goto:providers">服务云</button>
+          </div>
+        </div>
+        <div class="slide">
+          <div class="s-icon">📅</div>
+          <div class="eyebrow">会议邀请</div>
+          <h1>高效会议邀约工具</h1>
+          <p class="sub">SMART EVENT INVITATION</p>
+          <div class="cta-row">
+            <button class="btn-white" data-act="goto:templates">浏览模板</button>
+            <button class="btn-ghost" data-act="goto:providers">服务云</button>
+          </div>
+        </div>
+      </div>
+      <button class="arr arr-l" id="prevBtn" aria-label="上一张">‹</button>
+      <button class="arr arr-r" id="nextBtn" aria-label="下一张">›</button>
+      <div class="dots" id="dots"></div>
+    </section>
+
+    <!-- 核心引导 -->
+    <section class="guide-wrap">
+      <div class="guide">
+        <div class="guide-card"><div class="guide-ico">🎯</div><div><h3>始终专注企业秀H5</h3><p>简洁设计行业领先</p></div></div>
+        <div class="guide-card"><div class="guide-ico">📱</div><div><h3>海量H5场景</h3><p>一键生成专属H5 一分钟轻松制作</p></div></div>
+        <div class="guide-card"><div class="guide-ico">⚡</div><div><h3>极致体验 更懂您</h3><p>百万用户一致选择的H5制作工具</p></div></div>
+        <div class="guide-card"><div class="guide-ico">🎁</div><div><h3>无广告 无限制</h3><p>纯净访问传播无忧</p></div></div>
+      </div>
+    </section>
+
+    <!-- 内容搜索 -->
+    <section class="search-wrap">
+      <div class="search-bar">
+        <input id="searchInput" type="text" placeholder="搜索一下，快速找场景" autocomplete="off">
+        <button id="searchBtn">搜索场景</button>
+      </div>
+      <div class="hot-tags">
+        <span>热门搜索：</span>
+        <button class="tag-pill" data-act="search:企业招聘h5">企业招聘h5</button>
+        <button class="tag-pill" data-act="search:邀请函">邀请函</button>
+        <button class="tag-pill" data-act="search:婚礼邀请函h5">婚礼邀请函h5</button>
+        <button class="tag-pill" data-act="search:会议邀请函h5">会议邀请函h5</button>
+        <button class="tag-pill" data-act="search:生日邀请函h5">生日邀请函h5</button>
+        <button class="tag-pill" data-act="search:乔迁之喜">乔迁之喜</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== 模板展示 ===== -->
+  <section class="tpl-sec" id="templates">
+    <div class="cats" id="cats"></div>
+    <div class="tpl-grid" id="grid"></div>
+  </section>
+
+  <!-- ===== 服务商专区 ===== -->
+  <section class="prov-sec" id="providers">
+    <div class="prov-head">
+      <div>
+        <h2>服务商专区</h2>
+        <p>连接特约设计、光影纪录、宴会场地、花艺礼赠、仪式执事与演艺星团</p>
+      </div>
+      <a class="prov-more" data-act="svc:overview">进入找服务 ›</a>
+    </div>
+    <div class="prov-grid" id="provGrid"></div>
+    <p class="prov-note">点击任意服务类型，查看该类别下的服务商列表（演示数据）</p>
+  </section>
+
+  <!-- ===== 页脚 ===== -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <div class="f-brand-name">庆柬云</div>
+        <p class="f-tagline">以在线设计为入口的 H5 一站式创作与活动服务平台</p>
+      </div>
+      <div class="f-col">
+        <h4>设计</h4>
+        <ul>
+          <li><a data-act="toast:设计工坊需登录后使用（演示）">设计工坊</a></li>
+          <li><a data-act="goto:templates">模板库</a></li>
+          <li><a data-act="toast:定制需求（演示）">定制需求</a></li>
+        </ul>
+      </div>
+      <div class="f-col">
+        <h4>服务</h4>
+        <ul id="footerSvc"></ul>
+      </div>
+    </div>
+    <div class="f-bottom">© 2026 TAKLIP 设计平台 · 让创意触手可及</div>
+  </footer>
+</main>
+
+<!-- ===== 服务云专区视图（点击服务类型后整页切换，hash 路由 #/svc 或 #/svc/<key>） ===== -->
+<div class="svc-view" id="svcView" hidden>
+  <div class="svc-topbar">
+    <div class="svc-top-inner">
+      <button class="svc-back" id="svcBack">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <span id="svcBackText">返回首页</span>
+      </button>
+      <div>
+        <div class="svc-top-title" id="svcTopTitle">服务云</div>
+        <div class="svc-top-crumb" id="svcTopCrumb">首页 / 服务云</div>
+      </div>
+      <button class="svc-kefu-top" id="svcKefuTop">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10a5 5 0 0 1 10 0v2"/><path d="M5 12a2 2 0 0 1 2-2h1v6H7a2 2 0 0 1-2-2z"/><path d="M19 12a2 2 0 0 0-2-2h-1v6h1a2 2 0 0 0 2-2z"/><path d="M19 16v1a3 3 0 0 1-3 3h-3"/></svg>
+        在线客服
+      </button>
+    </div>
+  </div>
+  <div class="svc-body" id="svcBody"></div>
+</div>
+
+<!-- ===== 预约服务视图（点击服务商卡片「预约服务」打开） ===== -->
+<div class="book-view" id="bookView" hidden>
+  <div class="book-topbar">
+    <div class="book-top-inner">
+      <button class="svc-back" id="bookBack">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <span>返回服务商列表</span>
+      </button>
+      <div class="svc-top-title">预约服务</div>
+      <button class="svc-kefu-top" id="bookKefu">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10a5 5 0 0 1 10 0v2"/><path d="M5 12a2 2 0 0 1 2-2h1v6H7a2 2 0 0 1-2-2z"/><path d="M19 12a2 2 0 0 0-2-2h-1v6h1a2 2 0 0 0 2-2z"/><path d="M19 16v1a3 3 0 0 1-3 3h-3"/></svg>
+        在线客服
+      </button>
+    </div>
+  </div>
+  <div class="book-body" id="bookBody"></div>
+</div>
+
+<!-- 客服悬浮按钮 -->
+<button class="kefu-fab" id="kefuFab">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10a5 5 0 0 1 10 0v2"/><path d="M5 12a2 2 0 0 1 2-2h1v6H7a2 2 0 0 1-2-2z"/><path d="M19 12a2 2 0 0 0-2-2h-1v6h1a2 2 0 0 0 2-2z"/><path d="M19 16v1a3 3 0 0 1-3 3h-3"/></svg>
+  客服
+</button>
+
+<!-- 客服中心弹窗 -->
+<div class="modal" id="kefuModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="kefuTitle">客服中心</h3>
+      <button class="modal-close" id="kefuClose" aria-label="关闭">✕</button>
+    </div>
+    <div class="kefu-body">
+      <button class="kefu-item" data-kefu-act="chat">
+        <span class="ki"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+        <span><span class="ki-name">在线客服</span><br><span class="ki-sub">工作日 9:00-21:00 · 平均 30 秒接入</span></span>
+      </button>
+      <button class="kefu-item" data-kefu-act="phone">
+        <span class="ki"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+        <span><span class="ki-name">客服专线</span><br><span class="ki-sub">400-800-2026 · 7×24 小时</span></span>
+      </button>
+      <button class="kefu-item" data-kefu-act="complaint">
+        <span class="ki"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></span>
+        <span><span class="ki-name">投诉与建议</span><br><span class="ki-sub">交易纠纷 48 小时内响应处理</span></span>
+      </button>
+      <p class="kefu-note">演示原型：客服渠道为示意，正式版将接入真实客服系统</p>
+    </div>
+  </div>
+</div>
+
+<!-- 预览弹窗 -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modalTitle"></h3>
+      <button class="modal-close" id="modalClose" aria-label="关闭">✕</button>
+    </div>
+    <div class="phone"><div class="p-cover" id="modalCover"></div></div>
+    <button class="use-btn" id="modalUse">使用模板</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============ 模板数据（取自 localhost:5173 后端 /api/templates，43 条） ============ */
+var TPL_DATA=[{"id":"pv_svc_01","name":"天山雪莲·婚礼请柬","category":"wedding","useCount":36,"price":12800,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"天山雪莲·婚礼请柬","coverColor":"#c24b2e"},{"id":"pv_svc_02","name":"喀什古城·回门宴请柬","category":"wedding","useCount":21,"price":9800,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"喀什古城·回门宴请柬","coverColor":"#c24b2e"},{"id":"pv_svc_03","name":"伊犁草原·户外婚礼","category":"wedding","useCount":12,"price":16800,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"伊犁草原·户外婚礼","coverColor":"#c24b2e"},{"id":"pv_svc_04","name":"巴州寿宴·长寿请柬","category":"birthday","useCount":9,"price":6800,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"巴州寿宴·长寿请柬","coverColor":"#c24b2e"},{"id":"cmt5hqrd60014z44obwwx7yss","name":"新郎风采","category":"wedding","useCount":4,"price":0,"isOfficial":false,"bg":"rgba(140,140,140,0.20)","coverTitle":"我要结婚了","coverColor":"#c24b2e"},{"id":"cmt5kb51f00091293jhc3d7yn","name":"银婚之喜","category":"wedding","useCount":2,"price":0,"isOfficial":true,"bg":"#f5f5f5","coverTitle":"请柬","coverColor":"#c24b2e"},{"id":"cmt5he3zu000mz44o4dibyqoo","name":"新娘风采","category":"wedding","useCount":2,"price":0,"isOfficial":false,"bg":"rgba(255,172,197,0.17)","coverTitle":"我要结婚了","coverColor":"#c24b2e"},{"id":"cmt5jzhze001uz44oqyehxz25","name":"管理员测试模板","category":"wedding","useCount":1,"price":0,"isOfficial":true,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"tpl_seed_birthday_生日祝福贺卡","name":"生日祝福贺卡","category":"birthday","useCount":0,"price":0,"isOfficial":true,"bg":"#FFF8DC","coverTitle":"Happy Birthday","coverColor":"#c24b2e"},{"id":"tpl_seed_marketing_企业宣传画册","name":"企业宣传画册","category":"marketing","useCount":0,"price":0,"isOfficial":true,"bg":"#0F0E17","coverTitle":"创新科技","coverColor":"#e8e6df"},{"id":"tpl_seed_education_教育培训招生","name":"教育培训招生","category":"education","useCount":0,"price":0,"isOfficial":true,"bg":"#E8F5E9","coverTitle":"2026春季招生","coverColor":"#c24b2e"},{"id":"tpl_seed_festival_春节祝福贺卡","name":"春节祝福贺卡","category":"festival","useCount":0,"price":0,"isOfficial":true,"bg":"#D32F2F","coverTitle":"新春快乐","coverColor":"#fff"},{"id":"tpl_seed_wedding_简约婚礼邀请","name":"简约婚礼邀请","category":"wedding","useCount":0,"price":0,"isOfficial":false,"bg":"#FAFAFA","coverTitle":"Wedding Invitation","coverColor":"#c24b2e"},{"id":"tpl_seed_birth_celebration_宝宝满月宴请柬","name":"宝宝满月宴请柬","category":"birth_celebration","useCount":0,"price":0,"isOfficial":true,"bg":"#FFF0F5","coverTitle":"小宝贝满月啦","coverColor":"#c24b2e"},{"id":"tpl_seed_housewarming_乔迁新居邀请函","name":"乔迁新居邀请函","category":"housewarming","useCount":0,"price":0,"isOfficial":true,"bg":"#E8F5E9","coverTitle":"乔迁之喜","coverColor":"#c24b2e"},{"id":"tpl_seed_school_promotion_升学宴邀请函","name":"升学宴邀请函","category":"school_promotion","useCount":0,"price":0,"isOfficial":true,"bg":"#E3F2FD","coverTitle":"金榜题名","coverColor":"#c24b2e"},{"id":"tpl_seed_social_gathering_老同学聚会邀请","name":"老同学聚会邀请","category":"social_gathering","useCount":0,"price":0,"isOfficial":true,"bg":"#FFF3E0","coverTitle":"同学聚首","coverColor":"#c24b2e"},{"id":"tpl_seed_memorial_追悼会讣告","name":"追悼会讣告","category":"memorial","useCount":0,"price":0,"isOfficial":true,"bg":"#ECEFF1","coverTitle":"沉痛讣告","coverColor":"#c24b2e"},{"id":"e2e_tpl_on_1","name":"天山雪莲·婚礼主持套系","category":"wedding","useCount":0,"price":0,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"e2e_tpl_on_2","name":"丝路光影·婚礼跟拍","category":"wedding","useCount":0,"price":2900,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"uv_tpl_06","name":"草原牧歌·仪式执事","category":"wedding","useCount":0,"price":490000,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"tpl_seed_opening_新店开业促销","name":"新店开业促销","category":"opening","useCount":0,"price":0,"isOfficial":true,"bg":"#FCE4EC","coverTitle":"盛大开业","coverColor":"#c24b2e"},{"id":"tpl_seed_biz_social_商务客户答谢宴","name":"商务客户答谢宴","category":"biz_social","useCount":0,"price":0,"isOfficial":true,"bg":"#EDE7F6","coverTitle":"感恩有您","coverColor":"#c24b2e"},{"id":"uv_tpl_07","name":"赛里木湖·户外宴会布置","category":"wedding","useCount":0,"price":290000,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"uv_tpl_08","name":"胡杨礼赞·全案设计","category":"wedding","useCount":0,"price":990000,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"e2e_tpl_on_3","name":"楼兰盛宴·宴会全案","category":"wedding","useCount":0,"price":4900,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"e2e_tpl_on_4","name":"喀什老城·婚礼视觉设计","category":"wedding","useCount":0,"price":9900,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"e2e_tpl_on_5","name":"十二木卡姆·婚礼演出","category":"wedding","useCount":0,"price":0,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"e2e_tpl_on_6","name":"赛里木湖·户外宴会布置","category":"wedding","useCount":0,"price":2900,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"e2e_tpl_on_7","name":"草原牧歌·草原婚礼主持","category":"wedding","useCount":0,"price":4900,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"e2e_tpl_on_8","name":"胡杨礼赞·全案设计","category":"wedding","useCount":0,"price":9900,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"e2e_tpl_on_9","name":"葡萄沟·喜宴视觉设计","category":"wedding","useCount":0,"price":0,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"tpl_seed_recruitment_企业招聘海报","name":"企业招聘海报","category":"recruitment","useCount":0,"price":0,"isOfficial":true,"bg":"#1a1a2e","coverTitle":"JOIN US","coverColor":"#e8e6df"},{"id":"uv_tpl_05","name":"喀什老城·请柬视觉设计","category":"wedding","useCount":0,"price":99000,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"uv_tpl_01","name":"天山牧歌·婚礼跟拍","category":"wedding","useCount":0,"price":290000,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"uv_tpl_04","name":"十二木卡姆·婚礼演出","category":"wedding","useCount":0,"price":200000,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"uv_tpl_02","name":"楼兰盛宴·宴会全案","category":"wedding","useCount":0,"price":490000,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"tpl_seed_brand_企业LOGO展示卡","name":"企业标识展示卡","category":"brand","useCount":0,"price":0,"isOfficial":true,"bg":"#0F0E17","coverTitle":"品牌 VI 形象","coverColor":"#e8e6df"},{"id":"cmt5k30tu00011293r90b1chx","name":"大封面测试","category":"wedding","useCount":0,"price":0,"isOfficial":true,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"cmt5k316000031293xge6r3eb","name":"小封面控制","category":"wedding","useCount":0,"price":0,"isOfficial":true,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"},{"id":"tpl_seed_wedding_浪漫婚礼请柬","name":"浪漫婚礼请柬","category":"wedding","useCount":0,"price":0,"isOfficial":true,"bg":"#FFF0F5","coverTitle":"我们结婚了","coverColor":"#c24b2e"},{"id":"tpl_seed_conference_会议邀请函","name":"会议邀请函","category":"conference","useCount":0,"price":0,"isOfficial":true,"bg":"#f0f4f8","coverTitle":"会议邀请函","coverColor":"#1E3A5F"},{"id":"uv_tpl_03","name":"丝路花雨·花艺布置","category":"wedding","useCount":0,"price":168000,"isOfficial":false,"bg":"#fdf6f0","coverTitle":"","coverColor":"#c24b2e"}];
+
+/* ============ 分类（与线上一致：全部 + 15 个一级分类） ============ */
+var CATS=[["all","全部"],["wedding","💍","婚庆嫁娶"],["birth_celebration","👶","诞育庆贺"],["birthday","🎂","生日寿辰"],["festival","🏮","节庆贺卡"],["housewarming","🏠","乔迁新居"],["school_promotion","🎓","升学庆贺"],["social_gathering","🥳","社交聚会"],["memorial","🕯️","追思悼念"],["brand","🏢","商务企宣"],["recruitment","💼","招聘招募"],["conference","📋","会议会展"],["opening","🎉","开业庆典"],["education","📚","教育培训"],["biz_social","🤝","商务社交"],["marketing","🚀","产品营销"]];
+
+/* ============ 服务商 ============ */
+var PROVS=[
+  {key:"design",icon:"🎨",name:"特约设计",tags:["请柬设计","海报设计","品牌VI","插画"]},
+  {key:"photo",icon:"📷",name:"光影纪录",tags:["婚礼跟拍","活动摄影","产品摄影","视频拍摄"]},
+  {key:"venue",icon:"🏛️",name:"宴会场地",tags:["婚宴酒店","会议中心","生日宴","团建基地"]},
+  {key:"floral",icon:"💐",name:"花艺礼赠",tags:["鲜花花束","婚礼花艺","绿植","礼品礼盒"]},
+  {key:"ritual",icon:"🤵",name:"仪式执事",tags:["婚礼督导","丧礼陪伴","企业接待","活动司仪"]},
+  {key:"show",icon:"🎤",name:"演艺星团",tags:["婚礼乐队","舞蹈团","歌手","主持"]}
+];
+
+/* ============ 状态 ============ */
+var state={cat:"all",search:"",cur:0,auto:null,fav:{}};
+
+/* ============ 服务云数据（演示数据：每类服务 4-6 家服务商） ============ */
+var SVC_DATA=[
+ {key:"design",name:"特约设计",icon:"🎨",desc:"请柬、海报、品牌 VI 与插画设计，从创意到交付全流程对接",items:["请柬设计","海报设计","品牌VI","插画"],
+  providers:[
+   {name:"天山雪莲·设计工作室",city:"乌鲁木齐",rating:4.9,rate:"99%",served:368,price:"¥199 起",tags:["请柬设计","海报设计","品牌VI"],badge:"gold",badgeText:"金牌服务商",desc:"本土头部设计工作室，专注婚礼与商务 H5 视觉，原创案例丰富。",resp:"平均 5 分钟响应",av:"#d94f6b"},
+   {name:"楼兰视觉·全案设计",city:"库尔勒",rating:4.8,rate:"98%",served:216,price:"¥399 起",tags:["品牌VI","画册","折页","名片"],badge:"",badgeText:"平台认证",desc:"从品牌策略到印刷物料的一站式全案设计服务。",resp:"平均 8 分钟响应",av:"#b7791f"},
+   {name:"胡杨文创·插画设计",city:"喀什",rating:4.7,rate:"97%",served:158,price:"¥150 起",tags:["插画","IP形象","文创"],badge:"",badgeText:"资深团队",desc:"民族风格插画与 IP 形象定制，可商用授权。",resp:"平均 10 分钟响应",av:"#2e8b57"},
+   {name:"喀什老城·婚礼视觉",city:"喀什",rating:4.8,rate:"98%",served:287,price:"¥299 起",tags:["婚礼请柬","邀请函","桌卡"],badge:"gold",badgeText:"金牌服务商",desc:"婚礼全场景纸品与电子请柬视觉，含印刷对接。",resp:"平均 6 分钟响应",av:"#c24b2e"},
+   {name:"葡萄沟·喜宴视觉",city:"吐鲁番",rating:4.6,rate:"96%",served:96,price:"¥180 起",tags:["喜宴设计","海报","易拉宝"],badge:"",badgeText:"新锐服务商",desc:"宴会视觉快出服务，最快 24 小时交付。",resp:"平均 15 分钟响应",av:"#7a5c9e"}
+  ]},
+ {key:"photo",name:"光影纪录",icon:"📷",desc:"婚礼跟拍、活动摄影、产品拍摄与视频制作，留住每个高光时刻",items:["婚礼跟拍","活动摄影","产品摄影","视频拍摄"],
+  providers:[
+   {name:"丝路光影·婚礼跟拍",city:"伊犁",rating:4.9,rate:"99%",served:412,price:"¥1280 起",tags:["婚礼跟拍","微电影","航拍"],badge:"gold",badgeText:"金牌服务商",desc:"双机位婚礼跟拍，底片全送，成片 15 天交付。",resp:"平均 5 分钟响应",av:"#3b82f6"},
+   {name:"天山牧歌·影像",city:"乌鲁木齐",rating:4.8,rate:"98%",served:335,price:"¥980 起",tags:["活动摄影","会议跟拍","宣传片"],badge:"",badgeText:"平台认证",desc:"企业活动与会议影像整体解决方案。",resp:"平均 8 分钟响应",av:"#0e7490"},
+   {name:"赛里木湖·旅拍工作室",city:"博乐",rating:4.7,rate:"97%",served:189,price:"¥680 起",tags:["旅拍","外景","写真"],badge:"",badgeText:"资深团队",desc:"户外与旅拍达人团队，擅长自然光人像。",resp:"平均 12 分钟响应",av:"#2563eb"},
+   {name:"雪莲映像·活动摄影",city:"石河子",rating:4.6,rate:"96%",served:143,price:"¥580 起",tags:["开业活动","年会","庆典"],badge:"",badgeText:"平台认证",desc:"开业、年会、庆典一站式纪实拍摄。",resp:"平均 10 分钟响应",av:"#7c3aed"},
+   {name:"大漠光影·产品摄影",city:"哈密",rating:4.7,rate:"97%",served:87,price:"¥320 起",tags:["产品图","白底图","详情页"],badge:"",badgeText:"新锐服务商",desc:"电商产品白底图与详情页拍摄精修。",resp:"平均 20 分钟响应",av:"#d97706"}
+  ]},
+ {key:"venue",name:"宴会场地",icon:"🏛️",desc:"婚宴酒店、会议中心、生日宴与团建基地，实地可查、档期可约",items:["婚宴酒店","会议中心","生日宴","团建基地"],
+  providers:[
+   {name:"天山宾馆·婚宴厅",city:"乌鲁木齐",rating:4.8,rate:"98%",served:520,price:"¥1588/桌",tags:["婚宴","宴会厅","LED屏"],badge:"gold",badgeText:"金牌服务商",desc:"可容纳 30 桌，含灯光音响与婚宴套餐。",resp:"平均 5 分钟响应",av:"#b91c3c"},
+   {name:"伊犁河畔·宴会中心",city:"伊宁",rating:4.7,rate:"97%",served:348,price:"¥1288/桌",tags:["婚宴","生日宴","会议"],badge:"",badgeText:"平台认证",desc:"河景宴会厅，支持多种规格宴席与会议。",resp:"平均 9 分钟响应",av:"#0f766e"},
+   {name:"楼兰盛宴·宴会酒店",city:"库尔勒",rating:4.6,rate:"96%",served:276,price:"¥1088/桌",tags:["婚宴","升学宴","乔迁宴"],badge:"",badgeText:"平台认证",desc:"性价比宴会酒店，可代办宴席布置。",resp:"平均 12 分钟响应",av:"#a16207"},
+   {name:"赛里木湖·湖畔营地",city:"博乐",rating:4.9,rate:"99%",served:164,price:"¥2680",tags:["户外婚礼","团建","露营"],badge:"gold",badgeText:"金牌服务商",desc:"湖畔草坪与营地，户外婚礼与团建首选。",resp:"平均 8 分钟响应",av:"#0369a1"},
+   {name:"葡萄庄园·会议中心",city:"吐鲁番",rating:4.5,rate:"95%",served:112,price:"¥600/半天",tags:["会议","培训","发布会"],badge:"",badgeText:"资深团队",desc:"庄园式会议场地，含投影与茶歇服务。",resp:"平均 15 分钟响应",av:"#7d2ae8"},
+   {name:"草原牧歌·团建基地",city:"那拉提",rating:4.7,rate:"97%",served:201,price:"¥180/人",tags:["团建","拓展","篝火晚会"],badge:"gold",badgeText:"金牌服务商",desc:"草原团建基地，含教练与道具全案。",resp:"平均 6 分钟响应",av:"#15803d"}
+  ]},
+ {key:"floral",name:"花艺礼赠",icon:"💐",desc:"婚礼花艺、鲜花礼盒、绿植租摆与节庆布置，礼到心意到",items:["鲜花花束","婚礼花艺","绿植","礼品礼盒"],
+  providers:[
+   {name:"花语天山·婚礼花艺",city:"乌鲁木齐",rating:4.8,rate:"98%",served:429,price:"¥880 起",tags:["婚礼花艺","手捧花","宴会布置"],badge:"gold",badgeText:"金牌服务商",desc:"婚礼花艺全案，含手捧花与宴会桌花。",resp:"平均 5 分钟响应",av:"#db2777"},
+   {name:"薰衣草田·鲜花工坊",city:"伊犁",rating:4.9,rate:"99%",served:356,price:"¥128 起",tags:["鲜花花束","表白花礼","节日花"],badge:"",badgeText:"平台认证",desc:"本地鲜花直供，下单 2 小时同城送达。",resp:"平均 4 分钟响应",av:"#9333ea"},
+   {name:"玫瑰庄园·礼品花盒",city:"喀什",rating:4.7,rate:"97%",served:238,price:"¥98 起",tags:["礼品礼盒","永生花","伴手礼"],badge:"",badgeText:"平台认证",desc:"礼盒与伴手礼定制，支持企业批量采购。",resp:"平均 10 分钟响应",av:"#e11d48"},
+   {name:"雪莲花艺·绿植养护",city:"乌鲁木齐",rating:4.6,rate:"96%",served:127,price:"¥68 起",tags:["绿植盆栽","绿植租摆","养护"],badge:"",badgeText:"资深团队",desc:"办公与居家绿植租摆，定期上门养护。",resp:"平均 18 分钟响应",av:"#16a34a"},
+   {name:"沙枣花香·节庆花艺",city:"库尔勒",rating:4.5,rate:"95%",served:89,price:"¥158 起",tags:["开业花篮","庆典布置","气球"],badge:"",badgeText:"新锐服务商",desc:"开业花篮与庆典气球布置，当日可接单。",resp:"平均 25 分钟响应",av:"#c2410c"}
+  ]},
+ {key:"ritual",name:"仪式执事",icon:"🤵",desc:"婚礼督导、活动司仪、企业接待与礼宾服务，让每个环节体面妥帖",items:["婚礼督导","丧礼陪伴","企业接待","活动司仪"],
+  providers:[
+   {name:"礼成执事·婚礼督导",city:"乌鲁木齐",rating:4.9,rate:"99%",served:298,price:"¥880 起",tags:["婚礼督导","流程统筹","彩排"],badge:"gold",badgeText:"金牌服务商",desc:"全流程婚礼督导，含彩排与当日执行。",resp:"平均 5 分钟响应",av:"#334155"},
+   {name:"月老红娘·婚仪策划",city:"伊犁",rating:4.8,rate:"98%",served:265,price:"¥1680 起",tags:["婚礼策划","中式礼俗","主持"],badge:"",badgeText:"平台认证",desc:"中式与民族礼俗婚礼策划主持一条龙。",resp:"平均 8 分钟响应",av:"#be123c"},
+   {name:"敬贤司仪·企业接待",city:"喀什",rating:4.7,rate:"97%",served:156,price:"¥680 起",tags:["商务接待","开业剪彩","礼仪"],badge:"",badgeText:"资深团队",desc:"企业开业、签约、接待礼仪全案。",resp:"平均 10 分钟响应",av:"#1d4ed8"},
+   {name:"和风礼宾·活动司仪",city:"库尔勒",rating:4.6,rate:"96%",served:98,price:"¥580 起",tags:["司仪","主持","氛围"],badge:"",badgeText:"新锐服务商",desc:"会议与派对司仪，控场氛围双在线。",resp:"平均 15 分钟响应",av:"#0d9488"},
+   {name:"守望相伴·丧礼陪伴",city:"乌鲁木齐",rating:4.8,rate:"98%",served:74,price:"¥460 起",tags:["丧礼陪伴","告别仪式","家属协助"],badge:"",badgeText:"平台认证",desc:"专业礼宾陪伴，协助家属完成告别仪式。",resp:"平均 10 分钟响应",av:"#475569"}
+  ]},
+ {key:"show",name:"演艺星团",icon:"🎤",desc:"民族乐团、婚礼乐队、歌手舞蹈与活动主持，为现场注入气氛",items:["婚礼乐队","舞蹈团","歌手","主持"],
+  providers:[
+   {name:"十二木卡姆·民族乐团",city:"喀什",rating:4.9,rate:"99%",served:187,price:"¥2600 起",tags:["民族乐团","婚礼演出","庆典"],badge:"gold",badgeText:"金牌服务商",desc:"专业民族乐团，传承木卡姆经典曲目。",resp:"平均 6 分钟响应",av:"#b91c3c"},
+   {name:"草原牧歌·婚礼乐队",city:"伊犁",rating:4.8,rate:"98%",served:243,price:"¥1800 起",tags:["乐队","现场弹唱","氛围"],badge:"",badgeText:"平台认证",desc:"草原风情现场乐队，含设备自带。",resp:"平均 8 分钟响应",av:"#15803d"},
+   {name:"雪莲之声·歌手演艺",city:"乌鲁木齐",rating:4.7,rate:"97%",served:165,price:"¥1200 起",tags:["歌手","商演","年会"],badge:"",badgeText:"资深团队",desc:"专业歌手库，支持试听选人。",resp:"平均 10 分钟响应",av:"#7c3aed"},
+   {name:"楼兰舞团·舞蹈演绎",city:"库尔勒",rating:4.8,rate:"98%",served:129,price:"¥1500 起",tags:["舞蹈团","开场舞","快闪"],badge:"",badgeText:"平台认证",desc:"开场舞与快闪编排，节目定制。",resp:"平均 12 分钟响应",av:"#db2777"},
+   {name:"天山之韵·活动主持",city:"石河子",rating:4.6,rate:"96%",served:86,price:"¥900 起",tags:["主持","双语","晚会"],badge:"",badgeText:"新锐服务商",desc:"汉维双语晚会主持，含稿本撰写。",resp:"平均 18 分钟响应",av:"#0e7490"}
+  ]}
+];
+var AVATAR_COLORS=["#d94f6b","#b7791f","#2e8b57","#3b82f6","#7c3aed","#0f766e","#a16207","#0369a1","#db2777","#16a34a"];
+
+/* ============ 服务云：状态与渲染 ============ */
+var svcState={filter:"all",q:""};
+function svcMeta(key){for(var i=0;i<SVC_DATA.length;i++){if(SVC_DATA[i].key===key)return SVC_DATA[i];}return null;}
+function svcBadgeHtml(p){
+  var cls=p.badge==="gold"?"svc-badge gold":"svc-badge";
+  return p.badgeText?'<span class="'+cls+'">'+esc(p.badgeText)+"</span>":"";
+}
+function svcCardHtml(p,key){
+  var av=p.av||AVATAR_COLORS[0];
+  var priceTxt=String(p.price).replace(/\s*起$/,"");
+  return '<div class="svc-card">'
+    +'<div class="svc-head">'
+    +'<div class="svc-avatar" style="background:'+av+'">'+esc(p.name.charAt(0))+"</div>"
+    +'<div class="svc-name-line">'
+    +'<div class="svc-name"><span class="tn">'+esc(p.name)+"</span>"+svcBadgeHtml(p)+"</div>"
+    +'<div class="svc-sub"><span class="svc-dot"></span>客服在线 · '+esc(p.city)+" · "+esc(p.resp)+"</div>"
+    +"</div>"
+    +'<div class="svc-rating"><b>★ '+p.rating.toFixed(1)+'</b>'+(p.rate)+"好评</div>"
+    +"</div>"
+    +'<p class="svc-desc">'+esc(p.desc)+"</p>"
+    +'<ul class="svc-tags">'+p.tags.map(function(t){return '<li class="svc-tag">'+esc(t)+"</li>";}).join("")+"</ul>"
+    +'<div class="svc-meta"><span>已服务 <b class="num">'+p.served+"</b> 次</span><span>好评率 <b>"+esc(p.rate)+"</b></span></div>"
+    +'<div class="svc-foot">'
+    +'<span class="svc-price">'+esc(priceTxt)+'<small> 起</small></span>'
+    +'<div class="svc-actions">'
+    +'<button class="svc-btn ghost" data-kefu="'+esc(p.name)+'">在线咨询</button>'
+    +'<button class="svc-btn solid" data-book="'+esc(key)+'::'+esc(p.name)+'">预约服务</button>'
+    +"</div></div></div>";
+}
+function renderSvcList(key){
+  var s=svcMeta(key);if(!s)return;
+  $("#svcTopTitle").textContent=s.name;
+  $("#svcTopCrumb").textContent="首页 / 服务云 / "+s.name;
+  $("#svcBackText").textContent="返回服务总览";
+  var q=svcState.q.toLowerCase();
+  var list=s.providers.filter(function(p){
+    if(svcState.filter!=="all"&&p.tags.indexOf(svcState.filter)<0)return false;
+    if(q&&(p.name.toLowerCase().indexOf(q)<0&&p.city.toLowerCase().indexOf(q)<0&&p.tags.join("").toLowerCase().indexOf(q)<0))return false;
+    return true;
+  });
+  var html='<div class="svc-hero">'
+    +'<div class="svc-hero-icon">'+s.icon+"</div>"
+    +"<div><h1>"+esc(s.name)+'</h1><p>'+esc(s.desc)+"</p></div>"
+    +'<span class="svc-count">'+s.providers.length+" 家服务商</span></div>"
+    +'<div class="svc-guarantee"><span><b>✓</b> 平台实名认证</span><span><b>✓</b> 担保交易 · 服务后结算</span><span><b>✓</b> 客服 7×24 小时</span><span><b>✓</b> 不满意可投诉</span></div>'
+    +'<div class="svc-toolbar">'
+    +'<div class="svc-chips">'
+    +'<button class="svc-chip '+(svcState.filter==="all"?"on":"")+'" data-sf="all">全部</button>'
+    +s.items.map(function(it){return '<button class="svc-chip '+(svcState.filter===it?"on":"")+'" data-sf="'+esc(it)+'">'+esc(it)+"</button>";}).join("")
+    +"</div>"
+    +'<label class="svc-search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input id="svcSearch" placeholder="搜索服务商 / 城市" autocomplete="off"></label>'
+    +"</div>";
+  if(list.length){html+='<div class="svc-grid">'+list.map(function(p){return svcCardHtml(p,s.key);}).join("")+"</div>";}
+  else{html+='<div class="svc-empty">没有符合条件的服务商，换个筛选条件试试</div>';}
+  $("#svcBody").innerHTML=html;
+  var inp=document.getElementById("svcSearch");if(inp)inp.value=svcState.q;
+}
+function renderSvcOverview(){
+  $("#svcTopTitle").textContent="服务云";
+  $("#svcTopCrumb").textContent="首页 / 服务云";
+  $("#svcBackText").textContent="返回首页";
+  var html='<div class="svc-hero ov"><h1>服务云</h1>'
+    +"<p>从设计到落地，一站式对接本地优质服务商。实名认证、担保交易、客服全程跟进。</p></div>"
+    +'<div class="svc-guarantee"><span><b>✓</b> 平台实名认证</span><span><b>✓</b> 担保交易 · 服务后结算</span><span><b>✓</b> 客服 7×24 小时</span><span><b>✓</b> 不满意可投诉</span></div>'
+    +'<div class="svc-ov-grid">'
+    +SVC_DATA.map(function(s){
+      return '<div class="svc-ov-card" data-goto="'+s.key+'">'
+        +'<div class="svc-ov-head"><div class="svc-ov-ico">'+s.icon+'</div><span class="svc-ov-count">'+s.providers.length+" 家服务商</span></div>"
+        +'<h3>'+esc(s.name)+'</h3><p>'+esc(s.desc)+"</p>"
+        +'<ul class="svc-ov-tags">'+s.items.map(function(t){return '<li class="svc-ov-tag">'+esc(t)+"</li>";}).join("")+"</ul>"
+        +'<span class="svc-ov-link">查看服务商 ›</span></div>';
+    }).join("")
+    +"</div>"
+    +'<div class="svc-guarantee" style="margin-top:20px;justify-content:center"><span>需要帮忙挑选？</span><button class="svc-btn solid" data-kefu="all">联系在线客服，为您推荐</button></div>';
+  $("#svcBody").innerHTML=html;
+}
+function openSvcView(){var v=$("#svcView");if(v.hidden){v.hidden=false;}window.scrollTo(0,0);}
+function closeSvcView(){$("#svcView").hidden=true;}
+function routeSvc(){
+  var h=location.hash||"";
+  if(h.indexOf("#/svc")!==0){closeSvcView();return;}
+  var key=h.slice(5); /* #/svc */
+  if(key&&key.charAt(0)==="/"){key=key.slice(1);}
+  if(key&&svcMeta(key)){svcState.filter="all";svcState.q="";renderSvcList(key);}
+  else{renderSvcOverview();}
+  openSvcView();
+}
+/* 客服中心 */
+function openKefu(name){
+  var t=(name&&name!=="all")?"咨询 · "+name:"客服中心";
+  $("#kefuTitle").textContent=t;
+  $("#kefuModal").classList.add("open");
+}
+function closeKefu(){$("#kefuModal").classList.remove("open");}
+
+/* ============ 预约服务：表单与提交 ============ */
+var bkState={key:"",name:"",item:"",slot:""};
+function todayStr(){
+  var d=new Date();
+  return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);
+}
+function openBook(key,name){
+  var s=svcMeta(key);if(!s)return;
+  var p=null;for(var i=0;i<s.providers.length;i++){if(s.providers[i].name===name){p=s.providers[i];break;}}
+  if(!p)return;
+  bkState={key:key,name:name,item:"",slot:""};
+  renderBookForm(s,p);
+  $("#bookView").hidden=false;
+  window.scrollTo(0,0);
+}
+function closeBook(){$("#bookView").hidden=true;}
+function renderBookForm(s,p){
+  var items=p.tags.concat(["其他"]);
+  var html='<div class="bk-card">'
+    +'<div class="bk-avatar" style="background:'+(p.av||AVATAR_COLORS[0])+'">'+esc(p.name.charAt(0))+"</div>"
+    +'<div><div class="bk-card-name">'+esc(p.name)+'</div><div class="bk-card-sub">'+esc(s.name)+" · "+esc(p.city)+" · "+esc(p.resp)+"</div></div>"
+    +'<div class="bk-card-price"><b>'+esc(String(p.price).replace(/\s*起$/,""))+'</b><small> 起 · 好评率 '+esc(p.rate)+"</small></div></div>"
+    +'<form class="bk-form" id="bkForm">'
+    +'<div class="bk-field"><label>您的称呼 <em>*</em></label><input id="bkName" type="text" maxlength="20" placeholder="如何称呼您" autocomplete="off"></div>'
+    +'<div class="bk-field"><label>联系电话 <em>*</em></label><input id="bkPhone" type="tel" maxlength="11" placeholder="11 位手机号，用于客服确认" autocomplete="off"></div>'
+    +'<div class="bk-field"><label>服务项目 <em>*</em></label><div class="bk-chips">'
+    +items.map(function(it){return '<button type="button" class="bk-chip" data-bk-item="'+esc(it)+'">'+esc(it)+"</button>";}).join("")
+    +'</div></div>'
+    +'<div class="bk-field-row">'
+    +'<div class="bk-field"><label>期望日期 <em>*</em></label><input id="bkDate" type="date" min="'+todayStr()+'"></div>'
+    +'<div class="bk-field"><label>期望时段</label><div class="bk-chips">'
+    +["上午","下午","晚上"].map(function(t){return '<button type="button" class="bk-chip" data-bk-slot="'+t+'">'+t+"</button>";}).join("")
+    +'</div></div></div>'
+    +'<div class="bk-field"><label>预计规模 / 人数</label><input id="bkPeople" type="number" min="1" max="99999" placeholder="选填，如 20 人"></div>'
+    +'<div class="bk-field"><label>补充说明</label><textarea id="bkNote" maxlength="200" placeholder="选填，如场地偏好、特殊需求等"></textarea></div>'
+    +'<label class="bk-agree"><input type="checkbox" id="bkAgree" checked> 同意服务商与平台客服通过电话与您联系，用于确认档期与需求</label>'
+    +'<button type="button" class="bk-submit" id="bkSubmit">提交预约</button>'
+    +'<p class="bk-note">提交后平台客服将在 15 分钟内与您电话联系确认（演示原型）</p>'
+    +"</form>";
+  $("#bookBody").innerHTML=html;
+  var d=document.getElementById("bkDate");if(d)d.value=todayStr();
+}
+function renderBookOk(no,phone){
+  var masked=phone?phone.slice(0,3)+"****"+phone.slice(7):"";
+  var html='<div class="bk-ok">'
+    +'<div class="bk-ok-icon">✓</div>'
+    +'<h2>预约提交成功</h2>'
+    +'<span class="ok-no">预约单号：'+no+"</span>"
+    +'<p>平台客服将在 <b>15 分钟内</b>致电 '+esc(masked)+'<br>与您确认服务商档期、服务细节与费用明细</p>'
+    +'<div class="bk-ok-actions">'
+    +'<button class="svc-btn ghost" data-bk-ok="kefu">在线咨询</button>'
+    +'<button class="svc-btn solid" data-bk-ok="done">完成</button>'
+    +"</div></div>"
+    +'<p class="bk-note">演示原型：预约已记录，正式版将同步至服务商后台与客服工单系统</p>';
+  $("#bookBody").innerHTML=html;
+}
+function submitBook(){
+  var name=($("#bkName").value||"").trim();
+  var phone=($("#bkPhone").value||"").trim();
+  var date=$("#bkDate").value||"";
+  var agree=document.getElementById("bkAgree").checked;
+  if(!name){toast("请填写您的称呼");return;}
+  if(!/^1\d{10}$/.test(phone)){toast("请填写正确的 11 位手机号");return;}
+  if(!bkState.item){toast("请选择服务项目");return;}
+  if(!date){toast("请选择期望日期");return;}
+  if(!agree){toast("请先勾选同意客服联系");return;}
+  var no="BK"+todayStr().replace(/-/g,"")+String(Math.floor(1000+Math.random()*9000));
+  renderBookOk(no,phone);
+}
+function syncBkChips(){
+  var items=document.querySelectorAll("[data-bk-item]");
+  for(var i=0;i<items.length;i++){items[i].classList.toggle("on",items[i].getAttribute("data-bk-item")===bkState.item);}
+  var slots=document.querySelectorAll("[data-bk-slot]");
+  for(var j=0;j<slots.length;j++){slots[j].classList.toggle("on",slots[j].getAttribute("data-bk-slot")===bkState.slot);}
+}
+
+
+/* ============ 工具 ============ */
+function $(s){return document.querySelector(s)}
+function toast(msg){
+  var t=$("#toast");t.textContent=msg;t.classList.add("show");
+  clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove("show")},2200);
+}
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+
+/* ============ 渲染分类 ============ */
+function renderCats(){
+  var html="";
+  CATS.forEach(function(c){
+    if(c.length===2){html+='<button class="cat-btn '+(state.cat==="all"?"on":"off")+'" data-cat="all">'+esc(c[1])+"</button>";}
+    else{html+='<button class="cat-btn '+(state.cat===c[0]?"on":"off")+'" data-cat="'+c[0]+'"><span>'+c[1]+'</span> '+esc(c[2])+"</button>";}
+  });
+  $("#cats").innerHTML=html;
+}
+
+/* ============ 渲染模板网格 ============ */
+function coverHtml(t){
+  var title=t.coverTitle||t.name;
+  var color=t.coverColor||"#c24b2e";
+  var size=t.coverTitle?16:14;
+  var muted=(t.coverTitle&&t.coverTitle!==t.name)?0.75:1;
+  return '<div class="cover" style="background:'+t.bg+'">'
+    +'<span class="c-ring"></span><span class="c-ring c2"></span>'
+    +'<span class="c-title" style="color:'+color+';font-size:'+size+'px;opacity:'+muted+'">'+esc(title)+"</span></div>";
+}
+function renderGrid(){
+  var q=state.search.toLowerCase();
+  var list=TPL_DATA.filter(function(t){
+    if(state.cat!=="all"&&t.category!==state.cat)return false;
+    if(q&&!(t.name.toLowerCase().indexOf(q)>=0||t.category.toLowerCase().indexOf(q)>=0))return false;
+    return true;
+  });
+  var box=$("#grid");
+  if(!list.length){box.innerHTML='<div class="empty">暂无模板</div>';return;}
+  box.innerHTML=list.map(function(t){
+    var price=t.price>0?'<span class="price">¥'+(t.price/100).toFixed(2)+"</span>":'<span class="free">免费</span>';
+    var fav=state.fav[t.id]?"❤️":"🤍";
+    return '<div class="tcard" data-id="'+esc(t.id)+'">'
+      +'<button class="fav" data-fav="'+esc(t.id)+'" aria-label="收藏">'+fav+"</button>"
+      +coverHtml(t)
+      +'<div class="info-top"><h3 class="tname">'+esc(t.name)+"</h3>"+(t.isOfficial?'<span class="official">官方</span>':"")+"</div>"
+      +'<div class="info-bot"><span class="num">'+t.useCount+" 次使用</span>"+price+"</div>"
+      +'<div class="overlay">'
+      +'<button class="o-preview" data-preview="'+esc(t.id)+'">预览</button>'
+      +'<button class="o-create" data-create="'+esc(t.id)+'">立即制作</button>'
+      +"</div></div>";
+  }).join("");
+}
+
+/* ============ 轮播 ============ */
+var SLIDES=document.querySelectorAll(".slide").length;
+function goDot(i){
+  state.cur=(i+SLIDES)%SLIDES;
+  $("#track").style.transform="translateX(-"+(state.cur*100)+"%)";
+  var dots=$("#dots").children;
+  for(var k=0;k<dots.length;k++){dots[k].className="dot "+(k===state.cur?"on":"off");}
+}
+function buildDots(){
+  var h="";for(var i=0;i<SLIDES;i++){h+='<button class="dot '+(i===0?"on":"off")+'" data-dot="'+i+'" aria-label="第 '+(i+1)+' 张"></button>';}
+  $("#dots").innerHTML=h;
+}
+function startAuto(){stopAuto();state.auto=setInterval(function(){goDot(state.cur+1)},5000);}
+function stopAuto(){if(state.auto){clearInterval(state.auto);state.auto=null;}}
+
+/* ============ 预览弹窗 ============ */
+var modalTpl=null;
+function openModal(id){
+  var t=TPL_DATA.filter(function(x){return x.id===id})[0];if(!t)return;
+  modalTpl=t;
+  $("#modalTitle").textContent=t.name;
+  $("#modalCover").innerHTML='<span class="c-ring"></span><span class="c-ring c2"></span><span class="c-title" style="color:'+t.coverColor+';font-size:16px">'+esc(t.coverTitle||t.name)+"</span>";
+  $("#modalCover").style.background=t.bg;
+  $("#modal").classList.add("open");
+}
+function closeModal(){$("#modal").classList.remove("open");modalTpl=null;}
+
+/* ============ 初始化 ============ */
+buildDots();
+renderCats();
+renderGrid();
+startAuto();
+routeSvc();
+
+/* ============ 事件绑定 ============ */
+document.addEventListener("click",function(e){
+  var el=e.target.closest("[data-act],[data-cat],[data-fav],[data-preview],[data-create],[data-dot]");
+  if(!el)return;
+  if(el.hasAttribute("data-act")){
+    var act=el.getAttribute("data-act");
+    if(act==="goto:top"){window.scrollTo({top:0,behavior:"smooth"});}
+    else if(act==="goto:templates"){document.getElementById("templates").scrollIntoView({behavior:"smooth"});}
+    else if(act==="goto:providers"){document.getElementById("providers").scrollIntoView({behavior:"smooth"});}
+    else if(act==="svc:overview"){location.hash="#/svc";}
+    else if(act.indexOf("svc:")===0){location.hash="#/svc/"+act.slice(4);}
+    else if(act.indexOf("search:")===0){state.search=act.slice(7);$("#searchInput").value=state.search;renderGrid();document.getElementById("templates").scrollIntoView({behavior:"smooth"});}
+    else if(act.indexOf("toast:")===0){toast(act.slice(6));}
+    $("#mobilePanel").classList.remove("open");
+    return;
+  }
+  if(el.hasAttribute("data-cat")){state.cat=el.getAttribute("data-cat");renderCats();renderGrid();return;}
+  if(el.hasAttribute("data-dot")){stopAuto();goDot(+el.getAttribute("data-dot"));startAuto();return;}
+  if(el.hasAttribute("data-fav")){
+    var id=el.getAttribute("data-fav");
+    state.fav[id]=!state.fav[id];
+    el.textContent=state.fav[id]?"❤️":"🤍";
+    e.stopPropagation();
+    return;
+  }
+  if(el.hasAttribute("data-preview")){e.stopPropagation();openModal(el.getAttribute("data-preview"));return;}
+  if(el.hasAttribute("data-create")){e.stopPropagation();toast("演示：正在创建作品…");return;}
+});
+/* 卡片点击 */
+$("#grid").addEventListener("click",function(e){
+  var card=e.target.closest(".tcard");if(!card)return;
+  toast("演示：请先登录后使用模板");
+});
+/* 上一张/下一张 */
+$("#prevBtn").addEventListener("click",function(){stopAuto();goDot(state.cur-1);startAuto();});
+$("#nextBtn").addEventListener("click",function(){stopAuto();goDot(state.cur+1);startAuto();});
+/* 搜索 */
+$("#searchBtn").addEventListener("click",function(){state.search=$("#searchInput").value.trim();renderGrid();document.getElementById("templates").scrollIntoView({behavior:"smooth"});});
+$("#searchInput").addEventListener("input",function(){state.search=this.value.trim();renderGrid();});
+$("#searchInput").addEventListener("keydown",function(e){if(e.key==="Enter"){state.search=this.value.trim();renderGrid();document.getElementById("templates").scrollIntoView({behavior:"smooth"});}});
+/* 弹窗 */
+$("#modalClose").addEventListener("click",closeModal);
+$("#modalUse").addEventListener("click",function(){closeModal();toast("演示：正在创建作品…");});
+$("#modal").addEventListener("click",function(e){if(e.target===this)closeModal();});
+/* 汉堡菜单 */
+$("#hamburger").addEventListener("click",function(){$("#mobilePanel").classList.toggle("open");});
+/* 页脚服务列 */
+$("#footerSvc").innerHTML=PROVS.map(function(p){return '<li><a data-act="svc:'+p.key+'">'+esc(p.name)+"</a></li>";}).join("");
+/* 服务商卡片 */
+$("#provGrid").innerHTML=PROVS.map(function(p){
+  return '<a class="prov-card" data-act="svc:'+p.key+'">'
+    +'<div class="prov-ico">'+p.icon+"</div>"
+    +'<h3 class="prov-name">'+esc(p.name)+"</h3>"
+    +'<ul class="prov-tags">'+p.tags.map(function(t){return '<li class="prov-tag">'+esc(t)+"</li>";}).join("")+"</ul>"
+    +'<span class="prov-link">进入找服务 ›</span></a>';
+}).join("");
+/* 服务云视图路由与交互 */
+window.addEventListener("hashchange",routeSvc);
+$("#svcBack").addEventListener("click",function(){
+  var h=location.hash||"";
+  if(h.indexOf("#/svc/")===0){location.hash="#/svc";}
+  else{location.hash="";}
+});
+$("#svcKefuTop").addEventListener("click",function(){openKefu("all");});
+$("#svcBody").addEventListener("click",function(e){
+  var el=e.target.closest("[data-sf],[data-goto],[data-kefu],[data-book]");
+  if(!el)return;
+  if(el.hasAttribute("data-sf")){
+    svcState.filter=el.getAttribute("data-sf");
+    renderSvcList((location.hash||"").slice(6));
+    return;
+  }
+  if(el.hasAttribute("data-goto")){location.hash="#/svc/"+el.getAttribute("data-goto");return;}
+  if(el.hasAttribute("data-kefu")){openKefu(el.getAttribute("data-kefu"));return;}
+  if(el.hasAttribute("data-book")){
+    var bp=el.getAttribute("data-book").split("::");
+    openBook(bp[0],bp[1]);
+    return;
+  }
+});
+$("#svcBody").addEventListener("input",function(e){
+  if(e.target&&e.target.id==="svcSearch"){
+    svcState.q=e.target.value.trim();
+    renderSvcList((location.hash||"").slice(6));
+  }
+});
+/* 客服中心 */
+$("#kefuFab").addEventListener("click",function(){openKefu("all");});
+$("#kefuClose").addEventListener("click",closeKefu);
+$("#kefuModal").addEventListener("click",function(e){
+  if(e.target===this){closeKefu();return;}
+  var it=e.target.closest("[data-kefu-act]");
+  if(!it)return;
+  var a=it.getAttribute("data-kefu-act");
+  if(a==="chat"){toast("演示：正在为您接入在线客服…");}
+  else if(a==="phone"){toast("演示：客服专线 400-800-2026");}
+  else if(a==="complaint"){toast("演示：已进入投诉建议通道，48 小时内响应");}
+});
+/* 预约视图 */
+$("#bookBack").addEventListener("click",closeBook);
+$("#bookKefu").addEventListener("click",function(){openKefu("all");});
+$("#bookBody").addEventListener("click",function(e){
+  if(e.target&&e.target.id==="bkSubmit"){submitBook();return;}
+  var el=e.target.closest("[data-bk-item],[data-bk-slot],[data-bk-ok]");
+  if(!el)return;
+  if(el.hasAttribute("data-bk-item")){
+    bkState.item=el.getAttribute("data-bk-item");
+    syncBkChips();
+    return;
+  }
+  if(el.hasAttribute("data-bk-slot")){
+    bkState.slot=el.getAttribute("data-bk-slot");
+    syncBkChips();
+    return;
+  }
+  if(el.hasAttribute("data-bk-ok")){
+    if(el.getAttribute("data-bk-ok")==="kefu"){openKefu(bkState.name);}
+    else{closeBook();}
+  }
+});
+</script>
+</body>
+</html>

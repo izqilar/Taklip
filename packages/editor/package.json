@@ -1,0 +1,56 @@
+{
+  "name": "@h5design/editor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./styles.css": "./dist/editor.css",
+    "./store": {
+      "types": "./src/store/editorStore.ts",
+      "import": "./src/store/editorStore.ts",
+      "default": "./src/store/editorStore.ts"
+    },
+    "./animations": {
+      "types": "./src/animations/index.ts",
+      "import": "./src/animations/index.ts",
+      "default": "./src/animations/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "build:css": "tailwindcss -i ./src/styles/editor.css -o ./dist/editor.css --minify -c ./tailwind.config.js"
+  },
+  "dependencies": {
+    "@h5design/core": "workspace:*",
+    "@h5design/render": "workspace:*",
+    "gifenc": "^1.0.3",
+    "gsap": "^3.12.5",
+    "html-to-image": "^1.11.13",
+    "konva": "^9.3.20",
+    "qrcode": "^1.5.4",
+    "react-konva": "^18.2.10",
+    "zustand": "^4.5.5"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-i18next": ">=15.0.0",
+    "react-router-dom": ">=6.0.0"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,73 @@
+# H5 在线设计平台 — 生产环境 Docker Compose
+# 用法：
+#   1. cp .env.example .env  并填写真实密钥
+#   2. docker compose -f docker-compose.prod.yml up -d --build
+# 说明：前端（Nginx）托管静态产物并反代 /api 到 backend；backend 连接 postgres。
+#       Redis 已预留容器（当前应用代码未接入，见 docs/launch-checklist.md）。
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-h5design}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-h5design_platform}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-h5design} -d ${POSTGRES_DB:-h5design_platform}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [h5design-net]
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [h5design-net]
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-h5design}:${POSTGRES_PASSWORD:-change_me}@postgres:5432/${POSTGRES_DB:-h5design_platform}?schema=public
+      PORT: 3000
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7200}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-604800}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [h5design-net]
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks: [h5design-net]
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
+
+networks:
+  h5design-net:
+    driver: bridge

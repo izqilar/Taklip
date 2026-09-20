@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* 多语种 RTL 镜像：通过逻辑属性已在组件层处理，此处兜底 */
+[dir='rtl'] {
+  direction: rtl;
+}
