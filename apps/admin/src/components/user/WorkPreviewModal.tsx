@@ -16,7 +16,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { SchemaRenderer, type AnimationPlayer } from '@h5design/render';
 import { normalizeSchema } from '@h5design/core';
 import { T } from '../../config/theme';
-import { WEB_BASE } from '../../utility';
+import { ShareQrPanel } from './ShareQrPanel';
 
 /** 设计稿基准尺寸（与 schema 默认一致） */
 const DESIGN_W = 375;
@@ -343,14 +343,7 @@ export const WorkPreviewModal = ({ work, onClose }: WorkPreviewModalProps) => {
             {published && work.publishCode && (
               <div>
                 <div style={{ marginBottom: 4, fontSize: 12, color: T.ink3 }}>线上访问</div>
-                <a
-                  href={`${WEB_BASE}/p/${work.publishCode}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ fontSize: 13, color: T.accent }}
-                >
-                  访问 H5（{work.publishCode}）→
-                </a>
+                <ShareQrPanel publishCode={work.publishCode} title={work.title} />
               </div>
             )}
           </div>

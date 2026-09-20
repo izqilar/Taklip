@@ -211,6 +211,7 @@ const TemplateCard = ({
   onDelete,
   onUpgrade,
   onPublish,
+  onPreview,
 }: {
   r: any;
   onDetail: () => void;
@@ -218,6 +219,7 @@ const TemplateCard = ({
   onDelete?: () => void;
   onUpgrade?: () => void;
   onPublish?: () => void;
+  onPreview?: (w: WorkPreviewWork) => void;
 }) => {
   const isWork = r.kind === 'work';
   const { readonly } = useLayer();
@@ -248,7 +250,6 @@ const TemplateCard = ({
     </div>
   );
 
-  const [previewFor, setPreviewFor] = useState<WorkPreviewWork | null>(null);
   const [exportFor, setExportFor] = useState<WorkExportTarget | null>(null);
 
   const capabilities: DesignActionCaps = {
@@ -273,7 +274,8 @@ const TemplateCard = ({
 
   const on: Partial<Record<keyof DesignActionCaps, (it: any) => void>> = {
     detail: () => onDetail(),
-    preview: () => setPreviewFor({ id: r.id, title: r.name, schema: r.schema }),
+    preview: () =>
+      onPreview?.({ id: r.id, title: r.name, schema: r.schema, status: r.status, publishCode: r.publishCode }),
     edit: () => onEdit?.(),
     export: () => setExportFor({ id: r.id, title: r.name, schema: r.schema }),
     delete: () => {
@@ -339,7 +341,6 @@ const TemplateCard = ({
         </div>
       </div>
 
-      {previewFor && <WorkPreviewModal work={previewFor} onClose={() => setPreviewFor(null)} />}
       {exportFor && (
         <Suspense fallback={null}>
           <WorkExportDialog target={exportFor} onClose={() => setExportFor(null)} />
@@ -361,6 +362,8 @@ const TemplateCard = ({
 export const WorksList = () => {
   const nav = useNavigate();
   const [tick, setTick] = useState(0);
+  // 预览 / 发布后分享弹窗（提升到此级，便于发布成功后自动弹出含二维码的预览）
+  const [previewFor, setPreviewFor] = useState<WorkPreviewWork | null>(null);
 
   // 新建空白作品：复用 web 端项目创建端点（同一后端、同一 JWT），归属当前服务商
   const handleCreateWork = useCallback(async () => {
@@ -400,10 +403,19 @@ export const WorksList = () => {
 
   // 作品级设计稿：发布为可见 H5（与 web 端作品 hover 统一）。
   // 走 provider 域 POST works/:id/publish（subject 口径同上），替代 web 域 publish/:id。
-  const handlePublishWork = useCallback(async (id: string) => {
+  // 发布成功后直接弹出带二维码的预览/分享弹窗，让运营端「发布后能看到去哪了」。
+  const handlePublishWork = useCallback(async (r: any) => {
     try {
-      await dataProvider.custom!({ url: `provider/works/${id}/publish`, method: 'post' });
-      message.success('作品已发布');
+      const res: any = await dataProvider.custom!({ url: `provider/works/${r.id}/publish`, method: 'post' });
+      const code: string | undefined = res?.data?.publishCode;
+      // 立即弹出预览（已发布态 + publishCode 命中 WorkPreviewModal 的二维码分享区）
+      setPreviewFor({
+        id: r.id,
+        title: r.name,
+        schema: r.schema,
+        status: 'published',
+        publishCode: code,
+      });
       setTick((t) => t + 1); // 刷新列表
     } catch (e: any) {
       message.error(e?.response?.data?.message || e?.message || '发布失败');
@@ -411,31 +423,35 @@ export const WorksList = () => {
   }, []);
 
   return (
-    <GenericListPage
-      title="作品管理"
-      sub="个人作品（Project）· 设计稿 / 发布 H5 / 升级为模板"
-      chip={CHIP}
-      resource="provider/catalog"
-      rowKey="id"
-      pageSize={20}
-      key={tick}
-      createLabel="＋ 新建作品"
-      onCreate={handleCreateWork}
-      searchable
-      searchField="name"
-      searchPlaceholder="搜索名称…"
-      staticFilters={[{ field: 'kind', operator: 'eq', value: 'work' }]}
-      gridCard={(r: any) => (
-        <TemplateCard
-          r={r}
-          onDetail={() => nav(`/sp/works/${r.id}`)}
-          onEdit={() => nav(`/sp/works/${r.id}/editor`)}
-          onDelete={() => handleDeleteWork(r.id)}
-          onUpgrade={() => nav(`/sp/works/${r.id}/upgrade`)}
-          onPublish={() => handlePublishWork(r.id)}
-        />
-      )}
-    />
+    <>
+      <GenericListPage
+        title="作品管理"
+        sub="个人作品（Project）· 设计稿 / 发布 H5 / 升级为模板"
+        chip={CHIP}
+        resource="provider/catalog"
+        rowKey="id"
+        pageSize={20}
+        key={tick}
+        createLabel="＋ 新建作品"
+        onCreate={handleCreateWork}
+        searchable
+        searchField="name"
+        searchPlaceholder="搜索名称…"
+        staticFilters={[{ field: 'kind', operator: 'eq', value: 'work' }]}
+        gridCard={(r: any) => (
+          <TemplateCard
+            r={r}
+            onDetail={() => nav(`/sp/works/${r.id}`)}
+            onEdit={() => nav(`/sp/works/${r.id}/editor`)}
+            onDelete={() => handleDeleteWork(r.id)}
+            onUpgrade={() => nav(`/sp/works/${r.id}/upgrade`)}
+            onPublish={() => handlePublishWork(r)}
+            onPreview={setPreviewFor}
+          />
+        )}
+      />
+      {previewFor && <WorkPreviewModal work={previewFor} onClose={() => setPreviewFor(null)} />}
+    </>
   );
 };
 
