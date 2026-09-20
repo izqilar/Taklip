@@ -5,6 +5,7 @@ import { ArrowLeftOutlined } from '@ant-design/icons';
 import { T } from '../../config/theme';
 import { Pill, type PillTone } from '../ui/Pill';
 import { SchemaThumbnail, isProjectLike } from '@h5design/render';
+import { formatCents } from '../../utility';
 
 /**
  * 服务商视角「详情 / 设置页」统一骨架 —— 对齐 UI_Design/index.html 的 .svcf-grid 两栏范式。
@@ -281,7 +282,7 @@ export function ServicePreviewCard({ name, category, price, tags, intro, status,
       )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 14, marginTop: 8, borderTop: `1px solid ${T.border}` }}>
         <span style={{ flex: 1, fontSize: 15, fontWeight: 700, color: T.accent, whiteSpace: 'nowrap' }}>
-          {typeof price === 'number' ? `¥${(price / 100).toFixed(2)}` : '¥0.00'}
+          {formatCents(price ?? 0)}
           <small style={{ fontSize: 11, color: T.ink3, fontWeight: 400 }}> 起</small>
         </span>
         <span style={{ fontSize: 12.5, padding: '7px 14px', borderRadius: 8, border: `1px solid ${T.border}`, background: T.bg, color: T.ink2 }}>咨询预约</span>
@@ -316,7 +317,7 @@ export function TemplatePreviewCard({ name, category, price, tags, intro, status
       )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 14, marginTop: 8, borderTop: `1px solid ${T.border}` }}>
         <span style={{ flex: 1, fontSize: 15, fontWeight: 700, color: T.accent, whiteSpace: 'nowrap' }}>
-          {typeof price === 'number' && price > 0 ? `¥${(price / 100).toFixed(2)}` : '免费'}
+          {typeof price === 'number' && price > 0 ? formatCents(price) : '免费'}
           <small style={{ fontSize: 11, color: T.ink3, fontWeight: 400 }}> 起</small>
         </span>
         {useCount != null && (

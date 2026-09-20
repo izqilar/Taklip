@@ -9,6 +9,7 @@ import type { TemplateListItem } from '@/api/client';
 import { SchemaThumbnail } from '@/components/SchemaThumbnail';
 import TemplatePreviewModal from '@/components/TemplatePreviewModal';
 import { useFavoritesStore, type FavoriteTemplate } from '@/store/favoritesStore';
+import { formatCents } from '@h5design/core';
 
 interface TemplateCardProps {
   template: TemplateListItem;
@@ -70,7 +71,7 @@ export default function TemplateCard({ template, onUse }: TemplateCardProps) {
         <div className="flex items-center justify-between px-3 pb-3 text-xs text-gray-400">
           <span>{template.useCount} {t('common:home.uses')}</span>
           {template.price > 0 ? (
-            <span className="font-semibold text-[#c81e42]">¥{(template.price / 100).toFixed(2)}</span>
+            <span className="font-semibold text-[#c81e42]">{formatCents(template.price)}</span>
           ) : (
             <span className="text-green-600">{t('templates:free')}</span>
           )}

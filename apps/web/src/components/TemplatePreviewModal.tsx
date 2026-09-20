@@ -17,6 +17,7 @@ import { SchemaRenderer } from '@h5design/render';
 import type { AnimationPlayer } from '@h5design/render';
 import { normalizeSchema } from '@h5design/core';
 import { categoryI18nKey } from '@/categories';
+import { formatCents } from '@h5design/core';
 
 interface TemplatePreviewModalProps {
   template: TemplateListItem;
@@ -82,7 +83,7 @@ export default function TemplatePreviewModal({ template, onUse, onClose }: Templ
 
   const priceNode =
     template.price > 0 ? (
-      <span className="font-semibold text-[#c81e42]">¥{(template.price / 100).toFixed(2)}</span>
+      <span className="font-semibold text-[#c81e42]">{formatCents(template.price)}</span>
     ) : (
       <span className="text-green-600">{t('templates:free')}</span>
     );

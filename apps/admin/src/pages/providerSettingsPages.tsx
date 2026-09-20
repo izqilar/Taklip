@@ -332,7 +332,7 @@ export const SPClientsDetail = () => {
         <div style={{ fontWeight: 600, color: T.accent, marginBottom: 6 }}>{(REACH_TYPE[pv.type] ? `【${REACH_TYPE[pv.type]}】 ` : '') + (pv.subject || '（维护主题）')}</div>
         <div style={{ fontSize: 12, color: T.ink2, marginBottom: 6, whiteSpace: 'pre-wrap' }}>
           渠道：{REACH_CHANNEL[pv.channel] || pv.channel || '（渠道）'}
-          {isBenefit ? `　|　面额：¥${(Number(pv.amount) || 0).toFixed(2)}` : ''}
+          {isBenefit ? `　|　面额：${formatCents((Number(pv.amount) || 0) * 100)}` : ''}
           {isBenefit && pv.validTo ? `　|　有效期至：${pv.validTo}` : ''}
         </div>
         <div style={{ fontSize: 13, color: T.ink1, whiteSpace: 'pre-wrap' }}>{pv.content || '（维护内容将在右侧实时预览）'}</div>
@@ -343,7 +343,7 @@ export const SPClientsDetail = () => {
         ) : (
           <Timeline items={history.map((h) => ({
             title: `${REACH_TYPE[h.type] || h.type} · ${REACH_CHANNEL[h.channel] || h.channel}`,
-            desc: h.subject + (h.amount ? `　面额 ¥${(h.amount / 100).toFixed(2)}` : ''),
+            desc: h.subject + (h.amount ? `　面额 ${formatCents(h.amount)}` : ''),
             time: dt(h.createdAt),
           }))} />
         )}
