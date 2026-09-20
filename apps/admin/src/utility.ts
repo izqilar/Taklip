@@ -8,8 +8,13 @@ export const STATIC_URL = API_URL.replace(/\/api$/, '') || 'http://localhost:300
 export const TOKEN_KEY = 'h5_admin_token';
 export const USER_KEY = 'h5_admin_user';
 
-// Web 端（用户端 H5）基址：运营端「返回 Web 端首页」跨端跳转并保持登录态时使用
-export const WEB_BASE = 'http://localhost:5173';
+// Web 端（用户端 H5）基址：运营端「返回 Web 端首页」跨端跳转、以及发布后分享二维码
+// 都依赖它拼接 `WEB_BASE/p/<publishCode>`。
+// 局域网/公网一键切换：通过 VITE_WEB_BASE 覆盖；不设置时回退 localhost（本机自测）。
+//   - 局域网调试（手机/同网段设备扫码）：VITE_WEB_BASE=http://<本机局域网IP>:5173
+//   - 生产公网：VITE_WEB_BASE=https://<你的公网域名>
+export const WEB_BASE =
+  (import.meta.env.VITE_WEB_BASE as string | undefined) ?? 'http://localhost:5173';
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);

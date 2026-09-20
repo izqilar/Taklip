@@ -11,10 +11,13 @@ export default defineConfig({
     },
   },
   server: {
-    // 必须显式绑定 IPv4：Vite 默认只监听 localhost（本机解析到 [::1]），
-    // 而 Node/Chrome 访问 localhost 优先走 IPv4 127.0.0.1 → 服务端导出（puppeteer）
-    // 会拿到 ERR_CONNECTION_REFUSED。绑定 127.0.0.1 让两种解析都能通。
-    host: '127.0.0.1',
+    // 局域网/公网一键切换：
+    //   - 默认 host:true → Vite 监听所有网卡（含 127.0.0.1 / [::1] 回环 + 局域网 IP），
+    //     既保证 puppeteer/localhost 正常，又让同网段手机/设备能直接访问，便于扫码调试。
+    //   - 如需仅本机：设 VITE_DEV_HOST=127.0.0.1；如需仅指定网卡也可填具体 IP。
+    // 注意：浏览器侧的 API 走 vite proxy（target 仍是本机 localhost:3000，服务端转发），
+    // 所以手机扫码访问时无需手机直连后端，只要能访问本机 :5173 即可。
+    host: (process.env.VITE_DEV_HOST as string | undefined) ?? true,
     port: 5173,
     proxy: {
       // 开发期代理后端 API，避免跨域

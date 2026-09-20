@@ -37,8 +37,10 @@ export default defineConfig({
     dedupe: ['react', 'react-dom'],
   },
   server: {
-    // 同 web(:5173)：显式绑定 IPv4，避免只监听 [::1] 导致 IPv4 访问被拒
-    host: '127.0.0.1',
+    // 局域网/公网一键切换：默认 host:true → 监听所有网卡（含回环 + 局域网 IP），
+    // 既可本机 localhost:5174 访问，也让平板/同网段设备能开运营端。
+    // 设 VITE_DEV_HOST=127.0.0.1 可退回仅本机。
+    host: (process.env.VITE_DEV_HOST as string | undefined) ?? true,
     port: 5174,
     proxy: {
       // 静态资源代理：与 web(:5173) 一致，使 schema 内的相对资源路径
