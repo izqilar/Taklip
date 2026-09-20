@@ -33,6 +33,7 @@ import { t } from '../i18n/t';
 import { useLayer } from '../providers/layerContext';
 import { DesignGalleryCard, type DesignActionCaps } from '@h5design/ui';
 import { WorkPreviewModal, type WorkPreviewWork } from '../components/user/WorkPreviewModal';
+import { WorkShareLinks } from '../components/user/WorkShareLinks';
 import type { WorkExportTarget } from '../components/user/WorkExportDialog';
 
 // 导出对话框：与编辑器顶栏「导出」同一个内核弹窗（内含 Konva/GSAP，必须懒加载）
@@ -339,6 +340,11 @@ const TemplateCard = ({
           {isWork && <span>浏览 {r.viewCount ?? 0}</span>}
           <Pill tone={st.tone}>{t(st.key)}</Pill>
         </div>
+        {isWork && r.status === 'published' && r.publishCode && (
+          <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px dashed ${T.border}` }}>
+            <WorkShareLinks publishCode={r.publishCode} />
+          </div>
+        )}
       </div>
 
       {exportFor && (

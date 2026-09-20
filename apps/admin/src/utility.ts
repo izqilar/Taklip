@@ -16,25 +16,34 @@ export const USER_KEY = 'h5_admin_user';
 export const WEB_BASE =
   (import.meta.env.VITE_WEB_BASE as string | undefined) ?? 'http://localhost:5173';
 
+let __webBaseCache: { value: string; ts: number } | null = null;
+
 /**
- * 解析 web 端基址，三层回退：
+ * 解析 web 端基址，三层回退 + 30s 模块级缓存（多卡片/弹窗共享，避免重复打 /__lan_info）：
  *  1. VITE_WEB_BASE（手动覆盖 / 生产公网域名）；
  *  2. 开发期向 admin dev server 的 /__lan_info 探测本机 LAN IP（IP 变化自动跟随）；
  *  3. 兜底 http://localhost:5173。
  */
 export async function resolveWebBase(): Promise<string> {
+  const now = Date.now();
+  if (__webBaseCache && now - __webBaseCache.ts < 30000) return __webBaseCache.value;
   const env = (import.meta.env.VITE_WEB_BASE as string | undefined)?.trim();
-  if (env) return env;
-  try {
-    const res = await fetch('/__lan_info');
-    if (res.ok) {
-      const data = (await res.json()) as { ip?: string | null };
-      if (data?.ip) return `http://${data.ip}:5173`;
+  let base = WEB_BASE;
+  if (env) {
+    base = env;
+  } else {
+    try {
+      const res = await fetch('/__lan_info');
+      if (res.ok) {
+        const data = (await res.json()) as { ip?: string | null };
+        if (data?.ip) base = `http://${data.ip}:5173`;
+      }
+    } catch {
+      /* 生产构建无该接口，降级到兜底 */
     }
-  } catch {
-    /* 生产构建无该接口，降级到兜底 */
   }
-  return WEB_BASE;
+  __webBaseCache = { value: base, ts: now };
+  return base;
 }
 
 export function getToken(): string | null {
