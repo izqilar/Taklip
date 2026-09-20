@@ -1,6 +1,30 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { createRequire } from 'node:module';
+import os from 'node:os';
+
+// 探测本机用于局域网分享的 IPv4（排除回环 / 虚拟网卡 / 容器 / 隧道网段）。
+// 仅 dev server 生效；生产构建无此中间件，前端回退到 VITE_WEB_BASE。
+function pickLanIp(): string | null {
+  const ifaces = os.networkInterfaces();
+  const candidates: string[] = [];
+  for (const list of Object.values(ifaces)) {
+    for (const ni of list ?? []) {
+      if (ni.family !== 'IPv4' || ni.internal) continue;
+      const ip = ni.address;
+      if (/^169\.254\./.test(ip)) continue; // 链路本地
+      if (/^100\./.test(ip)) continue; // CGNAT / VPN 常见
+      if (/^172\.(1[6-9]|2\d|3[01])\./.test(ip)) continue; // Docker 桥接 172.16–31
+      if (/^192\.168\.(5[6-9]|6\d|7\d|8\d|9\d)\./.test(ip)) continue; // VirtualBox/VMware 56–99
+      candidates.push(ip);
+    }
+  }
+  // 优先 192.168.x（家用/办公最常见）
+  candidates.sort(
+    (a, b) => (a.startsWith('192.168.') ? -1 : 1) - (b.startsWith('192.168.') ? -1 : 1),
+  );
+  return candidates[0] ?? null;
+}
 
 // 管理后台独立工程，端口 5174 避免与 apps/web(5173) 冲突
 const require = createRequire(import.meta.url);
@@ -27,7 +51,19 @@ const reactI18next = resolveFromAdmin('react-i18next');
 const i18nextPkg = resolveFromAdmin('i18next');
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    {
+      // 暴露本机 LAN IP 给前端，用于动态生成可扫码的分享二维码（IP 变化自动跟随）
+      name: 'lan-info-endpoint',
+      configureServer(server) {
+        server.middlewares.use('/__lan_info', (_req, res) => {
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ ip: pickLanIp(), webPort: 5173, adminPort: 5174 }));
+        });
+      },
+    },
+    react(),
+  ],
   resolve: {
     alias: {
       'react-router-dom': reactRouterDom,

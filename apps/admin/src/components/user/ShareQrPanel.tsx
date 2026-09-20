@@ -10,7 +10,7 @@
  */
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { WEB_BASE } from '../../utility';
+import { resolveWebBase } from '../../utility';
 
 interface ShareQrPanelProps {
   publishCode: string;
@@ -20,11 +20,28 @@ interface ShareQrPanelProps {
 }
 
 export const ShareQrPanel = ({ publishCode, title, size = 200 }: ShareQrPanelProps) => {
-  const url = `${WEB_BASE}/p/${publishCode}`;
+  const [url, setUrl] = useState('');
   const [qr, setQr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // 动态解析 web 基址：优先 VITE_WEB_BASE（手动/公网覆盖），否则向 admin dev server
+  // 的 /__lan_info 探测本机 LAN IP（IP 变化自动跟随）。每 30s 重新探测一次。
   useEffect(() => {
+    let alive = true;
+    const resolve = async () => {
+      const base = await resolveWebBase();
+      if (alive) setUrl(`${base}/p/${publishCode}`);
+    };
+    resolve();
+    const timer = setInterval(resolve, 30000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [publishCode]);
+
+  useEffect(() => {
+    if (!url) return;
     let alive = true;
     QRCode.toDataURL(url, {
       width: size,
@@ -101,7 +118,7 @@ export const ShareQrPanel = ({ publishCode, title, size = 200 }: ShareQrPanelPro
           borderRadius: 8,
         }}
       >
-        {url}
+        {url || '探测本机地址中…'}
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
         <button type="button" onClick={handleCopy} style={btn('#c24b2e')}>
@@ -138,7 +155,7 @@ export const ShareQrPanel = ({ publishCode, title, size = 200 }: ShareQrPanelPro
           </div>
         )}
       </div>
-      <a href={url} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: '#c24b2e', textAlign: 'center' }}>
+      <a href={url || '#'} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: '#c24b2e', textAlign: 'center' }}>
         在浏览器打开 H5 →
       </a>
     </div>
