@@ -5,7 +5,7 @@ import { T } from '../config/theme';
 import { TICKET_STATUS } from '../config/status';
 import { PERIOD, SCHEDULE_STATUS, PERIOD_OPTS, STATUS_OPTS, SVC_OPTIONS, CLIENT_TAG_OPTS, TICKET_TYPE, TICKET_TYPE_OPTS, DEPT_OPTS, CERT_TYPES, APPLY_FLOW, APPLY_STATUS, REGION_OPTIONS, REACH_TYPE, REACH_CHANNEL } from '../config/providerConstants';
 import { dataProvider } from '../providers/dataProvider';
-import { API_URL, getToken } from '../utility';
+import { API_URL, getToken, formatCents } from '../utility';
 import { SettingPage, PreviewCard, FlowSteps, Timeline } from '../components/provider/SettingPage';
 import { Pill } from '../components/ui/Pill';
 import { t } from '../i18n/t';
@@ -22,7 +22,8 @@ const maskCert = (no: string) => (!no ? '—' : no.length <= 8 ? no : no.slice(0
 const licenseStatusTone = (s: string): any =>
   s === '有效' ? 'ok' : s === '待审核' ? 'ac' : s === '已过期' ? 'warn' : 'bad';
 
-const money = (v: any) => (typeof v === 'number' ? `¥${(v / 100).toFixed(2)}` : '¥0.00');
+// 金额（分）→ ¥ 字符串：收敛到 @h5design/core 的 formatCents（修复此前 toFixed(2) 无千分位分组）
+const money = (v: any) => (typeof v === 'number' ? formatCents(v) : '¥0.00');
 const dt = (v: any) => (v ? String(v).replace('T', ' ').slice(0, 16) : '—');
 const arr = (v: any) => (Array.isArray(v) && v.length ? v.join('、') : '—');
 

@@ -8,14 +8,9 @@ import { useTranslation } from 'react-i18next';
 import { api } from '@/api/client';
 import i18n from '@/i18n';
 
-/** 金额（分）→ ¥ 字符串 */
-export const formatCents = (cents?: number | null): string => {
-  const c = cents ?? 0;
-  return `¥${(c / 100).toLocaleString('zh-CN', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-};
+/** 金额（分）→ ¥ 字符串（统一真值源见 @h5design/core，本处 import 后 re-export 以兼容既有 import + 本模块内部使用） */
+import { formatCents } from '@h5design/core';
+export { formatCents };
 
 // 统一真值源已收敛到 @h5design/core（见 packages/core/src/code.ts），此处仅 re-export 以兼容既有 import。
 export { cleanCode } from '@h5design/core';

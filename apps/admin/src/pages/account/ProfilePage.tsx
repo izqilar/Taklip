@@ -4,7 +4,7 @@ import { Avatar, Button, Input, Select, Spin, Upload, message } from 'antd';
 import { EditOutlined, SaveOutlined, CloseOutlined, UploadOutlined } from '@ant-design/icons';
 import { T, S } from '../../config/theme';
 import '../../styles/profile.css';
-import { API_URL, authHeaders, getStoredUser, USER_KEY } from '../../utility';
+import { API_URL, authHeaders, getStoredUser, USER_KEY, formatCents } from '../../utility';
 import { roleText, serviceRolesText, cleanCode } from '../../config/labels';
 import { SUPPORTED_LANGS } from '../../i18n';
 import { t } from '../../i18n/t';
@@ -102,8 +102,8 @@ const formatDateTime = (d?: string | null) => {
   return date.toLocaleString('zh-CN', { hour12: false });
 };
 
-const yuan = (cents?: number | null) =>
-  cents == null ? '—' : `¥${(cents / 100).toLocaleString('zh-CN')}`;
+// 金额（分）→ ¥ 字符串：统一收敛到 @h5design/core 的 formatCents（修复此前丢失两位小数：¥123 应显示 ¥123.00）
+const yuan = formatCents;
 
 const num = (n?: number | null) => (n == null ? '—' : n.toLocaleString('zh-CN'));
 

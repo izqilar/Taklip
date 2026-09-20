@@ -80,11 +80,8 @@ export function todayKey(d: Date = new Date()): string {
   return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/** 分 → ¥ 字符串（保留两位，如 12345 → ¥123.45） */
-export function formatCents(cents?: number | null): string {
-  if (cents == null) return '-';
-  return `¥${(cents / 100).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
+/** 分 → ¥ 字符串（统一真值源见 @h5design/core，本处仅 re-export 以兼容既有 import） */
+export { formatCents } from '@h5design/core';
 
 export function jsonHeaders(): Record<string, string> {
   return { 'Content-Type': 'application/json', ...authHeaders() };
