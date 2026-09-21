@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
+import type { JwtUser } from '../common/types/jwt-user';
 import { CreateStaffDto, UpdateStaffDto } from './dto/staff.dto';
 import {
   checkFuncPerms,
@@ -98,7 +100,10 @@ async function nextMemberNo(prisma: PrismaService, orgType: OrgType, orgId: stri
 
 @Injectable()
 export class StaffService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   /** 列表（分页） */
   async list(orgType: OrgType, orgId: string, page = 1, pageSize = 20) {
@@ -129,7 +134,7 @@ export class StaffService {
    * `dataScope` 非法 → 400；`funcPerms` 越权 → 400（不静默丢弃，
    * 否则调用方会误以为授权成功）。
    */
-  async create(orgType: OrgType, orgId: string, dto: CreateStaffDto) {
+  async create(actor: JwtUser, orgType: OrgType, orgId: string, dto: CreateStaffDto) {
     const name = (dto.name ?? '').toString().trim();
     const phone = (dto.phone ?? '').toString().trim();
     if (!name) throw new BadRequestException('成员姓名必填');
@@ -161,41 +166,61 @@ export class StaffService {
     // 待对方注册后用 bindUser 补链，见下方 bindUser）。
     const existingUser = await this.prisma.user.findUnique({ where: { phone }, select: { id: true } });
 
-    const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
-    let created: StaffRow;
-    try {
-      created = (await this.prisma.orgStaff.create({
-        data: {
-          orgType,
-          orgId,
-          userId: existingUser?.id ?? null,
-          memberNo,
-          name,
-          phone,
-          accountStatus,
-          serviceType,
-          staffRole,
-          duties: Array.isArray(dto.duties) ? dto.duties.filter((d) => typeof d === 'string') : [],
-          funcPerms: chk.value,
-          dataScope,
-          personality: dto.personality ?? null,
-        },
-      })) as StaffRow;
-    } catch (e: any) {
-      // 唯一键冲突（工号 / 手机号）转成可读的 400，避免暴露成无信息的 500
-      if (e?.code === 'P2002') {
+    const baseData = {
+      orgType,
+      orgId,
+      userId: existingUser?.id ?? null,
+      name,
+      phone,
+      accountStatus,
+      serviceType,
+      staffRole,
+      duties: Array.isArray(dto.duties) ? dto.duties.filter((d) => typeof d === 'string') : [],
+      funcPerms: chk.value,
+      dataScope,
+      personality: dto.personality ?? null,
+    };
+
+    // 工号 member_no 全局唯一，但按组织内基线自增；历史残留成员可能占用同一编号 → P2002。
+    // 对 member_no 冲突重算重试（最多 5 次），仅 phone 冲突为真实业务冲突（直接 400）。
+    let created: StaffRow | undefined;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+      try {
+        created = (await this.prisma.orgStaff.create({ data: { ...baseData, memberNo } })) as StaffRow;
+        break;
+      } catch (e: any) {
         const target = Array.isArray(e?.meta?.target) ? e.meta.target.join(',') : String(e?.meta?.target ?? '');
-        throw new BadRequestException(
-          target.includes('phone') ? '该手机号已存在于员工名录' : `工号 ${memberNo} 已被占用，请重试`,
-        );
+        if (e?.code === 'P2002' && target.includes('phone')) {
+          throw new BadRequestException('该手机号已存在于员工名录');
+        }
+        if (e?.code === 'P2002' && target.includes('member_no')) {
+          continue; // 工号冲突：重算后重试
+        }
+        throw e;
       }
-      throw e;
     }
-    return toView(created);
+    if (!created) throw new BadRequestException('工号生成冲突，请稍后重试');
+    const view = toView(created);
+    await this.audit.log({
+      actor,
+      action: 'STAFF_CREATE',
+      targetType: 'ORG_STAFF',
+      targetId: view.id,
+      after: {
+        name: view.name,
+        phone: view.phone,
+        accountStatus: view.accountStatus,
+        staffRole: view.staffRole,
+        dataScope: view.dataScope,
+        funcPerms: view.funcPerms,
+      },
+    });
+    return view;
   }
 
   /** 更新（含停用：accountStatus=DISABLED） */
-  async update(orgType: OrgType, orgId: string, id: string, dto: UpdateStaffDto) {
+  async update(actor: JwtUser, orgType: OrgType, orgId: string, id: string, dto: UpdateStaffDto) {
     const cur = (await this.prisma.orgStaff.findFirst({ where: { id, orgType, orgId } })) as StaffRow | null;
     if (!cur) throw new NotFoundException('成员不存在或无权操作');
 
@@ -244,12 +269,49 @@ export class StaffService {
     }
 
     const updated = (await this.prisma.orgStaff.update({ where: { id }, data })) as StaffRow;
-    return toView(updated);
+    const view = toView(updated);
+    await this.audit.log({
+      actor,
+      action: 'STAFF_UPDATE',
+      targetType: 'ORG_STAFF',
+      targetId: id,
+      before: {
+        name: cur.name,
+        phone: cur.phone,
+        accountStatus: cur.accountStatus,
+        staffRole: cur.staffRole,
+        dataScope: cur.dataScope,
+        funcPerms: cur.funcPerms,
+      },
+      after: {
+        name: view.name,
+        phone: view.phone,
+        accountStatus: view.accountStatus,
+        staffRole: view.staffRole,
+        dataScope: view.dataScope,
+        funcPerms: view.funcPerms,
+      },
+    });
+    return view;
   }
 
-  async remove(orgType: OrgType, orgId: string, id: string) {
+  async remove(actor: JwtUser, orgType: OrgType, orgId: string, id: string) {
     const cur = await this.prisma.orgStaff.findFirst({ where: { id, orgType, orgId } });
     if (!cur) throw new NotFoundException('成员不存在或无权操作');
+    await this.audit.log({
+      actor,
+      action: 'STAFF_REMOVE',
+      targetType: 'ORG_STAFF',
+      targetId: id,
+      before: {
+        name: cur.name,
+        phone: cur.phone,
+        accountStatus: cur.accountStatus,
+        staffRole: cur.staffRole,
+        orgType: cur.orgType,
+        orgId: cur.orgId,
+      },
+    });
     await this.prisma.orgStaff.delete({ where: { id } });
     return { ok: true };
   }
@@ -263,7 +325,7 @@ export class StaffService {
    *
    * 若成员已绑定（userId 非空且匹配）则幂等返回；若目标手机号对应的 User 不存在则抛 400。
    */
-  async bindUser(orgType: OrgType, orgId: string, id: string) {
+  async bindUser(actor: JwtUser, orgType: OrgType, orgId: string, id: string) {
     const cur = (await this.prisma.orgStaff.findFirst({ where: { id, orgType, orgId } })) as StaffRow | null;
     if (!cur) throw new NotFoundException('成员不存在或无权操作');
 
@@ -280,7 +342,16 @@ export class StaffService {
       where: { id },
       data: { userId: user.id },
     })) as StaffRow;
-    return toView(updated);
+    const view = toView(updated);
+    await this.audit.log({
+      actor,
+      action: 'STAFF_BIND',
+      targetType: 'ORG_STAFF',
+      targetId: id,
+      before: { userId: cur.userId },
+      after: { userId: view.userId },
+    });
+    return view;
   }
 
   /**

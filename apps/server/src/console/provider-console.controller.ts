@@ -988,7 +988,7 @@ export class ProviderConsoleController {
     @Body() dto: CreateStaffDto,
     @Query('subject') subject?: string,
   ) {
-    return this.staff.create('PROVIDER', providerTeamOrg(req, subject), dto);
+    return this.staff.create(req.user, 'PROVIDER', providerTeamOrg(req, subject), dto);
   }
 
   /** P1（K-07）：邀请绑定已有账号 —— 按成员手机号把已注册 User 绑到该员工关系 */
@@ -996,7 +996,7 @@ export class ProviderConsoleController {
   @OrgAccess('PROVIDER', { requirePerm: 'team:manage' })
   @UseGuards(OrgAccessGuard)
   async bindTeamMember(@Req() req: ReqUser, @Param('id') id: string) {
-    return this.staff.bindUser('PROVIDER', providerTeamOrg(req), id);
+    return this.staff.bindUser(req.user, 'PROVIDER', providerTeamOrg(req), id);
   }
 
   @Patch('team/:id')
@@ -1008,14 +1008,14 @@ export class ProviderConsoleController {
     @Body() dto: UpdateStaffDto,
     @Query('subject') subject?: string,
   ) {
-    return this.staff.update('PROVIDER', providerTeamOrg(req, subject), id, dto);
+    return this.staff.update(req.user, 'PROVIDER', providerTeamOrg(req, subject), id, dto);
   }
 
   @Delete('team/:id')
   @OrgAccess('PROVIDER', { requirePerm: 'team:manage' })
   @UseGuards(OrgAccessGuard)
   async deleteTeamMember(@Req() req: ReqUser, @Param('id') id: string, @Query('subject') subject?: string) {
-    return this.staff.remove('PROVIDER', providerTeamOrg(req, subject), id);
+    return this.staff.remove(req.user, 'PROVIDER', providerTeamOrg(req, subject), id);
   }
 
   /** 我的客户 */

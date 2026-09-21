@@ -286,28 +286,28 @@ export class AgentConsoleController {
   @OrgAccess('AGENT', { requirePerm: 'team:manage' })
   @UseGuards(OrgAccessGuard)
   async createStaff(@Req() req: ReqUser, @Body() dto: CreateStaffDto) {
-    return this.staff.create('AGENT', agentTeamOrg(req), dto);
+    return this.staff.create(req.user, 'AGENT', agentTeamOrg(req), dto);
   }
 
   @Post('team/:id/bind')
   @OrgAccess('AGENT', { requirePerm: 'team:manage' })
   @UseGuards(OrgAccessGuard)
   async bindStaff(@Req() req: ReqUser, @Param('id') id: string) {
-    return this.staff.bindUser('AGENT', agentTeamOrg(req), id);
+    return this.staff.bindUser(req.user, 'AGENT', agentTeamOrg(req), id);
   }
 
   @Patch('team/:id')
   @OrgAccess('AGENT', { requirePerm: 'team:manage' })
   @UseGuards(OrgAccessGuard)
   async updateStaff(@Req() req: ReqUser, @Param('id') id: string, @Body() dto: UpdateStaffDto) {
-    return this.staff.update('AGENT', agentTeamOrg(req), id, dto);
+    return this.staff.update(req.user, 'AGENT', agentTeamOrg(req), id, dto);
   }
 
   @Delete('team/:id')
   @OrgAccess('AGENT', { requirePerm: 'team:manage' })
   @UseGuards(OrgAccessGuard)
   async deleteStaff(@Req() req: ReqUser, @Param('id') id: string) {
-    return this.staff.remove('AGENT', agentTeamOrg(req), id);
+    return this.staff.remove(req.user, 'AGENT', agentTeamOrg(req), id);
   }
 
   /** 辖区结算汇总（聚合辖区服务商钱包） */

@@ -273,28 +273,28 @@ export class AdminController {
   @Post('team')
   @OrgAccess('CONSOLE', { requirePerm: 'team:manage' })
   @UseGuards(OrgAccessGuard)
-  createStaff(@Body() dto: CreateStaffDto) {
-    return this.staff.create('CONSOLE', CONSOLE_ORG_ID, dto);
+  createStaff(@Req() req: AdminRequest, @Body() dto: CreateStaffDto) {
+    return this.staff.create(req.user, 'CONSOLE', CONSOLE_ORG_ID, dto);
   }
 
   @Post('team/:id/bind')
   @OrgAccess('CONSOLE', { requirePerm: 'team:manage' })
   @UseGuards(OrgAccessGuard)
-  bindStaff(@Param('id') id: string) {
-    return this.staff.bindUser('CONSOLE', CONSOLE_ORG_ID, id);
+  bindStaff(@Req() req: AdminRequest, @Param('id') id: string) {
+    return this.staff.bindUser(req.user, 'CONSOLE', CONSOLE_ORG_ID, id);
   }
 
   @Patch('team/:id')
   @OrgAccess('CONSOLE', { requirePerm: 'team:manage' })
   @UseGuards(OrgAccessGuard)
-  updateStaff(@Param('id') id: string, @Body() dto: UpdateStaffDto) {
-    return this.staff.update('CONSOLE', CONSOLE_ORG_ID, id, dto);
+  updateStaff(@Req() req: AdminRequest, @Param('id') id: string, @Body() dto: UpdateStaffDto) {
+    return this.staff.update(req.user, 'CONSOLE', CONSOLE_ORG_ID, id, dto);
   }
 
   @Delete('team/:id')
   @OrgAccess('CONSOLE', { requirePerm: 'team:manage' })
   @UseGuards(OrgAccessGuard)
-  deleteStaff(@Param('id') id: string) {
-    return this.staff.remove('CONSOLE', CONSOLE_ORG_ID, id);
+  deleteStaff(@Req() req: AdminRequest, @Param('id') id: string) {
+    return this.staff.remove(req.user, 'CONSOLE', CONSOLE_ORG_ID, id);
   }
 }
