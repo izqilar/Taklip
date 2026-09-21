@@ -1,6 +1,0 @@
-PASS: StrictMode 挂载 A 只请求一次（实际 1 次：A）
-PASS: A→B 会加载 B（实际 A,B）
-PASS: B→A 会重新加载 A（实际 A,B,A）
-PASS: 放弃草稿后 force 重载同一 id 生效（实际 T1,T1）
-PASS: 对照：旧布尔闸门 A→B 只加载了 A（回归复现：A）
-exit=0

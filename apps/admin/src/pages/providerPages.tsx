@@ -35,6 +35,7 @@ import { DesignGalleryCard, type DesignActionCaps } from '@h5design/ui';
 import { WorkPreviewModal, type WorkPreviewWork } from '../components/user/WorkPreviewModal';
 import { WorkShareLinks } from '../components/user/WorkShareLinks';
 import type { WorkExportTarget } from '../components/user/WorkExportDialog';
+import { StaffTeamList } from './staffTeamPages';
 
 // 导出对话框：与编辑器顶栏「导出」同一个内核弹窗（内含 Konva/GSAP，必须懒加载）
 const WorkExportDialog = lazy(() => import('../components/user/WorkExportDialog'));
@@ -783,42 +784,21 @@ export const SPReviews = () => {
   );
 };
 
-/* ===================== 我的团队 ===================== */
-export const SPTeam = () => {
-  const nav = useNavigate();
-  return (
-    <GenericListPage
-      title="我的团队"
-      sub="角色化团队建设 · 按服务类型差异化角色"
-      chip={CHIP}
-      resource="provider/team"
-      rowKey="id"
-      pageSize={20}
-      createLabel="＋ 新建成员"
-      onCreate={() => nav('/sp/team/new')}
-      searchable
-      searchField="name"
-      searchPlaceholder="搜索成员姓名…"
-      chipFilters={[
-        { label: '全部', value: 'all' },
-        { label: '正常', value: 'ACTIVE', test: (r) => r.accountStatus === 'ACTIVE' },
-        { label: '待激活', value: 'PENDING', test: (r) => r.accountStatus === 'PENDING' },
-        { label: '停用', value: 'DISABLED', test: (r) => r.accountStatus === 'DISABLED' },
-      ]}
-      columns={[
-        { title: '成员编号', dataIndex: 'memberNo', width: 120 },
-        { title: '姓名', dataIndex: 'name', width: 110 },
-        { title: '手机', dataIndex: 'phone', width: 140 },
-        { title: '服务类型', dataIndex: 'serviceType', ellipsis: true },
-        { title: '团队角色', dataIndex: 'teamRole', width: 130, ellipsis: true },
-        { title: '账号状态', dataIndex: 'accountStatus', width: 100, render: (v: any) => stPill(v, TEAM_STATUS) },
-      ]}
-      rowActions={(r: any) => (
-        <span onClick={() => nav(`/sp/team/${r.id}`)} style={{ color: T.accent, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' }}>查看</span>
-      )}
-    />
-  );
-};
+/* ===================== 我的团队 =====================
+ * 复用三层同构实现（staffTeamPages.StaffTeamList），服务商层展示「服务类型」列。
+ * 相比旧实现新增「数据权限」「功能权限」两列（原 funcPerms / dataScope 落库但不可见）。
+ */
+export const SPTeam = () => (
+  <StaffTeamList
+    org="PROVIDER"
+    resource="provider/team"
+    basePath="/sp/team"
+    title="我的团队"
+    sub="角色化团队建设 · 按服务类型差异化岗位"
+    chip={CHIP}
+    withServiceType
+  />
+);
 
 /* ===================== 我的客户 ===================== */
 
@@ -1251,7 +1231,7 @@ export const SPIncome = () => {
   return (
     <>
       <PageHead title="收入明细" sub="订单收入 / 结算明细" chip={CHIP} />
-      <div style={GRID.kpis}>
+      <div className={GRID.kpis}>
         <KpiCard main label="累计入账" value={money(d.totalIncomeCents)} delta="订单结算入账" deltaTrend="up" />
         <KpiCard label="待结算挂账" value={money(d.pendingCents)} delta="待 T+3 入账" />
         <KpiCard label="结算周期" value={d.settleCycle} delta="自动入账" />
@@ -1347,7 +1327,7 @@ export const SPWithdraw = () => {
   return (
     <>
       <PageHead title="提现管理" sub="提现申请 / 到账记录" chip={CHIP} />
-      <div style={GRID.kpis}>
+      <div className={GRID.kpis}>
         <KpiCard main label="累计申请" value={money(summary?.appliedCents)} delta="含全部状态" deltaTrend="up" />
         <KpiCard label="已到账" value={money(summary?.paidCents)} />
         <KpiCard label="审核中" value={money(summary?.pendingCents)} delta="待打款" />

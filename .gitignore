@@ -31,3 +31,10 @@ packages/**/node_modules/.prisma/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# test artifacts (Playwright screenshots / result traces / temp probes)
+apps/admin/test-results/
+apps/admin/e2e/_shot_*.png
+apps/admin/e2e/_out.txt
+apps/admin/e2e/_run*.txt
+_audit_tmp/

@@ -124,6 +124,11 @@ export type ProviderContract = $Result.DefaultSelection<Prisma.$ProviderContract
  */
 export type ProviderTeamMember = $Result.DefaultSelection<Prisma.$ProviderTeamMemberPayload>
 /**
+ * Model OrgStaff
+ * 
+ */
+export type OrgStaff = $Result.DefaultSelection<Prisma.$OrgStaffPayload>
+/**
  * Model ProviderClient
  * 
  */
@@ -650,6 +655,16 @@ export class PrismaClient<
   get providerTeamMember(): Prisma.ProviderTeamMemberDelegate<ExtArgs>;
 
   /**
+   * `prisma.orgStaff`: Exposes CRUD operations for the **OrgStaff** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more OrgStaffs
+    * const orgStaffs = await prisma.orgStaff.findMany()
+    * ```
+    */
+  get orgStaff(): Prisma.OrgStaffDelegate<ExtArgs>;
+
+  /**
    * `prisma.providerClient`: Exposes CRUD operations for the **ProviderClient** model.
     * Example usage:
     * ```ts
@@ -1151,6 +1166,7 @@ export namespace Prisma {
     ProviderSchedule: 'ProviderSchedule',
     ProviderContract: 'ProviderContract',
     ProviderTeamMember: 'ProviderTeamMember',
+    OrgStaff: 'OrgStaff',
     ProviderClient: 'ProviderClient',
     ProviderClientReach: 'ProviderClientReach',
     AuditLog: 'AuditLog',
@@ -1170,7 +1186,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, ClientOptions = {}> = {
     meta: {
-      modelProps: "region" | "user" | "project" | "template" | "font" | "projectVersion" | "asset" | "templateOrder" | "providerWallet" | "withdrawal" | "templateAppeal" | "ticket" | "message" | "review" | "messageRead" | "qualificationApplication" | "walletLog" | "coupon" | "userCoupon" | "providerSchedule" | "providerContract" | "providerTeamMember" | "providerClient" | "providerClientReach" | "auditLog" | "providerLicense"
+      modelProps: "region" | "user" | "project" | "template" | "font" | "projectVersion" | "asset" | "templateOrder" | "providerWallet" | "withdrawal" | "templateAppeal" | "ticket" | "message" | "review" | "messageRead" | "qualificationApplication" | "walletLog" | "coupon" | "userCoupon" | "providerSchedule" | "providerContract" | "providerTeamMember" | "orgStaff" | "providerClient" | "providerClientReach" | "auditLog" | "providerLicense"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2711,6 +2727,76 @@ export namespace Prisma {
           count: {
             args: Prisma.ProviderTeamMemberCountArgs<ExtArgs>
             result: $Utils.Optional<ProviderTeamMemberCountAggregateOutputType> | number
+          }
+        }
+      }
+      OrgStaff: {
+        payload: Prisma.$OrgStaffPayload<ExtArgs>
+        fields: Prisma.OrgStaffFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.OrgStaffFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrgStaffPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.OrgStaffFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrgStaffPayload>
+          }
+          findFirst: {
+            args: Prisma.OrgStaffFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrgStaffPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.OrgStaffFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrgStaffPayload>
+          }
+          findMany: {
+            args: Prisma.OrgStaffFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrgStaffPayload>[]
+          }
+          create: {
+            args: Prisma.OrgStaffCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrgStaffPayload>
+          }
+          createMany: {
+            args: Prisma.OrgStaffCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.OrgStaffCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrgStaffPayload>[]
+          }
+          delete: {
+            args: Prisma.OrgStaffDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrgStaffPayload>
+          }
+          update: {
+            args: Prisma.OrgStaffUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrgStaffPayload>
+          }
+          deleteMany: {
+            args: Prisma.OrgStaffDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.OrgStaffUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.OrgStaffUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrgStaffPayload>
+          }
+          aggregate: {
+            args: Prisma.OrgStaffAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateOrgStaff>
+          }
+          groupBy: {
+            args: Prisma.OrgStaffGroupByArgs<ExtArgs>
+            result: $Utils.Optional<OrgStaffGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.OrgStaffCountArgs<ExtArgs>
+            result: $Utils.Optional<OrgStaffCountAggregateOutputType> | number
           }
         }
       }
@@ -26905,6 +26991,1008 @@ export namespace Prisma {
 
 
   /**
+   * Model OrgStaff
+   */
+
+  export type AggregateOrgStaff = {
+    _count: OrgStaffCountAggregateOutputType | null
+    _min: OrgStaffMinAggregateOutputType | null
+    _max: OrgStaffMaxAggregateOutputType | null
+  }
+
+  export type OrgStaffMinAggregateOutputType = {
+    id: string | null
+    orgType: string | null
+    orgId: string | null
+    userId: string | null
+    memberNo: string | null
+    name: string | null
+    phone: string | null
+    accountStatus: string | null
+    serviceType: string | null
+    staffRole: string | null
+    dataScope: string | null
+    personality: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type OrgStaffMaxAggregateOutputType = {
+    id: string | null
+    orgType: string | null
+    orgId: string | null
+    userId: string | null
+    memberNo: string | null
+    name: string | null
+    phone: string | null
+    accountStatus: string | null
+    serviceType: string | null
+    staffRole: string | null
+    dataScope: string | null
+    personality: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type OrgStaffCountAggregateOutputType = {
+    id: number
+    orgType: number
+    orgId: number
+    userId: number
+    memberNo: number
+    name: number
+    phone: number
+    accountStatus: number
+    serviceType: number
+    staffRole: number
+    duties: number
+    funcPerms: number
+    dataScope: number
+    personality: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type OrgStaffMinAggregateInputType = {
+    id?: true
+    orgType?: true
+    orgId?: true
+    userId?: true
+    memberNo?: true
+    name?: true
+    phone?: true
+    accountStatus?: true
+    serviceType?: true
+    staffRole?: true
+    dataScope?: true
+    personality?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type OrgStaffMaxAggregateInputType = {
+    id?: true
+    orgType?: true
+    orgId?: true
+    userId?: true
+    memberNo?: true
+    name?: true
+    phone?: true
+    accountStatus?: true
+    serviceType?: true
+    staffRole?: true
+    dataScope?: true
+    personality?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type OrgStaffCountAggregateInputType = {
+    id?: true
+    orgType?: true
+    orgId?: true
+    userId?: true
+    memberNo?: true
+    name?: true
+    phone?: true
+    accountStatus?: true
+    serviceType?: true
+    staffRole?: true
+    duties?: true
+    funcPerms?: true
+    dataScope?: true
+    personality?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type OrgStaffAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OrgStaff to aggregate.
+     */
+    where?: OrgStaffWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrgStaffs to fetch.
+     */
+    orderBy?: OrgStaffOrderByWithRelationInput | OrgStaffOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: OrgStaffWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrgStaffs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrgStaffs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned OrgStaffs
+    **/
+    _count?: true | OrgStaffCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: OrgStaffMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: OrgStaffMaxAggregateInputType
+  }
+
+  export type GetOrgStaffAggregateType<T extends OrgStaffAggregateArgs> = {
+        [P in keyof T & keyof AggregateOrgStaff]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateOrgStaff[P]>
+      : GetScalarType<T[P], AggregateOrgStaff[P]>
+  }
+
+
+
+
+  export type OrgStaffGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrgStaffWhereInput
+    orderBy?: OrgStaffOrderByWithAggregationInput | OrgStaffOrderByWithAggregationInput[]
+    by: OrgStaffScalarFieldEnum[] | OrgStaffScalarFieldEnum
+    having?: OrgStaffScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: OrgStaffCountAggregateInputType | true
+    _min?: OrgStaffMinAggregateInputType
+    _max?: OrgStaffMaxAggregateInputType
+  }
+
+  export type OrgStaffGroupByOutputType = {
+    id: string
+    orgType: string
+    orgId: string
+    userId: string | null
+    memberNo: string
+    name: string
+    phone: string
+    accountStatus: string
+    serviceType: string | null
+    staffRole: string
+    duties: string[]
+    funcPerms: string[]
+    dataScope: string
+    personality: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: OrgStaffCountAggregateOutputType | null
+    _min: OrgStaffMinAggregateOutputType | null
+    _max: OrgStaffMaxAggregateOutputType | null
+  }
+
+  type GetOrgStaffGroupByPayload<T extends OrgStaffGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<OrgStaffGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof OrgStaffGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], OrgStaffGroupByOutputType[P]>
+            : GetScalarType<T[P], OrgStaffGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type OrgStaffSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    orgType?: boolean
+    orgId?: boolean
+    userId?: boolean
+    memberNo?: boolean
+    name?: boolean
+    phone?: boolean
+    accountStatus?: boolean
+    serviceType?: boolean
+    staffRole?: boolean
+    duties?: boolean
+    funcPerms?: boolean
+    dataScope?: boolean
+    personality?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["orgStaff"]>
+
+  export type OrgStaffSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    orgType?: boolean
+    orgId?: boolean
+    userId?: boolean
+    memberNo?: boolean
+    name?: boolean
+    phone?: boolean
+    accountStatus?: boolean
+    serviceType?: boolean
+    staffRole?: boolean
+    duties?: boolean
+    funcPerms?: boolean
+    dataScope?: boolean
+    personality?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["orgStaff"]>
+
+  export type OrgStaffSelectScalar = {
+    id?: boolean
+    orgType?: boolean
+    orgId?: boolean
+    userId?: boolean
+    memberNo?: boolean
+    name?: boolean
+    phone?: boolean
+    accountStatus?: boolean
+    serviceType?: boolean
+    staffRole?: boolean
+    duties?: boolean
+    funcPerms?: boolean
+    dataScope?: boolean
+    personality?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+
+  export type $OrgStaffPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "OrgStaff"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      orgType: string
+      orgId: string
+      userId: string | null
+      memberNo: string
+      name: string
+      phone: string
+      accountStatus: string
+      serviceType: string | null
+      staffRole: string
+      duties: string[]
+      funcPerms: string[]
+      dataScope: string
+      personality: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["orgStaff"]>
+    composites: {}
+  }
+
+  type OrgStaffGetPayload<S extends boolean | null | undefined | OrgStaffDefaultArgs> = $Result.GetResult<Prisma.$OrgStaffPayload, S>
+
+  type OrgStaffCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<OrgStaffFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: OrgStaffCountAggregateInputType | true
+    }
+
+  export interface OrgStaffDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['OrgStaff'], meta: { name: 'OrgStaff' } }
+    /**
+     * Find zero or one OrgStaff that matches the filter.
+     * @param {OrgStaffFindUniqueArgs} args - Arguments to find a OrgStaff
+     * @example
+     * // Get one OrgStaff
+     * const orgStaff = await prisma.orgStaff.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends OrgStaffFindUniqueArgs>(args: SelectSubset<T, OrgStaffFindUniqueArgs<ExtArgs>>): Prisma__OrgStaffClient<$Result.GetResult<Prisma.$OrgStaffPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one OrgStaff that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {OrgStaffFindUniqueOrThrowArgs} args - Arguments to find a OrgStaff
+     * @example
+     * // Get one OrgStaff
+     * const orgStaff = await prisma.orgStaff.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends OrgStaffFindUniqueOrThrowArgs>(args: SelectSubset<T, OrgStaffFindUniqueOrThrowArgs<ExtArgs>>): Prisma__OrgStaffClient<$Result.GetResult<Prisma.$OrgStaffPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first OrgStaff that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrgStaffFindFirstArgs} args - Arguments to find a OrgStaff
+     * @example
+     * // Get one OrgStaff
+     * const orgStaff = await prisma.orgStaff.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends OrgStaffFindFirstArgs>(args?: SelectSubset<T, OrgStaffFindFirstArgs<ExtArgs>>): Prisma__OrgStaffClient<$Result.GetResult<Prisma.$OrgStaffPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first OrgStaff that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrgStaffFindFirstOrThrowArgs} args - Arguments to find a OrgStaff
+     * @example
+     * // Get one OrgStaff
+     * const orgStaff = await prisma.orgStaff.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends OrgStaffFindFirstOrThrowArgs>(args?: SelectSubset<T, OrgStaffFindFirstOrThrowArgs<ExtArgs>>): Prisma__OrgStaffClient<$Result.GetResult<Prisma.$OrgStaffPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more OrgStaffs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrgStaffFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all OrgStaffs
+     * const orgStaffs = await prisma.orgStaff.findMany()
+     * 
+     * // Get first 10 OrgStaffs
+     * const orgStaffs = await prisma.orgStaff.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const orgStaffWithIdOnly = await prisma.orgStaff.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends OrgStaffFindManyArgs>(args?: SelectSubset<T, OrgStaffFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrgStaffPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a OrgStaff.
+     * @param {OrgStaffCreateArgs} args - Arguments to create a OrgStaff.
+     * @example
+     * // Create one OrgStaff
+     * const OrgStaff = await prisma.orgStaff.create({
+     *   data: {
+     *     // ... data to create a OrgStaff
+     *   }
+     * })
+     * 
+     */
+    create<T extends OrgStaffCreateArgs>(args: SelectSubset<T, OrgStaffCreateArgs<ExtArgs>>): Prisma__OrgStaffClient<$Result.GetResult<Prisma.$OrgStaffPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many OrgStaffs.
+     * @param {OrgStaffCreateManyArgs} args - Arguments to create many OrgStaffs.
+     * @example
+     * // Create many OrgStaffs
+     * const orgStaff = await prisma.orgStaff.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends OrgStaffCreateManyArgs>(args?: SelectSubset<T, OrgStaffCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many OrgStaffs and returns the data saved in the database.
+     * @param {OrgStaffCreateManyAndReturnArgs} args - Arguments to create many OrgStaffs.
+     * @example
+     * // Create many OrgStaffs
+     * const orgStaff = await prisma.orgStaff.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many OrgStaffs and only return the `id`
+     * const orgStaffWithIdOnly = await prisma.orgStaff.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends OrgStaffCreateManyAndReturnArgs>(args?: SelectSubset<T, OrgStaffCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrgStaffPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a OrgStaff.
+     * @param {OrgStaffDeleteArgs} args - Arguments to delete one OrgStaff.
+     * @example
+     * // Delete one OrgStaff
+     * const OrgStaff = await prisma.orgStaff.delete({
+     *   where: {
+     *     // ... filter to delete one OrgStaff
+     *   }
+     * })
+     * 
+     */
+    delete<T extends OrgStaffDeleteArgs>(args: SelectSubset<T, OrgStaffDeleteArgs<ExtArgs>>): Prisma__OrgStaffClient<$Result.GetResult<Prisma.$OrgStaffPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one OrgStaff.
+     * @param {OrgStaffUpdateArgs} args - Arguments to update one OrgStaff.
+     * @example
+     * // Update one OrgStaff
+     * const orgStaff = await prisma.orgStaff.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends OrgStaffUpdateArgs>(args: SelectSubset<T, OrgStaffUpdateArgs<ExtArgs>>): Prisma__OrgStaffClient<$Result.GetResult<Prisma.$OrgStaffPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more OrgStaffs.
+     * @param {OrgStaffDeleteManyArgs} args - Arguments to filter OrgStaffs to delete.
+     * @example
+     * // Delete a few OrgStaffs
+     * const { count } = await prisma.orgStaff.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends OrgStaffDeleteManyArgs>(args?: SelectSubset<T, OrgStaffDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OrgStaffs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrgStaffUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many OrgStaffs
+     * const orgStaff = await prisma.orgStaff.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends OrgStaffUpdateManyArgs>(args: SelectSubset<T, OrgStaffUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one OrgStaff.
+     * @param {OrgStaffUpsertArgs} args - Arguments to update or create a OrgStaff.
+     * @example
+     * // Update or create a OrgStaff
+     * const orgStaff = await prisma.orgStaff.upsert({
+     *   create: {
+     *     // ... data to create a OrgStaff
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the OrgStaff we want to update
+     *   }
+     * })
+     */
+    upsert<T extends OrgStaffUpsertArgs>(args: SelectSubset<T, OrgStaffUpsertArgs<ExtArgs>>): Prisma__OrgStaffClient<$Result.GetResult<Prisma.$OrgStaffPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of OrgStaffs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrgStaffCountArgs} args - Arguments to filter OrgStaffs to count.
+     * @example
+     * // Count the number of OrgStaffs
+     * const count = await prisma.orgStaff.count({
+     *   where: {
+     *     // ... the filter for the OrgStaffs we want to count
+     *   }
+     * })
+    **/
+    count<T extends OrgStaffCountArgs>(
+      args?: Subset<T, OrgStaffCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], OrgStaffCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a OrgStaff.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrgStaffAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends OrgStaffAggregateArgs>(args: Subset<T, OrgStaffAggregateArgs>): Prisma.PrismaPromise<GetOrgStaffAggregateType<T>>
+
+    /**
+     * Group by OrgStaff.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OrgStaffGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends OrgStaffGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: OrgStaffGroupByArgs['orderBy'] }
+        : { orderBy?: OrgStaffGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, OrgStaffGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOrgStaffGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the OrgStaff model
+   */
+  readonly fields: OrgStaffFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for OrgStaff.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__OrgStaffClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the OrgStaff model
+   */ 
+  interface OrgStaffFieldRefs {
+    readonly id: FieldRef<"OrgStaff", 'String'>
+    readonly orgType: FieldRef<"OrgStaff", 'String'>
+    readonly orgId: FieldRef<"OrgStaff", 'String'>
+    readonly userId: FieldRef<"OrgStaff", 'String'>
+    readonly memberNo: FieldRef<"OrgStaff", 'String'>
+    readonly name: FieldRef<"OrgStaff", 'String'>
+    readonly phone: FieldRef<"OrgStaff", 'String'>
+    readonly accountStatus: FieldRef<"OrgStaff", 'String'>
+    readonly serviceType: FieldRef<"OrgStaff", 'String'>
+    readonly staffRole: FieldRef<"OrgStaff", 'String'>
+    readonly duties: FieldRef<"OrgStaff", 'String[]'>
+    readonly funcPerms: FieldRef<"OrgStaff", 'String[]'>
+    readonly dataScope: FieldRef<"OrgStaff", 'String'>
+    readonly personality: FieldRef<"OrgStaff", 'String'>
+    readonly createdAt: FieldRef<"OrgStaff", 'DateTime'>
+    readonly updatedAt: FieldRef<"OrgStaff", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * OrgStaff findUnique
+   */
+  export type OrgStaffFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrgStaff
+     */
+    select?: OrgStaffSelect<ExtArgs> | null
+    /**
+     * Filter, which OrgStaff to fetch.
+     */
+    where: OrgStaffWhereUniqueInput
+  }
+
+  /**
+   * OrgStaff findUniqueOrThrow
+   */
+  export type OrgStaffFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrgStaff
+     */
+    select?: OrgStaffSelect<ExtArgs> | null
+    /**
+     * Filter, which OrgStaff to fetch.
+     */
+    where: OrgStaffWhereUniqueInput
+  }
+
+  /**
+   * OrgStaff findFirst
+   */
+  export type OrgStaffFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrgStaff
+     */
+    select?: OrgStaffSelect<ExtArgs> | null
+    /**
+     * Filter, which OrgStaff to fetch.
+     */
+    where?: OrgStaffWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrgStaffs to fetch.
+     */
+    orderBy?: OrgStaffOrderByWithRelationInput | OrgStaffOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OrgStaffs.
+     */
+    cursor?: OrgStaffWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrgStaffs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrgStaffs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrgStaffs.
+     */
+    distinct?: OrgStaffScalarFieldEnum | OrgStaffScalarFieldEnum[]
+  }
+
+  /**
+   * OrgStaff findFirstOrThrow
+   */
+  export type OrgStaffFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrgStaff
+     */
+    select?: OrgStaffSelect<ExtArgs> | null
+    /**
+     * Filter, which OrgStaff to fetch.
+     */
+    where?: OrgStaffWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrgStaffs to fetch.
+     */
+    orderBy?: OrgStaffOrderByWithRelationInput | OrgStaffOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OrgStaffs.
+     */
+    cursor?: OrgStaffWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrgStaffs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrgStaffs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OrgStaffs.
+     */
+    distinct?: OrgStaffScalarFieldEnum | OrgStaffScalarFieldEnum[]
+  }
+
+  /**
+   * OrgStaff findMany
+   */
+  export type OrgStaffFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrgStaff
+     */
+    select?: OrgStaffSelect<ExtArgs> | null
+    /**
+     * Filter, which OrgStaffs to fetch.
+     */
+    where?: OrgStaffWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OrgStaffs to fetch.
+     */
+    orderBy?: OrgStaffOrderByWithRelationInput | OrgStaffOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing OrgStaffs.
+     */
+    cursor?: OrgStaffWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OrgStaffs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OrgStaffs.
+     */
+    skip?: number
+    distinct?: OrgStaffScalarFieldEnum | OrgStaffScalarFieldEnum[]
+  }
+
+  /**
+   * OrgStaff create
+   */
+  export type OrgStaffCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrgStaff
+     */
+    select?: OrgStaffSelect<ExtArgs> | null
+    /**
+     * The data needed to create a OrgStaff.
+     */
+    data: XOR<OrgStaffCreateInput, OrgStaffUncheckedCreateInput>
+  }
+
+  /**
+   * OrgStaff createMany
+   */
+  export type OrgStaffCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many OrgStaffs.
+     */
+    data: OrgStaffCreateManyInput | OrgStaffCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OrgStaff createManyAndReturn
+   */
+  export type OrgStaffCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrgStaff
+     */
+    select?: OrgStaffSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many OrgStaffs.
+     */
+    data: OrgStaffCreateManyInput | OrgStaffCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OrgStaff update
+   */
+  export type OrgStaffUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrgStaff
+     */
+    select?: OrgStaffSelect<ExtArgs> | null
+    /**
+     * The data needed to update a OrgStaff.
+     */
+    data: XOR<OrgStaffUpdateInput, OrgStaffUncheckedUpdateInput>
+    /**
+     * Choose, which OrgStaff to update.
+     */
+    where: OrgStaffWhereUniqueInput
+  }
+
+  /**
+   * OrgStaff updateMany
+   */
+  export type OrgStaffUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update OrgStaffs.
+     */
+    data: XOR<OrgStaffUpdateManyMutationInput, OrgStaffUncheckedUpdateManyInput>
+    /**
+     * Filter which OrgStaffs to update
+     */
+    where?: OrgStaffWhereInput
+  }
+
+  /**
+   * OrgStaff upsert
+   */
+  export type OrgStaffUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrgStaff
+     */
+    select?: OrgStaffSelect<ExtArgs> | null
+    /**
+     * The filter to search for the OrgStaff to update in case it exists.
+     */
+    where: OrgStaffWhereUniqueInput
+    /**
+     * In case the OrgStaff found by the `where` argument doesn't exist, create a new OrgStaff with this data.
+     */
+    create: XOR<OrgStaffCreateInput, OrgStaffUncheckedCreateInput>
+    /**
+     * In case the OrgStaff was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<OrgStaffUpdateInput, OrgStaffUncheckedUpdateInput>
+  }
+
+  /**
+   * OrgStaff delete
+   */
+  export type OrgStaffDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrgStaff
+     */
+    select?: OrgStaffSelect<ExtArgs> | null
+    /**
+     * Filter which OrgStaff to delete.
+     */
+    where: OrgStaffWhereUniqueInput
+  }
+
+  /**
+   * OrgStaff deleteMany
+   */
+  export type OrgStaffDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OrgStaffs to delete
+     */
+    where?: OrgStaffWhereInput
+  }
+
+  /**
+   * OrgStaff without action
+   */
+  export type OrgStaffDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrgStaff
+     */
+    select?: OrgStaffSelect<ExtArgs> | null
+  }
+
+
+  /**
    * Model ProviderClient
    */
 
@@ -31240,6 +32328,28 @@ export namespace Prisma {
   export type ProviderTeamMemberScalarFieldEnum = (typeof ProviderTeamMemberScalarFieldEnum)[keyof typeof ProviderTeamMemberScalarFieldEnum]
 
 
+  export const OrgStaffScalarFieldEnum: {
+    id: 'id',
+    orgType: 'orgType',
+    orgId: 'orgId',
+    userId: 'userId',
+    memberNo: 'memberNo',
+    name: 'name',
+    phone: 'phone',
+    accountStatus: 'accountStatus',
+    serviceType: 'serviceType',
+    staffRole: 'staffRole',
+    duties: 'duties',
+    funcPerms: 'funcPerms',
+    dataScope: 'dataScope',
+    personality: 'personality',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type OrgStaffScalarFieldEnum = (typeof OrgStaffScalarFieldEnum)[keyof typeof OrgStaffScalarFieldEnum]
+
+
   export const ProviderClientScalarFieldEnum: {
     id: 'id',
     providerId: 'providerId',
@@ -33667,6 +34777,113 @@ export namespace Prisma {
     funcPerms?: StringNullableListFilter<"ProviderTeamMember">
     createdAt?: DateTimeWithAggregatesFilter<"ProviderTeamMember"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"ProviderTeamMember"> | Date | string
+  }
+
+  export type OrgStaffWhereInput = {
+    AND?: OrgStaffWhereInput | OrgStaffWhereInput[]
+    OR?: OrgStaffWhereInput[]
+    NOT?: OrgStaffWhereInput | OrgStaffWhereInput[]
+    id?: StringFilter<"OrgStaff"> | string
+    orgType?: StringFilter<"OrgStaff"> | string
+    orgId?: StringFilter<"OrgStaff"> | string
+    userId?: StringNullableFilter<"OrgStaff"> | string | null
+    memberNo?: StringFilter<"OrgStaff"> | string
+    name?: StringFilter<"OrgStaff"> | string
+    phone?: StringFilter<"OrgStaff"> | string
+    accountStatus?: StringFilter<"OrgStaff"> | string
+    serviceType?: StringNullableFilter<"OrgStaff"> | string | null
+    staffRole?: StringFilter<"OrgStaff"> | string
+    duties?: StringNullableListFilter<"OrgStaff">
+    funcPerms?: StringNullableListFilter<"OrgStaff">
+    dataScope?: StringFilter<"OrgStaff"> | string
+    personality?: StringNullableFilter<"OrgStaff"> | string | null
+    createdAt?: DateTimeFilter<"OrgStaff"> | Date | string
+    updatedAt?: DateTimeFilter<"OrgStaff"> | Date | string
+  }
+
+  export type OrgStaffOrderByWithRelationInput = {
+    id?: SortOrder
+    orgType?: SortOrder
+    orgId?: SortOrder
+    userId?: SortOrderInput | SortOrder
+    memberNo?: SortOrder
+    name?: SortOrder
+    phone?: SortOrder
+    accountStatus?: SortOrder
+    serviceType?: SortOrderInput | SortOrder
+    staffRole?: SortOrder
+    duties?: SortOrder
+    funcPerms?: SortOrder
+    dataScope?: SortOrder
+    personality?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type OrgStaffWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    memberNo?: string
+    AND?: OrgStaffWhereInput | OrgStaffWhereInput[]
+    OR?: OrgStaffWhereInput[]
+    NOT?: OrgStaffWhereInput | OrgStaffWhereInput[]
+    orgType?: StringFilter<"OrgStaff"> | string
+    orgId?: StringFilter<"OrgStaff"> | string
+    userId?: StringNullableFilter<"OrgStaff"> | string | null
+    name?: StringFilter<"OrgStaff"> | string
+    phone?: StringFilter<"OrgStaff"> | string
+    accountStatus?: StringFilter<"OrgStaff"> | string
+    serviceType?: StringNullableFilter<"OrgStaff"> | string | null
+    staffRole?: StringFilter<"OrgStaff"> | string
+    duties?: StringNullableListFilter<"OrgStaff">
+    funcPerms?: StringNullableListFilter<"OrgStaff">
+    dataScope?: StringFilter<"OrgStaff"> | string
+    personality?: StringNullableFilter<"OrgStaff"> | string | null
+    createdAt?: DateTimeFilter<"OrgStaff"> | Date | string
+    updatedAt?: DateTimeFilter<"OrgStaff"> | Date | string
+  }, "id" | "memberNo">
+
+  export type OrgStaffOrderByWithAggregationInput = {
+    id?: SortOrder
+    orgType?: SortOrder
+    orgId?: SortOrder
+    userId?: SortOrderInput | SortOrder
+    memberNo?: SortOrder
+    name?: SortOrder
+    phone?: SortOrder
+    accountStatus?: SortOrder
+    serviceType?: SortOrderInput | SortOrder
+    staffRole?: SortOrder
+    duties?: SortOrder
+    funcPerms?: SortOrder
+    dataScope?: SortOrder
+    personality?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: OrgStaffCountOrderByAggregateInput
+    _max?: OrgStaffMaxOrderByAggregateInput
+    _min?: OrgStaffMinOrderByAggregateInput
+  }
+
+  export type OrgStaffScalarWhereWithAggregatesInput = {
+    AND?: OrgStaffScalarWhereWithAggregatesInput | OrgStaffScalarWhereWithAggregatesInput[]
+    OR?: OrgStaffScalarWhereWithAggregatesInput[]
+    NOT?: OrgStaffScalarWhereWithAggregatesInput | OrgStaffScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"OrgStaff"> | string
+    orgType?: StringWithAggregatesFilter<"OrgStaff"> | string
+    orgId?: StringWithAggregatesFilter<"OrgStaff"> | string
+    userId?: StringNullableWithAggregatesFilter<"OrgStaff"> | string | null
+    memberNo?: StringWithAggregatesFilter<"OrgStaff"> | string
+    name?: StringWithAggregatesFilter<"OrgStaff"> | string
+    phone?: StringWithAggregatesFilter<"OrgStaff"> | string
+    accountStatus?: StringWithAggregatesFilter<"OrgStaff"> | string
+    serviceType?: StringNullableWithAggregatesFilter<"OrgStaff"> | string | null
+    staffRole?: StringWithAggregatesFilter<"OrgStaff"> | string
+    duties?: StringNullableListFilter<"OrgStaff">
+    funcPerms?: StringNullableListFilter<"OrgStaff">
+    dataScope?: StringWithAggregatesFilter<"OrgStaff"> | string
+    personality?: StringNullableWithAggregatesFilter<"OrgStaff"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"OrgStaff"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"OrgStaff"> | Date | string
   }
 
   export type ProviderClientWhereInput = {
@@ -36385,6 +37602,139 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type OrgStaffCreateInput = {
+    id?: string
+    orgType: string
+    orgId: string
+    userId?: string | null
+    memberNo: string
+    name: string
+    phone: string
+    accountStatus?: string
+    serviceType?: string | null
+    staffRole: string
+    duties?: OrgStaffCreatedutiesInput | string[]
+    funcPerms?: OrgStaffCreatefuncPermsInput | string[]
+    dataScope?: string
+    personality?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type OrgStaffUncheckedCreateInput = {
+    id?: string
+    orgType: string
+    orgId: string
+    userId?: string | null
+    memberNo: string
+    name: string
+    phone: string
+    accountStatus?: string
+    serviceType?: string | null
+    staffRole: string
+    duties?: OrgStaffCreatedutiesInput | string[]
+    funcPerms?: OrgStaffCreatefuncPermsInput | string[]
+    dataScope?: string
+    personality?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type OrgStaffUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orgType?: StringFieldUpdateOperationsInput | string
+    orgId?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    memberNo?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    accountStatus?: StringFieldUpdateOperationsInput | string
+    serviceType?: NullableStringFieldUpdateOperationsInput | string | null
+    staffRole?: StringFieldUpdateOperationsInput | string
+    duties?: OrgStaffUpdatedutiesInput | string[]
+    funcPerms?: OrgStaffUpdatefuncPermsInput | string[]
+    dataScope?: StringFieldUpdateOperationsInput | string
+    personality?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrgStaffUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orgType?: StringFieldUpdateOperationsInput | string
+    orgId?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    memberNo?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    accountStatus?: StringFieldUpdateOperationsInput | string
+    serviceType?: NullableStringFieldUpdateOperationsInput | string | null
+    staffRole?: StringFieldUpdateOperationsInput | string
+    duties?: OrgStaffUpdatedutiesInput | string[]
+    funcPerms?: OrgStaffUpdatefuncPermsInput | string[]
+    dataScope?: StringFieldUpdateOperationsInput | string
+    personality?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrgStaffCreateManyInput = {
+    id?: string
+    orgType: string
+    orgId: string
+    userId?: string | null
+    memberNo: string
+    name: string
+    phone: string
+    accountStatus?: string
+    serviceType?: string | null
+    staffRole: string
+    duties?: OrgStaffCreatedutiesInput | string[]
+    funcPerms?: OrgStaffCreatefuncPermsInput | string[]
+    dataScope?: string
+    personality?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type OrgStaffUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orgType?: StringFieldUpdateOperationsInput | string
+    orgId?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    memberNo?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    accountStatus?: StringFieldUpdateOperationsInput | string
+    serviceType?: NullableStringFieldUpdateOperationsInput | string | null
+    staffRole?: StringFieldUpdateOperationsInput | string
+    duties?: OrgStaffUpdatedutiesInput | string[]
+    funcPerms?: OrgStaffUpdatefuncPermsInput | string[]
+    dataScope?: StringFieldUpdateOperationsInput | string
+    personality?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrgStaffUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orgType?: StringFieldUpdateOperationsInput | string
+    orgId?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    memberNo?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    accountStatus?: StringFieldUpdateOperationsInput | string
+    serviceType?: NullableStringFieldUpdateOperationsInput | string | null
+    staffRole?: StringFieldUpdateOperationsInput | string
+    duties?: OrgStaffUpdatedutiesInput | string[]
+    funcPerms?: OrgStaffUpdatefuncPermsInput | string[]
+    dataScope?: StringFieldUpdateOperationsInput | string
+    personality?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type ProviderClientCreateInput = {
     id?: string
     providerId: string
@@ -38667,6 +40017,59 @@ export namespace Prisma {
     updatedAt?: SortOrder
   }
 
+  export type OrgStaffCountOrderByAggregateInput = {
+    id?: SortOrder
+    orgType?: SortOrder
+    orgId?: SortOrder
+    userId?: SortOrder
+    memberNo?: SortOrder
+    name?: SortOrder
+    phone?: SortOrder
+    accountStatus?: SortOrder
+    serviceType?: SortOrder
+    staffRole?: SortOrder
+    duties?: SortOrder
+    funcPerms?: SortOrder
+    dataScope?: SortOrder
+    personality?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type OrgStaffMaxOrderByAggregateInput = {
+    id?: SortOrder
+    orgType?: SortOrder
+    orgId?: SortOrder
+    userId?: SortOrder
+    memberNo?: SortOrder
+    name?: SortOrder
+    phone?: SortOrder
+    accountStatus?: SortOrder
+    serviceType?: SortOrder
+    staffRole?: SortOrder
+    dataScope?: SortOrder
+    personality?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type OrgStaffMinOrderByAggregateInput = {
+    id?: SortOrder
+    orgType?: SortOrder
+    orgId?: SortOrder
+    userId?: SortOrder
+    memberNo?: SortOrder
+    name?: SortOrder
+    phone?: SortOrder
+    accountStatus?: SortOrder
+    serviceType?: SortOrder
+    staffRole?: SortOrder
+    dataScope?: SortOrder
+    personality?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
   export type ProviderClientCountOrderByAggregateInput = {
     id?: SortOrder
     providerId?: SortOrder
@@ -40562,6 +41965,24 @@ export namespace Prisma {
   }
 
   export type ProviderTeamMemberUpdatefuncPermsInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
+  export type OrgStaffCreatedutiesInput = {
+    set: string[]
+  }
+
+  export type OrgStaffCreatefuncPermsInput = {
+    set: string[]
+  }
+
+  export type OrgStaffUpdatedutiesInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
+  export type OrgStaffUpdatefuncPermsInput = {
     set?: string[]
     push?: string | string[]
   }
@@ -49125,6 +50546,10 @@ export namespace Prisma {
      * @deprecated Use ProviderTeamMemberDefaultArgs instead
      */
     export type ProviderTeamMemberArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = ProviderTeamMemberDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use OrgStaffDefaultArgs instead
+     */
+    export type OrgStaffArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = OrgStaffDefaultArgs<ExtArgs>
     /**
      * @deprecated Use ProviderClientDefaultArgs instead
      */

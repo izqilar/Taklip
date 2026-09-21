@@ -118,7 +118,7 @@ export const AgentDashboard = () => {
         chip="代理商 · 辖区作用域"
       />
 
-      <div style={GRID.kpis}>
+      <div className={GRID.kpis}>
         <KpiCard
           main
           label="辖区流水"
@@ -160,7 +160,7 @@ export const AgentDashboard = () => {
         }}
       />
 
-      <div style={GRID.duo}>
+      <div className={GRID.duo}>
         <Panel title="待办事项" hint="辖区可办 · 点按直达">
           <TodoList
             items={[
@@ -388,7 +388,7 @@ export const AgentWallet = () => {
         chip="代理商 · 辖区作用域"
       />
 
-      <div style={GRID.kpis}>
+      <div className={GRID.kpis}>
         <KpiCard
           main
           label={t('pages.col.regionWithdrawable')}
@@ -501,7 +501,7 @@ export const SPStudio = () => {
         chip="服务商 · 自身作用域"
       />
 
-      <div style={GRID.kpis}>
+      <div className={GRID.kpis}>
         <KpiCard
           main
           label="可提现收益"
@@ -536,7 +536,7 @@ export const SPStudio = () => {
         }}
       />
 
-      <div style={GRID.trio}>
+      <div className={GRID.trio}>
         <Panel title="订单待办" hint="点按直达">
           <TodoList
             items={[
@@ -904,7 +904,7 @@ export const SPWallet = () => {
         chip="服务商 · 自身作用域"
       />
 
-      <div style={GRID.kpis}>
+      <div className={GRID.kpis}>
         <KpiCard
           main
           label={t('pages.col.withdrawable')}

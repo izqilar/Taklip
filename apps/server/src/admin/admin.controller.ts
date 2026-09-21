@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -13,22 +14,29 @@ import { AuthGuard } from '@nestjs/passport';
 import type { Prisma } from '../../prisma/prisma-client';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { OrgAccess } from '../common/decorators/org-access.decorator';
+import { OrgAccessGuard } from '../common/guards/org-access.guard';
 import { DataScopeInterceptor } from '../common/interceptors/data-scope.interceptor';
 import { UseInterceptors } from '@nestjs/common';
 import type { JwtUser } from '../common/types/jwt-user';
 import { AdminService } from './admin.service';
 import { WalletService } from '../wallet/wallet.service';
+import { StaffService } from '../console/staff.service';
 import {
   UpdateUserStatusDto,
   AssignRoleDto,
   ListUsersQueryDto,
   UpdateProviderReviewDto,
 } from './dto/admin.dto';
+import { CreateStaffDto, UpdateStaffDto } from '../console/dto/staff.dto';
 
 type AdminRequest = Express.Request & {
   user: JwtUser;
   dataScope?: Prisma.UserWhereInput;
 };
+
+/** 总台组织 id：总台内部员工全局共享一个组织，不按账号切分 */
+const CONSOLE_ORG_ID = 'console';
 
 @Controller('api/admin')
 @UseGuards(AuthGuard('jwt'))
@@ -36,6 +44,7 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly walletService: WalletService,
+    private readonly staff: StaffService,
   ) {}
 
   /** 用户列表（ADMIN 全量 / AGENT 辖区） */
@@ -240,5 +249,52 @@ export class AdminController {
   @UseGuards(RolesGuard)
   stats() {
     return this.adminService.getStats();
+  }
+
+  /* ══════════════════ 我的团队（OrgStaff · orgType=CONSOLE） ══════════════════
+   * 总台内部员工。orgId 固定为 'console'（总台不按账号切分，全局共享一个组织）。
+   * 数据范围白名单 self / all；权限池为 10 域全集（已裁掉 role:manage / settings:manage）。
+   */
+
+  @Get('team')
+  @OrgAccess('CONSOLE')
+  @UseGuards(OrgAccessGuard)
+  team(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
+    return this.staff.list('CONSOLE', CONSOLE_ORG_ID, page ? Number(page) : 1, pageSize ? Number(pageSize) : 20);
+  }
+
+  @Get('team/role-pool')
+  @OrgAccess('CONSOLE')
+  @UseGuards(OrgAccessGuard)
+  teamRolePool() {
+    return this.staff.rolePool('CONSOLE');
+  }
+
+  @Post('team')
+  @OrgAccess('CONSOLE', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  createStaff(@Body() dto: CreateStaffDto) {
+    return this.staff.create('CONSOLE', CONSOLE_ORG_ID, dto);
+  }
+
+  @Post('team/:id/bind')
+  @OrgAccess('CONSOLE', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  bindStaff(@Param('id') id: string) {
+    return this.staff.bindUser('CONSOLE', CONSOLE_ORG_ID, id);
+  }
+
+  @Patch('team/:id')
+  @OrgAccess('CONSOLE', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  updateStaff(@Param('id') id: string, @Body() dto: UpdateStaffDto) {
+    return this.staff.update('CONSOLE', CONSOLE_ORG_ID, id, dto);
+  }
+
+  @Delete('team/:id')
+  @OrgAccess('CONSOLE', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  deleteStaff(@Param('id') id: string) {
+    return this.staff.remove('CONSOLE', CONSOLE_ORG_ID, id);
   }
 }

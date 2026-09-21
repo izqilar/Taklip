@@ -96,6 +96,13 @@ const SPReviews = lazy(() => import('./pages/providerPages').then((m) => ({ defa
 const SPContractDetail = lazy(() => import('./pages/providerDetailPages').then((m) => ({ default: m.SPContractDetail })));
 const SPTeamCreate = lazy(() => import('./pages/providerDetailPages').then((m) => ({ default: m.SPTeamCreate })));
 const SPTeamMember = lazy(() => import('./pages/providerDetailPages').then((m) => ({ default: m.SPTeamMember })));
+// 代理商 / 总台的「我的团队」（本单位内部员工，三层同构）
+const AgentTeam = lazy(() => import('./pages/staffTeamLayers').then((m) => ({ default: m.AgentTeam })));
+const AgentTeamCreate = lazy(() => import('./pages/staffTeamLayers').then((m) => ({ default: m.AgentTeamCreate })));
+const AgentTeamMember = lazy(() => import('./pages/staffTeamLayers').then((m) => ({ default: m.AgentTeamMember })));
+const AdminTeam = lazy(() => import('./pages/staffTeamLayers').then((m) => ({ default: m.AdminTeam })));
+const AdminTeamCreate = lazy(() => import('./pages/staffTeamLayers').then((m) => ({ default: m.AdminTeamCreate })));
+const AdminTeamMember = lazy(() => import('./pages/staffTeamLayers').then((m) => ({ default: m.AdminTeamMember })));
 const SPTemplateDetail = lazy(() => import('./pages/providerDetailPages').then((m) => ({ default: m.SPTemplateDetail })));
 const SPServiceDetail = lazy(() => import('./pages/providerDetailPages').then((m) => ({ default: m.SPServiceDetail })));
 const SPWorkDetail = lazy(() => import('./pages/providerDetailPages').then((m) => ({ default: m.SPWorkDetail })));
@@ -220,6 +227,9 @@ export const App = () => (
                 {/* 总台：模板审核 / 角色与权限（M2 真实化） */}
                 <Route path="/admin/templates" element={<TemplateReviewList />} />
                 <Route path="/admin/roles" element={<RolesPage />} />
+                <Route path="/admin/team" element={<AdminTeam />} />
+                <Route path="/admin/team/new" element={<AdminTeamCreate />} />
+                <Route path="/admin/team/:id" element={<AdminTeamMember />} />
 
                 {/* ===================== 代理商中心（AGENT） ===================== */}
                 <Route path="/agent/dashboard" element={<AgentDashboard />} />
@@ -230,6 +240,9 @@ export const App = () => (
                 <Route path="/agent/feedback" element={<FeedbackList />} />
                 <Route path="/agent/messages" element={<MessageList />} />
                 <Route path="/agent/roles" element={<RolesPage />} />
+                <Route path="/agent/team" element={<AgentTeam />} />
+                <Route path="/agent/team/new" element={<AgentTeamCreate />} />
+                <Route path="/agent/team/:id" element={<AgentTeamMember />} />
 
                 {/* ===================== 服务商中心（SERVICE_PROVIDER） ===================== */}
                 <Route path="/sp/studio" element={<SPStudio />} />

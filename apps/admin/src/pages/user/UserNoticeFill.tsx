@@ -144,11 +144,11 @@ export const UserNoticeFill = () => {
         extra={<Button onClick={() => navigate('/user/notices')}>← 返回通知公告</Button>}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 16, alignItems: 'start' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr]" style={{ gap: 16, alignItems: 'start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
           {/* 申请主体信息 */}
           <Panel title="申请主体信息" hint="初审已通过 · 请补充完整资料">
-            <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2" style={{ padding: 16, gap: 14 }}>
               <label style={{ display: 'grid', gap: 6, fontSize: 12.5, color: T.ink2, fontWeight: 600 }}>
                 <span>
                   申请方类型<span style={{ color: T.down, marginLeft: 2 }}>*</span>
@@ -208,9 +208,8 @@ export const UserNoticeFill = () => {
                   资质类型<span style={{ color: T.down }}>*</span>
                 </span>
                 <div
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(3,1fr)',
                     gap: 10,
                   }}
                 >
@@ -240,7 +239,7 @@ export const UserNoticeFill = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+              <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14, marginBottom: 14 }}>
                 {field(
                   '证件编号',
                   true,

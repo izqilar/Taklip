@@ -231,6 +231,11 @@ export const resources: ResourceProps[] = [
     list: '/admin/audit-logs',
     meta: META('操作日志', 'console', { group: 'system', icon: <FileProtectOutlined /> }),
   },
+  {
+    name: 'admin/team',
+    list: '/admin/team',
+    meta: META('我的团队', 'console', { group: 'system', icon: <TeamOutlined /> }),
+  },
 
   // ===================== 代理商中心（AGENT · 8 项）=====================
   {
@@ -276,6 +281,11 @@ export const resources: ResourceProps[] = [
     name: 'agent/roles',
     list: '/agent/roles',
     meta: META('角色与权限', 'agent', { group: 'system', icon: <SafetyOutlined /> }),
+  },
+  {
+    name: 'agent/team',
+    list: '/agent/team',
+    meta: META('我的团队', 'agent', { group: 'system', icon: <TeamOutlined /> }),
   },
   {
     name: 'account/profile-agent',

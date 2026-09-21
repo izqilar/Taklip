@@ -1,4 +1,4 @@
-import { Suspense, type ReactNode } from 'react';
+import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import { T } from '../../config/theme';
 import { LayerHeader } from './LayerHeader';
 import { LayerSider } from './LayerSider';
@@ -28,6 +28,10 @@ const PageLoading = () => (
 /**
  * 三段式布局（原型 .app）：左导航 240 + 右主区，主区内 顶栏 sticky → 对象工具栏 → 内容。
  * 文档 §6.1；尺寸/配色全部取自 config/theme 令牌，不在此硬编码。
+ *
+ * 2026-09-20 响应式（P3-⑥）：宽屏（≥900px）维持原 240px 固定侧栏 + 1fr 主区，外观不变；
+ * 窄屏（<900px）侧栏改为 fixed 抽屉（由顶栏汉堡按钮开合，配半透明遮罩），主区单列，
+ * 不再被固定 240px 侧栏挤压导致窄屏错乱。
  */
 export const AdminLayout = ({ children }: { children: ReactNode }) => {
   const { view, preview, setPreview } = useLayer();
@@ -37,30 +41,62 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
   // 对象检索条（视察窗口）仅 ADMIN 可见：服务商/Agent/用户自身登录即是对象，无需检索。
   const showScopeBar = viewAs && isAdmin;
 
+  // 响应式断点：窄屏（≤900px）侧栏转抽屉；监听变化，回到宽屏自动收起抽屉
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches,
+  );
+  const [siderOpen, setSiderOpen] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)');
+    const onChange = (e: MediaQueryListEvent) => {
+      setNarrow(e.matches);
+      if (!e.matches) setSiderOpen(false); // 回到宽屏自动收起抽屉，避免遮挡主区
+    };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
   return (
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: `${T.side}px 1fr`,
+        gridTemplateColumns: narrow ? '1fr' : `${T.side}px 1fr`,
         minHeight: '100vh',
         background: T.page,
+        overflowX: narrow ? 'hidden' : undefined,
+        position: 'relative',
       }}
     >
-      {/* ── 侧栏：sticky 满高，品牌区 + 导航 + 底部署名 ── */}
+      {/* ── 侧栏：宽屏 sticky 满高；窄屏 fixed 抽屉（siderOpen 控制滑入） ── */}
       <aside
         style={{
           background: T.bg,
           borderInlineEnd: `1px solid ${T.border}`,
           display: 'flex',
           flexDirection: 'column',
-          position: 'sticky',
+          position: narrow ? 'fixed' : 'sticky',
           top: 0,
+          left: narrow ? 0 : undefined,
           height: '100vh',
+          width: narrow ? '240px' : undefined,
           minWidth: 0,
+          zIndex: narrow ? 100 : undefined,
+          transform: narrow ? (siderOpen ? 'translateX(0)' : 'translateX(-100%)') : undefined,
+          transition: narrow ? 'transform .2s ease' : undefined,
+          boxShadow: narrow && siderOpen ? T.shadowPop : undefined,
         }}
       >
-        <LayerSider />
+        <LayerSider onNavigate={narrow ? () => setSiderOpen(false) : undefined} />
       </aside>
+
+      {/* ── 窄屏遮罩：点击关闭抽屉 ── */}
+      {narrow && siderOpen && (
+        <div
+          onClick={() => setSiderOpen(false)}
+          aria-hidden
+          style={{ position: 'fixed', inset: 0, background: T.scrim, zIndex: 90 }}
+        />
+      )}
 
       {/* ── 主区：顶栏 +（对象工具栏）+ 内容 ── */}
       <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -79,7 +115,7 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
             flexWrap: 'wrap',
           }}
         >
-          <LayerHeader />
+          <LayerHeader showMenu={narrow} onMenu={() => setSiderOpen((o) => !o)} />
         </header>
 
         {showScopeBar && <ObjectScopeBar />}

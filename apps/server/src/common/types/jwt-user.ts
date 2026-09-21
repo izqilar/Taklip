@@ -26,4 +26,22 @@ export interface JwtUser {
   realName?: string | null;
   bio?: string | null;
   email?: string | null;
+  // —— 角色管理管线（P1）组织内员工上下文 ——
+  // 仅含 ACTIVE 成员关系（DISABLED 已被剔除，R-05/R-06）。
+  // 员工沿用 USER 平台身份，靠此数组「组织成员关系」提权进入对应层控制台。
+  staff?: StaffMembership[];
+}
+
+/**
+ * 组织内员工成员关系（注入 JWT / req.user，P1）。
+ * 由 jwt.strategy + auth.service 在登录 / 每次请求时从 OrgStaff 实时计算。
+ */
+export interface StaffMembership {
+  sid: string; // OrgStaff.id
+  orgType: 'PROVIDER' | 'AGENT' | 'CONSOLE';
+  orgId: string;
+  staffRole: string;
+  funcPerms: string[];
+  dataScope: string;
+  accountStatus: string;
 }

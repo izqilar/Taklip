@@ -1,6 +1,12 @@
 import {
+  Body,
   Controller,
+  Delete,
+  ForbiddenException,
   Get,
+  Param,
+  Patch,
+  Post,
   Query,
   Req,
   UseGuards,
@@ -8,11 +14,29 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { OrgAccess } from '../common/decorators/org-access.decorator';
+import { OrgAccessGuard, staffOrgIdOf } from '../common/guards/org-access.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import type { JwtUser } from '../common/types/jwt-user';
 import { bucketMonthly, since180 } from './chart-util';
+import { StaffService } from './staff.service';
+import { CreateStaffDto, UpdateStaffDto } from './dto/staff.dto';
 
 type ReqUser = Express.Request & { user: JwtUser };
+
+/**
+ * P1：解析代理商「我的团队」接口所用组织 id。
+ * - 员工（USER 身份 + AGENT 成员关系）：取其在 OrgStaff 上绑定的代理商 orgId；
+ * - legacy 拥有者（AGENT）/ ADMIN 视察：自身即组织（无 subject 机制时回退 req.user.id）。
+ */
+const agentTeamOrg = (req: ReqUser): string => {
+  if (req.user.role === 'USER') {
+    const oid = staffOrgIdOf(req.user, 'AGENT');
+    if (!oid) throw new ForbiddenException('非该代理商成员');
+    return oid;
+  }
+  return req.user.id;
+};
 
 const userSelect = {
   id: true,
@@ -40,7 +64,10 @@ const userSelect = {
 @Controller('api/agent')
 @UseGuards(AuthGuard('jwt'))
 export class AgentConsoleController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly staff: StaffService,
+  ) {}
 
   /** 辖区前缀匹配条件；ADMIN（无 regionPath）返回 undefined → 全量 */
   private regionPrefix(user: JwtUser): { startsWith: string } | undefined {
@@ -230,6 +257,57 @@ export class AgentConsoleController {
       this.prisma.templateOrder.count({ where }),
     ]);
     return { items, total, page: p, pageSize: ps };
+  }
+
+  /* ══════════════════ 我的团队（OrgStaff · orgType=AGENT） ══════════════════
+   * 与服务商层同构：岗位池来自 STAFF_ROLE_POOLS.AGENT（无工种联动），
+   * 数据范围白名单 self / region / agent，权限池按 agent 层域 + 红线裁剪。
+   */
+
+  @Get('team')
+  @OrgAccess('AGENT')
+  @UseGuards(OrgAccessGuard)
+  async team(
+    @Req() req: ReqUser,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.staff.list('AGENT', agentTeamOrg(req), page ? Number(page) : 1, pageSize ? Number(pageSize) : 20);
+  }
+
+  @Get('team/role-pool')
+  @OrgAccess('AGENT')
+  @UseGuards(OrgAccessGuard)
+  async teamRolePool() {
+    return this.staff.rolePool('AGENT');
+  }
+
+  @Post('team')
+  @OrgAccess('AGENT', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async createStaff(@Req() req: ReqUser, @Body() dto: CreateStaffDto) {
+    return this.staff.create('AGENT', agentTeamOrg(req), dto);
+  }
+
+  @Post('team/:id/bind')
+  @OrgAccess('AGENT', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async bindStaff(@Req() req: ReqUser, @Param('id') id: string) {
+    return this.staff.bindUser('AGENT', agentTeamOrg(req), id);
+  }
+
+  @Patch('team/:id')
+  @OrgAccess('AGENT', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async updateStaff(@Req() req: ReqUser, @Param('id') id: string, @Body() dto: UpdateStaffDto) {
+    return this.staff.update('AGENT', agentTeamOrg(req), id, dto);
+  }
+
+  @Delete('team/:id')
+  @OrgAccess('AGENT', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async deleteStaff(@Req() req: ReqUser, @Param('id') id: string) {
+    return this.staff.remove('AGENT', agentTeamOrg(req), id);
   }
 
   /** 辖区结算汇总（聚合辖区服务商钱包） */

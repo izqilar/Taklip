@@ -94,6 +94,18 @@ export interface AccessInfo {
   regionPath: string | null;
   scope: 'ALL' | 'REGION' | 'SELF';
   permissions: string[];
+  /** P1：组织内员工成员关系（员工沿用 USER 身份，靠此进入对应层控制台） */
+  staff?: StaffMembershipLite[];
+}
+
+/** 组织内员工成员关系（与服务端 getAccess / jwt.strategy 同源） */
+export interface StaffMembershipLite {
+  sid: string;
+  orgType: 'PROVIDER' | 'AGENT' | 'CONSOLE';
+  orgId: string;
+  staffRole: string;
+  dataScope: string;
+  funcPerms: string[];
 }
 
 /**

@@ -145,7 +145,13 @@
     "sp.notices": "通知公告",
     "sp.team": "我的团队",
     "sp.clients": "我的客户",
-    "account.profile-provider": "账户详情"
+    "account.profile-provider": "账户详情",
+    "admin": {
+      "team": "我的团队"
+    },
+    "agent": {
+      "team": "我的团队"
+    }
   },
   "pages": {
     "col.status": "状态",
@@ -514,6 +520,73 @@
       "floral": "花艺布置",
       "steward": "婚庆主持",
       "perform": "演出表演"
+    },
+    "team": {
+      "role": "团队角色",
+      "rolePlaceholder": "如：花艺师 / 客服专员（可选择或自行填写）",
+      "duties": "职责",
+      "funcPerms": "功能权限",
+      "dataScope": "数据权限",
+      "trait": "特长",
+      "traitPlaceholder": "由服务类型自动带出，可修改",
+      "serviceType": "服务类型",
+      "name": "成员姓名",
+      "namePlaceholder": "如：古丽娜尔",
+      "phone": "手机号",
+      "accountStatus": "账号状态",
+      "colMemberNo": "成员编号",
+      "colName": "姓名",
+      "colPhone": "手机",
+      "scopeSelf": "自身",
+      "scopeService": "自身（服务域）",
+      "scopeProvider": "本服务商",
+      "scopeRegion": "本辖区",
+      "scopeAgent": "本代理商",
+      "scopeAll": "全平台",
+      "create": "＋ 新建成员",
+      "save": "保存成员",
+      "newTitle": "新建团队成员",
+      "newSub": "按服务类型配置成员岗位、职责与权限",
+      "detailTitle": "团队成员详情",
+      "detailSub": "角色化团队建设 · 按服务类型差异化岗位",
+      "searchPlaceholder": "搜索成员姓名…",
+      "filterAll": "全部",
+      "filterActive": "正常",
+      "filterPending": "待激活",
+      "filterDisabled": "停用",
+      "memberName": "成员姓名",
+      "autoNo": "MT-（自动生成）",
+      "autoNoHint": "工号（MT-xxxx）由系统按当前最大编号自动生成，无需填写。",
+      "created": "成员已添加",
+      "removed": "成员已移除",
+      "disabled": "成员已停用",
+      "enabled": "成员已启用",
+      "disable": "停用成员",
+      "enable": "启用成员",
+      "remove": "移除成员",
+      "perm": {
+        "order:view": "订单查询",
+        "order:handle": "订单处理",
+        "order:aftersale": "售后处理",
+        "message:send": "站内信收发",
+        "template:publish": "模板/服务上架",
+        "content:offline": "内容下架",
+        "data:export": "列表数据导出",
+        "qualification:manage": "资质管理"
+      }
+    },
+    "action": {
+      "view": "查看",
+      "cancel": "取消",
+      "back": "返回"
+    },
+    "msg": {
+      "fixForm": "请先修正表单中的校验项",
+      "requiredName": "请填写成员姓名",
+      "requiredPhone": "请填写手机号",
+      "phoneFormat": "须为 11 位数字",
+      "requiredRole": "请填写或选择岗位",
+      "removeFailed": "移除失败"
     }
   }
 }

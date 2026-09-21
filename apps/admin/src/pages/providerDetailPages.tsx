@@ -1,13 +1,15 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Form, Input, InputNumber, Select, Switch, Button, message } from 'antd';
+import { Form, Input, InputNumber, Select, Switch, Button, AutoComplete, Checkbox, message } from 'antd';
 import { T } from '../config/theme';
 import { t } from '../i18n/t';
 import { dataProvider } from '../providers/dataProvider';
 import { getStoredUser } from '../utility';
 import { SettingPage, PreviewCard, FlowSteps, Timeline, MemberCard, TemplatePreviewCard, ServicePreviewCard, WorkPreviewCard } from '../components/provider/SettingPage';
 import { Pill } from '../components/ui/Pill';
+import { PermCheckGroup } from '../components/detail/PermCheckGroup';
 import { TEMPLATE_CAT_OPTS, TEMPLATE_TAG_OPTS, COVER_COLORS, TITLE_COLORS, CONTRACT_TYPE, CONTRACT_STAGE, CONTRACT_MODE, SETTLE, SVC_OPTIONS, REGION_OPTIONS, TEAM_STATUS } from '../config/providerConstants';
+import { StaffTeamCreate, StaffTeamMember } from './staffTeamPages';
 
 /* ════════════ 模板发布常量（与 providerPages 同源口径，避免跨文件耦合） ════════════ */
 /* ════════════ 模板发布状态（本地发布态，区别于 providerPages 的审核态） ════════════ */
@@ -178,7 +180,7 @@ export const SPContractDetail = () => {
         </div>
       )}
       <Form form={form} layout="vertical" initialValues={{ exclusive: false }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14 }}>
           <Field label="合同名称"><Form.Item name="name" noStyle rules={[{ required: true, message: '请填写合同名称' }]}><Input placeholder="如：2026 婚庆服务主合同" /></Form.Item></Field>
           <Field label="合同类型"><Form.Item name="type" noStyle rules={[{ required: true }]}><Select options={Object.entries(CONTRACT_TYPE).map(([v, l]) => ({ value: v, label: t(l) }))} style={{ width: '100%' }} /></Form.Item></Field>
           <Field label="签约主体甲方"><Form.Item name="partyA" noStyle rules={[{ required: true, message: '请填写甲方' }]}><Input placeholder="管理总台 / 各代理商" /></Form.Item></Field>
@@ -204,134 +206,38 @@ export const SPContractDetail = () => {
   );
 };
 
-/* ════════════ 我的团队 · 新建成员（pg-teamcfg：整页 + 名片预览） ════════════ */
-export const SPTeamCreate = () => {
-  const nav = useNavigate();
-  const [form] = Form.useForm();
-  const [saving, setSaving] = useState(false);
-  const [vals, setVals] = useState<any>({});
-  // 初始读取一次；后续由 Form 的 onValuesChange 驱动预览，避免渲染期调用 useWatch/getFieldValue 触发「useForm 未连接」告警
-  useEffect(() => { setVals(form.getFieldsValue()); }, []);
+/* ════════════ 我的团队 · 新建成员（pg-teamcfg：整页 + 名片预览） ════════════
+ * 复用三层同构实现（staffTeamPages.StaffTeamCreate），服务商层带「服务类型」联动。
+ * 岗位由自由文本 Input 升级为 AutoComplete（岗位池联动 + 允许自填），
+ * 并新增职责 / 功能权限 / 数据权限 / 特长字段。文档：docs/平台角色边界规范化.md
+ */
+export const SPTeamCreate = () => (
+  <StaffTeamCreate
+    org="PROVIDER"
+    resource="provider/team"
+    basePath="/sp/team"
+    title={t('pages.team.newTitle', '新建团队成员')}
+    sub={t('pages.team.newSub', '按服务类型配置成员岗位、职责与权限')}
+    chip="服务商 · 自身作用域"
+    withServiceType
+  />
+);
 
-  const save = async () => {
-    let v: any;
-    try {
-      v = await form.validateFields();
-    } catch {
-      message.warning('请先修正表单中的校验项');
-      return;
-    }
-    setSaving(true);
-    try {
-      await dataProvider.custom!({ url: 'provider/team', method: 'post', payload: {
-        name: v.name.trim(),
-        phone: v.phone.trim(),
-        accountStatus: v.accountStatus || 'ACTIVE',
-        serviceType: v.serviceType || '',
-        teamRole: v.teamRole || '',
-      } });
-      message.success('成员已添加');
-      nav('/sp/team');
-    } catch (e: any) {
-      message.error(e?.response?.data?.message || e?.message || '保存失败');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const aside = (
-    <MemberCard
-      name={vals.name || '成员姓名'}
-      memberNo="MT-（自动生成）"
-      serviceType={vals.serviceType}
-      teamRole={vals.teamRole}
-      status={vals.accountStatus ? t(TEAM_STATUS[vals.accountStatus]?.key ?? 'status.ACTIVE') : t('status.ACTIVE')}
-      phone={vals.phone}
-    />
-  );
-
-  return (
-    <SettingPage
-      title="新建团队成员"
-      sub="按服务类型配置成员角色与个性"
-      chip="服务商 · 自身作用域"
-      backTo="/sp/team"
-      aside={aside}
-      footer={<><Button onClick={() => nav('/sp/team')}>取消</Button><Button type="primary" loading={saving} onClick={save}>保存成员</Button></>}
-    >
-      <Form form={form} layout="vertical" initialValues={{ accountStatus: 'ACTIVE', serviceType: SVC_OPTIONS[0]?.value }} onValuesChange={(_, all) => setVals(all)} style={{ marginTop: 8 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <Field label="成员姓名"><Form.Item name="name" noStyle rules={[{ required: true, message: '请填写成员姓名' }]}><Input placeholder="如：古丽娜尔" /></Form.Item></Field>
-          <Field label="手机号"><Form.Item name="phone" noStyle rules={[{ required: true, message: '请填写手机号' }, { pattern: /^\d{11}$/, message: '须为 11 位数字' }]}><Input placeholder="11 位手机号" maxLength={11} /></Form.Item></Field>
-          <Field label="账号状态"><Form.Item name="accountStatus" noStyle><Select options={Object.entries(TEAM_STATUS).map(([v, m]) => ({ value: v, label: t(m.key) }))} style={{ width: '100%' }} /></Form.Item></Field>
-          <Field label="服务类型"><Form.Item name="serviceType" noStyle><Select options={SVC_OPTIONS} showSearch optionFilterProp="label" style={{ width: '100%' }} /></Form.Item></Field>
-          <Field label="团队角色"><Form.Item name="teamRole" noStyle><Input placeholder="如：花艺师 / 客服专员" /></Form.Item></Field>
-        </div>
-        <div style={{ fontSize: 11, color: T.ink3, marginTop: 4 }}>工号（MT-xxxx）由系统按当前最大编号自动生成，无需填写。</div>
-      </Form>
-    </SettingPage>
-  );
-};
-
-/* ════════════ 我的团队 · 成员详情（pg-teamcfg 查看） ════════════ */
-export const SPTeamMember = () => {
-  const { id = '' } = useParams();
-  const nav = useNavigate();
-  const [rec, setRec] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const r = await fetchOne('provider/team', id);
-        setRec(r);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [id]);
-
-  const remove = async () => {
-    try {
-      await dataProvider.custom!({ url: `provider/team/${id}`, method: 'delete' });
-      message.success('成员已移除');
-      nav('/sp/team');
-    } catch (e: any) {
-      message.error(e?.message || '移除失败');
-    }
-  };
-
-  const aside = rec ? (
-    <MemberCard name={rec.name} memberNo={rec.memberNo} serviceType={rec.serviceType} teamRole={rec.teamRole} status={rec.accountStatus ? t(TEAM_STATUS[rec.accountStatus]?.key ?? rec.accountStatus) : '—'} phone={rec.phone} />
-  ) : null;
-
-  return (
-    <SettingPage
-      title="团队成员详情"
-      sub="角色化团队建设 · 按服务类型差异化角色"
-      chip="服务商 · 自身作用域"
-      backTo="/sp/team"
-      aside={aside}
-      loading={loading}
-      footer={<><Button onClick={() => nav('/sp/team')}>返回</Button><Button danger onClick={remove}>移除成员</Button></>}
-    >
-      {rec && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <Line k="成员编号" v={rec.memberNo} />
-          <Line k="姓名" v={rec.name} />
-          <Line k="手机号" v={rec.phone} />
-          <Line k="服务类型" v={rec.serviceType || '—'} />
-          <Line k="团队角色" v={rec.teamRole || '—'} />
-          <Line k="职责" v={Array.isArray(rec.duties) && rec.duties.length ? rec.duties.join('、') : '—'} />
-          <Line k="数据权限" v={rec.dataScope || '—'} />
-          <Line k="功能权限" v={Array.isArray(rec.funcPerms) && rec.funcPerms.length ? rec.funcPerms.join('、') : '—'} />
-          <Line k="账号状态" v={rec.accountStatus ? t(TEAM_STATUS[rec.accountStatus]?.key ?? rec.accountStatus) : '—'} />
-        </div>
-      )}
-    </SettingPage>
-  );
-};
+/* ════════════ 我的团队 · 成员详情（pg-teamcfg 查看） ════════════
+ * 复用三层同构实现（staffTeamPages.StaffTeamMember）。
+ * 相比旧实现新增：数据权限 / 特长展示、功能权限用只读复选框组回显、停用 / 启用按钮。
+ */
+export const SPTeamMember = () => (
+  <StaffTeamMember
+    org="PROVIDER"
+    resource="provider/team"
+    basePath="/sp/team"
+    title={t('pages.team.detailTitle', '团队成员详情')}
+    sub={t('pages.team.detailSub', '角色化团队建设 · 按服务类型差异化岗位')}
+    chip="服务商 · 自身作用域"
+    withServiceType
+  />
+);
 
 /* ════════════ 模板发布详情（pg-tplcfg：整页 + 封面预览卡） ════════════ */
 export const SPTemplateDetail = () => {
@@ -482,7 +388,7 @@ export const SPTemplateDetail = () => {
           onValuesChange={(_, all) => setPv((p: any) => ({ ...p, ...all }))}
           style={{ marginTop: 8 }}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14 }}>
             <Field label="模板名称"><Form.Item name="name" noStyle rules={[{ required: true, message: '请填写模板名称' }]}><Input placeholder="如：天山雪莲·婚礼请柬" maxLength={20} /></Form.Item></Field>
             <Field label="售价（元，0=免费）"><Form.Item name="price" noStyle rules={[{ type: 'number', min: 0, message: '售价不小于 0' }]}><InputNumber min={0} precision={2} style={{ width: '100%' }} placeholder="0" /></Form.Item></Field>
             <Field label="已使用次数"><Form.Item name="useCount" noStyle><InputNumber disabled style={{ width: '100%' }} placeholder="自动统计" /></Form.Item></Field>
@@ -659,7 +565,7 @@ export const SPServiceDetail = () => {
           style={{ marginTop: 8 }}
         >
           <Sec title="基本信息" hint="编号自动生成 · 名称与类型展示在服务商卡片" />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14 }}>
             <Field label="服务编号">
               <Input disabled value={isEdit ? (rec.id || '自动生成') : '自动生成（保存后分配 T-xxxx）'} style={{ color: T.ink3 }} />
             </Field>
@@ -670,7 +576,7 @@ export const SPServiceDetail = () => {
           </div>
 
           <Sec title="展示配置" hint="与前台服务商卡片展示信息一一对应" />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14 }}>
             <Field label={<span>认证徽章{SOON}</span>}><Form.Item name="badge" noStyle><Select disabled placeholder="即将上线" options={SERVICE_BADGE_OPTS} style={{ width: '100%' }} /></Form.Item></Field>
             <Field label={<span>客服在线{SOON}</span>}><Form.Item name="online" noStyle valuePropName="checked"><Switch disabled defaultChecked /></Form.Item></Field>
             <Field label={<span>头像底色{SOON}</span>}>
@@ -684,7 +590,7 @@ export const SPServiceDetail = () => {
           </div>
 
           <Sec title="价格与数据" hint="对应卡片底部价格与数据统计区" />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14 }}>
             <Field label="起价（元）"><Form.Item name="price" noStyle rules={[{ required: true, type: 'number', min: 0, message: '请填写不小于 0 的起价' }]}><InputNumber min={0} precision={2} style={{ width: '100%' }} placeholder="如：199" /></Form.Item></Field>
             <Field label={<span>计价单位{SOON}</span>}><Form.Item name="unit" noStyle><Select disabled placeholder="即将上线" options={SERVICE_UNIT_OPTS} style={{ width: '100%' }} /></Form.Item></Field>
             <Field label={<span>已服务次数{SOON}</span>}><Form.Item name="served" noStyle><InputNumber disabled style={{ width: '100%' }} placeholder="即将上线" /></Form.Item></Field>
@@ -825,7 +731,7 @@ export function WorkDetailPanel({ id, rec: recProp }: { id: string; rec?: any })
           {rec.id} · 前端「我的作品」
         </div>
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14 }}>
         <Line k="作品编号" v={rec?.id ?? '—'} />
         <Line k="作品名称" v={rec?.title || rec?.name || '—'} />
         <Line k="来源" v="前端「我的作品」" />

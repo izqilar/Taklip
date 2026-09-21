@@ -4,6 +4,7 @@ import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import type { ServiceRole } from '../../prisma/prisma-client';
+import { loadStaffContext } from '../console/staff-context';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import type { JwtUser } from '../common/types/jwt-user';
 
@@ -32,6 +33,16 @@ const ROLE_HOME: Record<string, { origin: 'web' | 'admin'; path: string }> = {
   SERVICE_PROVIDER: { origin: 'admin', path: '/sp/studio' },
   AGENT: { origin: 'admin', path: '/agent/dashboard' },
   ADMIN: { origin: 'admin', path: '/admin/dashboard' },
+};
+
+/**
+ * P1（员工登录落点）：USER 身份 + 有效组织成员关系时，按主要成员关系所在层进入运营端工作台。
+ * 员工沿用 USER 平台身份，不新增角色，故落点需由「组织成员关系」推导（文档 §3.2 / §10.1）。
+ */
+const STAFF_HOME: Record<'PROVIDER' | 'AGENT' | 'CONSOLE', { origin: 'web' | 'admin'; path: string }> = {
+  PROVIDER: { origin: 'admin', path: '/sp/studio' },
+  AGENT: { origin: 'admin', path: '/agent/dashboard' },
+  CONSOLE: { origin: 'admin', path: '/admin/dashboard' },
 };
 
 @Injectable()
@@ -269,7 +280,7 @@ export class AuthService {
    */
   getAccess(user: JwtUser) {
     const scope = user.role === 'ADMIN' ? 'ALL' : user.role === 'AGENT' ? 'REGION' : 'SELF';
-    const permissions: string[] =
+    const baseline: string[] =
       user.role === 'ADMIN'
         ? ['user:read', 'user:update', 'user:role', 'provider:review', 'agent:manage', 'region:read', 'wallet:read', 'wallet:manage', 'order:read', 'feedback:read', 'feedback:review', 'message:read', 'message:audit', 'message:manage']
         : user.role === 'AGENT'
@@ -277,6 +288,10 @@ export class AuthService {
           : user.role === 'SERVICE_PROVIDER'
             ? ['feedback:read', 'feedback:own', 'message:read', 'message:own']
             : [];
+    // P1（guard 消费权限）：员工（USER 身份 + 有效成员关系）的岗位权限合并进可用权限集。
+    // legacy 角色持有者也保留其基线；员工叠加其所在组织授予的 funcPerms。
+    const staffPerms = (user.staff ?? []).flatMap((s) => s.funcPerms ?? []);
+    const permissions = Array.from(new Set([...baseline, ...staffPerms]));
     return {
       id: user.id,
       role: user.role,
@@ -284,6 +299,16 @@ export class AuthService {
       regionPath: user.regionPath ?? null,
       scope,
       permissions,
+      // P1：组织成员关系清单（供前端 accessControlProvider 判断「是否在某组织内」及写操作门控）
+      staff: (user.staff ?? []).map((s) => ({
+        sid: s.sid,
+        orgType: s.orgType,
+        orgId: s.orgId,
+        staffRole: s.staffRole,
+        dataScope: s.dataScope,
+        // 必带 funcPerms：前端据此判定员工能否执行 team:manage 等写操作（与后端 OrgAccessGuard 同源）
+        funcPerms: s.funcPerms ?? [],
+      })),
     };
   }
 
@@ -469,7 +494,18 @@ export class AuthService {
   }
 
   private async generateTokens(userId: string, phone: string) {
-    const payload = { sub: userId, phone };
+    // ⚠️ R-05 / R-06（P1）：账户被停用（User.status === DISABLED）禁止签发任何令牌。
+    // 这是「登录 / 刷新 / 跨端兑换」的统一闸门；即便 JWT 校验路径(jwt.strategy)已拦截，
+    // 也必须从登录源头拒绝，否则停用员工仍能凭密码换取令牌（红线形同虚设）。
+    // 注册产生的新用户 status 默认 ACTIVE，不受此影响。
+    const acct = await this.prisma.user.findUnique({ where: { id: userId }, select: { status: true } });
+    if (acct?.status === 'DISABLED') {
+      throw new UnauthorizedException('账户已被停用');
+    }
+    // P1：组织内员工上下文快照（随 JWT 携带，供下游服务 / 前端读取；
+    // 但真正的鉴权仍以 jwt.strategy 每次请求重算的 req.user.staff 为准）。
+    const staff = await loadStaffContext(this.prisma, userId);
+    const payload = { sub: userId, phone, staff };
 
     const accessToken = await this.jwtService.signAsync(payload, {
       expiresIn: '2h',
@@ -481,13 +517,18 @@ export class AuthService {
     });
 
     const user = await this.validateUser(userId);
+    // P1（员工登录落点）：USER + 有效成员关系 → 进入对应层运营端；否则按角色落点
+    const home =
+      user?.role === 'USER' && staff.length
+        ? STAFF_HOME[(staff[0].orgType as 'PROVIDER' | 'AGENT' | 'CONSOLE')] ?? ROLE_HOME.USER
+        : ROLE_HOME[user?.role ?? 'USER'] ?? ROLE_HOME.USER;
     return {
       accessToken,
       refreshToken,
       expiresIn: 7200,
-      user,
+      user: { ...user, staff },
       // 登录后应落地的工作台（统一登录入口按此分流；未知角色兜底为终端用户）
-      home: ROLE_HOME[user?.role ?? 'USER'] ?? ROLE_HOME.USER,
+      home,
     };
   }
 

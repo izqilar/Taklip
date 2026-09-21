@@ -335,7 +335,7 @@ export const UserDashboard = () => {
       </div>
 
       {/* ── KPI 四联（原型 .kpis） ── */}
-      <div style={GRID.kpis}>
+      <div className={GRID.kpis}>
         <KpiCard
           main
           label="账户余额"
@@ -368,7 +368,7 @@ export const UserDashboard = () => {
       </div>
 
       {/* ── duo：我的订单 + 会员权益 ── */}
-      <div style={GRID.duo}>
+      <div className={GRID.duo}>
         <Panel title="我的订单" hint="最近订单 · 用户视角">
           <DataTable<any>
             rowKey="id"
@@ -447,7 +447,7 @@ export const UserDashboard = () => {
       </div>
 
       {/* ── trio：关注的服务商 / 我的优惠券 / 我的评价 ── */}
-      <div style={GRID.trio}>
+      <div className={GRID.trio}>
         <Panel title="关注的服务商" hint="我的服务商">
           <DataTable<any>
             rowKey="id"
@@ -1103,7 +1103,7 @@ export const UserWallet = () => {
 
   return (
     <>
-      <div style={GRID.kpis}>
+      <div className={GRID.kpis}>
         <KpiCard main label="账户余额" value={formatCents(w?.balanceCents ?? 0)} delta="钱包可用余额" deltaTrend="up" />
         <KpiCard label="累计消费" value={formatCents(w?.totalSpentCents ?? 0)} delta="已支付订单合计" />
         <KpiCard label="积分" value={(w?.points ?? 0).toLocaleString('en-US')} delta="积分余额" />
@@ -1241,7 +1241,7 @@ export const UserCoupons = () => {
         ]}
       />
       <Panel title={`${tier} · 会员权益`} hint="当前等级可享">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, padding: '12px 16px' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: 12, padding: '12px 16px' }}>
           {(TIER_PERKS[tier] ?? []).map((pk) => (
             <div
               key={pk}

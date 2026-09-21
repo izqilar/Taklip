@@ -636,6 +636,32 @@ model ProviderTeamMember {
   @@index([providerId])
 }
 
+// 组织内员工（一表承载 服务商 / 代理商 / 总台 三层内部成员），文档 docs/平台角色边界规范化.md §4。
+// 与 ProviderTeamMember 的关系：本表为 P0 起的统一承载表，存量 ProviderTeamMember 由一次性脚本导入
+// （orgType=PROVIDER），旧表保留作备份，对外契约 /api/provider/team 字段名不变。
+// 岗位池真值源：UI_Design/index.html:4691（服务端镜像 src/console/team-role.meta.ts）。
+model OrgStaff {
+  id            String   @id @default(cuid())
+  orgType       String   @map("org_type") // PROVIDER 服务商 | AGENT 代理商 | CONSOLE 总台
+  orgId         String   @map("org_id") // 服务商 / 代理商 id；CONSOLE 固定 "console"
+  userId        String?  @map("user_id") // 绑定的存量账号（邀请绑定，不为员工新建 User；K-07）
+  memberNo      String   @unique @map("member_no") // MT-XXXX
+  name          String
+  phone         String
+  accountStatus String   @default("ACTIVE") @map("account_status") // ACTIVE | PENDING | DISABLED
+  serviceType   String?  @map("service_type") // 工种，仅 PROVIDER 层使用
+  staffRole     String   @map("staff_role") // 岗位（可自填自定义岗位）
+  duties        String[] @default([]) // 职责
+  funcPerms     String[] @default([]) @map("func_perms") // 功能权限子集
+  dataScope     String   @default("self") @map("data_scope") // 数据范围（按层白名单）
+  personality   String? // 特长 / 画像（由岗位池 trait 带出）
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([orgType, orgId])
+  @@index([userId])
+}
+
 // 我的客户：客户档案与精准维护触达
 model ProviderClient {
   id            String   @id @default(cuid())

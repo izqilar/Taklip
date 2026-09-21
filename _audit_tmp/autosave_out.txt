@@ -1,6 +1,0 @@
-PASS: 对照：旧写法 60s 内自动保存触发 0 次（定时器重建 60 次）
-PASS: 新写法 60s 内自动保存触发 2 次（定时器只建 1 次）
-PASS: interval 回调通过 ref 调最新后台保存（不依赖回调 identity）
-PASS: interval effect 依赖为空数组 —— 定时器稳定，不会被编辑打断
-PASS: 后台保存路径不弹窗（失败只 console.error，顶栏保持「● 未保存」）
-exit=0

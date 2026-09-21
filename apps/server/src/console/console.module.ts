@@ -5,6 +5,7 @@ import { UserConsoleController } from './user-console.controller';
 import { ConsoleDashboardController } from './console-dashboard.controller';
 import { FontController } from './font.controller';
 import { PublishModule } from '../publish/publish.module';
+import { StaffModule } from './staff.module';
 
 /**
  * 控制台作用域端点模块（管理总台 / 代理商中心 / 服务商中心 / 用户视角监督镜像）。
@@ -12,7 +13,7 @@ import { PublishModule } from '../publish/publish.module';
  * 不依赖其他业务模块的 service，避免循环依赖。
  */
 @Module({
-  imports: [PublishModule],
+  imports: [PublishModule, StaffModule],
   controllers: [
     AgentConsoleController,
     ProviderConsoleController,

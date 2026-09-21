@@ -223,9 +223,14 @@ export const S = {
   } as CSSProperties,
 } as const;
 
-/** 原型栅格：duo = 1.4fr / 1fr，trio = 1.2fr / 1fr / 1fr */
+/**
+ * 原型栅格：duo = 1.4fr / 1fr，trio = 1.2fr / 1fr / 1fr，kpis = 四列等宽。
+ * 2026-09-20 改响应式（P3-⑥）：此前为固定 inline grid，窄屏（<lg）错乱。
+ * 现改为 Tailwind 响应式工具类字符串，由 tailwind.css 的 JIT 生成；
+ * 桌面（≥1024px）保持原多列比例，窄屏逐级降列，宽屏外观完全不变。
+ */
 export const GRID = {
-  duo: { display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: T.gap },
-  trio: { display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: T.gap },
-  kpis: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 },
+  duo: 'grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4',
+  trio: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr] gap-4',
+  kpis: 'grid grid-cols-2 lg:grid-cols-4 gap-[14px]',
 } as const;

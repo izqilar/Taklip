@@ -731,3 +731,228 @@ Please make sure your database server is running at `localhost:5432`.
     at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
     at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
     at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+[31m[Nest] 33364  - [39m2026/09/21 08:23:57 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+    at async StaffService.create (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:26)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[31m[Nest] 33364  - [39m2026/09/21 08:23:57 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+    at async StaffService.create (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:26)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[31m[Nest] 33364  - [39m2026/09/21 08:24:28 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+    at async StaffService.create (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:26)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[31m[Nest] 33364  - [39m2026/09/21 08:24:59 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+    at async StaffService.create (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:26)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[31m[Nest] 33364  - [39m2026/09/21 08:25:25 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+    at async StaffService.create (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:26)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[31m[Nest] 33364  - [39m2026/09/21 08:25:25 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+    at async StaffService.create (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:26)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[31m[Nest] 33364  - [39m2026/09/21 08:25:25 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+    at async StaffService.create (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:26)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[31m[Nest] 33364  - [39m2026/09/21 08:25:37 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+    at async StaffService.create (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:26)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[31m[Nest] 33364  - [39m2026/09/21 08:25:37 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.orgStaff.create()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:53
+
+  74 }
+  75 const serviceType = orgType === 'PROVIDER' ? (dto.serviceType ?? '').toString().trim() || null : null;
+  76 const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+→ 77 const created = (await this.prisma.orgStaff.create(
+Unique constraint failed on the fields: (`member_no`)
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+    at async StaffService.create (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:26)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17

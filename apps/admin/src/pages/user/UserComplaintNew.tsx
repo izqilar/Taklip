@@ -92,10 +92,9 @@ export const UserComplaintNew = () => {
 
       <Panel title="反馈信息" hint="处理层次自下而上：服务商负责人 → 代理商 → 平台">
         <div
+          className="grid grid-cols-1 lg:grid-cols-2"
           style={{
             padding: 16,
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
             gap: 14,
           }}
         >

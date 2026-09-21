@@ -1,5 +1,5 @@
 import type { AccessControlProvider } from '@refinedev/core';
-import { API_URL, authHeaders, type AccessInfo } from '../utility';
+import { API_URL, authHeaders, type AccessInfo, type StaffMembershipLite } from '../utility';
 
 let cache: AccessInfo | null = null;
 
@@ -9,6 +9,12 @@ export function invalidateAccessCache() {
 }
 
 function permFor(resource: string, action: string): string | null {
+  // P1：团队写操作门控（与服务端 OrgAccess requirePerm 同源）。仅成员关系 + team:manage 可写，
+  // 其余动作（读/列表）对成员开放，交由 canSeeByRole 判定显隐。
+  if (resource.endsWith('/team')) {
+    if (action === 'create' || action === 'edit' || action === 'delete') return 'team:manage';
+    return null;
+  }
   // 自定义动作（来自资源 meta.action），用于细粒度（如角色分配）
   if (action === 'user:role') return 'user:role';
   if (resource === 'admin/users') {
@@ -35,10 +41,11 @@ function permFor(resource: string, action: string): string | null {
   return null;
 }
 
-function canSeeByRole(resource: string | undefined, role: string | undefined): boolean | null {
+function canSeeByRole(resource: string | undefined, role: string | undefined, staff?: StaffMembershipLite[]): boolean | null {
   if (!resource) return null;
+  const inLayer = (layer: StaffMembershipLite['orgType']) => (staff ?? []).some((s) => s.orgType === layer);
   // 总台根 / 财务中心 / 系统级资源（字体、模板审核、角色权限、系统设置、操作日志）：
-  // 仅 ADMIN。避免 USER / 代理商 / 服务商等非管理角色误见运营菜单（fail-closed）。
+  // 仅 ADMIN。员工（含总台员工）即便有 CONSOLE 成员关系也不开放系统级菜单（R-03 防越权）。
   if (
     resource === 'admin/console' ||
     resource === 'admin/finance' ||
@@ -50,13 +57,17 @@ function canSeeByRole(resource: string | undefined, role: string | undefined): b
   ) {
     return role === 'ADMIN';
   }
-  // 代理商中心资源：限 代理商 / 管理员
-  if (resource.startsWith('agent/')) {
-    return role === 'AGENT' || role === 'ADMIN';
+  // 总台「我的团队」+ 总台首页：ADMIN 或 总台内部员工（OrgStaff orgType=CONSOLE）
+  if (resource === 'admin/team' || resource === 'admin/dashboard') {
+    return role === 'ADMIN' || inLayer('CONSOLE');
   }
-  // 服务商中心资源：限 服务商 / 管理员
+  // 代理商中心资源：代理商 / 管理员 / 代理商内部员工
+  if (resource.startsWith('agent/')) {
+    return role === 'AGENT' || role === 'ADMIN' || inLayer('AGENT');
+  }
+  // 服务商中心资源：服务商 / 管理员 / 服务商内部员工
   if (resource.startsWith('sp/')) {
-    return role === 'SERVICE_PROVIDER' || role === 'ADMIN';
+    return role === 'SERVICE_PROVIDER' || role === 'ADMIN' || inLayer('PROVIDER');
   }
   // 其余（user/*、account/* 等自作用域资源）不按角色拦截，交由 permFor / 兜底判定
   return null;
@@ -79,12 +90,26 @@ export const accessControlProvider: AccessControlProvider = {
       }
     }
     const res = resource ?? '';
+    const staff = cache?.staff;
+    const role = cache?.role;
+    // 0) 团队写操作门控（与服务端 OrgAccess requirePerm 同源）：
+    //    - 该层拥有者（legacy 角色）天然可写；
+    //    - 员工须具备 team:manage 权限（由 funcPerms 推导）。
+    if (res.endsWith('/team') && (action === 'create' || action === 'edit' || action === 'delete')) {
+      const layer = res.startsWith('agent/') ? 'AGENT' : res.startsWith('sp/') ? 'PROVIDER' : 'CONSOLE';
+      const isOwner =
+        (layer === 'CONSOLE' && role === 'ADMIN') ||
+        (layer === 'AGENT' && (role === 'AGENT' || role === 'ADMIN')) ||
+        (layer === 'PROVIDER' && (role === 'SERVICE_PROVIDER' || role === 'ADMIN'));
+      if (isOwner) return { can: true };
+      return { can: (cache?.permissions ?? []).includes('team:manage') };
+    }
     // 1) 角色层显隐（前端菜单显隐，数据权限仍由后端强制）
-    const roleDecision = canSeeByRole(res, cache?.role);
+    const roleDecision = canSeeByRole(res, role, staff);
     if (roleDecision !== null) return { can: roleDecision };
     // 2) 细粒度权限：已显式映射的资源按权限串判定，缺失权限即拒绝（fail-closed）
     const perm = permFor(res, String(action));
-    if (perm) return { can: cache!.permissions.includes(perm) };
+    if (perm) return { can: (cache?.permissions ?? []).includes(perm) };
     // 3) 兜底：
     //    - 管理后台（admin/*）未显式映射的资源默认【拒绝】，避免非管理角色误入运营菜单；
     //    - user/agent/sp/account 等自作用域资源默认可见，数据权限由后端强制。

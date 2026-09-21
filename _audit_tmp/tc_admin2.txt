@@ -1,5 +1,0 @@
-
-> @h5design/admin@0.1.0 typecheck D:\MyWorkBuddy\2026-08-10-22-39-56\apps\admin
-> tsc --noEmit
-
-admin_exit=0

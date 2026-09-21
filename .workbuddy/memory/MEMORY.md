@@ -41,7 +41,20 @@ web 个人中心：grid `md:grid-cols-[240px_1fr]`，禁 max-w-7xl 居中；根 
 - `/api/projects` 列表 select 必含 `publishCode`（否则已发布作品详情二维码区块不显示）。
 - Playwright 回归 web 端：require('@playwright/test')（无裸 playwright 包）；先注入 localStorage(access_token/user_info)；hover 卡片图区 `div[class*="_root_"]` 触发 .root:hover 后按钮才可点（hover 外层卡片中心会落信息区，按钮 pointer-events:none 点不动）。
 
+## 12.5 组织内员工岗位体系（2026-09-21 P0 落地，文档 docs/平台角色边界规范化.md）
+- **双轴模型**：平台身份 `User.role`（不动）× 组织内岗位 `OrgStaff.staffRole`。员工沿用 USER 身份，不新增 STAFF 角色（会冲击 ROLE_HOME/canSeeByRole/getAccess/RolesGuard/DataScope 全线）。
+- **一表统三层**：`model OrgStaff`（orgType=PROVIDER|AGENT|CONSOLE，orgId；CONSOLE 固定 `'console'`）。存量 `ProviderTeamMember` 保留作备份，已迁移；对外契约不变（响应补 `teamRole` = `staffRole` 别名）。
+- 真值源 `config/staffRoles.ts`（前端）与 `server/src/console/team-role.meta.ts`（服务端）**互为镜像，改一侧必须同步**（原型 `UI_Design/index.html:4691`）。
+- 岗位控件必须 **AutoComplete**（存量是自由文本，严格 Select 会让旧值显示为空）；服务商层岗位池随 `serviceType` 联动，15 项服务类型只有 5 项命中原型（「婚礼策划」→别名「婚庆策划」），其余走 `TEAM_DEFAULT_ROLES` fallback。
+- 服务端强制：`dataScope` 按层白名单（PROVIDER self/service/provider；AGENT self/region/agent；CONSOLE self/all）；`funcPerms` 按层权限池；红线 `STAFF_FORBIDDEN_PERMS`（role:manage/settings:manage 全员禁；withdrawal:review/operate 禁于 PROVIDER）。
+- 三层页面同构于 `pages/staffTeamPages.tsx`（List/Create/Member），代理商=`/agent/team`、总台=`/admin/team`、服务商=`/sp/team`。新增 `admin/*` 资源**必须同时加进 accessControlProvider 的 ADMIN-only 白名单**，否则 `admin/*` 兜底 fail-closed 会把菜单藏掉。
+- **P1 已落地（2026-09-21）**：员工登录与鉴权门控全通。要点——`OrgStaff.userId` 邀请绑定存量 `User`；JWT 携带 `staff` 上下文（ACTIVE 成员关系，源头剔除 DISABLED）；`getAccess()` 合并 staff `funcPerms` 并回带 `staff[]`；新增 `@OrgAccess`+`OrgAccessGuard`（USER 凭成员关系进层、写操作门控 `team:manage`）；前端 `accessControlProvider` 消费 membership 做菜单显隐；员工 home 路由（有成员→落 admin 对应工作台，否则 web）。**红线 R-05（DISABLED 在 login+jwt 双校验）+ R-06（停用成员从 staff 剔除）现已真正生效**。后续 P2/P3 见文档 §10.1。
+- **P1 新坑**：① R-05 只在 jwt 校验不够，必须堵在 `generateTokens()` 漏斗；② `/auth/access` staff 映射曾漏 funcPerms；③ 员工走团队接口 orgId 取 `membership.orgId`（非 `req.user.id`）；④ 同文件并行 Edit 互相覆盖老坑又复发，必须串行+Grep 抽查。
+
 ## 12 fetch 铁律 + curl 验证盲区
 - 自写 fetch 封装发 JSON 字符串 body **必须显式 `Content-Type: application/json`**（fetch 默认 text/plain → NestJS parser 跳过 → 服务端空 body，报"xxx必填"400）。web 端 client.ts request() 已有默认；admin editorServices.ts authedFetch 已修（2026-09-19）。新增 fetch 封装必查。
 - **curl 验证会掩盖 Content-Type 类 bug**（curl 手动带了头）——前端管线问题必须用 Playwright 走真实浏览器链路复现，看请求 body/头 + 服务端响应三元组，不要只 curl 服务端。
 - 运营端 Playwright：注入 `layer.view='user'`（否则 ObjectScopeBar 不渲染）；对象搜索框 `xpath=//span[text()="搜索"]/following::input[1]`（AutoComplete data-testid 不落 input；页面首个 select 输入框是语言选择器）；antd select input 是 readonly，click+pressSequentially。
+- **antd Select 展开后不能直接 `click(#id)`**（被 `.ant-select-selection-item` span 拦截）→ 点外层 `.ant-select-selector`；已展开则 `focus()` + `keyboard.type()`。长列表（>10 项）走虚拟滚动，靠后的项**必须先搜索**才点得到。AutoComplete 读全量选项前**先清空输入框**（否则被 filterOption 滤成 1 项）；读下拉项要限定 `:not(.ant-select-dropdown-hidden)`，否则混入已隐藏下拉残留。
+- **i18next 默认 `nsSeparator=':'`** → 含冒号的 key（如 `pages.team.perm.order:view`）会被切成 ns+key 而查不到。逐调用传 `{ nsSeparator: false }`，**不要改全局配置**（会影响 `common:xxx` 命名空间用法）。
+- `prisma generate` 若报 EPERM rename `query_engine-windows.dll.node`：先 kill 占用 :3000 的 node（DLL 被映射），再把旧 dll 改名（`mv … qe_old.node`）后重新 generate。服务端未捕获异常不打堆栈到 server.log，排查 500 优先用「分步最小复现 + 直接跑 Prisma」定位。

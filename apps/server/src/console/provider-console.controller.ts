@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -16,6 +17,8 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { OrgAccess } from '../common/decorators/org-access.decorator';
+import { OrgAccessGuard, staffOrgIdOf } from '../common/guards/org-access.guard';
 import { InspectSubjectGuard } from '../common/guards/inspect-subject.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '../../prisma/prisma-client';
@@ -28,6 +31,8 @@ import {
   checkWorkFontLicense,
 } from '../common/font-license';
 import { PublishService } from '../publish/publish.service';
+import { StaffService } from './staff.service';
+import { CreateStaffDto, UpdateStaffDto } from './dto/staff.dto';
 
 type ReqUser = Express.Request & { user: JwtUser };
 
@@ -67,6 +72,21 @@ const subjectId = (req: ReqUser, subject?: string) =>
   subject && req.user.role === 'ADMIN' ? subject : req.user.id;
 
 /**
+ * P1：解析「我的团队」接口所用组织 id。
+ * - 员工（USER 身份 + PROVIDER 成员关系）：取其在 OrgStaff 上绑定的雇主 orgId；
+ * - legacy 拥有者（SERVICE_PROVIDER）/ ADMIN 视察：沿用 subjectId（无 subject 回退自身）。
+ * 避免在员工场景下把 req.user.id（员工自身）误当成服务商 orgId。
+ */
+const providerTeamOrg = (req: ReqUser, subject?: string): string => {
+  if (req.user.role === 'USER') {
+    const oid = staffOrgIdOf(req.user, 'PROVIDER');
+    if (!oid) throw new ForbiddenException('非该服务商成员');
+    return oid;
+  }
+  return subjectId(req, subject);
+};
+
+/**
  * 方案 A draft/live 的「当前有效副本」取值口径：有草稿取草稿，否则取线上。
  *
  * ⚠️ 所有用于**展示 / 装载画布**的读接口都必须走这里。
@@ -90,6 +110,7 @@ export class ProviderConsoleController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly publishService: PublishService,
+    private readonly staff: StaffService,
   ) {}
 
   /** 我的看板：钱包 + 订单 + 服务 + 反馈概览 */
@@ -933,74 +954,68 @@ export class ProviderConsoleController {
     return { items, total, page: p, pageSize: ps };
   }
 
-  /** 我的团队 */
+  /* ══════════════════ 我的团队（OrgStaff · orgType=PROVIDER） ══════════════════
+   * 承载表由 ProviderTeamMember 迁移到统一的 OrgStaff（文档 docs/平台角色边界规范化.md §4），
+   * 对外契约不变：响应仍带 teamRole 别名，前端列表 / 详情零感知。
+   * 相比旧实现新增：DTO 校验（原为 body:any + 手写校验）、dataScope 白名单、
+   * funcPerms 权限池与红线裁剪、PATCH 编辑 / 停用接口（原缺失）。
+   */
+
   @Get('team')
-  @Roles('SERVICE_PROVIDER', 'ADMIN')
-  @UseGuards(RolesGuard)
+  @OrgAccess('PROVIDER')
+  @UseGuards(OrgAccessGuard)
   async team(
     @Req() req: ReqUser,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ) {
-    const p = page ? Number(page) : 1;
-    const ps = Math.min(pageSize ? Number(pageSize) : 20, 100);
-    const where = { providerId: req.user.id };
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.providerTeamMember.findMany({
-        where,
-        skip: (p - 1) * ps,
-        take: ps,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.providerTeamMember.count({ where }),
-    ]);
-    return { items, total, page: p, pageSize: ps };
+    return this.staff.list('PROVIDER', providerTeamOrg(req), page ? Number(page) : 1, pageSize ? Number(pageSize) : 20);
+  }
+
+  /** 岗位池（随服务类型联动），供前端 / E2E 校验真值源一致 */
+  @Get('team/role-pool')
+  @OrgAccess('PROVIDER')
+  @UseGuards(OrgAccessGuard)
+  async teamRolePool(@Query('serviceType') serviceType?: string) {
+    return this.staff.rolePool('PROVIDER', serviceType);
   }
 
   @Post('team')
-  @Roles('SERVICE_PROVIDER', 'ADMIN')
-  @UseGuards(RolesGuard)
-  async createTeamMember(@Req() req: ReqUser, @Body() body: any, @Query('subject') subject?: string) {
-    const uid = subjectId(req, subject);
-    const name = (body.name || '').toString().trim();
-    const phone = (body.phone || '').toString().trim();
-    if (!name) throw new BadRequestException('成员姓名必填');
-    if (!/^\d{11}$/.test(phone)) throw new BadRequestException('手机号须为 11 位数字');
-    const members = await this.prisma.providerTeamMember.findMany({
-      where: { providerId: uid },
-      select: { memberNo: true },
-    });
-    let max = 1000;
-    for (const m of members) {
-      const n = parseInt((m.memberNo || '').replace(/\D/g, ''), 10);
-      if (!isNaN(n) && n > max) max = n;
-    }
-    const memberNo = 'MT-' + String(max + 1);
-    const data: any = {
-      providerId: uid,
-      memberNo,
-      name,
-      phone,
-      accountStatus: ['ACTIVE', 'PENDING', 'DISABLED'].includes(body.accountStatus) ? body.accountStatus : 'ACTIVE',
-      serviceType: body.serviceType || '',
-      teamRole: body.teamRole || '',
-      duties: Array.isArray(body.duties) ? body.duties : [],
-      personality: body.personality || null,
-      dataScope: body.dataScope || 'self',
-      funcPerms: Array.isArray(body.funcPerms) ? body.funcPerms : [],
-    };
-    const created = await this.prisma.providerTeamMember.create({ data });
-    return created;
+  @OrgAccess('PROVIDER', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async createTeamMember(
+    @Req() req: ReqUser,
+    @Body() dto: CreateStaffDto,
+    @Query('subject') subject?: string,
+  ) {
+    return this.staff.create('PROVIDER', providerTeamOrg(req, subject), dto);
+  }
+
+  /** P1（K-07）：邀请绑定已有账号 —— 按成员手机号把已注册 User 绑到该员工关系 */
+  @Post('team/:id/bind')
+  @OrgAccess('PROVIDER', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async bindTeamMember(@Req() req: ReqUser, @Param('id') id: string) {
+    return this.staff.bindUser('PROVIDER', providerTeamOrg(req), id);
+  }
+
+  @Patch('team/:id')
+  @OrgAccess('PROVIDER', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async updateTeamMember(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateStaffDto,
+    @Query('subject') subject?: string,
+  ) {
+    return this.staff.update('PROVIDER', providerTeamOrg(req, subject), id, dto);
   }
 
   @Delete('team/:id')
-  @Roles('SERVICE_PROVIDER', 'ADMIN')
-  @UseGuards(RolesGuard)
+  @OrgAccess('PROVIDER', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
   async deleteTeamMember(@Req() req: ReqUser, @Param('id') id: string, @Query('subject') subject?: string) {
-    const cur = await this.prisma.providerTeamMember.findFirst({ where: { id, providerId: subjectId(req, subject) } });
-    if (!cur) throw new NotFoundException('成员不存在或无权操作');
-    await this.prisma.providerTeamMember.delete({ where: { id } });
-    return { ok: true };
+    return this.staff.remove('PROVIDER', providerTeamOrg(req, subject), id);
   }
 
   /** 我的客户 */

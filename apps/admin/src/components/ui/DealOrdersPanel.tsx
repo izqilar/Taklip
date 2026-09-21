@@ -38,9 +38,8 @@ export const DealOrdersPanel = ({ stats }: { stats: DealOrdersStats }) => {
   return (
     <Panel title="成交订单构成" hint="已支付且未全额退单为有效成交 · 退单从成交统计冲减">
       <div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
           gap: 1,
           background: T.border,
           border: `1px solid ${T.border}`,

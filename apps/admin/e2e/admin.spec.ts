@@ -36,7 +36,11 @@ async function login(page: Page, phone: string, pwd: string) {
   await page.getByPlaceholder('密码').fill(pwd);
   // 登录按钮 accessible name 为「登 录」（antd 渲染含空格），改用 submit 选择器更稳
   await page.locator('button[type="submit"]').click();
-  await page.waitForURL('**/admin/users');
+  // ⚠️ 落点由服务端 ROLE_HOME 决定（ADMIN → /admin/dashboard、SP → /sp/studio、AGENT → /agent/dashboard），
+  // 曾硬编码等 `**/admin/users` 导致整个套件登录即超时。这里改为「离开 /login 即可」，
+  // 与角色无关，避免以后再改落点又全量失败。
+  await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 20000 });
+  await page.waitForLoadState('networkidle').catch(() => {});
 }
 
 test.describe('M5 · 运营端验收 (§14)', () => {
@@ -145,6 +149,62 @@ test.describe('M5 · 运营端验收 (§14)', () => {
     await login(page, ADMIN.phone, ADMIN.pwd);
     const brand = page.getByText('庆');
     await expect(brand).toHaveCSS('color', 'rgb(210, 72, 48)');
+  });
+
+  /**
+   * ⑪ 岗位边界规范化（docs/平台角色边界规范化.md）
+   * 断言：三层岗位池各就各位 + 数据范围按层白名单 + 权限复选框为原型 8 项子集。
+   *
+   * 选择器事实：antd Form.Item 的 name 会落到控件 id（#staffRole / #serviceType / #dataScope）；
+   * antd Select 展开后须点击 .ant-select-selector（直接 click(#id) 会被选中项 span 拦截）；
+   * 15 项服务类型走虚拟滚动（只渲染前 ~10 项），必须搜索过滤后再选。
+   */
+  test('⑪ 岗位边界：三层岗位池 + 数据范围白名单 + 权限 8 项子集', async ({ page }) => {
+    await login(page, ADMIN.phone, ADMIN.pwd);
+
+    // ── 总台层：岗位池 5 项，数据范围 self / all ──
+    await page.goto('/admin/team/new');
+    await page.locator('#staffRole').click();
+    await page.locator('#staffRole').fill('');
+    await page.waitForTimeout(400);
+    const consoleRoles = await page.evaluate(() => {
+      const dds = Array.from(document.querySelectorAll('.ant-select-dropdown'))
+        .filter((d) => !d.classList.contains('ant-select-dropdown-hidden'));
+      return Array.from(new Set(dds.flatMap((d) =>
+        Array.from(d.querySelectorAll('.ant-select-item-option-content')).map((e) => (e.textContent || '').trim()))));
+    });
+    expect(consoleRoles).toEqual(['超级管理员', '内容运营', '审核员', '财务', '客服/工单']);
+    await page.keyboard.press('Escape');
+
+    await page.locator('#dataScope').locator('xpath=ancestor::div[contains(@class,"ant-select-selector")][1]').click();
+    await page.waitForTimeout(400);
+    const consoleScopes = await page.evaluate(() => {
+      const dds = Array.from(document.querySelectorAll('.ant-select-dropdown'))
+        .filter((d) => !d.classList.contains('ant-select-dropdown-hidden'));
+      return Array.from(new Set(dds.flatMap((d) =>
+        Array.from(d.querySelectorAll('.ant-select-item-option-content')).map((e) => (e.textContent || '').trim()))));
+    });
+    expect(consoleScopes).toEqual(['自身', '全平台']);
+    await page.keyboard.press('Escape');
+
+    // ── 代理商层：岗位池 5 项，数据范围 self / region / agent ──
+    await page.goto('/agent/team/new');
+    await page.locator('#staffRole').click();
+    await page.locator('#staffRole').fill('');
+    await page.waitForTimeout(400);
+    const agentRoles = await page.evaluate(() => {
+      const dds = Array.from(document.querySelectorAll('.ant-select-dropdown'))
+        .filter((d) => !d.classList.contains('ant-select-dropdown-hidden'));
+      return Array.from(new Set(dds.flatMap((d) =>
+        Array.from(d.querySelectorAll('.ant-select-item-option-content')).map((e) => (e.textContent || '').trim()))));
+    });
+    expect(agentRoles).toEqual(['区域经理', '入驻审核员', '商务拓展', '财务专员', '客服专员']);
+
+    // ── 权限复选框：代理商层应包含 入驻审核 相关权限点，且不含红线项 角色管理 ──
+    const labels = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('.ant-checkbox-wrapper')).map((e) => (e.textContent || '').trim()));
+    expect(labels).toContain('服务商入驻审核');
+    expect(labels).not.toContain('角色管理');
   });
 
   test('RTL：切换维吾尔语后 direction=rtl', async ({ page }) => {

@@ -152,7 +152,7 @@ export const SPQualificationDetail = () => {
     >
       {rec && (
         <Form form={form} layout="vertical" initialValues={rec} style={{ marginTop: 8 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14 }}>
             <Field label="资质名称"><Form.Item name="name" noStyle rules={[{ required: true, message: '请填写资质名称' }]}><Input placeholder="如：营业执照" /></Form.Item></Field>
             <Field label="资质类型"><Form.Item name="type" noStyle rules={[{ required: true, message: '请选择资质类型' }]}><Select options={LICENSE_TYPES} placeholder="选择类型" /></Form.Item></Field>
             <Field label="证件编号"><Form.Item name="certNo" noStyle rules={[{ required: true, message: '请填写证件编号' }]}><Input placeholder="如：91650100********2210" maxLength={32} /></Form.Item></Field>
@@ -255,7 +255,7 @@ export const SPScheduleDetail = () => {
     >
       {rec && (
         <Form form={form} layout="vertical" initialValues={rec} style={{ marginTop: 8 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14 }}>
             <Field label="日期"><Form.Item name="date" noStyle rules={[{ required: true, message: '请选择日期' }]}><Input type="date" /></Form.Item></Field>
             <Field label="时段"><Form.Item name="period" noStyle rules={[{ required: true, message: '请选择时段' }]}><Select options={PERIOD_OPTS} /></Form.Item></Field>
             <Field label="服务类型"><Form.Item name="serviceType" noStyle rules={[{ required: true, message: '请选择服务类型' }]}><Select options={SVC_OPTIONS} showSearch optionFilterProp="label" /></Form.Item></Field>
@@ -321,7 +321,7 @@ export const SPClientsDetail = () => {
   const aside = (
     <>
       <PreviewCard title="客户 360° 概览">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 13 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 6, fontSize: 13 }}>
           <div>累计消费：<b>{money(rec?.totalSpend)}</b></div>
           <div>互动次数：<b>{rec?.interactions ?? 0}</b></div>
           <div>最近服务：{rec?.lastService || '—'}</div>
@@ -367,7 +367,7 @@ export const SPClientsDetail = () => {
       {rec && (
         <>
           <PreviewCard title={`客户档案 · ${rec.clientNo || ''}`}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13, color: T.ink1 }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 8, fontSize: 13, color: T.ink1 }}>
               <div>编号：<b>{rec.clientNo}</b></div>
               <div>姓名：<b>{rec.name}</b></div>
               <div>手机：<b>{rec.phone}</b></div>
@@ -375,7 +375,7 @@ export const SPClientsDetail = () => {
             </div>
           </PreviewCard>
           <Form form={form} layout="vertical" initialValues={{ type: 'SERVICE_MSG', channel: 'INNER_SMS' }} onValuesChange={(_, all) => setPv(all)} style={{ marginTop: 8 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14 }}>
               <Field label="维护类型*">
                 <Form.Item name="type" noStyle rules={[{ required: true, message: '请选择维护类型' }]}>
                   <Select options={Object.entries(REACH_TYPE).map(([v, t]) => ({ value: v, label: t }))} />
@@ -388,7 +388,7 @@ export const SPClientsDetail = () => {
               </Field>
             </div>
             {isBenefit && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14 }}>
                 <Field label="权益面额（元）*">
                   <Form.Item name="amount" noStyle rules={[{ required: true, message: '请填写面额' }]}>
                     <InputNumber min={0.01} precision={2} step={1} style={{ width: '100%' }} addonAfter="元" />
@@ -448,7 +448,7 @@ export const SPClientCreate = () => {
       </>}
     >
       <Form form={form} layout="vertical" style={{ marginTop: 8 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14 }}>
           <Field label="客户姓名"><Form.Item name="name" noStyle rules={[{ required: true, message: '请填写客户姓名' }]}><Input placeholder="如：阿依古丽" /></Form.Item></Field>
           <Field label="手机号"><Form.Item name="phone" noStyle rules={[{ required: true, message: '请填写手机号' }, { pattern: /^\d{11}$/, message: '须为 11 位数字' }]}><Input placeholder="11 位手机号" maxLength={11} /></Form.Item></Field>
           <Field label="客户标签"><Form.Item name="tags" noStyle><Select mode="multiple" options={CLIENT_TAG_OPTS} placeholder="可多选" maxTagCount="responsive" /></Form.Item></Field>
@@ -539,7 +539,7 @@ export const SPComplaintCreate = () => {
       </>}
     >
       <Form form={form} layout="vertical" initialValues={{ type: 'AFTERSALE', department: 'AGENT' }} style={{ marginTop: 8 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14 }}>
           <Field label="反馈主题"><Form.Item name="title" noStyle rules={[{ required: true, message: '请填写反馈主题' }, { max: 60, message: '不超过 60 字' }]}><Input placeholder="一句话概括您的反馈" maxLength={60} /></Form.Item></Field>
           <Field label="类型"><Form.Item name="type" noStyle rules={[{ required: true, message: '请选择类型' }]}><Select options={TICKET_TYPE_OPTS} /></Form.Item></Field>
           <Field label="反馈部门" hint="自下而上：服务商 → 代理商 → 平台">
@@ -635,7 +635,7 @@ export const SPApplyDetail = () => {
             </div>
           )}
           <Form form={form} layout="vertical" initialValues={rec} style={{ marginTop: 8 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14 }}>
               <Field label="申请主体名称"><Form.Item name="applicantName" noStyle rules={[{ required: true, message: '请填写申请主体名称' }]}><Input placeholder="如：天山雄鹰文化传媒" /></Form.Item></Field>
               <Field label="手机号"><Form.Item name="phone" noStyle rules={[{ required: true, message: '请填写手机号' }, { pattern: /^\d{11}$/, message: '须为 11 位数字' }]}><Input placeholder="11 位手机号" maxLength={11} /></Form.Item></Field>
               <Field label="申请区域"><Form.Item name="regionPath" noStyle rules={[{ required: true, message: '请选择申请区域' }]}><Select options={REGION_OPTIONS} placeholder="选择业务开展城市" /></Form.Item></Field>

@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Select } from 'antd';
-import { GlobalOutlined } from '@ant-design/icons';
+import { GlobalOutlined, MenuOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { T } from '../../config/theme';
 import { useLayer } from '../../providers/layerContext';
@@ -47,8 +47,16 @@ const VIEW_CRUMB: Record<LayerKey, string> = {
  * 顶栏内容（原型 .top）：面包屑 + 视角切换 + 账号胶囊 + 资料入口。
  * 账号模块只表达「我是谁」（操作员锚点）+ 监督视角的「当前对象」（数据主体），
  * 不在此呈现可写/只读等权限文字——权限由各角色层作用域隐式体现。
+ *
+ * 2026-09-20 响应式（P3-⑥）：窄屏时于最左侧渲染汉堡按钮，点击开合侧栏抽屉。
  */
-export const LayerHeader = () => {
+export const LayerHeader = ({
+  showMenu = false,
+  onMenu,
+}: {
+  showMenu?: boolean;
+  onMenu?: () => void;
+}) => {
   const { i18n } = useTranslation();
   const { view, setView, objectScope, setObjectScope } = useLayer();
   const location = useLocation();
@@ -87,6 +95,28 @@ export const LayerHeader = () => {
 
   return (
     <>
+      {/* ── 窄屏菜单按钮（仅窄屏显示，打开侧栏抽屉） ── */}
+      <button
+        type="button"
+        onClick={onMenu}
+        aria-label="打开菜单"
+        style={{
+          display: showMenu ? 'inline-flex' : 'none',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 36,
+          height: 36,
+          flex: 'none',
+          border: `1px solid ${T.border}`,
+          borderRadius: T.rSm,
+          background: T.bg,
+          color: T.ink1,
+          cursor: 'pointer',
+        }}
+      >
+        <MenuOutlined />
+      </button>
+
       {/* ── 面包屑 ── */}
       <span style={{ fontSize: 15, fontWeight: 700, whiteSpace: 'nowrap', color: T.ink1 }}>
         {VIEW_CRUMB[view]}

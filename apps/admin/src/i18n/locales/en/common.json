@@ -145,7 +145,13 @@
     "sp.notices": "Notices",
     "sp.team": "My Team",
     "sp.clients": "My Clients",
-    "account.profile-provider": "Account"
+    "account.profile-provider": "Account",
+    "admin": {
+      "team": "My team"
+    },
+    "agent": {
+      "team": "My team"
+    }
   },
   "pages": {
     "col.status": "Status",
@@ -514,6 +520,73 @@
     "error": {
       "404": "Page not found (404)",
       "backHome": "Back to home"
+    },
+    "team": {
+      "role": "Team role",
+      "rolePlaceholder": "e.g. Florist / CS (select or type)",
+      "duties": "Duties",
+      "funcPerms": "Function permissions",
+      "dataScope": "Data scope",
+      "trait": "Specialty",
+      "traitPlaceholder": "Auto-filled by service type, editable",
+      "serviceType": "Service type",
+      "name": "Name",
+      "namePlaceholder": "e.g. Gulnar",
+      "phone": "Phone",
+      "accountStatus": "Account status",
+      "colMemberNo": "Member No.",
+      "colName": "Name",
+      "colPhone": "Phone",
+      "scopeSelf": "Self",
+      "scopeService": "Own (service)",
+      "scopeProvider": "Whole provider",
+      "scopeRegion": "Own region",
+      "scopeAgent": "Whole agency",
+      "scopeAll": "All platform",
+      "create": "＋ New member",
+      "save": "Save member",
+      "newTitle": "New team member",
+      "newSub": "Configure role, duties and permissions by service type",
+      "detailTitle": "Team member detail",
+      "detailSub": "Role-based team · differentiated by service type",
+      "searchPlaceholder": "Search member name…",
+      "filterAll": "All",
+      "filterActive": "Active",
+      "filterPending": "Pending",
+      "filterDisabled": "Disabled",
+      "memberName": "Member name",
+      "autoNo": "MT- (auto)",
+      "autoNoHint": "Member No. (MT-xxxx) is generated automatically.",
+      "created": "Member added",
+      "removed": "Member removed",
+      "disabled": "Member disabled",
+      "enabled": "Member enabled",
+      "disable": "Disable",
+      "enable": "Enable",
+      "remove": "Remove member",
+      "perm": {
+        "order:view": "Order view",
+        "order:handle": "Order handle",
+        "order:aftersale": "After-sale",
+        "message:send": "Internal message",
+        "template:publish": "Publish template",
+        "content:offline": "Take down",
+        "data:export": "Export data",
+        "qualification:manage": "Qualification"
+      }
+    },
+    "action": {
+      "view": "View",
+      "cancel": "Cancel",
+      "back": "Back"
+    },
+    "msg": {
+      "fixForm": "Please fix the invalid fields first",
+      "requiredName": "Name is required",
+      "requiredPhone": "Phone is required",
+      "phoneFormat": "Must be 11 digits",
+      "requiredRole": "Select or type a role",
+      "removeFailed": "Remove failed"
     }
   }
 }

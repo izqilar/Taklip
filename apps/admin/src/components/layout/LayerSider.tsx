@@ -53,7 +53,7 @@ const isActivePath = (r: MenuNode, pathname: string) => {
  *
  * 菜单项样式还原原型 .mi：hover 暖石底，选中朱砂软底 + 左侧 3px 竖条 + 朱砂字。
  */
-export const LayerSider = () => {
+export const LayerSider = ({ onNavigate }: { onNavigate?: () => void }) => {
   const { view } = useLayer();
   const location = useLocation();
   const navigate = useNavigate();
@@ -115,7 +115,10 @@ export const LayerSider = () => {
       <div
         key={r.name}
         data-menu={r.name}
-        onClick={() => navigate(r.list as string)}
+        onClick={() => {
+          navigate(r.list as string);
+          onNavigate?.();
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',

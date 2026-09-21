@@ -78,7 +78,7 @@ export const Dashboard = () => {
     return (
       <>
         <PageHead title="经营总览" sub={`平台运营核心指标 · 截至今日 ${today()}`} chip="总台 · 全盘治理" />
-        <div style={GRID.kpis}>
+        <div className={GRID.kpis}>
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
@@ -117,7 +117,7 @@ export const Dashboard = () => {
       />
 
       {/* ── KPI 四联：主指标大一号，不搞四张一样大 ── */}
-      <div style={GRID.kpis}>
+      <div className={GRID.kpis}>
         <KpiCard
           main
           label="平台总流水"
@@ -160,7 +160,7 @@ export const Dashboard = () => {
       />
 
       {/* ── duo：区域经营对比 + 资金流水趋势 ── */}
-      <div style={GRID.duo}>
+      <div className={GRID.duo}>
         <ChartCard title="区域经营对比" hint="近 30 日 · 按流水排序">
           <HorizontalBarList
             data={regionBars}
@@ -176,7 +176,7 @@ export const Dashboard = () => {
       </div>
 
       {/* ── trio：绩效 / 待办 / 入驻审核 ── */}
-      <div style={GRID.trio}>
+      <div className={GRID.trio}>
         <Panel title="代理商绩效 前五名" hint="按月流水">
           <DataTable<AgentTop>
             dense

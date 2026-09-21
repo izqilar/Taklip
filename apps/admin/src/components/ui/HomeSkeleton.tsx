@@ -9,7 +9,7 @@ import { todayKey } from '../../utility';
 export const HomeSkeleton = ({ title, chip }: { title: string; chip?: string }) => (
   <>
     <PageHead title={title} chip={chip} />
-    <div style={GRID.kpis}>
+    <div className={GRID.kpis}>
       {[0, 1, 2, 3].map((i) => (
         <div
           key={i}

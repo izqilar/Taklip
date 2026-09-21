@@ -95,7 +95,7 @@ export const UserComplaintDetail = () => {
         extra={<Button onClick={() => navigate('/user/complaints')}>← 返回我的反馈</Button>}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]" style={{ gap: 16 }}>
         {/* 左：基本信息 */}
         <Panel title="基本信息" hint={`编号 ${rec.id?.slice(-8) ?? '—'}`}>
           <div style={{ padding: '12px 20px 16px' }}>

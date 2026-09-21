@@ -22,8 +22,6 @@ const body: CSSProperties = {
 };
 
 const grid: CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'minmax(0,1fr) 360px',
   gap: 16,
   alignItems: 'start',
 };
@@ -70,7 +68,7 @@ export function SettingPage({ title, sub, chip, backTo, children, aside, footer,
         )}
       </div>
 
-      <div style={grid}>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px]" style={grid}>
         <div style={{ ...cardBase, padding: 20 }} className="svcf-main">
           {children}
         </div>

@@ -1,2 +1,0 @@
-admin:200
-server:200
