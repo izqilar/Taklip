@@ -4,6 +4,11 @@
 apps/server(:3000 NestJS+Prisma+PG+Redis) / admin(:5174 Refine+antd) / web(:5173 React18+Vite+Konva9+GSAP+i18n 6语言含RTL)。包：@h5design/core(dist构建,改后必重建)/editor(Konva+GSAP)/render(纯DOM)。主题朱砂 #c24b2e；顶栏/登录红 #c81e42（两套勿混）。未实现功能统一「该功能即将上线」。
 角色 USER/SERVICE_PROVIDER/AGENT/ADMIN；权限真相源=DataScopeInterceptor(ALL/REGION/SELF)；金额以分存。四层视角 localStorage `layer.view`；ADMIN 视察代操作经 `?subject=`（dataProviders 的 `withSubject(path,method)` 统一注入：GET=provider|wallet|export+messages，写=provider|export；服务端 `subjectId(req,subject)` 仅认 `req.user.role==='ADMIN'`）。
 
+## 0.5 版本控制（★2026-09-21 纠正：仓库确实受 git 托管）
+- 工作区是 git 仓库，分支 `main`，remote= `github.com/izqilar/Taklip`（已 push 过，本地曾领先 25+ 提交）。**此前误判"非 git 仓库"是错误的，勿再据此拒绝提交。**
+- 沙箱无 GitHub 凭据、无 SSH 密钥（~/.ssh 空、22 端口关闭），HTTPS push 必须靠用户提供的令牌。
+- **fine-grained PAT 坑**：REST API `permissions.push=true` 只反映账户权限，**不代表令牌可写**；git 传输/API 写操作被拒(403 "denied to izqilar")时，多为令牌「Contents」未设 Read and write 或仓库未加入授权列表。判定法：用 `curl -X POST .../git/refs` 建引用，403=令牌无写权。修法：令牌改 Contents=Read and write（含本仓库）或改用 Classic PAT(`repo` 范围)。令牌仅用于一次性 `git -c credential.helper= push`，不写入 .git/config、不持久化。
+
 ## 1 环境/启动（★重启铁律）
 DB：postgresql://h5design:h5design_dev_2026@localhost:5432/h5design_platform。密码 Test123456；ADMIN 13800000002、SP 13800000001（dev123456）；USER 13900001001~003（Test123456）。startup.ps1 启动（detached）；**:3000 跑 `node dist/main`（watchdog 每5s探活重启，勿手起第二个）。改 server 源码后必须 `pnpm --filter @h5design/server run build:compiled` 再 kill :3000 让 watchdog 拉新代码——只改源码不 build = 线上仍是旧行为**（2026-09-19 导出 subject 404 即此因）。core 改码须重建 dist；prisma 改 schema 须 regenerate；验证 `pnpm --filter @h5design/{web,admin,editor,render,ui,server} run typecheck`。
 
