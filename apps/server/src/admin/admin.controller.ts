@@ -297,4 +297,12 @@ export class AdminController {
   deleteStaff(@Req() req: AdminRequest, @Param('id') id: string) {
     return this.staff.remove(req.user, 'CONSOLE', CONSOLE_ORG_ID, id);
   }
+
+  /** 员工操作时间线（P3 可视化）：总台层成员审计，受 OrgAccess 保护 */
+  @Get('team/:id/audit-logs')
+  @OrgAccess('CONSOLE', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  teamMemberAudit(@Req() req: AdminRequest, @Param('id') id: string, @Query('take') take?: string) {
+    return this.staff.listAudit(id, take ? Number(take) : 100);
+  }
 }

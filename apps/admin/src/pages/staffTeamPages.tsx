@@ -42,6 +42,82 @@ const ORG_LAYER: Record<OrgType, LayerKey> = {
   CONSOLE: 'console',
 };
 
+/* ════════════════ P3 审计可视化：员工操作时间线 ══════════════════ */
+
+/** 审计动作 → 展示标签 + 主色（数据层见 staff.service.listAudit / AuditLog.action） */
+const STAFF_ACTION_META: Record<string, { label: string; color: string }> = {
+  STAFF_CREATE: { label: '新建成员', color: T.accent2 },
+  STAFF_UPDATE: { label: '编辑成员', color: T.accent },
+  STAFF_REMOVE: { label: '移除成员', color: '#c0392b' },
+  STAFF_BIND: { label: '绑定账号', color: '#8e44ad' },
+};
+const staffActionMeta = (a?: string) =>
+  a ? STAFF_ACTION_META[a] ?? { label: a, color: T.ink1 } : { label: '—', color: T.ink3 };
+
+const fmtVal = (v: any) =>
+  v == null ? '—' : Array.isArray(v) ? (v.length ? v.join('、') : '—') : typeof v === 'object' ? JSON.stringify(v) : String(v);
+
+/** 取 before/after 的差异行（字段: 旧 → 新） */
+function diffLines(before: any, after: any): string[] {
+  const keys = new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})]);
+  const out: string[] = [];
+  for (const k of keys) {
+    const b = (before ?? {})[k];
+    const a = (after ?? {})[k];
+    if (JSON.stringify(b) !== JSON.stringify(a)) out.push(`${k}：${fmtVal(b)} → ${fmtVal(a)}`);
+  }
+  return out;
+}
+
+/** 员工操作时间线（只读展示；仅 team:manage 可见，无权限时静默降级） */
+function StaffAuditTimeline({ items, denied }: { items: any[]; denied?: boolean }) {
+  if (denied) {
+    return <div style={{ color: T.ink3, fontSize: 13 }}>{t('pages.team.auditDenied', '仅团队管理员可查看操作时间线')}</div>;
+  }
+  if (!items?.length) {
+    return <div style={{ color: T.ink3, fontSize: 13 }}>{t('pages.team.auditEmpty', '暂无操作记录')}</div>;
+  }
+  return (
+    <div style={{ marginTop: 4 }}>
+      {items.map((it: any, idx: number) => {
+        const meta = staffActionMeta(it.action);
+        const lines = diffLines(it.before, it.after);
+        return (
+          <div key={it.id ?? idx} style={{ display: 'flex', gap: 12, paddingBottom: idx === items.length - 1 ? 0 : 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 12, flexShrink: 0 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 999, background: meta.color, marginTop: 4 }} />
+              {idx !== items.length - 1 && <span style={{ flex: 1, width: 2, background: T.border, marginTop: 4 }} />}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ color: meta.color, fontWeight: 600, fontSize: 13.5 }}>{meta.label}</span>
+                {it.actorRole && (
+                  <span style={{ fontSize: 11.5, padding: '1px 7px', borderRadius: 999, background: T.accent2Soft, color: T.accent2 }}>
+                    {it.actorRole}
+                  </span>
+                )}
+                <span style={{ color: T.ink3, fontSize: 12, fontFamily: T.fontNum }}>
+                  {it.createdAt ? new Date(it.createdAt).toLocaleString('zh-CN', { hour12: false }) : ''}
+                </span>
+              </div>
+              {lines.length > 0 && (
+                <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {lines.map((l: string, i: number) => (
+                    <span key={i} style={{ color: T.ink2, fontSize: 12.5, fontFamily: T.fontNum }}>
+                      {l}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {it.reason && <div style={{ marginTop: 4, color: T.ink2, fontSize: 12.5 }}>理由：{it.reason}</div>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const fieldLabelStyle = { fontSize: 12.5, color: T.ink2, fontWeight: 600, marginBottom: 6 } as const;
 
 function Field({ label, children }: { label: ReactNode; children: ReactNode }) {
@@ -418,12 +494,23 @@ export function StaffTeamMember({ org, resource, basePath, title, sub, chip, wit
   const nav = useNavigate();
   const [rec, setRec] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [audit, setAudit] = useState<any[]>([]);
+  const [auditDenied, setAuditDenied] = useState(false);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
+      setAudit([]);
+      setAuditDenied(false);
       try {
         setRec(await fetchOne(resource, id));
+        // P3 审计时间线（team:manage 可见；非管理员或无记录静默降级）
+        try {
+          const au: any = await dataProvider.custom!({ url: `${resource}/${id}/audit-logs`, method: 'get' });
+          setAudit(Array.isArray(au?.data) ? au.data : []);
+        } catch (e: any) {
+          if (e?.response?.status === 403) setAuditDenied(true);
+        }
       } finally {
         setLoading(false);
       }
@@ -497,6 +584,10 @@ export function StaffTeamMember({ org, resource, basePath, title, sub, chip, wit
           <div style={{ marginTop: 16 }}>
             <div style={fieldLabelStyle}>{t('pages.team.funcPerms', '功能权限')}</div>
             <PermCheckGroupWrap layer={ORG_LAYER[org]} keys={permKeysOf(org)} value={rec.funcPerms ?? []} disabled />
+          </div>
+          <div style={{ marginTop: 20 }}>
+            <div style={fieldLabelStyle}>{t('pages.team.auditTitle', '操作时间线')}</div>
+            <StaffAuditTimeline items={audit} denied={auditDenied} />
           </div>
         </>
       )}

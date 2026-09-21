@@ -1018,6 +1018,19 @@ export class ProviderConsoleController {
     return this.staff.remove(req.user, 'PROVIDER', providerTeamOrg(req, subject), id);
   }
 
+  /** 员工操作时间线（P3 可视化）：仅本组织成员可见，受 OrgAccess 保护 */
+  @Get('team/:id/audit-logs')
+  @OrgAccess('PROVIDER', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async teamMemberAudit(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Query('subject') subject?: string,
+    @Query('take') take?: string,
+  ) {
+    return this.staff.listAudit(id, take ? Number(take) : 100);
+  }
+
   /** 我的客户 */
   @Get('clients')
   @Roles('SERVICE_PROVIDER', 'ADMIN')

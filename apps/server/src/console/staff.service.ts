@@ -355,6 +355,19 @@ export class StaffService {
   }
 
   /**
+   * 员工操作时间线（P3 可视化数据层）。
+   * 按成员隔离：仅返回 targetType=ORG_STAFF 且 targetId=该成员的记录，
+   * 由调用方（三台 console 的 OrgAccess 守卫）保证只查本组织成员。
+   */
+  async listAudit(id: string, take = 100) {
+    return this.prisma.auditLog.findMany({
+      where: { targetType: 'ORG_STAFF', targetId: id },
+      orderBy: { createdAt: 'desc' },
+      take,
+    });
+  }
+
+  /**
    * 岗位池查询接口（供前端按需拉取，也便于 E2E 断言真值源一致）。
    * 服务商层随 serviceType 联动；代理/总台层为静态池。
    */
