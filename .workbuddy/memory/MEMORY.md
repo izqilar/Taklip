@@ -48,12 +48,12 @@ web 个人中心：grid `md:grid-cols-[240px_1fr]`，禁 max-w-7xl 居中；根 
 
 ## 12.5 组织内员工岗位体系（2026-09-21 P0 落地，文档 docs/平台角色边界规范化.md）
 - **双轴模型**：平台身份 `User.role`（不动）× 组织内岗位 `OrgStaff.staffRole`。员工沿用 USER 身份，不新增 STAFF 角色（会冲击 ROLE_HOME/canSeeByRole/getAccess/RolesGuard/DataScope 全线）。
-- **一表统三层**：`model OrgStaff`（orgType=PROVIDER|AGENT|CONSOLE，orgId；CONSOLE 固定 `'console'`）。存量 `ProviderTeamMember` 保留作备份，已迁移；对外契约不变（响应补 `teamRole` = `staffRole` 别名）。
-- 真值源 `config/staffRoles.ts`（前端）与 `server/src/console/team-role.meta.ts`（服务端）**互为镜像，改一侧必须同步**（原型 `UI_Design/index.html:4691`）。
+- **一表统三层**：`model OrgStaff`（orgType=PROVIDER|AGENT|CONSOLE，orgId；CONSOLE 固定 `'console'`）。存量 `ProviderTeamMember` **P2 已删表**（一次性迁移脚本 `migrate-team-to-org-staff.mjs` 同步删除）；对外契约不变（响应补 `teamRole` = `staffRole` 别名）。
+- **岗位字典唯一真值源（P2）**：`packages/core/src/staff-roles.ts`，导出 `OrgType` / `TEAM_SVC_META` / `PROVIDER_ROLE_META` / `AGENT_ROLE_META` / `CONSOLE_ROLE_META` / `STAFF_ROLE_POOLS` / `STAFF_ROLE_TEMPLATES` / `staffRoleMetaOf` / `staffPermPool` / `STAFF_FORBIDDEN_PERMS` / `SCOPE_OPTS_BY_ORG` / `staffRolePool` / `validDataScope` / `checkFuncPerms` 等。前端 `apps/admin/src/config/staffRoles.ts` 退化为 `export * from '@h5design/core'` facade；服务端 `staff.service.ts` 改从 `@h5design/core` 引入（旧 `team-role.meta.ts` 已删除）。**改岗位池/职责/权限/数据范围只动 core 一处**。
 - 岗位控件必须 **AutoComplete**（存量是自由文本，严格 Select 会让旧值显示为空）；服务商层岗位池随 `serviceType` 联动，15 项服务类型只有 5 项命中原型（「婚礼策划」→别名「婚庆策划」），其余走 `TEAM_DEFAULT_ROLES` fallback。
 - 服务端强制：`dataScope` 按层白名单（PROVIDER self/service/provider；AGENT self/region/agent；CONSOLE self/all）；`funcPerms` 按层权限池；红线 `STAFF_FORBIDDEN_PERMS`（role:manage/settings:manage 全员禁；withdrawal:review/operate 禁于 PROVIDER）。
 - 三层页面同构于 `pages/staffTeamPages.tsx`（List/Create/Member），代理商=`/agent/team`、总台=`/admin/team`、服务商=`/sp/team`。新增 `admin/*` 资源**必须同时加进 accessControlProvider 的 ADMIN-only 白名单**，否则 `admin/*` 兜底 fail-closed 会把菜单藏掉。
-- **P1 已落地（2026-09-21）**：员工登录与鉴权门控全通。要点——`OrgStaff.userId` 邀请绑定存量 `User`；JWT 携带 `staff` 上下文（ACTIVE 成员关系，源头剔除 DISABLED）；`getAccess()` 合并 staff `funcPerms` 并回带 `staff[]`；新增 `@OrgAccess`+`OrgAccessGuard`（USER 凭成员关系进层、写操作门控 `team:manage`）；前端 `accessControlProvider` 消费 membership 做菜单显隐；员工 home 路由（有成员→落 admin 对应工作台，否则 web）。**红线 R-05（DISABLED 在 login+jwt 双校验）+ R-06（停用成员从 staff 剔除）现已真正生效**。后续 P2/P3 见文档 §10.1。
+- **P0+P1+P2 已落地（2026-09-21）**：P1 员工登录与鉴权门控全通（要点同上）；P2 岗位字典统一到 `packages/core/src/staff-roles.ts` 单一真值源、删 `team-role.meta.ts` 与 `ProviderTeamMember` 旧表（详见文档 §13.6）。**红线 R-05（DISABLED 在 login+jwt 双校验）+ R-06（停用成员从 staff 剔除）现已真正生效**。后续 P3（员工审计留痕 `AuditModule` 接入 `ProviderConsoleModule`）见文档 §10.1。
 - **P1 新坑**：① R-05 只在 jwt 校验不够，必须堵在 `generateTokens()` 漏斗；② `/auth/access` staff 映射曾漏 funcPerms；③ 员工走团队接口 orgId 取 `membership.orgId`（非 `req.user.id`）；④ 同文件并行 Edit 互相覆盖老坑又复发，必须串行+Grep 抽查。
 
 ## 12 fetch 铁律 + curl 验证盲区

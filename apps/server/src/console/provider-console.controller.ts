@@ -955,7 +955,7 @@ export class ProviderConsoleController {
   }
 
   /* ══════════════════ 我的团队（OrgStaff · orgType=PROVIDER） ══════════════════
-   * 承载表由 ProviderTeamMember 迁移到统一的 OrgStaff（文档 docs/平台角色边界规范化.md §4），
+   * OrgStaff 为服务商 / 代理商 / 总台三层的统一承载表（文档 docs/平台角色边界规范化.md §4）。
    * 对外契约不变：响应仍带 teamRole 别名，前端列表 / 详情零感知。
    * 相比旧实现新增：DTO 校验（原为 body:any + 手写校验）、dataScope 白名单、
    * funcPerms 权限池与红线裁剪、PATCH 编辑 / 停用接口（原缺失）。

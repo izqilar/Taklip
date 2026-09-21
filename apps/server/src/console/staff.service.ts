@@ -8,7 +8,7 @@ import {
   teamRolesOf,
   validDataScope,
   type OrgType,
-} from './team-role.meta';
+} from '@h5design/core';
 
 /**
  * 组织内员工（OrgStaff）服务 —— 一表承载 服务商 / 代理商 / 总台 三层。
@@ -22,7 +22,7 @@ import {
  * 关联文档：`docs/平台角色边界规范化.md`
  */
 
-/** 对外响应：补 teamRole 别名，保持与原 ProviderTeamMember 契约一致 */
+/** 对外响应：补 teamRole 别名，与 OrgStaff.staffRole 同源，前端列表/详情零感知（文档 §4.2） */
 export interface StaffView {
   id: string;
   orgType: string;

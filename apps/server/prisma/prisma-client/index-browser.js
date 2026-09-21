@@ -429,23 +429,6 @@ exports.Prisma.ProviderContractScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
-exports.Prisma.ProviderTeamMemberScalarFieldEnum = {
-  id: 'id',
-  providerId: 'providerId',
-  memberNo: 'memberNo',
-  name: 'name',
-  phone: 'phone',
-  accountStatus: 'accountStatus',
-  serviceType: 'serviceType',
-  teamRole: 'teamRole',
-  duties: 'duties',
-  personality: 'personality',
-  dataScope: 'dataScope',
-  funcPerms: 'funcPerms',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
 exports.Prisma.OrgStaffScalarFieldEnum = {
   id: 'id',
   orgType: 'orgType',
@@ -659,7 +642,6 @@ exports.Prisma.ModelName = {
   UserCoupon: 'UserCoupon',
   ProviderSchedule: 'ProviderSchedule',
   ProviderContract: 'ProviderContract',
-  ProviderTeamMember: 'ProviderTeamMember',
   OrgStaff: 'OrgStaff',
   ProviderClient: 'ProviderClient',
   ProviderClientReach: 'ProviderClientReach',

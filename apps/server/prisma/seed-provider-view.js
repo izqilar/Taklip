@@ -393,18 +393,34 @@ const orderNo = (d, seq) =>
   }
   console.log(`✓ 合同 ${CONTRACTS.length} 份（已生效主合同 / 待签补充协议）`);
 
-  /* ── 我的团队 ── */
+  /* ── 我的团队（P2 起写入统一表 OrgStaff，不再写已删除的 ProviderTeamMember）── */
+  const CN_PERM_ALIAS = {
+    订单查询: 'order:view', 订单处理: 'order:handle', 售后处理: 'order:aftersale',
+    站内信收发: 'message:send', 模板服务上架: 'template:publish', '模板/服务上架': 'template:publish',
+    内容下架: 'content:offline', 列表数据导出: 'data:export', 资质管理: 'qualification:manage',
+  };
   const TEAM = [
-    { id: 'pv_tm_00', memberNo: 'MT-1000', name: '古丽娜尔', phone: '13500000100', accountStatus: 'ACTIVE', serviceType: '花艺布置', teamRole: '花艺师', duties: ['花艺设计', '现场布置'], personality: '细致耐心', dataScope: 'provider', funcPerms: ['订单查询', '内容下架'] },
-    { id: 'pv_tm_01', memberNo: 'MT-1001', name: '小马', phone: '13500000101', accountStatus: 'PENDING', serviceType: '婚庆策划', teamRole: '客服专员', duties: ['客户接待', '进度同步'], personality: '热情主动', dataScope: 'service', funcPerms: ['订单查询', '站内信收发'] },
-    { id: 'pv_tm_02', memberNo: 'MT-1002', name: '阿依古丽', phone: '13500000102', accountStatus: 'ACTIVE', serviceType: '特约设计', teamRole: '设计助理', duties: ['初稿绘制', '素材整理'], personality: '创意丰富', dataScope: 'self', funcPerms: ['模板/服务上架'] },
-    { id: 'pv_tm_03', memberNo: 'MT-1003', name: '麦麦提·艾力', phone: '13800000001', accountStatus: 'ACTIVE', serviceType: '特约设计', teamRole: '负责人', duties: ['统筹', '品质把控', '客户维护', '团队管理', '商务洽谈'], personality: '专业可靠', dataScope: 'provider', funcPerms: ['订单查询', '订单处理', '售后处理', '站内信收发', '模板/服务上架', '内容下架', '列表数据导出', '资质管理'] },
+    { memberNo: 'MT-1000', name: '古丽娜尔', phone: '13500000100', accountStatus: 'ACTIVE', serviceType: '花艺布置', teamRole: '花艺师', duties: ['花艺设计', '现场布置'], personality: '细致耐心', dataScope: 'provider', funcPerms: ['订单查询', '内容下架'] },
+    { memberNo: 'MT-1001', name: '小马', phone: '13500000101', accountStatus: 'PENDING', serviceType: '婚庆策划', teamRole: '客服专员', duties: ['客户接待', '进度同步'], personality: '热情主动', dataScope: 'service', funcPerms: ['订单查询', '站内信收发'] },
+    { memberNo: 'MT-1002', name: '阿依古丽', phone: '13500000102', accountStatus: 'ACTIVE', serviceType: '特约设计', teamRole: '设计助理', duties: ['初稿绘制', '素材整理'], personality: '创意丰富', dataScope: 'self', funcPerms: ['模板/服务上架'] },
+    { memberNo: 'MT-1003', name: '麦麦提·艾力', phone: '13800000001', accountStatus: 'ACTIVE', serviceType: '特约设计', teamRole: '负责人', duties: ['统筹', '品质把控', '客户维护', '团队管理', '商务洽谈'], personality: '专业可靠', dataScope: 'provider', funcPerms: ['订单查询', '订单处理', '售后处理', '站内信收发', '模板/服务上架', '内容下架', '列表数据导出', '资质管理'] },
   ];
   for (const m of TEAM) {
-    await prisma.providerTeamMember.upsert({
-      where: { id: m.id },
-      create: { ...m, providerId: provider.id },
-      update: { ...m, providerId: provider.id },
+    const funcPerms = m.funcPerms.map((p) => CN_PERM_ALIAS[p] ?? p);
+    await prisma.orgStaff.upsert({
+      where: { memberNo: m.memberNo },
+      create: {
+        orgType: 'PROVIDER', orgId: provider.id, memberNo: m.memberNo,
+        name: m.name, phone: m.phone, accountStatus: m.accountStatus,
+        serviceType: m.serviceType, staffRole: m.teamRole, duties: m.duties,
+        personality: m.personality, dataScope: m.dataScope, funcPerms,
+      },
+      update: {
+        orgType: 'PROVIDER', orgId: provider.id,
+        name: m.name, phone: m.phone, accountStatus: m.accountStatus,
+        serviceType: m.serviceType, staffRole: m.teamRole, duties: m.duties,
+        personality: m.personality, dataScope: m.dataScope, funcPerms,
+      },
     });
   }
   console.log(`✓ 团队成员 ${TEAM.length} 人（负责人 / 设计助理 / 客服 / 花艺师）`);

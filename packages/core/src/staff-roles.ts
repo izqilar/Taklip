@@ -1,18 +1,24 @@
 /**
- * 组织内员工「岗位（StaffRole）」字典 —— 服务端镜像。
+ * 组织内员工「岗位（StaffRole）」字典 —— 全平台**唯一真值源**（P2 统一与模板化收敛）。
  *
- * 真值源：`UI_Design/index.html:4691` 的 `TEAM_SVC_META` 与 `TEAM_FUNCS`。
- * 前端镜像：`apps/admin/src/config/staffRoles.ts`。
- * ⚠️ 两侧必须同步修改（P2 抽到 packages/core 收敛为单一真值源）。
+ * 真值源：`UI_Design/index.html:4691` 的 `TEAM_SVC_META`(6 服务类型 → 角色池 + 职责池 + trait)
+ *         与 `TEAM_FUNCS`(8 项功能权限)。
  *
- * 用途：
- *  1. 校验提交的 `staffRole` 是否属于内置岗位池（非内置则记为「自定义岗位」，放行但可审计）
- *  2. 校验 `dataScope` 是否在该层的白名单内（此前无任何校验，见文档 §2.1）
- *  3. 校验 `funcPerms` 是否在该层可分配权限池内（拒绝越权分配，红线 R-01/R-02/R-03）
+ * 历史：P0 起该字典在 `apps/admin/src/config/staffRoles.ts`（运营端）与
+ *       `apps/server/src/console/team-role.meta.ts`（服务端）各维护一份逐字镜像，存在漂移风险（K-04）。
+ *       P2 把两份收敛到本文件，前后端均 import 本文件，不再各自维护（见文档 §13.6）。
+ *
+ * ⚠️ 概念区分（文档 §1.4）：
+ *   - 平台身份 User.role：决定进哪个端、管哪个辖区（本体系不碰）
+ *   - 组织内岗位 staffRole：决定在本单位能干什么（本文件）
+ *   - 工种 serviceType：决定会什么手艺（仅服务商层，与岗位联动）
  *
  * 关联文档：`docs/平台角色边界规范化.md`
  */
 
+/* ══════════════════ 基础类型 ══════════════════ */
+
+/** 组织层类型：服务商 / 代理商 / 总台 */
 export type OrgType = 'PROVIDER' | 'AGENT' | 'CONSOLE';
 
 export const ORG_TYPES: OrgType[] = ['PROVIDER', 'AGENT', 'CONSOLE'];
@@ -21,13 +27,34 @@ export function isOrgType(v: unknown): v is OrgType {
   return typeof v === 'string' && (ORG_TYPES as string[]).includes(v);
 }
 
-/* ══════════════════ 服务商层：服务类型 → 岗位池 / 职责池 / 特长 ══════════════════ */
-
 export interface SvcMeta {
   roles: string[];
   duties: string[];
   trait: string;
 }
+
+/** 岗位模板：岗位 → { 默认职责, 默认功能权限子集, 默认数据范围 }（文档 §5.2 / §5.3 / §5.1） */
+export interface StaffRoleMeta {
+  /** 默认职责 */
+  duties: string[];
+  /** 默认功能权限子集（permGroups key） */
+  perms: string[];
+  /** 默认数据范围 */
+  dataScope: string;
+}
+
+/**
+ * 扁平化岗位模板（P2 模板化的核心载体）：把三层 `*_ROLE_META` 拍平为单一列表，
+ * 供前端「选岗位即预填」与后端「校验/预填默认值」共用，避免三张散表漂移。
+ */
+export interface StaffRoleTemplate extends StaffRoleMeta {
+  org: OrgType;
+  role: string;
+  /** 是否内置岗位（自填岗位 builtin=false，仅作展示/审计用） */
+  builtin: boolean;
+}
+
+/* ══════════════════ 服务商层：服务类型 → 岗位池 / 职责池 / 特长 ══════════════════ */
 
 /** 抄自原型 `UI_Design/index.html:4691` */
 export const TEAM_SVC_META: Record<string, SvcMeta> = {
@@ -66,29 +93,38 @@ export const TEAM_SVC_META: Record<string, SvcMeta> = {
 /** 代码侧服务类型名 → 原型键名的别名（SVC_OPTIONS 「婚礼策划」 对应原型「婚庆策划」） */
 const SVC_ALIAS: Record<string, string> = { 婚礼策划: '婚庆策划' };
 
+/** 未命中原型服务类型时的兜底岗位池（避免下拉为空，文档 §2.2 冲突 1） */
 export const TEAM_DEFAULT_ROLES = ['负责人', '执行专员', '客服专员'];
+
+/** 兜底职责池（原型未定义时使用，取「业务经理」通用职责） */
 export const TEAM_DEFAULT_DUTIES = ['客户沟通', '订单管理', '交付履约', '售后处理'];
+
+/** 兜底特长画像 */
 export const TEAM_DEFAULT_TRAIT = '负责本服务类型的客户沟通、订单管理与交付履约。';
 
-/** 服务商层通用追加岗位（所有服务类型都可选） */
+/** 服务商层通用追加岗位：所有服务类型都可选（文档 §5.1） */
 export const PROVIDER_COMMON_ROLES = ['店长/调度', '财务专员'];
 
+/** 归一化服务类型键（走别名 → 原型键） */
 const svcKey = (svc?: string | null): string | undefined => {
   if (!svc) return undefined;
   const raw = String(svc).trim();
   return SVC_ALIAS[raw] ?? raw;
 };
 
+/** 服务类型 → 岗位池（含通用追加岗位）；未命中则回落到兜底池 + 通用岗位 */
 export function teamRolesOf(svc?: string | null): string[] {
   const meta = TEAM_SVC_META[svcKey(svc) ?? ''];
   const base = meta ? meta.roles : TEAM_DEFAULT_ROLES;
   return Array.from(new Set([...base, ...PROVIDER_COMMON_ROLES]));
 }
 
+/** 服务类型 → 职责池；未命中则回落到兜底职责池 */
 export function teamDutiesOf(svc?: string | null): string[] {
   return TEAM_SVC_META[svcKey(svc) ?? '']?.duties ?? TEAM_DEFAULT_DUTIES;
 }
 
+/** 服务类型 → 特长画像（用于预填「特长」字段）；未命中回落兜底文案 */
 export function teamTraitOf(svc?: string | null): string {
   return TEAM_SVC_META[svcKey(svc) ?? '']?.trait ?? TEAM_DEFAULT_TRAIT;
 }
@@ -107,30 +143,50 @@ export const TEAM_PERM_KEYS = [
   'qualification:manage',
 ] as const;
 
-/* ══════════════════ 代理商 / 总台岗位池 ══════════════════ */
+/* ══════════════════ 代理商 / 总台 / 服务商 岗位模板（文档 §5.1 / §5.2 / §5.3） ══════════════════ */
 
-export interface StaffRoleMeta {
-  duties: string[];
-  perms: string[];
-  dataScope: string;
+/** 代理商层可见域全集（隐藏「服务与内容」域，与前端 LAYER_DOMAIN_IDS.agent 一致） */
+function agentLayerPerms(): string[] {
+  return [
+    'user:view', 'user:edit', 'provider:review', 'provider:qualification', 'provider:upgrade',
+    'order:view', 'order:handle', 'order:aftersale', 'finance:view', 'withdrawal:review',
+    'withdrawal:operate', 'finance:reconcile', 'coupon:config', 'coupon:issue', 'coupon:view',
+    'feedback:handle', 'appeal:arbitrate', 'announce:publish', 'announce:review', 'message:send',
+    'role:manage', 'region:manage', 'settings:manage', 'data:export',
+  ];
 }
 
+/** 总台层可见域全集（10 域 28 点） */
+function consoleLayerPerms(): string[] {
+  return [
+    'user:view', 'user:edit', 'provider:review', 'provider:qualification', 'provider:upgrade',
+    'template:publish', 'content:offline', 'template:review', 'qualification:manage',
+    'order:view', 'order:handle', 'order:aftersale', 'finance:view', 'withdrawal:review',
+    'withdrawal:operate', 'finance:reconcile', 'coupon:config', 'coupon:issue', 'coupon:view',
+    'feedback:handle', 'appeal:arbitrate', 'announce:publish', 'announce:review', 'message:send',
+    'role:manage', 'region:manage', 'settings:manage', 'data:export',
+  ];
+}
+
+/** 代理商层岗位模板 */
 export const AGENT_ROLE_META: Record<string, StaffRoleMeta> = {
-  区域经理: { duties: ['辖区经营统筹', '服务商拓展', '业绩负责'], perms: AGENT_LAYER_PERMS(), dataScope: 'agent' },
+  区域经理: { duties: ['辖区经营统筹', '服务商拓展', '业绩负责'], perms: agentLayerPerms(), dataScope: 'agent' },
   入驻审核员: { duties: ['服务商入驻资质审核'], perms: ['provider:review', 'provider:qualification'], dataScope: 'region' },
   商务拓展: { duties: ['招商', '服务商拜访', '线索跟进'], perms: ['user:view', 'provider:review'], dataScope: 'region' },
   财务专员: { duties: ['分润对账', '提现发起'], perms: ['finance:view', 'finance:reconcile'], dataScope: 'agent' },
   客服专员: { duties: ['工单处理', '反馈跟进'], perms: ['feedback:handle', 'message:send'], dataScope: 'self' },
 };
 
+/** 总台层岗位模板 */
 export const CONSOLE_ROLE_META: Record<string, StaffRoleMeta> = {
-  超级管理员: { duties: ['全平台配置', '角色与区域管理'], perms: CONSOLE_LAYER_PERMS(), dataScope: 'all' },
+  超级管理员: { duties: ['全平台配置', '角色与区域管理'], perms: consoleLayerPerms(), dataScope: 'all' },
   内容运营: { duties: ['模板运营', '公告运营'], perms: ['template:publish', 'template:review', 'announce:publish', 'announce:review'], dataScope: 'all' },
   审核员: { duties: ['模板审核', '资质审核', '入驻审核'], perms: ['template:review', 'qualification:manage', 'provider:review'], dataScope: 'all' },
   财务: { duties: ['提现审核', '平台对账'], perms: ['finance:view', 'withdrawal:review', 'finance:reconcile'], dataScope: 'all' },
   '客服/工单': { duties: ['反馈处理', '申诉仲裁'], perms: ['feedback:handle', 'appeal:arbitrate', 'message:send'], dataScope: 'self' },
 };
 
+/** 服务商层岗位 → 默认权限 / 数据范围（权限池固定为 TEAM_PERM_KEYS 8 项，对齐原型 TEAM_FUNCS） */
 export const PROVIDER_ROLE_META: Record<string, { perms: string[]; dataScope: string }> = {
   负责人: { perms: [...TEAM_PERM_KEYS], dataScope: 'provider' },
   '店长/调度': { perms: ['order:view', 'order:handle', 'order:aftersale', 'message:send', 'data:export'], dataScope: 'provider' },
@@ -151,29 +207,35 @@ export const PROVIDER_ROLE_META: Record<string, { perms: string[]; dataScope: st
   音响师: { perms: ['order:view'], dataScope: 'self' },
 };
 
-/* ══════════════════ 权限池裁剪 ══════════════════ */
+/** 三层岗位池（列表顺序即下拉顺序） */
+export const STAFF_ROLE_POOLS: Record<OrgType, string[]> = {
+  PROVIDER: [], // 服务商层岗位随服务类型联动，用 teamRolesOf(svc) 取，不用静态池
+  AGENT: Object.keys(AGENT_ROLE_META),
+  CONSOLE: Object.keys(CONSOLE_ROLE_META),
+};
 
-/** 代理商层可见域全集（隐藏「服务与内容」域，与前端 LAYER_DOMAIN_IDS.agent 一致） */
-function AGENT_LAYER_PERMS(): string[] {
-  return ['user:view', 'user:edit', 'provider:review', 'provider:qualification', 'provider:upgrade',
-    'order:view', 'order:handle', 'order:aftersale', 'finance:view', 'withdrawal:review',
-    'withdrawal:operate', 'finance:reconcile', 'coupon:config', 'coupon:issue', 'coupon:view',
-    'feedback:handle', 'appeal:arbitrate', 'announce:publish', 'announce:review', 'message:send',
-    'role:manage', 'region:manage', 'settings:manage', 'data:export'];
+/** 拍平为单一模板列表（P2 模板化核心载体） */
+export const STAFF_ROLE_TEMPLATES: StaffRoleTemplate[] = [
+  ...Object.entries(AGENT_ROLE_META).map(([role, m]) => ({ org: 'AGENT' as OrgType, role, builtin: true, ...m })),
+  ...Object.entries(CONSOLE_ROLE_META).map(([role, m]) => ({ org: 'CONSOLE' as OrgType, role, builtin: true, ...m })),
+  ...Object.entries(PROVIDER_ROLE_META).map(([role, m]) => ({
+    org: 'PROVIDER' as OrgType, role, builtin: true, duties: [], perms: m.perms, dataScope: m.dataScope,
+  })),
+];
+
+/** 取某层某岗位的默认配置（服务商层无 serviceType 时按岗位名查） */
+export function staffRoleMetaOf(org: OrgType, role?: string | null): StaffRoleMeta | undefined {
+  if (!role) return undefined;
+  if (org === 'AGENT') return AGENT_ROLE_META[role];
+  if (org === 'CONSOLE') return CONSOLE_ROLE_META[role];
+  const p = PROVIDER_ROLE_META[role];
+  return p ? { duties: [], perms: p.perms, dataScope: p.dataScope } : undefined;
 }
 
-/** 总台层可见域全集（10 域 28 点） */
-function CONSOLE_LAYER_PERMS(): string[] {
-  return ['user:view', 'user:edit', 'provider:review', 'provider:qualification', 'provider:upgrade',
-    'template:publish', 'content:offline', 'template:review', 'qualification:manage',
-    'order:view', 'order:handle', 'order:aftersale', 'finance:view', 'withdrawal:review',
-    'withdrawal:operate', 'finance:reconcile', 'coupon:config', 'coupon:issue', 'coupon:view',
-    'feedback:handle', 'appeal:arbitrate', 'announce:publish', 'announce:review', 'message:send',
-    'role:manage', 'region:manage', 'settings:manage', 'data:export'];
-}
+/* ══════════════════ 权限池裁剪（红线，文档 §9） ══════════════════ */
 
 /**
- * 员工权限池的禁止项（红线，文档 §9）：
+ * 员工权限池的禁止项：
  *  R-03 `role:manage` / `settings:manage` 仅老板持有、不可转授（防自我提权）
  *  R-02 `withdrawal:*` 不进服务商 / 代理商执行岗权限池（财务发起 / 审批分离；
  *        总台「财务」是审批方，故 CONSOLE 层保留 `withdrawal:review`）
@@ -187,19 +249,60 @@ export const STAFF_FORBIDDEN_PERMS: Record<OrgType, string[]> = {
 
 /** 某层可分配给员工的权限池（已裁剪红线禁止项） */
 export function staffPermPool(org: OrgType): string[] {
-  const raw = org === 'PROVIDER' ? [...TEAM_PERM_KEYS] : org === 'AGENT' ? AGENT_LAYER_PERMS() : CONSOLE_LAYER_PERMS();
+  const raw = org === 'PROVIDER'
+    ? [...TEAM_PERM_KEYS]
+    : org === 'AGENT'
+      ? agentLayerPerms()
+      : consoleLayerPerms();
   const forbid = STAFF_FORBIDDEN_PERMS[org] ?? [];
   return raw.filter((k) => !forbid.includes(k));
 }
 
-/* ══════════════════ 数据范围白名单 ══════════════════ */
+/** 某层可分配权限池（已裁剪红线项） */
+export function staffPermOptions(org: OrgType): string[] {
+  return staffPermPool(org);
+}
 
+/** 裁剪掉红线禁止项后的权限数组 */
+export function sanitizeStaffPerms(org: OrgType, perms?: string[] | null): string[] {
+  const forbid = STAFF_FORBIDDEN_PERMS[org] ?? [];
+  const pool = staffPermPool(org);
+  return (perms ?? []).filter((k) => pool.includes(k) && !forbid.includes(k));
+}
+
+/* ══════════════════ 数据范围 ══════════════════ */
+
+export interface ScopeOpt {
+  value: string;
+  labelKey: string;
+}
+
+/** 各层可选数据范围（服务端按此白名单校验，文档 §5.4） */
+export const SCOPE_OPTS_BY_ORG: Record<OrgType, ScopeOpt[]> = {
+  PROVIDER: [
+    { value: 'self', labelKey: 'pages.team.scopeSelf' },
+    { value: 'service', labelKey: 'pages.team.scopeService' },
+    { value: 'provider', labelKey: 'pages.team.scopeProvider' },
+  ],
+  AGENT: [
+    { value: 'self', labelKey: 'pages.team.scopeSelf' },
+    { value: 'region', labelKey: 'pages.team.scopeRegion' },
+    { value: 'agent', labelKey: 'pages.team.scopeAgent' },
+  ],
+  CONSOLE: [
+    { value: 'self', labelKey: 'pages.team.scopeSelf' },
+    { value: 'all', labelKey: 'pages.team.scopeAll' },
+  ],
+};
+
+/** 数据范围合法值（按层，供服务端白名单校验） */
 export const SCOPE_BY_ORG: Record<OrgType, string[]> = {
   PROVIDER: ['self', 'service', 'provider'],
   AGENT: ['self', 'region', 'agent'],
   CONSOLE: ['self', 'all'],
 };
 
+/** 数据范围中文标签（不依赖 i18n 的兜底展示，如导出/列表） */
 export const SCOPE_TEXT: Record<string, string> = {
   self: '自身',
   service: '自身（服务域）',
@@ -209,7 +312,12 @@ export const SCOPE_TEXT: Record<string, string> = {
   all: '全平台',
 };
 
-/* ══════════════════ 校验工具 ══════════════════ */
+/** 数据范围合法值（按层） */
+export function scopeValuesOf(org: OrgType): string[] {
+  return SCOPE_OPTS_BY_ORG[org].map((o) => o.value);
+}
+
+/* ══════════════════ 校验工具（服务端消费） ══════════════════ */
 
 /** 该层岗位池（服务商层按 serviceType 联动；无 serviceType 时返回兜底 + 通用岗位） */
 export function staffRolePool(org: OrgType, serviceType?: string | null): string[] {
@@ -219,12 +327,12 @@ export function staffRolePool(org: OrgType, serviceType?: string | null): string
 
 /**
  * 校验并裁剪 dataScope：非法值返回 undefined（调用方据此抛 400）。
- * 此前 `dataScope` 无任何白名単校验，任意字符串都能落库。
+ * 此前 `dataScope` 无任何白名单校验，任意字符串都能落库。
  */
 export function assertDataScope(org: OrgType, scope?: string | null): string {
   const allow = SCOPE_BY_ORG[org];
   const v = (scope ?? '').toString().trim() || 'self';
-  return allow.includes(v) ? v : undefined as unknown as string;
+  return allow.includes(v) ? v : (undefined as unknown as string);
 }
 
 /** dataScope 是否合法 */
