@@ -30,7 +30,13 @@ const DEMO_USER_PHONE = '13900001001';
  * 待 P1「注册即入驻 / 资料页」上线后改为 true，届时代理商第一闸口审到的必是真材料。
  * 无论开关如何，只要请求带了任一材料字段，就按「填了必须填全」校验。
  */
-const MATERIALS_REQUIRED = false;
+/**
+ * 材料是否强制必填。
+ * false 时是「填了就须填全」的兼容态（老入口未收集材料，强制会直接打断提交）；
+ * Apply.tsx 与 /onboarding 均已收集完整主体材料后，置为 true —— 让代理商第一闸口
+ * 审到的是真实资质材料，而不是空壳申请。
+ */
+const MATERIALS_REQUIRED = true;
 
 /**
  * 用户视角业务编号生成器 —— 与 UI_Design/index.html 原型样例编号格式严格对齐。
@@ -1133,9 +1139,12 @@ export class UserConsoleController {
     if (kind === 'provider' && !(body.serviceScopes ?? []).length) {
       throw new BadRequestException('请至少选择一项服务类型');
     }
-    // 区域语义（决策 5）：代理商 = 辖区（必填）；服务商 = 开展服务区域（选填）
-    if (kind === 'agent' && !body.regionPath) {
-      throw new BadRequestException('请选择完整的代理辖区（省 / 市 / 区县）');
+    // 区域语义：代理商 = 辖区（必填）；服务商 = 开展服务区域（**必填**，决策 7）
+    // 服务商区域留空会产出「不落入任何代理商辖区」的孤立主体，无人一审，故改为必填。
+    if (!body.regionPath) {
+      throw new BadRequestException(
+        kind === 'agent' ? '请选择完整的代理辖区（省 / 市 / 区县）' : '请选择开展服务的区域',
+      );
     }
     // —— 代理商辖区深度校验：必须选到区县（regionPath = "省/市/区"）——
     // 仅选到省/市会产生「一个代理商罩住整个省」的超大辖区，且与既有市级代理商重叠。
@@ -1178,15 +1187,27 @@ export class UserConsoleController {
     const riskFlags: string[] = [];
     if (!materialComplete) riskFlags.push('MATERIAL_MISSING');
     if (certNo) {
-      const dupSubject = await this.prisma.qualificationApplication.findFirst({
+      // —— 主体唯一性（决策 8）——
+      // ① 命中**已入驻主体**（APPROVED，即已落地身份的服务商/代理商）→ 直接拦截：
+      //    同一证件号已是平台主体，换手机号重开即为重复入驻。
+      // ② 仅命中**在途申请** → 不拦截，只打旗标告警：可能是同一主体误重复提交，
+      //    也可能是历史脏数据（同号不同主体），交由人工在终审判定，避免误伤。
+      const approvedDup = await this.prisma.qualificationApplication.findFirst({
+        where: { certNo, userId: { not: id }, status: 'APPROVED' },
+        select: { id: true, kind: true },
+      });
+      if (approvedDup) {
+        throw new BadRequestException('该证件号码已是平台入驻主体，不可重复注册');
+      }
+      const pendingDup = await this.prisma.qualificationApplication.findFirst({
         where: {
           certNo,
           userId: { not: id },
-          status: { in: ['FIRST_PENDING', 'FIRST_PASSED', 'FINAL_PENDING', 'APPROVED'] },
+          status: { in: ['FIRST_PENDING', 'FIRST_PASSED', 'FINAL_PENDING'] },
         },
         select: { id: true },
       });
-      if (dupSubject) riskFlags.push('DUPLICATE_CERT_NO');
+      if (pendingDup) riskFlags.push('DUPLICATE_CERT_NO');
     }
     if (kind === 'provider') {
       const rp = (body.regionPath ?? '').toString().trim();

@@ -73,6 +73,13 @@ const SERVICE_SCOPES: { value: string; key: string }[] = [
   { value: 'PERFORM', key: 'userCenter.svc.perform' },
 ];
 
+/** 证件类型（与运营端 / 注册即入驻资料页同一枚举） */
+const CERT_TYPES: { value: string; key: string }[] = [
+  { value: 'ID_CARD', key: 'userCenter.apply.material.cert.idCard' },
+  { value: 'BUSINESS_LICENSE', key: 'userCenter.apply.material.cert.license' },
+  { value: 'OTHER', key: 'userCenter.apply.material.cert.other' },
+];
+
 const MAX_REASON = 500;
 
 /** 申请 / 入驻状态 → 徽章色（与运营端 StatusBadge tone 同口径） */
@@ -111,6 +118,15 @@ export default function Apply() {
   const [targets, setTargets] = useState<JoinTarget[]>([]);
   const [targetId, setTargetId] = useState('');
   const [scopes, setScopes] = useState<string[]>([]);
+  /* ── 主体资质材料（M3 材料前置：与注册即入驻资料页同口径，提交即随申请落库） ── */
+  const [applicantName, setApplicantName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [certType, setCertType] = useState('ID_CARD');
+  const [certNo, setCertNo] = useState('');
+  const [certExpire, setCertExpire] = useState('');
+  const [certLongTerm, setCertLongTerm] = useState(false);
+  const [issuer, setIssuer] = useState('');
+  const [attachText, setAttachText] = useState('');
   const [reason, setReason] = useState('');
   const [mine, setMine] = useState<MyApplication[]>([]);
   const [teams, setTeams] = useState<string[]>([]);
@@ -140,6 +156,9 @@ export default function Apply() {
   /* ── 初始化：区域树 + 我的申请 ── */
   useEffect(() => {
     api.get<any[]>('/api/regions/tree').then((r) => setTree(r ?? [])).catch(() => setTree([]));
+    // 预填实名与手机号，减少重复录入
+    if (user?.realName) setApplicantName(user.realName);
+    if ((user as any)?.phone) setContactPhone((user as any).phone);
     loadMine();
     // 当前已加入的团队（身份卡徽章展示）
     api
@@ -215,13 +234,41 @@ export default function Apply() {
       setError(t('userCenter.apply.needTarget'));
       return;
     }
-    if (!isJoin && layer === 'AGENT' && !selectedRegion) {
+    // 入驻：区域必填（服务商区域决定归属代理商，留空会产出无人管辖的孤立主体）
+    if (!isJoin && !selectedRegion) {
+      setError(t('userCenter.apply.needRegionAny'));
+      return;
+    }
+    if (!isJoin && layer === 'AGENT' && !districtId) {
       setError(t('userCenter.apply.needRegion'));
       return;
     }
     if (!isJoin && layer === 'PROVIDER' && scopes.length === 0) {
       setError(t('userCenter.apply.needScope'));
       return;
+    }
+    // 入驻：主体资质材料（M3 材料前置，让代理一审能看到真实材料）
+    if (!isJoin) {
+      if (!applicantName.trim()) {
+        setError(t('userCenter.apply.material.err.applicantName'));
+        return;
+      }
+      if (!contactPhone.trim()) {
+        setError(t('userCenter.apply.material.err.phone'));
+        return;
+      }
+      if (!certNo.trim()) {
+        setError(t('userCenter.apply.material.err.certNo'));
+        return;
+      }
+      if (!certLongTerm && !certExpire) {
+        setError(t('userCenter.apply.material.err.certExpire'));
+        return;
+      }
+      if (!attachText.trim()) {
+        setError(t('userCenter.apply.material.err.attachments'));
+        return;
+      }
     }
     setSubmitting(true);
     try {
@@ -234,18 +281,35 @@ export default function Apply() {
           reason: reason.trim(),
         });
       } else {
+        const attachments = attachText
+          .split('\n')
+          .map((x) => x.trim())
+          .filter(Boolean);
         await api.post('/api/user/qualifications', {
           kind: layer === 'AGENT' ? 'agent' : 'provider',
           reason: reason.trim(),
           serviceScopes: layer === 'PROVIDER' ? scopes : [],
           regionPath: selectedRegion?.regionPath ?? null,
           regionLabel: selectedRegion?.label ?? null,
+          applicantName: applicantName.trim(),
+          phone: contactPhone.trim(),
+          certType,
+          certNo: certNo.trim(),
+          certExpire: certLongTerm ? '' : certExpire,
+          certLongTerm,
+          issuer: issuer.trim() || null,
+          attachments,
         });
       }
       setToast(t('userCenter.apply.submitted'));
       setReason('');
       setScopes([]);
       setTargetId('');
+      setCertNo('');
+      setCertExpire('');
+      setCertLongTerm(false);
+      setIssuer('');
+      setAttachText('');
       await loadMine();
     } catch (e: any) {
       setError(e?.message || t('userCenter.apply.submitFailed'));
@@ -309,6 +373,10 @@ export default function Apply() {
 
   const selectCls =
     'h-[36px] w-full rounded-md border border-[rgba(74,60,42,0.16)] bg-[#fffefb] px-2.5 text-[13.5px] text-[#2a2118] outline-none focus:border-[#D24830]';
+  const inputCls =
+    'h-[36px] w-full rounded-md border border-[rgba(74,60,42,0.16)] bg-[#fffefb] px-2.5 text-[13.5px] text-[#2a2118] outline-none focus:border-[#D24830]';
+  const taCls =
+    'w-full rounded-md border border-[rgba(74,60,42,0.16)] bg-[#fffefb] p-2.5 text-[13.5px] text-[#2a2118] outline-none focus:border-[#D24830]';
 
   return (
     <div className="space-y-4">
@@ -442,8 +510,10 @@ export default function Apply() {
           <div>
             <Label>
               {t('userCenter.apply.region.label')}
-              {!isJoin && layer === 'PROVIDER' && (
+              {isJoin ? (
                 <span className="ml-1.5 font-normal text-[#6e5f4a]">（{t('userCenter.apply.region.optional')}）</span>
+              ) : (
+                <span className="ml-1 text-[#D24830]">*</span>
               )}
             </Label>
             <div className="grid gap-2.5 md:grid-cols-3">
@@ -540,6 +610,93 @@ export default function Apply() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* 主体资质材料：仅「入驻」隧道需要（材料前置，代理一审据此审核真实资质） */}
+          {!isJoin && (
+            <div className="rounded-[10px] border border-[rgba(74,60,42,0.10)] bg-[#faf7f1] p-3">
+              <Label>{t('userCenter.apply.material.title')}</Label>
+              <p className="mb-3 text-[12px] leading-snug text-[#6e5f4a]">
+                {t('userCenter.apply.material.hint')}
+              </p>
+              <div className="grid gap-2.5 md:grid-cols-3">
+                <div>
+                  <div className="mb-1 text-[12px] text-[#6e5f4a]">{t('userCenter.apply.material.applicantNameLabel')}</div>
+                  <input
+                    className={inputCls}
+                    value={applicantName}
+                    onChange={(e) => setApplicantName(e.target.value)}
+                    placeholder={t('userCenter.apply.material.applicantNamePh')}
+                  />
+                </div>
+                <div>
+                  <div className="mb-1 text-[12px] text-[#6e5f4a]">{t('userCenter.apply.material.phoneLabel')}</div>
+                  <input
+                    className={inputCls}
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    placeholder={t('userCenter.apply.material.phonePh')}
+                  />
+                </div>
+                <div>
+                  <div className="mb-1 text-[12px] text-[#6e5f4a]">{t('userCenter.apply.material.certTypeLabel')}</div>
+                  <select className={selectCls} value={certType} onChange={(e) => setCertType(e.target.value)}>
+                    {CERT_TYPES.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {t(c.key)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <div className="mb-1 text-[12px] text-[#6e5f4a]">{t('userCenter.apply.material.certNoLabel')}</div>
+                  <input
+                    className={inputCls}
+                    value={certNo}
+                    onChange={(e) => setCertNo(e.target.value)}
+                    placeholder={t('userCenter.apply.material.certNoPh')}
+                  />
+                </div>
+                <div>
+                  <div className="mb-1 text-[12px] text-[#6e5f4a]">{t('userCenter.apply.material.certExpireLabel')}</div>
+                  <input
+                    type="date"
+                    className={inputCls}
+                    value={certExpire}
+                    disabled={certLongTerm}
+                    onChange={(e) => setCertExpire(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <div className="mb-1 text-[12px] text-[#6e5f4a]">{t('userCenter.apply.material.issuerLabel')}</div>
+                  <input
+                    className={inputCls}
+                    value={issuer}
+                    onChange={(e) => setIssuer(e.target.value)}
+                    placeholder={t('userCenter.apply.material.issuerPh')}
+                  />
+                </div>
+              </div>
+              <label className="mt-2 flex items-center gap-2 text-[12.5px] text-[#4c4236]">
+                <input
+                  type="checkbox"
+                  className="h-3.5 w-3.5"
+                  checked={certLongTerm}
+                  onChange={(e) => setCertLongTerm(e.target.checked)}
+                />
+                {t('userCenter.apply.material.certLongTerm')}
+              </label>
+              <div className="mt-2.5">
+                <div className="mb-1 text-[12px] text-[#6e5f4a]">{t('userCenter.apply.material.attachmentsLabel')}</div>
+                <textarea
+                  className={taCls}
+                  rows={3}
+                  value={attachText}
+                  onChange={(e) => setAttachText(e.target.value)}
+                  placeholder={t('userCenter.apply.material.attachmentsPh')}
+                />
               </div>
             </div>
           )}

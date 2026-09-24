@@ -847,6 +847,36 @@
       "withdrawFailed": "Withdrawal failed",
       "needTarget": "Please select the team you want to join",
       "needRegion": "Agent applications require a full territory (province / city / district)",
+      "needRegionAny": "Select your region (it determines which agent governs you)",
+      "material": {
+        "title": "Entity qualification materials",
+        "hint": "Materials are submitted with the application; the agent reviews them at first review. Use the exact info shown on your certificate.",
+        "applicantNameLabel": "Applicant name",
+        "applicantNamePh": "Full legal name",
+        "phoneLabel": "Contact phone",
+        "phonePh": "Contact mobile number",
+        "certTypeLabel": "Certificate type",
+        "certNoLabel": "Certificate number",
+        "certNoPh": "ID number / unified social credit code",
+        "certExpireLabel": "Expiry date",
+        "issuerLabel": "Issuing authority",
+        "issuerPh": "Optional",
+        "certLongTerm": "Certificate is valid indefinitely",
+        "attachmentsLabel": "Attachments",
+        "attachmentsPh": "One attachment URL per line (business license / ID card, etc.)",
+        "cert": {
+          "idCard": "ID card",
+          "license": "Business license",
+          "other": "Other"
+        },
+        "err": {
+          "applicantName": "Applicant name is required",
+          "phone": "Contact phone is required",
+          "certNo": "Certificate number is required",
+          "certExpire": "Expiry date is required (or tick 'valid indefinitely')",
+          "attachments": "At least one attachment URL is required"
+        }
+      },
       "needScope": "Please select at least one service type",
       "reviewNote": "Review feedback",
       "status": {

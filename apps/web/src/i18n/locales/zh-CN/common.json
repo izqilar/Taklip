@@ -847,6 +847,36 @@
       "withdrawFailed": "撤回失败",
       "needTarget": "请选择要加入的团队",
       "needRegion": "代理商入驻须选择完整辖区（省 / 市 / 区县）",
+      "needRegionAny": "请选择所属区域（服务商区域决定由哪个代理商管辖）",
+      "material": {
+        "title": "主体资质材料",
+        "hint": "材料随申请一并提交，代理商据此做资质一审；请填写与证件一致的信息。",
+        "applicantNameLabel": "申请人姓名",
+        "applicantNamePh": "请输入真实姓名",
+        "phoneLabel": "联系手机",
+        "phonePh": "请输入联系手机号",
+        "certTypeLabel": "证件类型",
+        "certNoLabel": "证件号码",
+        "certNoPh": "身份证号 / 统一社会信用代码",
+        "certExpireLabel": "证件有效期",
+        "issuerLabel": "发证机关",
+        "issuerPh": "选填",
+        "certLongTerm": "证件长期有效",
+        "attachmentsLabel": "资质附件",
+        "attachmentsPh": "每行一个附件链接（营业执照 / 身份证正反面等）",
+        "cert": {
+          "idCard": "身份证",
+          "license": "营业执照",
+          "other": "其他证件"
+        },
+        "err": {
+          "applicantName": "请填写申请人姓名",
+          "phone": "请填写联系手机",
+          "certNo": "请填写证件号码",
+          "certExpire": "请填写证件有效期，或勾选长期有效",
+          "attachments": "请至少填写一个资质附件链接"
+        }
+      },
       "needScope": "请至少选择一项服务类型",
       "reviewNote": "审批反馈",
       "status": {
