@@ -374,6 +374,15 @@ exports.Prisma.QualificationApplicationScalarFieldEnum = {
   certLongTerm: 'certLongTerm',
   issuer: 'issuer',
   attachments: 'attachments',
+  reviewNote: 'reviewNote',
+  firstReviewedById: 'firstReviewedById',
+  firstReviewedAt: 'firstReviewedAt',
+  finalReviewedById: 'finalReviewedById',
+  finalReviewedAt: 'finalReviewedAt',
+  materialSubmittedAt: 'materialSubmittedAt',
+  resubmitOfId: 'resubmitOfId',
+  riskFlags: 'riskFlags',
+  notifiedAt: 'notifiedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

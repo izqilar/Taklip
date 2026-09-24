@@ -60,6 +60,15 @@ ROLE_HOME：USER→web /user/works；SP→admin /sp/studio；AGENT/ADMIN→admin
 - 权限边界：`team:manage` 不在任何层 staffPermPool 内 + admin/roles 仅 ADMIN 可见 ⇒ 团队管理只能各层拥有者执行（R-03 防自我提权，刻意设计）。
 - 员工操作审计 P3：AuditModule 接 StaffModule，create/update/remove/bindUser 写 AuditLog；可视化端点 `GET {provider|agent|admin}/team/:id/audit-logs`。
 
+## 12.6 入驻管线单一真源（2026-09-25 落地，docs/服务商入驻与归属管线改造方案.md + docs/新客户注册为代理商或服务商方案.md）
+- **铁律**：注册只建 `USER`；`role`/`providerStatus` 变更**只能**在总台终审 `APPROVED` 落地（`user-console.applyQualificationResult`）。自服务 `applyForProvider` / `submit-provider-review` 已收口（前者只建申请，后者已删）。
+- 两段审：代理一审 `FIRST_PENDING→FIRST_PASSED/REJECTED`（`PATCH /api/agent/qualifications/:id/review`，只设标记）；总台终审 `→APPROVED/REJECTED`（`POST /api/user/qualifications/:id/review`，`@Roles('ADMIN')`）。**驳回原因两侧均必填**。
+- 材料前置：申请即带主体材料（`MATERIALS_REQUIRED=true`）；服务商 `regionPath` **必填**（否则产出无人管辖的孤立主体）；代理商辖区须三级且不重叠（提交时预检 + 终审前强校验，DB 不加唯一约束——同辖区多服务商共用）。
+- 终审落地连带：`regionPath` 固化 + `agentId` 最长前缀匹配 + ProviderWallet + `type=MAIN` 主合同 + 实名置 APPROVED；代理商另出 `type=AGENCY` 代理协议（甲方恒为平台，代理商非签约方）。
+- 付费闸门：存在 MAIN 合同时须 `EFFECTIVE` 才可上架付费（`template.service` + `provider-console.createService`，后者曾绕过校验已补齐）。合同推进 `POST /api/provider/contracts/:id/advance` **必须传 body.stage**（APPROVING/EFFECTIVE）。
+- 风险预检 `GET /api/admin/qualifications/:id/precheck` **只标记不自动放行**；一审质量护栏 `GET /api/admin/agent-review-quality`。badges 细分 `onboardingFirst`/`onboardingFinal`。
+- 重提：`resubmitOfId` 仅可基于本人 REJECTED/WITHDRAWN，生成新申请。招商意向转入驻**不代客建申请**，只置 WON + 邀请链接。
+
 ## 13 用户视角侧栏角标（2026-09-23 新增）
 - `GET /api/console/badges` 按被视察对象/登录者作用域下发菜单待办数。
 - 用户视角三项：通知公告 `noticeUnread`(本人可见已发布 ANNOUNCEMENT 且未读) / 业务消息 `messagePending`(非 ANNOUNCEMENT 未读=待处理) / 我的反馈 `feedbackPending`(本人发起未关闭工单=待回复)。仅当 me.role==='USER' 时统计，其余恒 0。

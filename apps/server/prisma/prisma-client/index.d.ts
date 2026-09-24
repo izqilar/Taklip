@@ -21213,6 +21213,14 @@ export namespace Prisma {
     certExpire: string | null
     certLongTerm: boolean | null
     issuer: string | null
+    reviewNote: string | null
+    firstReviewedById: string | null
+    firstReviewedAt: Date | null
+    finalReviewedById: string | null
+    finalReviewedAt: Date | null
+    materialSubmittedAt: Date | null
+    resubmitOfId: string | null
+    notifiedAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -21232,6 +21240,14 @@ export namespace Prisma {
     certExpire: string | null
     certLongTerm: boolean | null
     issuer: string | null
+    reviewNote: string | null
+    firstReviewedById: string | null
+    firstReviewedAt: Date | null
+    finalReviewedById: string | null
+    finalReviewedAt: Date | null
+    materialSubmittedAt: Date | null
+    resubmitOfId: string | null
+    notifiedAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -21253,6 +21269,15 @@ export namespace Prisma {
     certLongTerm: number
     issuer: number
     attachments: number
+    reviewNote: number
+    firstReviewedById: number
+    firstReviewedAt: number
+    finalReviewedById: number
+    finalReviewedAt: number
+    materialSubmittedAt: number
+    resubmitOfId: number
+    riskFlags: number
+    notifiedAt: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -21274,6 +21299,14 @@ export namespace Prisma {
     certExpire?: true
     certLongTerm?: true
     issuer?: true
+    reviewNote?: true
+    firstReviewedById?: true
+    firstReviewedAt?: true
+    finalReviewedById?: true
+    finalReviewedAt?: true
+    materialSubmittedAt?: true
+    resubmitOfId?: true
+    notifiedAt?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -21293,6 +21326,14 @@ export namespace Prisma {
     certExpire?: true
     certLongTerm?: true
     issuer?: true
+    reviewNote?: true
+    firstReviewedById?: true
+    firstReviewedAt?: true
+    finalReviewedById?: true
+    finalReviewedAt?: true
+    materialSubmittedAt?: true
+    resubmitOfId?: true
+    notifiedAt?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -21314,6 +21355,15 @@ export namespace Prisma {
     certLongTerm?: true
     issuer?: true
     attachments?: true
+    reviewNote?: true
+    firstReviewedById?: true
+    firstReviewedAt?: true
+    finalReviewedById?: true
+    finalReviewedAt?: true
+    materialSubmittedAt?: true
+    resubmitOfId?: true
+    riskFlags?: true
+    notifiedAt?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -21408,6 +21458,15 @@ export namespace Prisma {
     certLongTerm: boolean
     issuer: string | null
     attachments: string[]
+    reviewNote: string | null
+    firstReviewedById: string | null
+    firstReviewedAt: Date | null
+    finalReviewedById: string | null
+    finalReviewedAt: Date | null
+    materialSubmittedAt: Date | null
+    resubmitOfId: string | null
+    riskFlags: string[]
+    notifiedAt: Date | null
     createdAt: Date
     updatedAt: Date
     _count: QualificationApplicationCountAggregateOutputType | null
@@ -21446,6 +21505,15 @@ export namespace Prisma {
     certLongTerm?: boolean
     issuer?: boolean
     attachments?: boolean
+    reviewNote?: boolean
+    firstReviewedById?: boolean
+    firstReviewedAt?: boolean
+    finalReviewedById?: boolean
+    finalReviewedAt?: boolean
+    materialSubmittedAt?: boolean
+    resubmitOfId?: boolean
+    riskFlags?: boolean
+    notifiedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -21468,6 +21536,15 @@ export namespace Prisma {
     certLongTerm?: boolean
     issuer?: boolean
     attachments?: boolean
+    reviewNote?: boolean
+    firstReviewedById?: boolean
+    firstReviewedAt?: boolean
+    finalReviewedById?: boolean
+    finalReviewedAt?: boolean
+    materialSubmittedAt?: boolean
+    resubmitOfId?: boolean
+    riskFlags?: boolean
+    notifiedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -21490,6 +21567,15 @@ export namespace Prisma {
     certLongTerm?: boolean
     issuer?: boolean
     attachments?: boolean
+    reviewNote?: boolean
+    firstReviewedById?: boolean
+    firstReviewedAt?: boolean
+    finalReviewedById?: boolean
+    finalReviewedAt?: boolean
+    materialSubmittedAt?: boolean
+    resubmitOfId?: boolean
+    riskFlags?: boolean
+    notifiedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
@@ -21523,6 +21609,15 @@ export namespace Prisma {
       certLongTerm: boolean
       issuer: string | null
       attachments: string[]
+      reviewNote: string | null
+      firstReviewedById: string | null
+      firstReviewedAt: Date | null
+      finalReviewedById: string | null
+      finalReviewedAt: Date | null
+      materialSubmittedAt: Date | null
+      resubmitOfId: string | null
+      riskFlags: string[]
+      notifiedAt: Date | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["qualificationApplication"]>
@@ -21935,6 +22030,15 @@ export namespace Prisma {
     readonly certLongTerm: FieldRef<"QualificationApplication", 'Boolean'>
     readonly issuer: FieldRef<"QualificationApplication", 'String'>
     readonly attachments: FieldRef<"QualificationApplication", 'String[]'>
+    readonly reviewNote: FieldRef<"QualificationApplication", 'String'>
+    readonly firstReviewedById: FieldRef<"QualificationApplication", 'String'>
+    readonly firstReviewedAt: FieldRef<"QualificationApplication", 'DateTime'>
+    readonly finalReviewedById: FieldRef<"QualificationApplication", 'String'>
+    readonly finalReviewedAt: FieldRef<"QualificationApplication", 'DateTime'>
+    readonly materialSubmittedAt: FieldRef<"QualificationApplication", 'DateTime'>
+    readonly resubmitOfId: FieldRef<"QualificationApplication", 'String'>
+    readonly riskFlags: FieldRef<"QualificationApplication", 'String[]'>
+    readonly notifiedAt: FieldRef<"QualificationApplication", 'DateTime'>
     readonly createdAt: FieldRef<"QualificationApplication", 'DateTime'>
     readonly updatedAt: FieldRef<"QualificationApplication", 'DateTime'>
   }
@@ -34609,6 +34713,15 @@ export namespace Prisma {
     certLongTerm: 'certLongTerm',
     issuer: 'issuer',
     attachments: 'attachments',
+    reviewNote: 'reviewNote',
+    firstReviewedById: 'firstReviewedById',
+    firstReviewedAt: 'firstReviewedAt',
+    finalReviewedById: 'finalReviewedById',
+    finalReviewedAt: 'finalReviewedAt',
+    materialSubmittedAt: 'materialSubmittedAt',
+    resubmitOfId: 'resubmitOfId',
+    riskFlags: 'riskFlags',
+    notifiedAt: 'notifiedAt',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -36682,6 +36795,15 @@ export namespace Prisma {
     certLongTerm?: BoolFilter<"QualificationApplication"> | boolean
     issuer?: StringNullableFilter<"QualificationApplication"> | string | null
     attachments?: StringNullableListFilter<"QualificationApplication">
+    reviewNote?: StringNullableFilter<"QualificationApplication"> | string | null
+    firstReviewedById?: StringNullableFilter<"QualificationApplication"> | string | null
+    firstReviewedAt?: DateTimeNullableFilter<"QualificationApplication"> | Date | string | null
+    finalReviewedById?: StringNullableFilter<"QualificationApplication"> | string | null
+    finalReviewedAt?: DateTimeNullableFilter<"QualificationApplication"> | Date | string | null
+    materialSubmittedAt?: DateTimeNullableFilter<"QualificationApplication"> | Date | string | null
+    resubmitOfId?: StringNullableFilter<"QualificationApplication"> | string | null
+    riskFlags?: StringNullableListFilter<"QualificationApplication">
+    notifiedAt?: DateTimeNullableFilter<"QualificationApplication"> | Date | string | null
     createdAt?: DateTimeFilter<"QualificationApplication"> | Date | string
     updatedAt?: DateTimeFilter<"QualificationApplication"> | Date | string
     user?: XOR<UserRelationFilter, UserWhereInput>
@@ -36704,6 +36826,15 @@ export namespace Prisma {
     certLongTerm?: SortOrder
     issuer?: SortOrderInput | SortOrder
     attachments?: SortOrder
+    reviewNote?: SortOrderInput | SortOrder
+    firstReviewedById?: SortOrderInput | SortOrder
+    firstReviewedAt?: SortOrderInput | SortOrder
+    finalReviewedById?: SortOrderInput | SortOrder
+    finalReviewedAt?: SortOrderInput | SortOrder
+    materialSubmittedAt?: SortOrderInput | SortOrder
+    resubmitOfId?: SortOrderInput | SortOrder
+    riskFlags?: SortOrder
+    notifiedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     user?: UserOrderByWithRelationInput
@@ -36729,6 +36860,15 @@ export namespace Prisma {
     certLongTerm?: BoolFilter<"QualificationApplication"> | boolean
     issuer?: StringNullableFilter<"QualificationApplication"> | string | null
     attachments?: StringNullableListFilter<"QualificationApplication">
+    reviewNote?: StringNullableFilter<"QualificationApplication"> | string | null
+    firstReviewedById?: StringNullableFilter<"QualificationApplication"> | string | null
+    firstReviewedAt?: DateTimeNullableFilter<"QualificationApplication"> | Date | string | null
+    finalReviewedById?: StringNullableFilter<"QualificationApplication"> | string | null
+    finalReviewedAt?: DateTimeNullableFilter<"QualificationApplication"> | Date | string | null
+    materialSubmittedAt?: DateTimeNullableFilter<"QualificationApplication"> | Date | string | null
+    resubmitOfId?: StringNullableFilter<"QualificationApplication"> | string | null
+    riskFlags?: StringNullableListFilter<"QualificationApplication">
+    notifiedAt?: DateTimeNullableFilter<"QualificationApplication"> | Date | string | null
     createdAt?: DateTimeFilter<"QualificationApplication"> | Date | string
     updatedAt?: DateTimeFilter<"QualificationApplication"> | Date | string
     user?: XOR<UserRelationFilter, UserWhereInput>
@@ -36751,6 +36891,15 @@ export namespace Prisma {
     certLongTerm?: SortOrder
     issuer?: SortOrderInput | SortOrder
     attachments?: SortOrder
+    reviewNote?: SortOrderInput | SortOrder
+    firstReviewedById?: SortOrderInput | SortOrder
+    firstReviewedAt?: SortOrderInput | SortOrder
+    finalReviewedById?: SortOrderInput | SortOrder
+    finalReviewedAt?: SortOrderInput | SortOrder
+    materialSubmittedAt?: SortOrderInput | SortOrder
+    resubmitOfId?: SortOrderInput | SortOrder
+    riskFlags?: SortOrder
+    notifiedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: QualificationApplicationCountOrderByAggregateInput
@@ -36778,6 +36927,15 @@ export namespace Prisma {
     certLongTerm?: BoolWithAggregatesFilter<"QualificationApplication"> | boolean
     issuer?: StringNullableWithAggregatesFilter<"QualificationApplication"> | string | null
     attachments?: StringNullableListFilter<"QualificationApplication">
+    reviewNote?: StringNullableWithAggregatesFilter<"QualificationApplication"> | string | null
+    firstReviewedById?: StringNullableWithAggregatesFilter<"QualificationApplication"> | string | null
+    firstReviewedAt?: DateTimeNullableWithAggregatesFilter<"QualificationApplication"> | Date | string | null
+    finalReviewedById?: StringNullableWithAggregatesFilter<"QualificationApplication"> | string | null
+    finalReviewedAt?: DateTimeNullableWithAggregatesFilter<"QualificationApplication"> | Date | string | null
+    materialSubmittedAt?: DateTimeNullableWithAggregatesFilter<"QualificationApplication"> | Date | string | null
+    resubmitOfId?: StringNullableWithAggregatesFilter<"QualificationApplication"> | string | null
+    riskFlags?: StringNullableListFilter<"QualificationApplication">
+    notifiedAt?: DateTimeNullableWithAggregatesFilter<"QualificationApplication"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"QualificationApplication"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"QualificationApplication"> | Date | string
   }
@@ -39624,6 +39782,15 @@ export namespace Prisma {
     certLongTerm?: boolean
     issuer?: string | null
     attachments?: QualificationApplicationCreateattachmentsInput | string[]
+    reviewNote?: string | null
+    firstReviewedById?: string | null
+    firstReviewedAt?: Date | string | null
+    finalReviewedById?: string | null
+    finalReviewedAt?: Date | string | null
+    materialSubmittedAt?: Date | string | null
+    resubmitOfId?: string | null
+    riskFlags?: QualificationApplicationCreateriskFlagsInput | string[]
+    notifiedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     user: UserCreateNestedOneWithoutQualificationsInput
@@ -39646,6 +39813,15 @@ export namespace Prisma {
     certLongTerm?: boolean
     issuer?: string | null
     attachments?: QualificationApplicationCreateattachmentsInput | string[]
+    reviewNote?: string | null
+    firstReviewedById?: string | null
+    firstReviewedAt?: Date | string | null
+    finalReviewedById?: string | null
+    finalReviewedAt?: Date | string | null
+    materialSubmittedAt?: Date | string | null
+    resubmitOfId?: string | null
+    riskFlags?: QualificationApplicationCreateriskFlagsInput | string[]
+    notifiedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -39666,6 +39842,15 @@ export namespace Prisma {
     certLongTerm?: BoolFieldUpdateOperationsInput | boolean
     issuer?: NullableStringFieldUpdateOperationsInput | string | null
     attachments?: QualificationApplicationUpdateattachmentsInput | string[]
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    firstReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    firstReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    finalReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    finalReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    materialSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    resubmitOfId?: NullableStringFieldUpdateOperationsInput | string | null
+    riskFlags?: QualificationApplicationUpdateriskFlagsInput | string[]
+    notifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutQualificationsNestedInput
@@ -39688,6 +39873,15 @@ export namespace Prisma {
     certLongTerm?: BoolFieldUpdateOperationsInput | boolean
     issuer?: NullableStringFieldUpdateOperationsInput | string | null
     attachments?: QualificationApplicationUpdateattachmentsInput | string[]
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    firstReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    firstReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    finalReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    finalReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    materialSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    resubmitOfId?: NullableStringFieldUpdateOperationsInput | string | null
+    riskFlags?: QualificationApplicationUpdateriskFlagsInput | string[]
+    notifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -39709,6 +39903,15 @@ export namespace Prisma {
     certLongTerm?: boolean
     issuer?: string | null
     attachments?: QualificationApplicationCreateattachmentsInput | string[]
+    reviewNote?: string | null
+    firstReviewedById?: string | null
+    firstReviewedAt?: Date | string | null
+    finalReviewedById?: string | null
+    finalReviewedAt?: Date | string | null
+    materialSubmittedAt?: Date | string | null
+    resubmitOfId?: string | null
+    riskFlags?: QualificationApplicationCreateriskFlagsInput | string[]
+    notifiedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -39729,6 +39932,15 @@ export namespace Prisma {
     certLongTerm?: BoolFieldUpdateOperationsInput | boolean
     issuer?: NullableStringFieldUpdateOperationsInput | string | null
     attachments?: QualificationApplicationUpdateattachmentsInput | string[]
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    firstReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    firstReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    finalReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    finalReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    materialSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    resubmitOfId?: NullableStringFieldUpdateOperationsInput | string | null
+    riskFlags?: QualificationApplicationUpdateriskFlagsInput | string[]
+    notifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -39750,6 +39962,15 @@ export namespace Prisma {
     certLongTerm?: BoolFieldUpdateOperationsInput | boolean
     issuer?: NullableStringFieldUpdateOperationsInput | string | null
     attachments?: QualificationApplicationUpdateattachmentsInput | string[]
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    firstReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    firstReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    finalReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    finalReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    materialSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    resubmitOfId?: NullableStringFieldUpdateOperationsInput | string | null
+    riskFlags?: QualificationApplicationUpdateriskFlagsInput | string[]
+    notifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -42615,6 +42836,15 @@ export namespace Prisma {
     certLongTerm?: SortOrder
     issuer?: SortOrder
     attachments?: SortOrder
+    reviewNote?: SortOrder
+    firstReviewedById?: SortOrder
+    firstReviewedAt?: SortOrder
+    finalReviewedById?: SortOrder
+    finalReviewedAt?: SortOrder
+    materialSubmittedAt?: SortOrder
+    resubmitOfId?: SortOrder
+    riskFlags?: SortOrder
+    notifiedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -42634,6 +42864,14 @@ export namespace Prisma {
     certExpire?: SortOrder
     certLongTerm?: SortOrder
     issuer?: SortOrder
+    reviewNote?: SortOrder
+    firstReviewedById?: SortOrder
+    firstReviewedAt?: SortOrder
+    finalReviewedById?: SortOrder
+    finalReviewedAt?: SortOrder
+    materialSubmittedAt?: SortOrder
+    resubmitOfId?: SortOrder
+    notifiedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -42653,6 +42891,14 @@ export namespace Prisma {
     certExpire?: SortOrder
     certLongTerm?: SortOrder
     issuer?: SortOrder
+    reviewNote?: SortOrder
+    firstReviewedById?: SortOrder
+    firstReviewedAt?: SortOrder
+    finalReviewedById?: SortOrder
+    finalReviewedAt?: SortOrder
+    materialSubmittedAt?: SortOrder
+    resubmitOfId?: SortOrder
+    notifiedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -44954,6 +45200,10 @@ export namespace Prisma {
     set: string[]
   }
 
+  export type QualificationApplicationCreateriskFlagsInput = {
+    set: string[]
+  }
+
   export type UserCreateNestedOneWithoutQualificationsInput = {
     create?: XOR<UserCreateWithoutQualificationsInput, UserUncheckedCreateWithoutQualificationsInput>
     connectOrCreate?: UserCreateOrConnectWithoutQualificationsInput
@@ -44966,6 +45216,11 @@ export namespace Prisma {
   }
 
   export type QualificationApplicationUpdateattachmentsInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
+  export type QualificationApplicationUpdateriskFlagsInput = {
     set?: string[]
     push?: string | string[]
   }
@@ -46767,6 +47022,15 @@ export namespace Prisma {
     certLongTerm?: boolean
     issuer?: string | null
     attachments?: QualificationApplicationCreateattachmentsInput | string[]
+    reviewNote?: string | null
+    firstReviewedById?: string | null
+    firstReviewedAt?: Date | string | null
+    finalReviewedById?: string | null
+    finalReviewedAt?: Date | string | null
+    materialSubmittedAt?: Date | string | null
+    resubmitOfId?: string | null
+    riskFlags?: QualificationApplicationCreateriskFlagsInput | string[]
+    notifiedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -46787,6 +47051,15 @@ export namespace Prisma {
     certLongTerm?: boolean
     issuer?: string | null
     attachments?: QualificationApplicationCreateattachmentsInput | string[]
+    reviewNote?: string | null
+    firstReviewedById?: string | null
+    firstReviewedAt?: Date | string | null
+    finalReviewedById?: string | null
+    finalReviewedAt?: Date | string | null
+    materialSubmittedAt?: Date | string | null
+    resubmitOfId?: string | null
+    riskFlags?: QualificationApplicationCreateriskFlagsInput | string[]
+    notifiedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -47594,6 +47867,15 @@ export namespace Prisma {
     certLongTerm?: BoolFilter<"QualificationApplication"> | boolean
     issuer?: StringNullableFilter<"QualificationApplication"> | string | null
     attachments?: StringNullableListFilter<"QualificationApplication">
+    reviewNote?: StringNullableFilter<"QualificationApplication"> | string | null
+    firstReviewedById?: StringNullableFilter<"QualificationApplication"> | string | null
+    firstReviewedAt?: DateTimeNullableFilter<"QualificationApplication"> | Date | string | null
+    finalReviewedById?: StringNullableFilter<"QualificationApplication"> | string | null
+    finalReviewedAt?: DateTimeNullableFilter<"QualificationApplication"> | Date | string | null
+    materialSubmittedAt?: DateTimeNullableFilter<"QualificationApplication"> | Date | string | null
+    resubmitOfId?: StringNullableFilter<"QualificationApplication"> | string | null
+    riskFlags?: StringNullableListFilter<"QualificationApplication">
+    notifiedAt?: DateTimeNullableFilter<"QualificationApplication"> | Date | string | null
     createdAt?: DateTimeFilter<"QualificationApplication"> | Date | string
     updatedAt?: DateTimeFilter<"QualificationApplication"> | Date | string
   }
@@ -53736,6 +54018,15 @@ export namespace Prisma {
     certLongTerm?: boolean
     issuer?: string | null
     attachments?: QualificationApplicationCreateattachmentsInput | string[]
+    reviewNote?: string | null
+    firstReviewedById?: string | null
+    firstReviewedAt?: Date | string | null
+    finalReviewedById?: string | null
+    finalReviewedAt?: Date | string | null
+    materialSubmittedAt?: Date | string | null
+    resubmitOfId?: string | null
+    riskFlags?: QualificationApplicationCreateriskFlagsInput | string[]
+    notifiedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -54604,6 +54895,15 @@ export namespace Prisma {
     certLongTerm?: BoolFieldUpdateOperationsInput | boolean
     issuer?: NullableStringFieldUpdateOperationsInput | string | null
     attachments?: QualificationApplicationUpdateattachmentsInput | string[]
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    firstReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    firstReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    finalReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    finalReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    materialSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    resubmitOfId?: NullableStringFieldUpdateOperationsInput | string | null
+    riskFlags?: QualificationApplicationUpdateriskFlagsInput | string[]
+    notifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -54624,6 +54924,15 @@ export namespace Prisma {
     certLongTerm?: BoolFieldUpdateOperationsInput | boolean
     issuer?: NullableStringFieldUpdateOperationsInput | string | null
     attachments?: QualificationApplicationUpdateattachmentsInput | string[]
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    firstReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    firstReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    finalReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    finalReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    materialSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    resubmitOfId?: NullableStringFieldUpdateOperationsInput | string | null
+    riskFlags?: QualificationApplicationUpdateriskFlagsInput | string[]
+    notifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -54644,6 +54953,15 @@ export namespace Prisma {
     certLongTerm?: BoolFieldUpdateOperationsInput | boolean
     issuer?: NullableStringFieldUpdateOperationsInput | string | null
     attachments?: QualificationApplicationUpdateattachmentsInput | string[]
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    firstReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    firstReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    finalReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    finalReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    materialSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    resubmitOfId?: NullableStringFieldUpdateOperationsInput | string | null
+    riskFlags?: QualificationApplicationUpdateriskFlagsInput | string[]
+    notifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
