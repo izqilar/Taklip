@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   ForbiddenException,
+  BadRequestException,
+  NotFoundException,
   Get,
   Param,
   Patch,
@@ -524,5 +526,300 @@ export class AgentConsoleController {
       totalIncomeCents: agg._sum.totalIncome ?? 0,
       withdrawnCents: agg._sum.withdrawn ?? 0,
     };
+  }
+
+  /* ══════════════════ 辖区业务申请（入驻审批 · 代理一审） ══════════════════
+   * 用户「入驻」资格升级隧道：FIRST_PENDING（待初审）→ FIRST_PASSED（待补资料）
+   * → FINAL_PENDING（待终审）→ APPROVED（变更平台身份）。
+   * 代理商只做「代理一审」（FIRST_PENDING → FIRST_PASSED / REJECTED），**不触碰身份变更**；
+   * 身份变更（role 落地）仅总台 ADMIN 终审（final）环节执行。辖区按申请 regionPath 收敛。
+   */
+
+  /** 辖区入驻申请队列（只读，regionPath 前缀收敛） */
+  @Get('qualifications')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async qualifications(
+    @Req() req: ReqUser,
+    @Query('status') status?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('subject') subject?: string,
+  ) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath ? { startsWith: scope.regionPath } : undefined;
+    if (req.user.role === 'AGENT' && !scope.regionPath) return { items: [], total: 0 };
+    const where: any = rp ? { regionPath: rp } : {};
+    if (status) where.status = status;
+    const p = page ? Number(page) : 1;
+    const ps = Math.min(pageSize ? Number(pageSize) : 20, 100);
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.qualificationApplication.findMany({
+        where,
+        skip: (p - 1) * ps,
+        take: ps,
+        orderBy: { createdAt: 'desc' },
+        include: { user: { select: { id: true, nickname: true, realName: true, phone: true, role: true } } },
+      }),
+      this.prisma.qualificationApplication.count({ where }),
+    ]);
+    return { items, total, page: p, pageSize: ps };
+  }
+
+  /** 代理一审（仅 FIRST_PENDING → FIRST_PASSED / REJECTED；不落地身份变更） */
+  @Patch('qualifications/:id/review')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async reviewQualification(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Body() body: { pass: boolean; note?: string },
+    @Query('subject') subject?: string,
+  ) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath;
+    const app = await this.prisma.qualificationApplication.findUnique({ where: { id } });
+    if (!app) throw new NotFoundException('申请不存在');
+    if (rp) {
+      if (!app.regionPath || !app.regionPath.startsWith(rp)) {
+        throw new ForbiddenException('超出辖区范围');
+      }
+    } else if (req.user.role === 'AGENT') {
+      throw new ForbiddenException('代理商未配置辖区');
+    }
+    if (app.status !== 'FIRST_PENDING') {
+      throw new BadRequestException('当前状态不可初审（仅待初审可代理一审）');
+    }
+    const status = body.pass ? 'FIRST_PASSED' : 'REJECTED';
+    const updated = await this.prisma.qualificationApplication.update({ where: { id }, data: { status } });
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: req.user.id,
+        action: 'AGENT_QUALIFICATION_FIRST_REVIEW',
+        targetType: 'QUALIFICATION_APPLICATION',
+        targetId: id,
+        reason: body.note ?? null,
+        after: { status },
+      },
+    });
+    return updated;
+  }
+
+  /* ══════════════════ 辖区合同管理（只读） ══════════════════
+   * 代理商查看辖区内服务商合同（provider.regionPath 前缀收敛）。签约/编辑属服务商自身职能，
+   * 代理商仅辖区可见，不做写操作。
+   */
+
+  /** 辖区合同列表（regionPath 前缀收敛） */
+  @Get('contracts')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async contracts(
+    @Req() req: ReqUser,
+    @Query('signStage') signStage?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('subject') subject?: string,
+  ) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath ? { startsWith: scope.regionPath } : undefined;
+    if (req.user.role === 'AGENT' && !scope.regionPath) return { items: [], total: 0 };
+    const where: any = rp ? { provider: { regionPath: rp } } : {};
+    if (signStage) where.signStage = signStage;
+    const p = page ? Number(page) : 1;
+    const ps = Math.min(pageSize ? Number(pageSize) : 20, 100);
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.providerContract.findMany({
+        where,
+        skip: (p - 1) * ps,
+        take: ps,
+        orderBy: { createdAt: 'desc' },
+        include: { provider: { select: { id: true, nickname: true, phone: true, regionPath: true } } },
+      }),
+      this.prisma.providerContract.count({ where }),
+    ]);
+    return { items, total, page: p, pageSize: ps };
+  }
+
+  /* ══════════════════ 辖区提现初审（代理一审 → 总台终审） ══════════════════
+   * 代理商对辖区服务商提现做「一审」标记（reviewStage），**不触碰资金闸门**（status 仍 pending）；
+   * 资金放行（status pending→paid）与驳回退款仅总台 ADMIN 终审执行。辖区按 provider.regionPath 收敛。
+   */
+
+  /** 辖区提现列表（regionPath 前缀收敛） */
+  @Get('withdrawals')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async agentWithdrawals(
+    @Req() req: ReqUser,
+    @Query('status') status?: string,
+    @Query('reviewStage') reviewStage?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('subject') subject?: string,
+  ) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath ? { startsWith: scope.regionPath } : undefined;
+    if (req.user.role === 'AGENT' && !scope.regionPath) return { items: [], total: 0 };
+    const where: any = rp ? { provider: { regionPath: rp } } : {};
+    if (status) where.status = status;
+    if (reviewStage) where.reviewStage = reviewStage;
+    const p = page ? Number(page) : 1;
+    const ps = Math.min(pageSize ? Number(pageSize) : 20, 100);
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.withdrawal.findMany({
+        where,
+        skip: (p - 1) * ps,
+        take: ps,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          provider: { select: { id: true, nickname: true, phone: true, regionPath: true } },
+          wallet: { select: { id: true, balance: true } },
+        },
+      }),
+      this.prisma.withdrawal.count({ where }),
+    ]);
+    return { items, total, page: p, pageSize: ps };
+  }
+
+  /** 代理一审标记（仅 pending + AGENT_PENDING 可标记；不动资金） */
+  @Patch('withdrawals/:id/review')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async reviewWithdrawal(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Body() body: { pass: boolean; note?: string },
+    @Query('subject') subject?: string,
+  ) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath;
+    const w = await this.prisma.withdrawal.findUnique({
+      where: { id },
+      include: { provider: { select: { regionPath: true } } },
+    });
+    if (!w) throw new NotFoundException('提现记录不存在');
+    if (rp) {
+      if (!w.provider?.regionPath || !w.provider.regionPath.startsWith(rp)) {
+        throw new ForbiddenException('超出辖区范围');
+      }
+    } else if (req.user.role === 'AGENT') {
+      throw new ForbiddenException('代理商未配置辖区');
+    }
+    if (w.status !== 'pending') throw new BadRequestException('该提现已处理（资金闸门已闭合）');
+    if (w.reviewStage !== 'AGENT_PENDING') throw new BadRequestException('该提现已初审');
+    const stage = body.pass ? 'AGENT_PASSED' : 'AGENT_REJECTED';
+    const updated = await this.prisma.withdrawal.update({
+      where: { id },
+      data: { reviewStage: stage, agentReviewedById: req.user.id, agentReviewedAt: new Date() },
+    });
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: req.user.id,
+        action: 'AGENT_WITHDRAWAL_FIRST_REVIEW',
+        targetType: 'WITHDRAWAL',
+        targetId: id,
+        reason: body.note ?? null,
+        after: { reviewStage: stage },
+      },
+    });
+    return updated;
+  }
+
+  /* ══════════════════ 招商拓展（代理商专有 · 招商意向池） ══════════════════
+   * 区别于服务商自驱动的「入驻申请」隧道：招商意向由代理商主动拓客登记，辖区隔离。
+   */
+
+  /** 辖区招商意向列表（regionPath 前缀收敛） */
+  @Get('recruits')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async recruits(
+    @Req() req: ReqUser,
+    @Query('stage') stage?: string,
+    @Query('keyword') keyword?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('subject') subject?: string,
+  ) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath ? { startsWith: scope.regionPath } : undefined;
+    if (req.user.role === 'AGENT' && !scope.regionPath) return { items: [], total: 0 };
+    const where: any = rp ? { regionPath: rp } : {};
+    if (stage) where.stage = stage;
+    if (keyword) {
+      where.OR = [
+        { name: { contains: keyword } },
+        { phone: { contains: keyword } },
+      ];
+    }
+    const p = page ? Number(page) : 1;
+    const ps = Math.min(pageSize ? Number(pageSize) : 20, 100);
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.recruitLead.findMany({
+        where,
+        skip: (p - 1) * ps,
+        take: ps,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.recruitLead.count({ where }),
+    ]);
+    return { items, total, page: p, pageSize: ps };
+  }
+
+  /** 新建招商意向（归属当前代理商辖区；regionPath 由辖区推导，保证辖区隔离） */
+  @Post('recruits')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async createRecruit(@Req() req: ReqUser, @Body() body: any, @Query('subject') subject?: string) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const name = (body.name || '').toString().trim();
+    if (!name) throw new BadRequestException('意向主体名称必填');
+    const phone = (body.phone || '').toString().trim();
+    if (!/^\d{11}$/.test(phone)) throw new BadRequestException('手机号须为 11 位数字');
+    // regionPath 默认取辖区前缀；若前端提供，必须落在辖区内（辖区隔离）
+    const regionPath = (body.regionPath || scope.regionPath || '').toString().trim();
+    if (!regionPath) throw new BadRequestException('代理商未配置辖区，无法登记招商意向');
+    if (scope.regionPath && !regionPath.startsWith(scope.regionPath)) {
+      throw new ForbiddenException('意向区域超出辖区范围');
+    }
+    const ownerAgentId = scope.orgId;
+    return this.prisma.recruitLead.create({
+      data: {
+        name,
+        phone,
+        regionPath,
+        regionLabel: body.regionLabel || null,
+        intro: (body.intro || '').toString().trim() || null,
+        stage: 'NEW',
+        ownerAgentId,
+      },
+    });
+  }
+
+  /** 更新招商意向阶段（辖区收敛） */
+  @Patch('recruits/:id')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async updateRecruit(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Body() body: { stage?: string },
+    @Query('subject') subject?: string,
+  ) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath;
+    const lead = await this.prisma.recruitLead.findUnique({ where: { id } });
+    if (!lead) throw new NotFoundException('招商意向不存在');
+    if (rp) {
+      if (!lead.regionPath || !lead.regionPath.startsWith(rp)) {
+        throw new ForbiddenException('超出辖区范围');
+      }
+    } else if (req.user.role === 'AGENT') {
+      throw new ForbiddenException('代理商未配置辖区');
+    }
+    const STAGES = ['NEW', 'CONTACTED', 'WON', 'LOST'];
+    const stage = body.stage && STAGES.includes(body.stage) ? body.stage : lead.stage;
+    return this.prisma.recruitLead.update({ where: { id }, data: { stage } });
   }
 }

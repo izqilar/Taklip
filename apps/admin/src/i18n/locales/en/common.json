@@ -418,6 +418,46 @@
     "col.walletId": "Wallet ID",
     "col.accountBalance": "Account balance",
     "col.regionSlash": "Region / area",
+    "col.partyA": "Party A",
+    "col.kind": "Onboarding tier",
+    "col.stage": "Stage",
+    "col.signStage": "Signing stage",
+    "col.businessMode": "Business mode",
+    "col.serviceType": "Service type",
+    "col.settlePeriod": "Settle period",
+    "col.deposit": "Deposit (cents)",
+    "col.platformRate": "Platform rate (%)",
+    "col.expireDate": "Expiry",
+    "col.exclusive": "Exclusive",
+    "col.negotiation": "Negotiation",
+    "col.regionProvider": "Provider region",
+    "col.reason": "Application note",
+    "col.certNo": "Certificate no.",
+    "enum.agentReviewPending": "Awaiting first review",
+    "enum.agentReviewPassed": "First review passed",
+    "enum.agentReviewRejected": "First review rejected",
+    "enum.recruitNew": "New",
+    "enum.recruitContacted": "Contacted",
+    "enum.recruitWon": "Won",
+    "enum.recruitLost": "Lost",
+    "btn.agentFirstPass": "First approve",
+    "btn.agentFirstReject": "First reject",
+    "btn.withdrawFirstPass": "First approve",
+    "btn.withdrawFirstReject": "First reject",
+    "btn.recruitContacted": "Mark contacted",
+    "btn.recruitWon": "Mark won",
+    "btn.recruitLost": "Mark lost",
+    "empty.noContract": "No contracts in your region",
+    "empty.noQualification": "No onboarding applications in your region",
+    "empty.noWithdraw": "No withdrawals in your region",
+    "empty.noRecruit": "No recruitment leads in your region",
+    "sec.agentContract": "Region contracts",
+    "sec.agentQualification": "Onboarding review",
+    "sec.agentWithdraw": "Withdrawal first review",
+    "sec.recruit": "Recruitment leads",
+    "toast.agentReviewed": "First review submitted",
+    "toast.recruitCreated": "Recruitment lead registered",
+    "toast.recruitStageUpdated": "Stage updated",
     "sec.templateReview": "Template review",
     "sec.providerOnboardReview": "Provider onboarding review",
     "sec.providerQualReview": "Provider qualification review",
@@ -623,14 +663,18 @@
       "approvedOnSale": "Approved & on sale"
     },
     "lbl": {
-      "all": "All"
+      "all": "All",
+      "registerRecruit": "Register lead",
+      "recentRecruit": "Recent",
+      "intentPool": "Intent pool"
     },
     "sec": {
       "templateReview": "Template Review",
       "serviceReview": "Service Review"
     },
     "toast": {
-      "redlineRequired": "Reject requires opinion and a redline category"
+      "redlineRequired": "Reject requires opinion and a redline category",
+      "actionFailed": "Action failed"
     },
     "note": {
       "comingSoonHint": "This module backend endpoint will land in a later iteration"
@@ -670,6 +714,24 @@
       "deleteFail": "Delete failed",
       "reloadFail": "Refresh failed",
       "deleteConfirm": "Confirm deleting this red-line word?"
+    },
+    "desc": {
+      "agentContractSub": "Provider contracts in region · read-only (signing/editing done by the provider)",
+      "agentContractHint": "Region-visible",
+      "agentQualificationSub": "Regional onboarding tunnel · agent first-review (no role change) · final review by admin",
+      "agentInvestSub": "Regional lead registration · assigned to this agent on submit, region auto-locked by system",
+      "agentPoolSub": "Regional recruitment lead ledger · advance contact stage (no role/fund touch)"
+    },
+    "ph": {
+      "recruitName": "e.g. XX Culture Media Co., Ltd.",
+      "recruitRegion": "Optional · e.g. High-tech Zone",
+      "recruitIntro": "Optional · source / contact / needs",
+      "searchNamePhone": "Search name / phone"
+    },
+    "rule": {
+      "nameRequired": "Lead name required",
+      "phoneRequired": "Contact phone required",
+      "phone11": "Phone must be 11 digits"
     }
   }
 }

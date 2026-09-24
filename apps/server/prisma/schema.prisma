@@ -144,6 +144,7 @@ model User {
   reviewsReceived Review[] @relation("ReviewProvider")
   messageReads    MessageRead[] @relation("MessageReadUser")
   qualifications  QualificationApplication[] @relation("QualificationUser")
+  contracts       ProviderContract[] @relation("ProviderContractToUser")
   walletLogs      WalletLog[] @relation("WalletLogUser")
   coupons         UserCoupon[] @relation("UserCouponUser")
   joinApplications TeamJoinApplication[] @relation("JoinApplicationUser")
@@ -324,7 +325,11 @@ model Withdrawal {
   walletId    String
   amount      Int      // 提现金额（分）
   currency    String   @default("CNY")
-  status      String   @default("pending") // pending | paid | failed
+  status      String   @default("pending") // pending | paid | failed（资金闸门，仅总台可改）
+  // 辖区初审（代理商一审 → 总台终审，两级审核）。null / AGENT_PENDING = 待代理商初审
+  reviewStage String   @default("AGENT_PENDING") // AGENT_PENDING | AGENT_PASSED | AGENT_REJECTED
+  agentReviewedById String? @map("agent_reviewed_by_id")
+  agentReviewedAt   DateTime? @map("agent_reviewed_at")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -333,6 +338,7 @@ model Withdrawal {
 
   @@index([providerId])
   @@index([walletId])
+  @@index([reviewStage])
 }
 
 // 模板违规申诉（服务商对下架/驳回决定提出申诉）
@@ -540,6 +546,25 @@ model QualificationApplication {
   @@index([status])
 }
 
+// 招商意向（代理商专有拓客）—— 辖区资源池，区别于服务商自驱动的「入驻申请」隧道
+model RecruitLead {
+  id          String   @id @default(cuid())
+  name        String // 潜在服务商 / 客户联系人名称
+  phone       String
+  regionPath  String?  @map("region_path") // 意向开展区域（regionPath 前缀链）
+  regionLabel String?  @map("region_label")
+  intro       String?  // 意向说明 / 备注
+  // 拓客阶段：NEW 新建 | CONTACTED 已联系 | WON 已签约转化 | LOST 已流失
+  stage       String   @default("NEW")
+  ownerAgentId String?  @map("owner_agent_id") // 归属代理商（辖区隔离锚点）
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([regionPath])
+  @@index([ownerAgentId])
+  @@index([stage])
+}
+
 // ————————————————————————————————————————————————
 // 用户钱包流水（用户视角「我的钱包」流水号 W-1001 递增）
 // type: RECHARGE 充值 / CONSUME 消费 / REFUND 退款 / GIFT 权益赠送
@@ -627,6 +652,7 @@ model ProviderSchedule {
 model ProviderContract {
   id           String   @id @default(cuid())
   providerId   String   @map("provider_id")
+  provider     User @relation("ProviderContractToUser", fields: [providerId], references: [id])
   contractNo   String   @unique @map("contract_no") // HT-YYYY-SPXXX
   type         String   @default("MAIN") // MAIN 主合同 | SUPPLEMENT 补充协议 | RENEW 续签 | TERMINATE 终止协议
   name         String

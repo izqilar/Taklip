@@ -278,6 +278,9 @@ exports.Prisma.WithdrawalScalarFieldEnum = {
   amount: 'amount',
   currency: 'currency',
   status: 'status',
+  reviewStage: 'reviewStage',
+  agentReviewedById: 'agentReviewedById',
+  agentReviewedAt: 'agentReviewedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -371,6 +374,19 @@ exports.Prisma.QualificationApplicationScalarFieldEnum = {
   certLongTerm: 'certLongTerm',
   issuer: 'issuer',
   attachments: 'attachments',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.RecruitLeadScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  phone: 'phone',
+  regionPath: 'regionPath',
+  regionLabel: 'regionLabel',
+  intro: 'intro',
+  stage: 'stage',
+  ownerAgentId: 'ownerAgentId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -673,6 +689,7 @@ exports.Prisma.ModelName = {
   Review: 'Review',
   MessageRead: 'MessageRead',
   QualificationApplication: 'QualificationApplication',
+  RecruitLead: 'RecruitLead',
   WalletLog: 'WalletLog',
   Coupon: 'Coupon',
   UserCoupon: 'UserCoupon',

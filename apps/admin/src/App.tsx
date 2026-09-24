@@ -74,6 +74,11 @@ const AgentServiceReview = lazy(() => import('./pages/agentServiceReview').then(
 const AgentComingSoon = lazy(() => import('./pages/agentComingSoon').then((m) => ({ default: m.AgentComingSoon })));
 const AgentNotices = lazy(() => import('./pages/agentNotices').then((m) => ({ default: m.AgentNotices })));
 const AgentComplaints = lazy(() => import('./pages/agentComplaints').then((m) => ({ default: m.AgentComplaints })));
+const AgentQualifications = lazy(() => import('./pages/agentQualifications').then((m) => ({ default: m.AgentQualifications })));
+const AgentWithdrawReview = lazy(() => import('./pages/agentWithdrawReview').then((m) => ({ default: m.AgentWithdrawReview })));
+const AgentContracts = lazy(() => import('./pages/agentContracts').then((m) => ({ default: m.AgentContracts })));
+const AgentInvest = lazy(() => import('./pages/agentInvest').then((m) => ({ default: m.AgentInvest })));
+const AgentPool = lazy(() => import('./pages/agentPool').then((m) => ({ default: m.AgentPool })));
 const SPStudio = lazy(() => import('./pages/consolePages').then((m) => ({ default: m.SPStudio })));
 const SPServices = lazy(() => import('./pages/consolePages').then((m) => ({ default: m.SPServices })));
 const SPOrders = lazy(() => import('./pages/consolePages').then((m) => ({ default: m.SPOrders })));
@@ -293,17 +298,17 @@ export const App = () => (
                 {/* 辖区服务商（代理商监督簇）：入驻审批 / 资质审核 / 合同管理 */}
                 {/* 资质审核：复用总台「服务商资质审核队列」（后端已 AGENT 辖区收敛，无新增权限） */}
                 <Route path="/agent/qualification" element={<ProviderReviewList />} />
-                <Route path="/agent/apply" element={<AgentComingSoon title="入驻审批" />} />
-                <Route path="/agent/contract" element={<AgentComingSoon title="合同管理" />} />
+                <Route path="/agent/apply" element={<AgentQualifications />} />
+                <Route path="/agent/contract" element={<AgentContracts />} />
                 {/* 辖区运营：意见反馈（复用辖区工单）/ 通知公告（复用收件箱） */}
                 <Route path="/agent/complaints" element={<AgentComplaints />} />
                 <Route path="/agent/notices" element={<AgentNotices />} />
                 {/* 招商拓展（代理商专有）：招商申请 / 意向池（占位，需新建后端） */}
-                <Route path="/agent/invest" element={<AgentComingSoon title="招商申请" />} />
-                <Route path="/agent/pool" element={<AgentComingSoon title="意向池" />} />
+                <Route path="/agent/invest" element={<AgentInvest />} />
+                <Route path="/agent/pool" element={<AgentPool />} />
                 {/* 财务中心：结算总览（复用辖区钱包） / 提现初审（占位） */}
                 <Route path="/agent/settle" element={<AgentWallet />} />
-                <Route path="/agent/withdraw-review" element={<AgentComingSoon title="提现初审" />} />
+                <Route path="/agent/withdraw-review" element={<AgentWithdrawReview />} />
 
                 {/* ===================== 服务商中心（SERVICE_PROVIDER） ===================== */}
                 <Route path="/sp/studio" element={<SPStudio />} />

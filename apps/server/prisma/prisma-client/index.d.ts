@@ -99,6 +99,11 @@ export type MessageRead = $Result.DefaultSelection<Prisma.$MessageReadPayload>
  */
 export type QualificationApplication = $Result.DefaultSelection<Prisma.$QualificationApplicationPayload>
 /**
+ * Model RecruitLead
+ * 
+ */
+export type RecruitLead = $Result.DefaultSelection<Prisma.$RecruitLeadPayload>
+/**
  * Model WalletLog
  * 
  */
@@ -609,6 +614,16 @@ export class PrismaClient<
     * ```
     */
   get qualificationApplication(): Prisma.QualificationApplicationDelegate<ExtArgs>;
+
+  /**
+   * `prisma.recruitLead`: Exposes CRUD operations for the **RecruitLead** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more RecruitLeads
+    * const recruitLeads = await prisma.recruitLead.findMany()
+    * ```
+    */
+  get recruitLead(): Prisma.RecruitLeadDelegate<ExtArgs>;
 
   /**
    * `prisma.walletLog`: Exposes CRUD operations for the **WalletLog** model.
@@ -1177,6 +1192,7 @@ export namespace Prisma {
     Review: 'Review',
     MessageRead: 'MessageRead',
     QualificationApplication: 'QualificationApplication',
+    RecruitLead: 'RecruitLead',
     WalletLog: 'WalletLog',
     Coupon: 'Coupon',
     UserCoupon: 'UserCoupon',
@@ -1203,7 +1219,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, ClientOptions = {}> = {
     meta: {
-      modelProps: "region" | "user" | "project" | "template" | "redlineWord" | "font" | "projectVersion" | "asset" | "templateOrder" | "providerWallet" | "withdrawal" | "templateAppeal" | "ticket" | "message" | "review" | "messageRead" | "qualificationApplication" | "walletLog" | "coupon" | "userCoupon" | "providerSchedule" | "providerContract" | "orgStaff" | "teamJoinApplication" | "providerClient" | "providerClientReach" | "auditLog" | "providerLicense"
+      modelProps: "region" | "user" | "project" | "template" | "redlineWord" | "font" | "projectVersion" | "asset" | "templateOrder" | "providerWallet" | "withdrawal" | "templateAppeal" | "ticket" | "message" | "review" | "messageRead" | "qualificationApplication" | "recruitLead" | "walletLog" | "coupon" | "userCoupon" | "providerSchedule" | "providerContract" | "orgStaff" | "teamJoinApplication" | "providerClient" | "providerClientReach" | "auditLog" | "providerLicense"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2397,6 +2413,76 @@ export namespace Prisma {
           }
         }
       }
+      RecruitLead: {
+        payload: Prisma.$RecruitLeadPayload<ExtArgs>
+        fields: Prisma.RecruitLeadFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.RecruitLeadFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecruitLeadPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.RecruitLeadFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecruitLeadPayload>
+          }
+          findFirst: {
+            args: Prisma.RecruitLeadFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecruitLeadPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.RecruitLeadFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecruitLeadPayload>
+          }
+          findMany: {
+            args: Prisma.RecruitLeadFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecruitLeadPayload>[]
+          }
+          create: {
+            args: Prisma.RecruitLeadCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecruitLeadPayload>
+          }
+          createMany: {
+            args: Prisma.RecruitLeadCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.RecruitLeadCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecruitLeadPayload>[]
+          }
+          delete: {
+            args: Prisma.RecruitLeadDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecruitLeadPayload>
+          }
+          update: {
+            args: Prisma.RecruitLeadUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecruitLeadPayload>
+          }
+          deleteMany: {
+            args: Prisma.RecruitLeadDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.RecruitLeadUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.RecruitLeadUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RecruitLeadPayload>
+          }
+          aggregate: {
+            args: Prisma.RecruitLeadAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateRecruitLead>
+          }
+          groupBy: {
+            args: Prisma.RecruitLeadGroupByArgs<ExtArgs>
+            result: $Utils.Optional<RecruitLeadGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.RecruitLeadCountArgs<ExtArgs>
+            result: $Utils.Optional<RecruitLeadCountAggregateOutputType> | number
+          }
+        }
+      }
       WalletLog: {
         payload: Prisma.$WalletLogPayload<ExtArgs>
         fields: Prisma.WalletLogFieldRefs
@@ -3384,6 +3470,7 @@ export namespace Prisma {
     reviewsReceived: number
     messageReads: number
     qualifications: number
+    contracts: number
     walletLogs: number
     coupons: number
     joinApplications: number
@@ -3406,6 +3493,7 @@ export namespace Prisma {
     reviewsReceived?: boolean | UserCountOutputTypeCountReviewsReceivedArgs
     messageReads?: boolean | UserCountOutputTypeCountMessageReadsArgs
     qualifications?: boolean | UserCountOutputTypeCountQualificationsArgs
+    contracts?: boolean | UserCountOutputTypeCountContractsArgs
     walletLogs?: boolean | UserCountOutputTypeCountWalletLogsArgs
     coupons?: boolean | UserCountOutputTypeCountCouponsArgs
     joinApplications?: boolean | UserCountOutputTypeCountJoinApplicationsArgs
@@ -3532,6 +3620,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountQualificationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: QualificationApplicationWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountContractsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ProviderContractWhereInput
   }
 
   /**
@@ -5194,6 +5289,7 @@ export namespace Prisma {
     reviewsReceived?: boolean | User$reviewsReceivedArgs<ExtArgs>
     messageReads?: boolean | User$messageReadsArgs<ExtArgs>
     qualifications?: boolean | User$qualificationsArgs<ExtArgs>
+    contracts?: boolean | User$contractsArgs<ExtArgs>
     walletLogs?: boolean | User$walletLogsArgs<ExtArgs>
     coupons?: boolean | User$couponsArgs<ExtArgs>
     joinApplications?: boolean | User$joinApplicationsArgs<ExtArgs>
@@ -5286,6 +5382,7 @@ export namespace Prisma {
     reviewsReceived?: boolean | User$reviewsReceivedArgs<ExtArgs>
     messageReads?: boolean | User$messageReadsArgs<ExtArgs>
     qualifications?: boolean | User$qualificationsArgs<ExtArgs>
+    contracts?: boolean | User$contractsArgs<ExtArgs>
     walletLogs?: boolean | User$walletLogsArgs<ExtArgs>
     coupons?: boolean | User$couponsArgs<ExtArgs>
     joinApplications?: boolean | User$joinApplicationsArgs<ExtArgs>
@@ -5318,6 +5415,7 @@ export namespace Prisma {
       reviewsReceived: Prisma.$ReviewPayload<ExtArgs>[]
       messageReads: Prisma.$MessageReadPayload<ExtArgs>[]
       qualifications: Prisma.$QualificationApplicationPayload<ExtArgs>[]
+      contracts: Prisma.$ProviderContractPayload<ExtArgs>[]
       walletLogs: Prisma.$WalletLogPayload<ExtArgs>[]
       coupons: Prisma.$UserCouponPayload<ExtArgs>[]
       joinApplications: Prisma.$TeamJoinApplicationPayload<ExtArgs>[]
@@ -5735,6 +5833,7 @@ export namespace Prisma {
     reviewsReceived<T extends User$reviewsReceivedArgs<ExtArgs> = {}>(args?: Subset<T, User$reviewsReceivedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReviewPayload<ExtArgs>, T, "findMany"> | Null>
     messageReads<T extends User$messageReadsArgs<ExtArgs> = {}>(args?: Subset<T, User$messageReadsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MessageReadPayload<ExtArgs>, T, "findMany"> | Null>
     qualifications<T extends User$qualificationsArgs<ExtArgs> = {}>(args?: Subset<T, User$qualificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$QualificationApplicationPayload<ExtArgs>, T, "findMany"> | Null>
+    contracts<T extends User$contractsArgs<ExtArgs> = {}>(args?: Subset<T, User$contractsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProviderContractPayload<ExtArgs>, T, "findMany"> | Null>
     walletLogs<T extends User$walletLogsArgs<ExtArgs> = {}>(args?: Subset<T, User$walletLogsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WalletLogPayload<ExtArgs>, T, "findMany"> | Null>
     coupons<T extends User$couponsArgs<ExtArgs> = {}>(args?: Subset<T, User$couponsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserCouponPayload<ExtArgs>, T, "findMany"> | Null>
     joinApplications<T extends User$joinApplicationsArgs<ExtArgs> = {}>(args?: Subset<T, User$joinApplicationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TeamJoinApplicationPayload<ExtArgs>, T, "findMany"> | Null>
@@ -6476,6 +6575,26 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: QualificationApplicationScalarFieldEnum | QualificationApplicationScalarFieldEnum[]
+  }
+
+  /**
+   * User.contracts
+   */
+  export type User$contractsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProviderContract
+     */
+    select?: ProviderContractSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProviderContractInclude<ExtArgs> | null
+    where?: ProviderContractWhereInput
+    orderBy?: ProviderContractOrderByWithRelationInput | ProviderContractOrderByWithRelationInput[]
+    cursor?: ProviderContractWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ProviderContractScalarFieldEnum | ProviderContractScalarFieldEnum[]
   }
 
   /**
@@ -14842,6 +14961,9 @@ export namespace Prisma {
     amount: number | null
     currency: string | null
     status: string | null
+    reviewStage: string | null
+    agentReviewedById: string | null
+    agentReviewedAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -14853,6 +14975,9 @@ export namespace Prisma {
     amount: number | null
     currency: string | null
     status: string | null
+    reviewStage: string | null
+    agentReviewedById: string | null
+    agentReviewedAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -14864,6 +14989,9 @@ export namespace Prisma {
     amount: number
     currency: number
     status: number
+    reviewStage: number
+    agentReviewedById: number
+    agentReviewedAt: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -14885,6 +15013,9 @@ export namespace Prisma {
     amount?: true
     currency?: true
     status?: true
+    reviewStage?: true
+    agentReviewedById?: true
+    agentReviewedAt?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -14896,6 +15027,9 @@ export namespace Prisma {
     amount?: true
     currency?: true
     status?: true
+    reviewStage?: true
+    agentReviewedById?: true
+    agentReviewedAt?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -14907,6 +15041,9 @@ export namespace Prisma {
     amount?: true
     currency?: true
     status?: true
+    reviewStage?: true
+    agentReviewedById?: true
+    agentReviewedAt?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -15005,6 +15142,9 @@ export namespace Prisma {
     amount: number
     currency: string
     status: string
+    reviewStage: string
+    agentReviewedById: string | null
+    agentReviewedAt: Date | null
     createdAt: Date
     updatedAt: Date
     _count: WithdrawalCountAggregateOutputType | null
@@ -15035,6 +15175,9 @@ export namespace Prisma {
     amount?: boolean
     currency?: boolean
     status?: boolean
+    reviewStage?: boolean
+    agentReviewedById?: boolean
+    agentReviewedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     provider?: boolean | UserDefaultArgs<ExtArgs>
@@ -15048,6 +15191,9 @@ export namespace Prisma {
     amount?: boolean
     currency?: boolean
     status?: boolean
+    reviewStage?: boolean
+    agentReviewedById?: boolean
+    agentReviewedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     provider?: boolean | UserDefaultArgs<ExtArgs>
@@ -15061,6 +15207,9 @@ export namespace Prisma {
     amount?: boolean
     currency?: boolean
     status?: boolean
+    reviewStage?: boolean
+    agentReviewedById?: boolean
+    agentReviewedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
@@ -15087,6 +15236,9 @@ export namespace Prisma {
       amount: number
       currency: string
       status: string
+      reviewStage: string
+      agentReviewedById: string | null
+      agentReviewedAt: Date | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["withdrawal"]>
@@ -15490,6 +15642,9 @@ export namespace Prisma {
     readonly amount: FieldRef<"Withdrawal", 'Int'>
     readonly currency: FieldRef<"Withdrawal", 'String'>
     readonly status: FieldRef<"Withdrawal", 'String'>
+    readonly reviewStage: FieldRef<"Withdrawal", 'String'>
+    readonly agentReviewedById: FieldRef<"Withdrawal", 'String'>
+    readonly agentReviewedAt: FieldRef<"Withdrawal", 'DateTime'>
     readonly createdAt: FieldRef<"Withdrawal", 'DateTime'>
     readonly updatedAt: FieldRef<"Withdrawal", 'DateTime'>
   }
@@ -22115,6 +22270,944 @@ export namespace Prisma {
 
 
   /**
+   * Model RecruitLead
+   */
+
+  export type AggregateRecruitLead = {
+    _count: RecruitLeadCountAggregateOutputType | null
+    _min: RecruitLeadMinAggregateOutputType | null
+    _max: RecruitLeadMaxAggregateOutputType | null
+  }
+
+  export type RecruitLeadMinAggregateOutputType = {
+    id: string | null
+    name: string | null
+    phone: string | null
+    regionPath: string | null
+    regionLabel: string | null
+    intro: string | null
+    stage: string | null
+    ownerAgentId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type RecruitLeadMaxAggregateOutputType = {
+    id: string | null
+    name: string | null
+    phone: string | null
+    regionPath: string | null
+    regionLabel: string | null
+    intro: string | null
+    stage: string | null
+    ownerAgentId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type RecruitLeadCountAggregateOutputType = {
+    id: number
+    name: number
+    phone: number
+    regionPath: number
+    regionLabel: number
+    intro: number
+    stage: number
+    ownerAgentId: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type RecruitLeadMinAggregateInputType = {
+    id?: true
+    name?: true
+    phone?: true
+    regionPath?: true
+    regionLabel?: true
+    intro?: true
+    stage?: true
+    ownerAgentId?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type RecruitLeadMaxAggregateInputType = {
+    id?: true
+    name?: true
+    phone?: true
+    regionPath?: true
+    regionLabel?: true
+    intro?: true
+    stage?: true
+    ownerAgentId?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type RecruitLeadCountAggregateInputType = {
+    id?: true
+    name?: true
+    phone?: true
+    regionPath?: true
+    regionLabel?: true
+    intro?: true
+    stage?: true
+    ownerAgentId?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type RecruitLeadAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RecruitLead to aggregate.
+     */
+    where?: RecruitLeadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RecruitLeads to fetch.
+     */
+    orderBy?: RecruitLeadOrderByWithRelationInput | RecruitLeadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: RecruitLeadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RecruitLeads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RecruitLeads.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned RecruitLeads
+    **/
+    _count?: true | RecruitLeadCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: RecruitLeadMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: RecruitLeadMaxAggregateInputType
+  }
+
+  export type GetRecruitLeadAggregateType<T extends RecruitLeadAggregateArgs> = {
+        [P in keyof T & keyof AggregateRecruitLead]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateRecruitLead[P]>
+      : GetScalarType<T[P], AggregateRecruitLead[P]>
+  }
+
+
+
+
+  export type RecruitLeadGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RecruitLeadWhereInput
+    orderBy?: RecruitLeadOrderByWithAggregationInput | RecruitLeadOrderByWithAggregationInput[]
+    by: RecruitLeadScalarFieldEnum[] | RecruitLeadScalarFieldEnum
+    having?: RecruitLeadScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: RecruitLeadCountAggregateInputType | true
+    _min?: RecruitLeadMinAggregateInputType
+    _max?: RecruitLeadMaxAggregateInputType
+  }
+
+  export type RecruitLeadGroupByOutputType = {
+    id: string
+    name: string
+    phone: string
+    regionPath: string | null
+    regionLabel: string | null
+    intro: string | null
+    stage: string
+    ownerAgentId: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: RecruitLeadCountAggregateOutputType | null
+    _min: RecruitLeadMinAggregateOutputType | null
+    _max: RecruitLeadMaxAggregateOutputType | null
+  }
+
+  type GetRecruitLeadGroupByPayload<T extends RecruitLeadGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<RecruitLeadGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof RecruitLeadGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], RecruitLeadGroupByOutputType[P]>
+            : GetScalarType<T[P], RecruitLeadGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type RecruitLeadSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    phone?: boolean
+    regionPath?: boolean
+    regionLabel?: boolean
+    intro?: boolean
+    stage?: boolean
+    ownerAgentId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["recruitLead"]>
+
+  export type RecruitLeadSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    phone?: boolean
+    regionPath?: boolean
+    regionLabel?: boolean
+    intro?: boolean
+    stage?: boolean
+    ownerAgentId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["recruitLead"]>
+
+  export type RecruitLeadSelectScalar = {
+    id?: boolean
+    name?: boolean
+    phone?: boolean
+    regionPath?: boolean
+    regionLabel?: boolean
+    intro?: boolean
+    stage?: boolean
+    ownerAgentId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+
+  export type $RecruitLeadPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "RecruitLead"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      name: string
+      phone: string
+      regionPath: string | null
+      regionLabel: string | null
+      intro: string | null
+      stage: string
+      ownerAgentId: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["recruitLead"]>
+    composites: {}
+  }
+
+  type RecruitLeadGetPayload<S extends boolean | null | undefined | RecruitLeadDefaultArgs> = $Result.GetResult<Prisma.$RecruitLeadPayload, S>
+
+  type RecruitLeadCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<RecruitLeadFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: RecruitLeadCountAggregateInputType | true
+    }
+
+  export interface RecruitLeadDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['RecruitLead'], meta: { name: 'RecruitLead' } }
+    /**
+     * Find zero or one RecruitLead that matches the filter.
+     * @param {RecruitLeadFindUniqueArgs} args - Arguments to find a RecruitLead
+     * @example
+     * // Get one RecruitLead
+     * const recruitLead = await prisma.recruitLead.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends RecruitLeadFindUniqueArgs>(args: SelectSubset<T, RecruitLeadFindUniqueArgs<ExtArgs>>): Prisma__RecruitLeadClient<$Result.GetResult<Prisma.$RecruitLeadPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one RecruitLead that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {RecruitLeadFindUniqueOrThrowArgs} args - Arguments to find a RecruitLead
+     * @example
+     * // Get one RecruitLead
+     * const recruitLead = await prisma.recruitLead.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends RecruitLeadFindUniqueOrThrowArgs>(args: SelectSubset<T, RecruitLeadFindUniqueOrThrowArgs<ExtArgs>>): Prisma__RecruitLeadClient<$Result.GetResult<Prisma.$RecruitLeadPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first RecruitLead that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecruitLeadFindFirstArgs} args - Arguments to find a RecruitLead
+     * @example
+     * // Get one RecruitLead
+     * const recruitLead = await prisma.recruitLead.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends RecruitLeadFindFirstArgs>(args?: SelectSubset<T, RecruitLeadFindFirstArgs<ExtArgs>>): Prisma__RecruitLeadClient<$Result.GetResult<Prisma.$RecruitLeadPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first RecruitLead that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecruitLeadFindFirstOrThrowArgs} args - Arguments to find a RecruitLead
+     * @example
+     * // Get one RecruitLead
+     * const recruitLead = await prisma.recruitLead.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends RecruitLeadFindFirstOrThrowArgs>(args?: SelectSubset<T, RecruitLeadFindFirstOrThrowArgs<ExtArgs>>): Prisma__RecruitLeadClient<$Result.GetResult<Prisma.$RecruitLeadPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more RecruitLeads that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecruitLeadFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all RecruitLeads
+     * const recruitLeads = await prisma.recruitLead.findMany()
+     * 
+     * // Get first 10 RecruitLeads
+     * const recruitLeads = await prisma.recruitLead.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const recruitLeadWithIdOnly = await prisma.recruitLead.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends RecruitLeadFindManyArgs>(args?: SelectSubset<T, RecruitLeadFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecruitLeadPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a RecruitLead.
+     * @param {RecruitLeadCreateArgs} args - Arguments to create a RecruitLead.
+     * @example
+     * // Create one RecruitLead
+     * const RecruitLead = await prisma.recruitLead.create({
+     *   data: {
+     *     // ... data to create a RecruitLead
+     *   }
+     * })
+     * 
+     */
+    create<T extends RecruitLeadCreateArgs>(args: SelectSubset<T, RecruitLeadCreateArgs<ExtArgs>>): Prisma__RecruitLeadClient<$Result.GetResult<Prisma.$RecruitLeadPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many RecruitLeads.
+     * @param {RecruitLeadCreateManyArgs} args - Arguments to create many RecruitLeads.
+     * @example
+     * // Create many RecruitLeads
+     * const recruitLead = await prisma.recruitLead.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends RecruitLeadCreateManyArgs>(args?: SelectSubset<T, RecruitLeadCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many RecruitLeads and returns the data saved in the database.
+     * @param {RecruitLeadCreateManyAndReturnArgs} args - Arguments to create many RecruitLeads.
+     * @example
+     * // Create many RecruitLeads
+     * const recruitLead = await prisma.recruitLead.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many RecruitLeads and only return the `id`
+     * const recruitLeadWithIdOnly = await prisma.recruitLead.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends RecruitLeadCreateManyAndReturnArgs>(args?: SelectSubset<T, RecruitLeadCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecruitLeadPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a RecruitLead.
+     * @param {RecruitLeadDeleteArgs} args - Arguments to delete one RecruitLead.
+     * @example
+     * // Delete one RecruitLead
+     * const RecruitLead = await prisma.recruitLead.delete({
+     *   where: {
+     *     // ... filter to delete one RecruitLead
+     *   }
+     * })
+     * 
+     */
+    delete<T extends RecruitLeadDeleteArgs>(args: SelectSubset<T, RecruitLeadDeleteArgs<ExtArgs>>): Prisma__RecruitLeadClient<$Result.GetResult<Prisma.$RecruitLeadPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one RecruitLead.
+     * @param {RecruitLeadUpdateArgs} args - Arguments to update one RecruitLead.
+     * @example
+     * // Update one RecruitLead
+     * const recruitLead = await prisma.recruitLead.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends RecruitLeadUpdateArgs>(args: SelectSubset<T, RecruitLeadUpdateArgs<ExtArgs>>): Prisma__RecruitLeadClient<$Result.GetResult<Prisma.$RecruitLeadPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more RecruitLeads.
+     * @param {RecruitLeadDeleteManyArgs} args - Arguments to filter RecruitLeads to delete.
+     * @example
+     * // Delete a few RecruitLeads
+     * const { count } = await prisma.recruitLead.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends RecruitLeadDeleteManyArgs>(args?: SelectSubset<T, RecruitLeadDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more RecruitLeads.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecruitLeadUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many RecruitLeads
+     * const recruitLead = await prisma.recruitLead.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends RecruitLeadUpdateManyArgs>(args: SelectSubset<T, RecruitLeadUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one RecruitLead.
+     * @param {RecruitLeadUpsertArgs} args - Arguments to update or create a RecruitLead.
+     * @example
+     * // Update or create a RecruitLead
+     * const recruitLead = await prisma.recruitLead.upsert({
+     *   create: {
+     *     // ... data to create a RecruitLead
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the RecruitLead we want to update
+     *   }
+     * })
+     */
+    upsert<T extends RecruitLeadUpsertArgs>(args: SelectSubset<T, RecruitLeadUpsertArgs<ExtArgs>>): Prisma__RecruitLeadClient<$Result.GetResult<Prisma.$RecruitLeadPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of RecruitLeads.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecruitLeadCountArgs} args - Arguments to filter RecruitLeads to count.
+     * @example
+     * // Count the number of RecruitLeads
+     * const count = await prisma.recruitLead.count({
+     *   where: {
+     *     // ... the filter for the RecruitLeads we want to count
+     *   }
+     * })
+    **/
+    count<T extends RecruitLeadCountArgs>(
+      args?: Subset<T, RecruitLeadCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], RecruitLeadCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a RecruitLead.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecruitLeadAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends RecruitLeadAggregateArgs>(args: Subset<T, RecruitLeadAggregateArgs>): Prisma.PrismaPromise<GetRecruitLeadAggregateType<T>>
+
+    /**
+     * Group by RecruitLead.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RecruitLeadGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends RecruitLeadGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: RecruitLeadGroupByArgs['orderBy'] }
+        : { orderBy?: RecruitLeadGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, RecruitLeadGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetRecruitLeadGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the RecruitLead model
+   */
+  readonly fields: RecruitLeadFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for RecruitLead.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__RecruitLeadClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the RecruitLead model
+   */ 
+  interface RecruitLeadFieldRefs {
+    readonly id: FieldRef<"RecruitLead", 'String'>
+    readonly name: FieldRef<"RecruitLead", 'String'>
+    readonly phone: FieldRef<"RecruitLead", 'String'>
+    readonly regionPath: FieldRef<"RecruitLead", 'String'>
+    readonly regionLabel: FieldRef<"RecruitLead", 'String'>
+    readonly intro: FieldRef<"RecruitLead", 'String'>
+    readonly stage: FieldRef<"RecruitLead", 'String'>
+    readonly ownerAgentId: FieldRef<"RecruitLead", 'String'>
+    readonly createdAt: FieldRef<"RecruitLead", 'DateTime'>
+    readonly updatedAt: FieldRef<"RecruitLead", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * RecruitLead findUnique
+   */
+  export type RecruitLeadFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecruitLead
+     */
+    select?: RecruitLeadSelect<ExtArgs> | null
+    /**
+     * Filter, which RecruitLead to fetch.
+     */
+    where: RecruitLeadWhereUniqueInput
+  }
+
+  /**
+   * RecruitLead findUniqueOrThrow
+   */
+  export type RecruitLeadFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecruitLead
+     */
+    select?: RecruitLeadSelect<ExtArgs> | null
+    /**
+     * Filter, which RecruitLead to fetch.
+     */
+    where: RecruitLeadWhereUniqueInput
+  }
+
+  /**
+   * RecruitLead findFirst
+   */
+  export type RecruitLeadFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecruitLead
+     */
+    select?: RecruitLeadSelect<ExtArgs> | null
+    /**
+     * Filter, which RecruitLead to fetch.
+     */
+    where?: RecruitLeadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RecruitLeads to fetch.
+     */
+    orderBy?: RecruitLeadOrderByWithRelationInput | RecruitLeadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RecruitLeads.
+     */
+    cursor?: RecruitLeadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RecruitLeads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RecruitLeads.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RecruitLeads.
+     */
+    distinct?: RecruitLeadScalarFieldEnum | RecruitLeadScalarFieldEnum[]
+  }
+
+  /**
+   * RecruitLead findFirstOrThrow
+   */
+  export type RecruitLeadFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecruitLead
+     */
+    select?: RecruitLeadSelect<ExtArgs> | null
+    /**
+     * Filter, which RecruitLead to fetch.
+     */
+    where?: RecruitLeadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RecruitLeads to fetch.
+     */
+    orderBy?: RecruitLeadOrderByWithRelationInput | RecruitLeadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RecruitLeads.
+     */
+    cursor?: RecruitLeadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RecruitLeads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RecruitLeads.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RecruitLeads.
+     */
+    distinct?: RecruitLeadScalarFieldEnum | RecruitLeadScalarFieldEnum[]
+  }
+
+  /**
+   * RecruitLead findMany
+   */
+  export type RecruitLeadFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecruitLead
+     */
+    select?: RecruitLeadSelect<ExtArgs> | null
+    /**
+     * Filter, which RecruitLeads to fetch.
+     */
+    where?: RecruitLeadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RecruitLeads to fetch.
+     */
+    orderBy?: RecruitLeadOrderByWithRelationInput | RecruitLeadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing RecruitLeads.
+     */
+    cursor?: RecruitLeadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RecruitLeads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RecruitLeads.
+     */
+    skip?: number
+    distinct?: RecruitLeadScalarFieldEnum | RecruitLeadScalarFieldEnum[]
+  }
+
+  /**
+   * RecruitLead create
+   */
+  export type RecruitLeadCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecruitLead
+     */
+    select?: RecruitLeadSelect<ExtArgs> | null
+    /**
+     * The data needed to create a RecruitLead.
+     */
+    data: XOR<RecruitLeadCreateInput, RecruitLeadUncheckedCreateInput>
+  }
+
+  /**
+   * RecruitLead createMany
+   */
+  export type RecruitLeadCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many RecruitLeads.
+     */
+    data: RecruitLeadCreateManyInput | RecruitLeadCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * RecruitLead createManyAndReturn
+   */
+  export type RecruitLeadCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecruitLead
+     */
+    select?: RecruitLeadSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many RecruitLeads.
+     */
+    data: RecruitLeadCreateManyInput | RecruitLeadCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * RecruitLead update
+   */
+  export type RecruitLeadUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecruitLead
+     */
+    select?: RecruitLeadSelect<ExtArgs> | null
+    /**
+     * The data needed to update a RecruitLead.
+     */
+    data: XOR<RecruitLeadUpdateInput, RecruitLeadUncheckedUpdateInput>
+    /**
+     * Choose, which RecruitLead to update.
+     */
+    where: RecruitLeadWhereUniqueInput
+  }
+
+  /**
+   * RecruitLead updateMany
+   */
+  export type RecruitLeadUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update RecruitLeads.
+     */
+    data: XOR<RecruitLeadUpdateManyMutationInput, RecruitLeadUncheckedUpdateManyInput>
+    /**
+     * Filter which RecruitLeads to update
+     */
+    where?: RecruitLeadWhereInput
+  }
+
+  /**
+   * RecruitLead upsert
+   */
+  export type RecruitLeadUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecruitLead
+     */
+    select?: RecruitLeadSelect<ExtArgs> | null
+    /**
+     * The filter to search for the RecruitLead to update in case it exists.
+     */
+    where: RecruitLeadWhereUniqueInput
+    /**
+     * In case the RecruitLead found by the `where` argument doesn't exist, create a new RecruitLead with this data.
+     */
+    create: XOR<RecruitLeadCreateInput, RecruitLeadUncheckedCreateInput>
+    /**
+     * In case the RecruitLead was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<RecruitLeadUpdateInput, RecruitLeadUncheckedUpdateInput>
+  }
+
+  /**
+   * RecruitLead delete
+   */
+  export type RecruitLeadDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecruitLead
+     */
+    select?: RecruitLeadSelect<ExtArgs> | null
+    /**
+     * Filter which RecruitLead to delete.
+     */
+    where: RecruitLeadWhereUniqueInput
+  }
+
+  /**
+   * RecruitLead deleteMany
+   */
+  export type RecruitLeadDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RecruitLeads to delete
+     */
+    where?: RecruitLeadWhereInput
+  }
+
+  /**
+   * RecruitLead without action
+   */
+  export type RecruitLeadDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RecruitLead
+     */
+    select?: RecruitLeadSelect<ExtArgs> | null
+  }
+
+
+  /**
    * Model WalletLog
    */
 
@@ -26398,6 +27491,7 @@ export namespace Prisma {
     attachments?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    provider?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["providerContract"]>
 
   export type ProviderContractSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -26421,6 +27515,7 @@ export namespace Prisma {
     attachments?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    provider?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["providerContract"]>
 
   export type ProviderContractSelectScalar = {
@@ -26446,10 +27541,18 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
+  export type ProviderContractInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    provider?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type ProviderContractIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    provider?: boolean | UserDefaultArgs<ExtArgs>
+  }
 
   export type $ProviderContractPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "ProviderContract"
-    objects: {}
+    objects: {
+      provider: Prisma.$UserPayload<ExtArgs>
+    }
     scalars: $Extensions.GetPayloadResult<{
       id: string
       providerId: string
@@ -26835,6 +27938,7 @@ export namespace Prisma {
    */
   export interface Prisma__ProviderContractClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    provider<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -26897,6 +28001,10 @@ export namespace Prisma {
      */
     select?: ProviderContractSelect<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProviderContractInclude<ExtArgs> | null
+    /**
      * Filter, which ProviderContract to fetch.
      */
     where: ProviderContractWhereUniqueInput
@@ -26911,6 +28019,10 @@ export namespace Prisma {
      */
     select?: ProviderContractSelect<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProviderContractInclude<ExtArgs> | null
+    /**
      * Filter, which ProviderContract to fetch.
      */
     where: ProviderContractWhereUniqueInput
@@ -26924,6 +28036,10 @@ export namespace Prisma {
      * Select specific fields to fetch from the ProviderContract
      */
     select?: ProviderContractSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProviderContractInclude<ExtArgs> | null
     /**
      * Filter, which ProviderContract to fetch.
      */
@@ -26969,6 +28085,10 @@ export namespace Prisma {
      */
     select?: ProviderContractSelect<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProviderContractInclude<ExtArgs> | null
+    /**
      * Filter, which ProviderContract to fetch.
      */
     where?: ProviderContractWhereInput
@@ -27013,6 +28133,10 @@ export namespace Prisma {
      */
     select?: ProviderContractSelect<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProviderContractInclude<ExtArgs> | null
+    /**
      * Filter, which ProviderContracts to fetch.
      */
     where?: ProviderContractWhereInput
@@ -27052,6 +28176,10 @@ export namespace Prisma {
      */
     select?: ProviderContractSelect<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProviderContractInclude<ExtArgs> | null
+    /**
      * The data needed to create a ProviderContract.
      */
     data: XOR<ProviderContractCreateInput, ProviderContractUncheckedCreateInput>
@@ -27081,6 +28209,10 @@ export namespace Prisma {
      */
     data: ProviderContractCreateManyInput | ProviderContractCreateManyInput[]
     skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProviderContractIncludeCreateManyAndReturn<ExtArgs> | null
   }
 
   /**
@@ -27091,6 +28223,10 @@ export namespace Prisma {
      * Select specific fields to fetch from the ProviderContract
      */
     select?: ProviderContractSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProviderContractInclude<ExtArgs> | null
     /**
      * The data needed to update a ProviderContract.
      */
@@ -27124,6 +28260,10 @@ export namespace Prisma {
      */
     select?: ProviderContractSelect<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProviderContractInclude<ExtArgs> | null
+    /**
      * The filter to search for the ProviderContract to update in case it exists.
      */
     where: ProviderContractWhereUniqueInput
@@ -27145,6 +28285,10 @@ export namespace Prisma {
      * Select specific fields to fetch from the ProviderContract
      */
     select?: ProviderContractSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProviderContractInclude<ExtArgs> | null
     /**
      * Filter which ProviderContract to delete.
      */
@@ -27169,6 +28313,10 @@ export namespace Prisma {
      * Select specific fields to fetch from the ProviderContract
      */
     select?: ProviderContractSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProviderContractInclude<ExtArgs> | null
   }
 
 
@@ -33347,6 +34495,9 @@ export namespace Prisma {
     amount: 'amount',
     currency: 'currency',
     status: 'status',
+    reviewStage: 'reviewStage',
+    agentReviewedById: 'agentReviewedById',
+    agentReviewedAt: 'agentReviewedAt',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -33463,6 +34614,22 @@ export namespace Prisma {
   };
 
   export type QualificationApplicationScalarFieldEnum = (typeof QualificationApplicationScalarFieldEnum)[keyof typeof QualificationApplicationScalarFieldEnum]
+
+
+  export const RecruitLeadScalarFieldEnum: {
+    id: 'id',
+    name: 'name',
+    phone: 'phone',
+    regionPath: 'regionPath',
+    regionLabel: 'regionLabel',
+    intro: 'intro',
+    stage: 'stage',
+    ownerAgentId: 'ownerAgentId',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type RecruitLeadScalarFieldEnum = (typeof RecruitLeadScalarFieldEnum)[keyof typeof RecruitLeadScalarFieldEnum]
 
 
   export const WalletLogScalarFieldEnum: {
@@ -34068,6 +35235,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewListRelationFilter
     messageReads?: MessageReadListRelationFilter
     qualifications?: QualificationApplicationListRelationFilter
+    contracts?: ProviderContractListRelationFilter
     walletLogs?: WalletLogListRelationFilter
     coupons?: UserCouponListRelationFilter
     joinApplications?: TeamJoinApplicationListRelationFilter
@@ -34122,6 +35290,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewOrderByRelationAggregateInput
     messageReads?: MessageReadOrderByRelationAggregateInput
     qualifications?: QualificationApplicationOrderByRelationAggregateInput
+    contracts?: ProviderContractOrderByRelationAggregateInput
     walletLogs?: WalletLogOrderByRelationAggregateInput
     coupons?: UserCouponOrderByRelationAggregateInput
     joinApplications?: TeamJoinApplicationOrderByRelationAggregateInput
@@ -34179,6 +35348,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewListRelationFilter
     messageReads?: MessageReadListRelationFilter
     qualifications?: QualificationApplicationListRelationFilter
+    contracts?: ProviderContractListRelationFilter
     walletLogs?: WalletLogListRelationFilter
     coupons?: UserCouponListRelationFilter
     joinApplications?: TeamJoinApplicationListRelationFilter
@@ -34953,6 +36123,9 @@ export namespace Prisma {
     amount?: IntFilter<"Withdrawal"> | number
     currency?: StringFilter<"Withdrawal"> | string
     status?: StringFilter<"Withdrawal"> | string
+    reviewStage?: StringFilter<"Withdrawal"> | string
+    agentReviewedById?: StringNullableFilter<"Withdrawal"> | string | null
+    agentReviewedAt?: DateTimeNullableFilter<"Withdrawal"> | Date | string | null
     createdAt?: DateTimeFilter<"Withdrawal"> | Date | string
     updatedAt?: DateTimeFilter<"Withdrawal"> | Date | string
     provider?: XOR<UserRelationFilter, UserWhereInput>
@@ -34966,6 +36139,9 @@ export namespace Prisma {
     amount?: SortOrder
     currency?: SortOrder
     status?: SortOrder
+    reviewStage?: SortOrder
+    agentReviewedById?: SortOrderInput | SortOrder
+    agentReviewedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     provider?: UserOrderByWithRelationInput
@@ -34982,6 +36158,9 @@ export namespace Prisma {
     amount?: IntFilter<"Withdrawal"> | number
     currency?: StringFilter<"Withdrawal"> | string
     status?: StringFilter<"Withdrawal"> | string
+    reviewStage?: StringFilter<"Withdrawal"> | string
+    agentReviewedById?: StringNullableFilter<"Withdrawal"> | string | null
+    agentReviewedAt?: DateTimeNullableFilter<"Withdrawal"> | Date | string | null
     createdAt?: DateTimeFilter<"Withdrawal"> | Date | string
     updatedAt?: DateTimeFilter<"Withdrawal"> | Date | string
     provider?: XOR<UserRelationFilter, UserWhereInput>
@@ -34995,6 +36174,9 @@ export namespace Prisma {
     amount?: SortOrder
     currency?: SortOrder
     status?: SortOrder
+    reviewStage?: SortOrder
+    agentReviewedById?: SortOrderInput | SortOrder
+    agentReviewedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: WithdrawalCountOrderByAggregateInput
@@ -35014,6 +36196,9 @@ export namespace Prisma {
     amount?: IntWithAggregatesFilter<"Withdrawal"> | number
     currency?: StringWithAggregatesFilter<"Withdrawal"> | string
     status?: StringWithAggregatesFilter<"Withdrawal"> | string
+    reviewStage?: StringWithAggregatesFilter<"Withdrawal"> | string
+    agentReviewedById?: StringNullableWithAggregatesFilter<"Withdrawal"> | string | null
+    agentReviewedAt?: DateTimeNullableWithAggregatesFilter<"Withdrawal"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Withdrawal"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Withdrawal"> | Date | string
   }
@@ -35597,6 +36782,83 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"QualificationApplication"> | Date | string
   }
 
+  export type RecruitLeadWhereInput = {
+    AND?: RecruitLeadWhereInput | RecruitLeadWhereInput[]
+    OR?: RecruitLeadWhereInput[]
+    NOT?: RecruitLeadWhereInput | RecruitLeadWhereInput[]
+    id?: StringFilter<"RecruitLead"> | string
+    name?: StringFilter<"RecruitLead"> | string
+    phone?: StringFilter<"RecruitLead"> | string
+    regionPath?: StringNullableFilter<"RecruitLead"> | string | null
+    regionLabel?: StringNullableFilter<"RecruitLead"> | string | null
+    intro?: StringNullableFilter<"RecruitLead"> | string | null
+    stage?: StringFilter<"RecruitLead"> | string
+    ownerAgentId?: StringNullableFilter<"RecruitLead"> | string | null
+    createdAt?: DateTimeFilter<"RecruitLead"> | Date | string
+    updatedAt?: DateTimeFilter<"RecruitLead"> | Date | string
+  }
+
+  export type RecruitLeadOrderByWithRelationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    phone?: SortOrder
+    regionPath?: SortOrderInput | SortOrder
+    regionLabel?: SortOrderInput | SortOrder
+    intro?: SortOrderInput | SortOrder
+    stage?: SortOrder
+    ownerAgentId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type RecruitLeadWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: RecruitLeadWhereInput | RecruitLeadWhereInput[]
+    OR?: RecruitLeadWhereInput[]
+    NOT?: RecruitLeadWhereInput | RecruitLeadWhereInput[]
+    name?: StringFilter<"RecruitLead"> | string
+    phone?: StringFilter<"RecruitLead"> | string
+    regionPath?: StringNullableFilter<"RecruitLead"> | string | null
+    regionLabel?: StringNullableFilter<"RecruitLead"> | string | null
+    intro?: StringNullableFilter<"RecruitLead"> | string | null
+    stage?: StringFilter<"RecruitLead"> | string
+    ownerAgentId?: StringNullableFilter<"RecruitLead"> | string | null
+    createdAt?: DateTimeFilter<"RecruitLead"> | Date | string
+    updatedAt?: DateTimeFilter<"RecruitLead"> | Date | string
+  }, "id">
+
+  export type RecruitLeadOrderByWithAggregationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    phone?: SortOrder
+    regionPath?: SortOrderInput | SortOrder
+    regionLabel?: SortOrderInput | SortOrder
+    intro?: SortOrderInput | SortOrder
+    stage?: SortOrder
+    ownerAgentId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: RecruitLeadCountOrderByAggregateInput
+    _max?: RecruitLeadMaxOrderByAggregateInput
+    _min?: RecruitLeadMinOrderByAggregateInput
+  }
+
+  export type RecruitLeadScalarWhereWithAggregatesInput = {
+    AND?: RecruitLeadScalarWhereWithAggregatesInput | RecruitLeadScalarWhereWithAggregatesInput[]
+    OR?: RecruitLeadScalarWhereWithAggregatesInput[]
+    NOT?: RecruitLeadScalarWhereWithAggregatesInput | RecruitLeadScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"RecruitLead"> | string
+    name?: StringWithAggregatesFilter<"RecruitLead"> | string
+    phone?: StringWithAggregatesFilter<"RecruitLead"> | string
+    regionPath?: StringNullableWithAggregatesFilter<"RecruitLead"> | string | null
+    regionLabel?: StringNullableWithAggregatesFilter<"RecruitLead"> | string | null
+    intro?: StringNullableWithAggregatesFilter<"RecruitLead"> | string | null
+    stage?: StringWithAggregatesFilter<"RecruitLead"> | string
+    ownerAgentId?: StringNullableWithAggregatesFilter<"RecruitLead"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"RecruitLead"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"RecruitLead"> | Date | string
+  }
+
   export type WalletLogWhereInput = {
     AND?: WalletLogWhereInput | WalletLogWhereInput[]
     OR?: WalletLogWhereInput[]
@@ -35926,6 +37188,7 @@ export namespace Prisma {
     attachments?: StringNullableListFilter<"ProviderContract">
     createdAt?: DateTimeFilter<"ProviderContract"> | Date | string
     updatedAt?: DateTimeFilter<"ProviderContract"> | Date | string
+    provider?: XOR<UserRelationFilter, UserWhereInput>
   }
 
   export type ProviderContractOrderByWithRelationInput = {
@@ -35949,6 +37212,7 @@ export namespace Prisma {
     attachments?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    provider?: UserOrderByWithRelationInput
   }
 
   export type ProviderContractWhereUniqueInput = Prisma.AtLeast<{
@@ -35975,6 +37239,7 @@ export namespace Prisma {
     attachments?: StringNullableListFilter<"ProviderContract">
     createdAt?: DateTimeFilter<"ProviderContract"> | Date | string
     updatedAt?: DateTimeFilter<"ProviderContract"> | Date | string
+    provider?: XOR<UserRelationFilter, UserWhereInput>
   }, "id" | "contractNo">
 
   export type ProviderContractOrderByWithAggregationInput = {
@@ -36723,6 +37988,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -36775,6 +38041,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -36827,6 +38094,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -36879,6 +38147,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -37751,6 +39020,9 @@ export namespace Prisma {
     amount: number
     currency?: string
     status?: string
+    reviewStage?: string
+    agentReviewedById?: string | null
+    agentReviewedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     provider: UserCreateNestedOneWithoutWithdrawalsInput
@@ -37764,6 +39036,9 @@ export namespace Prisma {
     amount: number
     currency?: string
     status?: string
+    reviewStage?: string
+    agentReviewedById?: string | null
+    agentReviewedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -37773,6 +39048,9 @@ export namespace Prisma {
     amount?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    reviewStage?: StringFieldUpdateOperationsInput | string
+    agentReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    agentReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     provider?: UserUpdateOneRequiredWithoutWithdrawalsNestedInput
@@ -37786,6 +39064,9 @@ export namespace Prisma {
     amount?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    reviewStage?: StringFieldUpdateOperationsInput | string
+    agentReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    agentReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -37797,6 +39078,9 @@ export namespace Prisma {
     amount: number
     currency?: string
     status?: string
+    reviewStage?: string
+    agentReviewedById?: string | null
+    agentReviewedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -37806,6 +39090,9 @@ export namespace Prisma {
     amount?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    reviewStage?: StringFieldUpdateOperationsInput | string
+    agentReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    agentReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -37817,6 +39104,9 @@ export namespace Prisma {
     amount?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    reviewStage?: StringFieldUpdateOperationsInput | string
+    agentReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    agentReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -38464,6 +39754,97 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type RecruitLeadCreateInput = {
+    id?: string
+    name: string
+    phone: string
+    regionPath?: string | null
+    regionLabel?: string | null
+    intro?: string | null
+    stage?: string
+    ownerAgentId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type RecruitLeadUncheckedCreateInput = {
+    id?: string
+    name: string
+    phone: string
+    regionPath?: string | null
+    regionLabel?: string | null
+    intro?: string | null
+    stage?: string
+    ownerAgentId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type RecruitLeadUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    regionLabel?: NullableStringFieldUpdateOperationsInput | string | null
+    intro?: NullableStringFieldUpdateOperationsInput | string | null
+    stage?: StringFieldUpdateOperationsInput | string
+    ownerAgentId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RecruitLeadUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    regionLabel?: NullableStringFieldUpdateOperationsInput | string | null
+    intro?: NullableStringFieldUpdateOperationsInput | string | null
+    stage?: StringFieldUpdateOperationsInput | string
+    ownerAgentId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RecruitLeadCreateManyInput = {
+    id?: string
+    name: string
+    phone: string
+    regionPath?: string | null
+    regionLabel?: string | null
+    intro?: string | null
+    stage?: string
+    ownerAgentId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type RecruitLeadUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    regionLabel?: NullableStringFieldUpdateOperationsInput | string | null
+    intro?: NullableStringFieldUpdateOperationsInput | string | null
+    stage?: StringFieldUpdateOperationsInput | string
+    ownerAgentId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RecruitLeadUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    phone?: StringFieldUpdateOperationsInput | string
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    regionLabel?: NullableStringFieldUpdateOperationsInput | string | null
+    intro?: NullableStringFieldUpdateOperationsInput | string | null
+    stage?: StringFieldUpdateOperationsInput | string
+    ownerAgentId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type WalletLogCreateInput = {
     id?: string
     type: string
@@ -38803,7 +40184,6 @@ export namespace Prisma {
 
   export type ProviderContractCreateInput = {
     id?: string
-    providerId: string
     contractNo: string
     type?: string
     name: string
@@ -38822,6 +40202,7 @@ export namespace Prisma {
     attachments?: ProviderContractCreateattachmentsInput | string[]
     createdAt?: Date | string
     updatedAt?: Date | string
+    provider: UserCreateNestedOneWithoutContractsInput
   }
 
   export type ProviderContractUncheckedCreateInput = {
@@ -38849,7 +40230,6 @@ export namespace Prisma {
 
   export type ProviderContractUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    providerId?: StringFieldUpdateOperationsInput | string
     contractNo?: StringFieldUpdateOperationsInput | string
     type?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
@@ -38868,6 +40248,7 @@ export namespace Prisma {
     attachments?: ProviderContractUpdateattachmentsInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    provider?: UserUpdateOneRequiredWithoutContractsNestedInput
   }
 
   export type ProviderContractUncheckedUpdateInput = {
@@ -38918,7 +40299,6 @@ export namespace Prisma {
 
   export type ProviderContractUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
-    providerId?: StringFieldUpdateOperationsInput | string
     contractNo?: StringFieldUpdateOperationsInput | string
     type?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
@@ -39946,6 +41326,12 @@ export namespace Prisma {
     none?: QualificationApplicationWhereInput
   }
 
+  export type ProviderContractListRelationFilter = {
+    every?: ProviderContractWhereInput
+    some?: ProviderContractWhereInput
+    none?: ProviderContractWhereInput
+  }
+
   export type WalletLogListRelationFilter = {
     every?: WalletLogWhereInput
     some?: WalletLogWhereInput
@@ -40005,6 +41391,10 @@ export namespace Prisma {
   }
 
   export type QualificationApplicationOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type ProviderContractOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -40773,6 +42163,9 @@ export namespace Prisma {
     amount?: SortOrder
     currency?: SortOrder
     status?: SortOrder
+    reviewStage?: SortOrder
+    agentReviewedById?: SortOrder
+    agentReviewedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -40788,6 +42181,9 @@ export namespace Prisma {
     amount?: SortOrder
     currency?: SortOrder
     status?: SortOrder
+    reviewStage?: SortOrder
+    agentReviewedById?: SortOrder
+    agentReviewedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -40799,6 +42195,9 @@ export namespace Prisma {
     amount?: SortOrder
     currency?: SortOrder
     status?: SortOrder
+    reviewStage?: SortOrder
+    agentReviewedById?: SortOrder
+    agentReviewedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -41254,6 +42653,45 @@ export namespace Prisma {
     certExpire?: SortOrder
     certLongTerm?: SortOrder
     issuer?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type RecruitLeadCountOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    phone?: SortOrder
+    regionPath?: SortOrder
+    regionLabel?: SortOrder
+    intro?: SortOrder
+    stage?: SortOrder
+    ownerAgentId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type RecruitLeadMaxOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    phone?: SortOrder
+    regionPath?: SortOrder
+    regionLabel?: SortOrder
+    intro?: SortOrder
+    stage?: SortOrder
+    ownerAgentId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type RecruitLeadMinOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    phone?: SortOrder
+    regionPath?: SortOrder
+    regionLabel?: SortOrder
+    intro?: SortOrder
+    stage?: SortOrder
+    ownerAgentId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -42068,6 +43506,13 @@ export namespace Prisma {
     connect?: QualificationApplicationWhereUniqueInput | QualificationApplicationWhereUniqueInput[]
   }
 
+  export type ProviderContractCreateNestedManyWithoutProviderInput = {
+    create?: XOR<ProviderContractCreateWithoutProviderInput, ProviderContractUncheckedCreateWithoutProviderInput> | ProviderContractCreateWithoutProviderInput[] | ProviderContractUncheckedCreateWithoutProviderInput[]
+    connectOrCreate?: ProviderContractCreateOrConnectWithoutProviderInput | ProviderContractCreateOrConnectWithoutProviderInput[]
+    createMany?: ProviderContractCreateManyProviderInputEnvelope
+    connect?: ProviderContractWhereUniqueInput | ProviderContractWhereUniqueInput[]
+  }
+
   export type WalletLogCreateNestedManyWithoutUserInput = {
     create?: XOR<WalletLogCreateWithoutUserInput, WalletLogUncheckedCreateWithoutUserInput> | WalletLogCreateWithoutUserInput[] | WalletLogUncheckedCreateWithoutUserInput[]
     connectOrCreate?: WalletLogCreateOrConnectWithoutUserInput | WalletLogCreateOrConnectWithoutUserInput[]
@@ -42205,6 +43650,13 @@ export namespace Prisma {
     connectOrCreate?: QualificationApplicationCreateOrConnectWithoutUserInput | QualificationApplicationCreateOrConnectWithoutUserInput[]
     createMany?: QualificationApplicationCreateManyUserInputEnvelope
     connect?: QualificationApplicationWhereUniqueInput | QualificationApplicationWhereUniqueInput[]
+  }
+
+  export type ProviderContractUncheckedCreateNestedManyWithoutProviderInput = {
+    create?: XOR<ProviderContractCreateWithoutProviderInput, ProviderContractUncheckedCreateWithoutProviderInput> | ProviderContractCreateWithoutProviderInput[] | ProviderContractUncheckedCreateWithoutProviderInput[]
+    connectOrCreate?: ProviderContractCreateOrConnectWithoutProviderInput | ProviderContractCreateOrConnectWithoutProviderInput[]
+    createMany?: ProviderContractCreateManyProviderInputEnvelope
+    connect?: ProviderContractWhereUniqueInput | ProviderContractWhereUniqueInput[]
   }
 
   export type WalletLogUncheckedCreateNestedManyWithoutUserInput = {
@@ -42516,6 +43968,20 @@ export namespace Prisma {
     deleteMany?: QualificationApplicationScalarWhereInput | QualificationApplicationScalarWhereInput[]
   }
 
+  export type ProviderContractUpdateManyWithoutProviderNestedInput = {
+    create?: XOR<ProviderContractCreateWithoutProviderInput, ProviderContractUncheckedCreateWithoutProviderInput> | ProviderContractCreateWithoutProviderInput[] | ProviderContractUncheckedCreateWithoutProviderInput[]
+    connectOrCreate?: ProviderContractCreateOrConnectWithoutProviderInput | ProviderContractCreateOrConnectWithoutProviderInput[]
+    upsert?: ProviderContractUpsertWithWhereUniqueWithoutProviderInput | ProviderContractUpsertWithWhereUniqueWithoutProviderInput[]
+    createMany?: ProviderContractCreateManyProviderInputEnvelope
+    set?: ProviderContractWhereUniqueInput | ProviderContractWhereUniqueInput[]
+    disconnect?: ProviderContractWhereUniqueInput | ProviderContractWhereUniqueInput[]
+    delete?: ProviderContractWhereUniqueInput | ProviderContractWhereUniqueInput[]
+    connect?: ProviderContractWhereUniqueInput | ProviderContractWhereUniqueInput[]
+    update?: ProviderContractUpdateWithWhereUniqueWithoutProviderInput | ProviderContractUpdateWithWhereUniqueWithoutProviderInput[]
+    updateMany?: ProviderContractUpdateManyWithWhereWithoutProviderInput | ProviderContractUpdateManyWithWhereWithoutProviderInput[]
+    deleteMany?: ProviderContractScalarWhereInput | ProviderContractScalarWhereInput[]
+  }
+
   export type WalletLogUpdateManyWithoutUserNestedInput = {
     create?: XOR<WalletLogCreateWithoutUserInput, WalletLogUncheckedCreateWithoutUserInput> | WalletLogCreateWithoutUserInput[] | WalletLogUncheckedCreateWithoutUserInput[]
     connectOrCreate?: WalletLogCreateOrConnectWithoutUserInput | WalletLogCreateOrConnectWithoutUserInput[]
@@ -42790,6 +44256,20 @@ export namespace Prisma {
     update?: QualificationApplicationUpdateWithWhereUniqueWithoutUserInput | QualificationApplicationUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: QualificationApplicationUpdateManyWithWhereWithoutUserInput | QualificationApplicationUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: QualificationApplicationScalarWhereInput | QualificationApplicationScalarWhereInput[]
+  }
+
+  export type ProviderContractUncheckedUpdateManyWithoutProviderNestedInput = {
+    create?: XOR<ProviderContractCreateWithoutProviderInput, ProviderContractUncheckedCreateWithoutProviderInput> | ProviderContractCreateWithoutProviderInput[] | ProviderContractUncheckedCreateWithoutProviderInput[]
+    connectOrCreate?: ProviderContractCreateOrConnectWithoutProviderInput | ProviderContractCreateOrConnectWithoutProviderInput[]
+    upsert?: ProviderContractUpsertWithWhereUniqueWithoutProviderInput | ProviderContractUpsertWithWhereUniqueWithoutProviderInput[]
+    createMany?: ProviderContractCreateManyProviderInputEnvelope
+    set?: ProviderContractWhereUniqueInput | ProviderContractWhereUniqueInput[]
+    disconnect?: ProviderContractWhereUniqueInput | ProviderContractWhereUniqueInput[]
+    delete?: ProviderContractWhereUniqueInput | ProviderContractWhereUniqueInput[]
+    connect?: ProviderContractWhereUniqueInput | ProviderContractWhereUniqueInput[]
+    update?: ProviderContractUpdateWithWhereUniqueWithoutProviderInput | ProviderContractUpdateWithWhereUniqueWithoutProviderInput[]
+    updateMany?: ProviderContractUpdateManyWithWhereWithoutProviderInput | ProviderContractUpdateManyWithWhereWithoutProviderInput[]
+    deleteMany?: ProviderContractScalarWhereInput | ProviderContractScalarWhereInput[]
   }
 
   export type WalletLogUncheckedUpdateManyWithoutUserNestedInput = {
@@ -43590,6 +45070,12 @@ export namespace Prisma {
     set: string[]
   }
 
+  export type UserCreateNestedOneWithoutContractsInput = {
+    create?: XOR<UserCreateWithoutContractsInput, UserUncheckedCreateWithoutContractsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutContractsInput
+    connect?: UserWhereUniqueInput
+  }
+
   export type ProviderContractUpdatenegotiationInput = {
     set?: string[]
     push?: string | string[]
@@ -43598,6 +45084,14 @@ export namespace Prisma {
   export type ProviderContractUpdateattachmentsInput = {
     set?: string[]
     push?: string | string[]
+  }
+
+  export type UserUpdateOneRequiredWithoutContractsNestedInput = {
+    create?: XOR<UserCreateWithoutContractsInput, UserUncheckedCreateWithoutContractsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutContractsInput
+    upsert?: UserUpsertWithoutContractsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutContractsInput, UserUpdateWithoutContractsInput>, UserUncheckedUpdateWithoutContractsInput>
   }
 
   export type OrgStaffCreatedutiesInput = {
@@ -44224,6 +45718,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -44275,6 +45770,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -44614,6 +46110,9 @@ export namespace Prisma {
     amount: number
     currency?: string
     status?: string
+    reviewStage?: string
+    agentReviewedById?: string | null
+    agentReviewedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     wallet: ProviderWalletCreateNestedOneWithoutWithdrawalsInput
@@ -44625,6 +46124,9 @@ export namespace Prisma {
     amount: number
     currency?: string
     status?: string
+    reviewStage?: string
+    agentReviewedById?: string | null
+    agentReviewedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -44744,6 +46246,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -44795,6 +46298,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -44851,6 +46355,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -44902,6 +46407,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -45295,6 +46801,60 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type ProviderContractCreateWithoutProviderInput = {
+    id?: string
+    contractNo: string
+    type?: string
+    name: string
+    partyA: string
+    serviceType: string
+    businessMode?: string
+    region?: string | null
+    exclusive?: boolean
+    platformRate?: number
+    deposit?: number
+    settlePeriod?: string
+    signStage?: string
+    signDate?: Date | string | null
+    expireDate?: Date | string | null
+    negotiation?: ProviderContractCreatenegotiationInput | string[]
+    attachments?: ProviderContractCreateattachmentsInput | string[]
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ProviderContractUncheckedCreateWithoutProviderInput = {
+    id?: string
+    contractNo: string
+    type?: string
+    name: string
+    partyA: string
+    serviceType: string
+    businessMode?: string
+    region?: string | null
+    exclusive?: boolean
+    platformRate?: number
+    deposit?: number
+    settlePeriod?: string
+    signStage?: string
+    signDate?: Date | string | null
+    expireDate?: Date | string | null
+    negotiation?: ProviderContractCreatenegotiationInput | string[]
+    attachments?: ProviderContractCreateattachmentsInput | string[]
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ProviderContractCreateOrConnectWithoutProviderInput = {
+    where: ProviderContractWhereUniqueInput
+    create: XOR<ProviderContractCreateWithoutProviderInput, ProviderContractUncheckedCreateWithoutProviderInput>
+  }
+
+  export type ProviderContractCreateManyProviderInputEnvelope = {
+    data: ProviderContractCreateManyProviderInput | ProviderContractCreateManyProviderInput[]
+    skipDuplicates?: boolean
+  }
+
   export type WalletLogCreateWithoutUserInput = {
     id?: string
     type: string
@@ -45598,6 +47158,9 @@ export namespace Prisma {
     amount?: IntFilter<"Withdrawal"> | number
     currency?: StringFilter<"Withdrawal"> | string
     status?: StringFilter<"Withdrawal"> | string
+    reviewStage?: StringFilter<"Withdrawal"> | string
+    agentReviewedById?: StringNullableFilter<"Withdrawal"> | string | null
+    agentReviewedAt?: DateTimeNullableFilter<"Withdrawal"> | Date | string | null
     createdAt?: DateTimeFilter<"Withdrawal"> | Date | string
     updatedAt?: DateTimeFilter<"Withdrawal"> | Date | string
   }
@@ -45722,6 +47285,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -45773,6 +47337,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -46033,6 +47598,48 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"QualificationApplication"> | Date | string
   }
 
+  export type ProviderContractUpsertWithWhereUniqueWithoutProviderInput = {
+    where: ProviderContractWhereUniqueInput
+    update: XOR<ProviderContractUpdateWithoutProviderInput, ProviderContractUncheckedUpdateWithoutProviderInput>
+    create: XOR<ProviderContractCreateWithoutProviderInput, ProviderContractUncheckedCreateWithoutProviderInput>
+  }
+
+  export type ProviderContractUpdateWithWhereUniqueWithoutProviderInput = {
+    where: ProviderContractWhereUniqueInput
+    data: XOR<ProviderContractUpdateWithoutProviderInput, ProviderContractUncheckedUpdateWithoutProviderInput>
+  }
+
+  export type ProviderContractUpdateManyWithWhereWithoutProviderInput = {
+    where: ProviderContractScalarWhereInput
+    data: XOR<ProviderContractUpdateManyMutationInput, ProviderContractUncheckedUpdateManyWithoutProviderInput>
+  }
+
+  export type ProviderContractScalarWhereInput = {
+    AND?: ProviderContractScalarWhereInput | ProviderContractScalarWhereInput[]
+    OR?: ProviderContractScalarWhereInput[]
+    NOT?: ProviderContractScalarWhereInput | ProviderContractScalarWhereInput[]
+    id?: StringFilter<"ProviderContract"> | string
+    providerId?: StringFilter<"ProviderContract"> | string
+    contractNo?: StringFilter<"ProviderContract"> | string
+    type?: StringFilter<"ProviderContract"> | string
+    name?: StringFilter<"ProviderContract"> | string
+    partyA?: StringFilter<"ProviderContract"> | string
+    serviceType?: StringFilter<"ProviderContract"> | string
+    businessMode?: StringFilter<"ProviderContract"> | string
+    region?: StringNullableFilter<"ProviderContract"> | string | null
+    exclusive?: BoolFilter<"ProviderContract"> | boolean
+    platformRate?: IntFilter<"ProviderContract"> | number
+    deposit?: IntFilter<"ProviderContract"> | number
+    settlePeriod?: StringFilter<"ProviderContract"> | string
+    signStage?: StringFilter<"ProviderContract"> | string
+    signDate?: DateTimeNullableFilter<"ProviderContract"> | Date | string | null
+    expireDate?: DateTimeNullableFilter<"ProviderContract"> | Date | string | null
+    negotiation?: StringNullableListFilter<"ProviderContract">
+    attachments?: StringNullableListFilter<"ProviderContract">
+    createdAt?: DateTimeFilter<"ProviderContract"> | Date | string
+    updatedAt?: DateTimeFilter<"ProviderContract"> | Date | string
+  }
+
   export type WalletLogUpsertWithWhereUniqueWithoutUserInput = {
     where: WalletLogWhereUniqueInput
     update: XOR<WalletLogUpdateWithoutUserInput, WalletLogUncheckedUpdateWithoutUserInput>
@@ -46173,6 +47780,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -46224,6 +47832,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -46374,6 +47983,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -46425,6 +48035,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -46569,6 +48180,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -46620,6 +48232,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -46809,6 +48422,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -46860,6 +48474,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -47063,6 +48678,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -47114,6 +48730,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -47181,6 +48798,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -47232,6 +48850,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -47283,6 +48902,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -47334,6 +48954,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -47462,6 +49083,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -47513,6 +49135,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -47631,6 +49254,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -47682,6 +49306,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -47697,6 +49322,9 @@ export namespace Prisma {
     amount: number
     currency?: string
     status?: string
+    reviewStage?: string
+    agentReviewedById?: string | null
+    agentReviewedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     provider: UserCreateNestedOneWithoutWithdrawalsInput
@@ -47708,6 +49336,9 @@ export namespace Prisma {
     amount: number
     currency?: string
     status?: string
+    reviewStage?: string
+    agentReviewedById?: string | null
+    agentReviewedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -47779,6 +49410,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -47830,6 +49462,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -47897,6 +49530,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -47948,6 +49582,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -48040,6 +49675,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -48091,6 +49727,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -48234,6 +49871,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -48285,6 +49923,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -48419,6 +50058,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -48470,6 +50110,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -48521,6 +50162,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -48572,6 +50214,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -48628,6 +50271,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -48679,6 +50323,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -48735,6 +50380,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -48786,6 +50432,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -48853,6 +50500,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -48904,6 +50552,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -48966,6 +50615,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -49017,6 +50667,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -49079,6 +50730,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -49130,6 +50782,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -49181,6 +50834,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -49232,6 +50886,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -49310,6 +50965,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -49361,6 +51017,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -49428,6 +51085,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -49479,6 +51137,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -49557,6 +51216,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -49608,6 +51268,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -49659,6 +51320,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -49710,6 +51372,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -49766,6 +51429,7 @@ export namespace Prisma {
     reviews?: ReviewCreateNestedManyWithoutUserInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -49817,6 +51481,7 @@ export namespace Prisma {
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -49884,6 +51549,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -49935,6 +51601,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -49997,6 +51664,7 @@ export namespace Prisma {
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -50048,6 +51716,7 @@ export namespace Prisma {
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -50142,6 +51811,7 @@ export namespace Prisma {
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -50193,6 +51863,7 @@ export namespace Prisma {
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -50309,6 +51980,7 @@ export namespace Prisma {
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -50360,6 +52032,7 @@ export namespace Prisma {
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -50411,6 +52084,7 @@ export namespace Prisma {
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
@@ -50462,6 +52136,7 @@ export namespace Prisma {
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -50529,6 +52204,7 @@ export namespace Prisma {
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -50580,6 +52256,7 @@ export namespace Prisma {
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -50632,6 +52309,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
@@ -50683,6 +52361,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
@@ -50750,6 +52429,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
@@ -50801,6 +52481,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
@@ -50894,6 +52575,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
@@ -50945,6 +52627,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
@@ -51045,6 +52728,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
@@ -51096,6 +52780,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
@@ -51137,6 +52822,230 @@ export namespace Prisma {
     validFrom?: DateTimeFieldUpdateOperationsInput | Date | string
     validUntil?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserCreateWithoutContractsInput = {
+    id?: string
+    phone?: string | null
+    wxOpenid?: string | null
+    password?: string | null
+    nickname?: string | null
+    avatar?: string | null
+    realName?: string | null
+    idCard?: string | null
+    realNameStatus?: $Enums.RealNameStatus
+    realNameVerifiedAt?: Date | string | null
+    bio?: string | null
+    email?: string | null
+    vipLevel?: number
+    locale?: string
+    role?: $Enums.Role
+    lastLoginAt?: Date | string | null
+    points?: number
+    totalSpent?: number
+    userBalance?: number
+    followingProviderCount?: number
+    serviceRoles?: UserCreateserviceRolesInput | $Enums.ServiceRole[]
+    pendingServiceRoles?: UserCreatependingServiceRolesInput | $Enums.ServiceRole[]
+    providerStatus?: $Enums.ProviderStatus
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    regionPath?: string | null
+    status?: $Enums.UserStatus
+    projects?: ProjectCreateNestedManyWithoutUserInput
+    assets?: AssetCreateNestedManyWithoutUserInput
+    templates?: TemplateCreateNestedManyWithoutAuthorInput
+    orders?: TemplateOrderCreateNestedManyWithoutBuyerInput
+    providerWallet?: ProviderWalletCreateNestedOneWithoutProviderInput
+    withdrawals?: WithdrawalCreateNestedManyWithoutProviderInput
+    appeals?: TemplateAppealCreateNestedManyWithoutProviderInput
+    region?: RegionCreateNestedOneWithoutUsersInput
+    agent?: UserCreateNestedOneWithoutAgentOfInput
+    agentOf?: UserCreateNestedManyWithoutAgentInput
+    ticketsReporter?: TicketCreateNestedManyWithoutReporterInput
+    ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
+    ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
+    messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
+    reviews?: ReviewCreateNestedManyWithoutUserInput
+    reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
+    messageReads?: MessageReadCreateNestedManyWithoutUserInput
+    qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    walletLogs?: WalletLogCreateNestedManyWithoutUserInput
+    coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutContractsInput = {
+    id?: string
+    phone?: string | null
+    wxOpenid?: string | null
+    password?: string | null
+    nickname?: string | null
+    avatar?: string | null
+    realName?: string | null
+    idCard?: string | null
+    realNameStatus?: $Enums.RealNameStatus
+    realNameVerifiedAt?: Date | string | null
+    bio?: string | null
+    email?: string | null
+    vipLevel?: number
+    locale?: string
+    role?: $Enums.Role
+    lastLoginAt?: Date | string | null
+    points?: number
+    totalSpent?: number
+    userBalance?: number
+    followingProviderCount?: number
+    serviceRoles?: UserCreateserviceRolesInput | $Enums.ServiceRole[]
+    pendingServiceRoles?: UserCreatependingServiceRolesInput | $Enums.ServiceRole[]
+    providerStatus?: $Enums.ProviderStatus
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    regionId?: string | null
+    agentId?: string | null
+    regionPath?: string | null
+    status?: $Enums.UserStatus
+    projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
+    assets?: AssetUncheckedCreateNestedManyWithoutUserInput
+    templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
+    orders?: TemplateOrderUncheckedCreateNestedManyWithoutBuyerInput
+    providerWallet?: ProviderWalletUncheckedCreateNestedOneWithoutProviderInput
+    withdrawals?: WithdrawalUncheckedCreateNestedManyWithoutProviderInput
+    appeals?: TemplateAppealUncheckedCreateNestedManyWithoutProviderInput
+    agentOf?: UserUncheckedCreateNestedManyWithoutAgentInput
+    ticketsReporter?: TicketUncheckedCreateNestedManyWithoutReporterInput
+    ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
+    ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
+    messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
+    reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
+    reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
+    messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
+    qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
+    coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutContractsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutContractsInput, UserUncheckedCreateWithoutContractsInput>
+  }
+
+  export type UserUpsertWithoutContractsInput = {
+    update: XOR<UserUpdateWithoutContractsInput, UserUncheckedUpdateWithoutContractsInput>
+    create: XOR<UserCreateWithoutContractsInput, UserUncheckedCreateWithoutContractsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutContractsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutContractsInput, UserUncheckedUpdateWithoutContractsInput>
+  }
+
+  export type UserUpdateWithoutContractsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    wxOpenid?: NullableStringFieldUpdateOperationsInput | string | null
+    password?: NullableStringFieldUpdateOperationsInput | string | null
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    realName?: NullableStringFieldUpdateOperationsInput | string | null
+    idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
+    realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    vipLevel?: IntFieldUpdateOperationsInput | number
+    locale?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    points?: IntFieldUpdateOperationsInput | number
+    totalSpent?: IntFieldUpdateOperationsInput | number
+    userBalance?: IntFieldUpdateOperationsInput | number
+    followingProviderCount?: IntFieldUpdateOperationsInput | number
+    serviceRoles?: UserUpdateserviceRolesInput | $Enums.ServiceRole[]
+    pendingServiceRoles?: UserUpdatependingServiceRolesInput | $Enums.ServiceRole[]
+    providerStatus?: EnumProviderStatusFieldUpdateOperationsInput | $Enums.ProviderStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    projects?: ProjectUpdateManyWithoutUserNestedInput
+    assets?: AssetUpdateManyWithoutUserNestedInput
+    templates?: TemplateUpdateManyWithoutAuthorNestedInput
+    orders?: TemplateOrderUpdateManyWithoutBuyerNestedInput
+    providerWallet?: ProviderWalletUpdateOneWithoutProviderNestedInput
+    withdrawals?: WithdrawalUpdateManyWithoutProviderNestedInput
+    appeals?: TemplateAppealUpdateManyWithoutProviderNestedInput
+    region?: RegionUpdateOneWithoutUsersNestedInput
+    agent?: UserUpdateOneWithoutAgentOfNestedInput
+    agentOf?: UserUpdateManyWithoutAgentNestedInput
+    ticketsReporter?: TicketUpdateManyWithoutReporterNestedInput
+    ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
+    ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
+    messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
+    reviews?: ReviewUpdateManyWithoutUserNestedInput
+    reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
+    messageReads?: MessageReadUpdateManyWithoutUserNestedInput
+    qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
+    coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutContractsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    wxOpenid?: NullableStringFieldUpdateOperationsInput | string | null
+    password?: NullableStringFieldUpdateOperationsInput | string | null
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    realName?: NullableStringFieldUpdateOperationsInput | string | null
+    idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
+    realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    vipLevel?: IntFieldUpdateOperationsInput | number
+    locale?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    points?: IntFieldUpdateOperationsInput | number
+    totalSpent?: IntFieldUpdateOperationsInput | number
+    userBalance?: IntFieldUpdateOperationsInput | number
+    followingProviderCount?: IntFieldUpdateOperationsInput | number
+    serviceRoles?: UserUpdateserviceRolesInput | $Enums.ServiceRole[]
+    pendingServiceRoles?: UserUpdatependingServiceRolesInput | $Enums.ServiceRole[]
+    providerStatus?: EnumProviderStatusFieldUpdateOperationsInput | $Enums.ProviderStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    regionId?: NullableStringFieldUpdateOperationsInput | string | null
+    agentId?: NullableStringFieldUpdateOperationsInput | string | null
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
+    assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
+    templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
+    orders?: TemplateOrderUncheckedUpdateManyWithoutBuyerNestedInput
+    providerWallet?: ProviderWalletUncheckedUpdateOneWithoutProviderNestedInput
+    withdrawals?: WithdrawalUncheckedUpdateManyWithoutProviderNestedInput
+    appeals?: TemplateAppealUncheckedUpdateManyWithoutProviderNestedInput
+    agentOf?: UserUncheckedUpdateManyWithoutAgentNestedInput
+    ticketsReporter?: TicketUncheckedUpdateManyWithoutReporterNestedInput
+    ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
+    ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
+    messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
+    reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
+    reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
+    messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
+    qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
+    coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutJoinApplicationsInput = {
@@ -51186,6 +53095,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
   }
@@ -51237,6 +53147,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    contracts?: ProviderContractUncheckedCreateNestedManyWithoutProviderInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
   }
@@ -51304,6 +53215,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
   }
@@ -51355,6 +53267,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
   }
@@ -51472,6 +53385,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -51523,6 +53437,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -51633,6 +53548,9 @@ export namespace Prisma {
     amount: number
     currency?: string
     status?: string
+    reviewStage?: string
+    agentReviewedById?: string | null
+    agentReviewedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -51818,6 +53736,28 @@ export namespace Prisma {
     certLongTerm?: boolean
     issuer?: string | null
     attachments?: QualificationApplicationCreateattachmentsInput | string[]
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ProviderContractCreateManyProviderInput = {
+    id?: string
+    contractNo: string
+    type?: string
+    name: string
+    partyA: string
+    serviceType: string
+    businessMode?: string
+    region?: string | null
+    exclusive?: boolean
+    platformRate?: number
+    deposit?: number
+    settlePeriod?: string
+    signStage?: string
+    signDate?: Date | string | null
+    expireDate?: Date | string | null
+    negotiation?: ProviderContractCreatenegotiationInput | string[]
+    attachments?: ProviderContractCreateattachmentsInput | string[]
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -52073,6 +54013,9 @@ export namespace Prisma {
     amount?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    reviewStage?: StringFieldUpdateOperationsInput | string
+    agentReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    agentReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     wallet?: ProviderWalletUpdateOneRequiredWithoutWithdrawalsNestedInput
@@ -52084,6 +54027,9 @@ export namespace Prisma {
     amount?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    reviewStage?: StringFieldUpdateOperationsInput | string
+    agentReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    agentReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -52094,6 +54040,9 @@ export namespace Prisma {
     amount?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    reviewStage?: StringFieldUpdateOperationsInput | string
+    agentReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    agentReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -52180,6 +54129,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
@@ -52231,6 +54181,7 @@ export namespace Prisma {
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    contracts?: ProviderContractUncheckedUpdateManyWithoutProviderNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -52697,6 +54648,72 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type ProviderContractUpdateWithoutProviderInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contractNo?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    partyA?: StringFieldUpdateOperationsInput | string
+    serviceType?: StringFieldUpdateOperationsInput | string
+    businessMode?: StringFieldUpdateOperationsInput | string
+    region?: NullableStringFieldUpdateOperationsInput | string | null
+    exclusive?: BoolFieldUpdateOperationsInput | boolean
+    platformRate?: IntFieldUpdateOperationsInput | number
+    deposit?: IntFieldUpdateOperationsInput | number
+    settlePeriod?: StringFieldUpdateOperationsInput | string
+    signStage?: StringFieldUpdateOperationsInput | string
+    signDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    expireDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    negotiation?: ProviderContractUpdatenegotiationInput | string[]
+    attachments?: ProviderContractUpdateattachmentsInput | string[]
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProviderContractUncheckedUpdateWithoutProviderInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contractNo?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    partyA?: StringFieldUpdateOperationsInput | string
+    serviceType?: StringFieldUpdateOperationsInput | string
+    businessMode?: StringFieldUpdateOperationsInput | string
+    region?: NullableStringFieldUpdateOperationsInput | string | null
+    exclusive?: BoolFieldUpdateOperationsInput | boolean
+    platformRate?: IntFieldUpdateOperationsInput | number
+    deposit?: IntFieldUpdateOperationsInput | number
+    settlePeriod?: StringFieldUpdateOperationsInput | string
+    signStage?: StringFieldUpdateOperationsInput | string
+    signDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    expireDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    negotiation?: ProviderContractUpdatenegotiationInput | string[]
+    attachments?: ProviderContractUpdateattachmentsInput | string[]
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProviderContractUncheckedUpdateManyWithoutProviderInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    contractNo?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    partyA?: StringFieldUpdateOperationsInput | string
+    serviceType?: StringFieldUpdateOperationsInput | string
+    businessMode?: StringFieldUpdateOperationsInput | string
+    region?: NullableStringFieldUpdateOperationsInput | string | null
+    exclusive?: BoolFieldUpdateOperationsInput | boolean
+    platformRate?: IntFieldUpdateOperationsInput | number
+    deposit?: IntFieldUpdateOperationsInput | number
+    settlePeriod?: StringFieldUpdateOperationsInput | string
+    signStage?: StringFieldUpdateOperationsInput | string
+    signDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    expireDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    negotiation?: ProviderContractUpdatenegotiationInput | string[]
+    attachments?: ProviderContractUpdateattachmentsInput | string[]
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type WalletLogUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     type?: StringFieldUpdateOperationsInput | string
@@ -53011,6 +55028,9 @@ export namespace Prisma {
     amount: number
     currency?: string
     status?: string
+    reviewStage?: string
+    agentReviewedById?: string | null
+    agentReviewedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -53020,6 +55040,9 @@ export namespace Prisma {
     amount?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    reviewStage?: StringFieldUpdateOperationsInput | string
+    agentReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    agentReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     provider?: UserUpdateOneRequiredWithoutWithdrawalsNestedInput
@@ -53031,6 +55054,9 @@ export namespace Prisma {
     amount?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    reviewStage?: StringFieldUpdateOperationsInput | string
+    agentReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    agentReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -53041,6 +55067,9 @@ export namespace Prisma {
     amount?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    reviewStage?: StringFieldUpdateOperationsInput | string
+    agentReviewedById?: NullableStringFieldUpdateOperationsInput | string | null
+    agentReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -53202,6 +55231,10 @@ export namespace Prisma {
      * @deprecated Use QualificationApplicationDefaultArgs instead
      */
     export type QualificationApplicationArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = QualificationApplicationDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use RecruitLeadDefaultArgs instead
+     */
+    export type RecruitLeadArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = RecruitLeadDefaultArgs<ExtArgs>
     /**
      * @deprecated Use WalletLogDefaultArgs instead
      */

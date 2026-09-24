@@ -414,8 +414,9 @@ export class ConsoleDashboardController {
     if (rp) {
       const [onb, qual, tplRev, svcRev, comp, wdRev, msg] = await this.prisma.$transaction([
         // 入驻审批（onboarding）：辖区待初审/复审的「入驻 / 资格升级」申请（QualificationApplication）
+        // 口径与「入驻审批」页(agent/apply)一致：辖区内全部入驻层次（代理商 / 服务商）的待审申请
         this.prisma.qualificationApplication.count({
-          where: { kind: 'provider', status: { in: ['FIRST_PENDING', 'FINAL_PENDING'] }, regionPath: { startsWith: rp } },
+          where: { kind: { in: ['provider', 'agent'] }, status: { in: ['FIRST_PENDING', 'FINAL_PENDING'] }, regionPath: { startsWith: rp } },
         }),
         // 资质审核（qualification）：辖区服务商资质待审（providerStatus=PENDING），
         // 与「服务商资质审核队列」admin/provider-review 的辖区子集严格同口径（点进去总数 ≥ 角标）
@@ -450,8 +451,10 @@ export class ConsoleDashboardController {
       agentComplaints = comp;
       withdrawReview = wdRev;
       agentMessages = msg;
-      // 招商申请：招商模块尚未上线，暂无独立招商申请表，预留为 0
-      investPending = 0;
+      // 招商申请：辖区内 stage=NEW 的招商意向数（与「招商申请 / 意向池」登记口径一致）
+      investPending = await this.prisma.recruitLead.count({
+        where: { stage: 'NEW', regionPath: { startsWith: rp } },
+      });
     }
 
     return {

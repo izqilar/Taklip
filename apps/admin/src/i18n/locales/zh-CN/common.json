@@ -422,6 +422,46 @@
     "col.walletId": "钱包ID",
     "col.accountBalance": "账户余额",
     "col.regionSlash": "辖区/区域",
+    "col.partyA": "甲方",
+    "col.kind": "入驻层次",
+    "col.stage": "阶段",
+    "col.signStage": "签署阶段",
+    "col.businessMode": "开展方式",
+    "col.serviceType": "服务类型",
+    "col.settlePeriod": "结算周期",
+    "col.deposit": "保证金(分)",
+    "col.platformRate": "平台抽成(%)",
+    "col.expireDate": "到期日",
+    "col.exclusive": "独家",
+    "col.negotiation": "协商记录",
+    "col.regionProvider": "服务商辖区",
+    "col.reason": "申请说明",
+    "col.certNo": "证件编号",
+    "enum.agentReviewPending": "待初审",
+    "enum.agentReviewPassed": "初审通过",
+    "enum.agentReviewRejected": "初审驳回",
+    "enum.recruitNew": "新建",
+    "enum.recruitContacted": "已联系",
+    "enum.recruitWon": "已转化",
+    "enum.recruitLost": "已流失",
+    "btn.agentFirstPass": "一审通过",
+    "btn.agentFirstReject": "一审驳回",
+    "btn.withdrawFirstPass": "初审通过",
+    "btn.withdrawFirstReject": "初审驳回",
+    "btn.recruitContacted": "标记已联系",
+    "btn.recruitWon": "标记已转化",
+    "btn.recruitLost": "标记已流失",
+    "empty.noContract": "辖区内暂无合同",
+    "empty.noQualification": "辖区内暂无入驻申请",
+    "empty.noWithdraw": "辖区内暂无提现",
+    "empty.noRecruit": "辖区内暂无招商意向",
+    "sec.agentContract": "辖区合同",
+    "sec.agentQualification": "入驻审批",
+    "sec.agentWithdraw": "提现初审",
+    "sec.recruit": "招商意向",
+    "toast.agentReviewed": "一审已提交",
+    "toast.recruitCreated": "招商意向已登记",
+    "toast.recruitStageUpdated": "阶段已更新",
     "sec.templateReview": "模板审核",
     "sec.providerOnboardReview": "服务商入驻审核",
     "sec.providerQualReview": "服务商资质审核",
@@ -623,14 +663,18 @@
       "approvedOnSale": "已通过并上架"
     },
     "lbl": {
-      "all": "全部"
+      "all": "全部",
+      "registerRecruit": "登记招商意向",
+      "recentRecruit": "最近登记",
+      "intentPool": "意向池"
     },
     "sec": {
       "templateReview": "模板审核",
       "serviceReview": "服务审核"
     },
     "toast": {
-      "redlineRequired": "驳回必须填写意见并选择红线类别"
+      "redlineRequired": "驳回必须填写意见并选择红线类别",
+      "actionFailed": "操作失败"
     },
     "note": {
       "comingSoonHint": "该模块后端端点将在后续迭代落地"
@@ -670,6 +714,24 @@
       "deleteFail": "删除失败",
       "reloadFail": "刷新失败",
       "deleteConfirm": "确认删除该红线词？"
+    },
+    "desc": {
+      "agentContractSub": "辖区内服务商合同 · 只读可见（签约 / 编辑由服务商自身完成）",
+      "agentContractHint": "辖区可见",
+      "agentQualificationSub": "辖区入驻资格升级隧道 · 代理一审（不触碰身份变更）· 终审由总台裁定",
+      "agentInvestSub": "辖区内拓客登记 · 提交后归属本代理商，区域由系统按辖区自动锁定",
+      "agentPoolSub": "辖区内招商意向台账 · 推进接触阶段（不触碰身份 / 资金）"
+    },
+    "ph": {
+      "recruitName": "如：某某文化传媒有限公司",
+      "recruitRegion": "选填 · 例如：高新区",
+      "recruitIntro": "选填 · 意向来源 / 对接人 / 诉求",
+      "searchNamePhone": "搜索名称 / 手机"
+    },
+    "rule": {
+      "nameRequired": "请填写意向主体名称",
+      "phoneRequired": "请填写联系电话",
+      "phone11": "手机号须为 11 位数字"
     }
   }
 }
