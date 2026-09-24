@@ -169,6 +169,12 @@ exports.Prisma.ProjectScalarFieldEnum = {
   title: 'title',
   cover: 'cover',
   status: 'status',
+  reviewStatus: 'reviewStatus',
+  reviewedBy: 'reviewedBy',
+  reviewedAt: 'reviewedAt',
+  reviewStage: 'reviewStage',
+  redlineCategory: 'redlineCategory',
+  reviewNote: 'reviewNote',
   publishCode: 'publishCode',
   schema: 'schema',
   draftSchema: 'draftSchema',
@@ -196,11 +202,21 @@ exports.Prisma.TemplateScalarFieldEnum = {
   reviewNote: 'reviewNote',
   reviewedBy: 'reviewedBy',
   reviewedAt: 'reviewedAt',
+  reviewStage: 'reviewStage',
+  redlineCategory: 'redlineCategory',
   price: 'price',
   currency: 'currency',
   paidFonts: 'paidFonts',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.RedlineWordScalarFieldEnum = {
+  id: 'id',
+  word: 'word',
+  category: 'category',
+  enabled: 'enabled',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.FontScalarFieldEnum = {
@@ -644,6 +660,7 @@ exports.Prisma.ModelName = {
   User: 'User',
   Project: 'Project',
   Template: 'Template',
+  RedlineWord: 'RedlineWord',
   Font: 'Font',
   ProjectVersion: 'ProjectVersion',
   Asset: 'Asset',

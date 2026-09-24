@@ -144,28 +144,28 @@ export class TemplateController {
     );
   }
 
-  /** 管理员：审核模板（approve / reject） */
+  /** 管理员：审核模板（approve / reject，可记录红线类别） */
   @Patch(':id/review')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   review(
     @Param('id') id: string,
-    @Body() body: { decision: 'APPROVED' | 'REJECTED'; reviewNote?: string },
+    @Body() body: { decision: 'APPROVED' | 'REJECTED'; reviewNote?: string; redlineCategory?: string },
     @Req() req: AuthedRequest,
   ) {
-    return this.templateService.review(id, body.decision, body.reviewNote, req.user.id);
+    return this.templateService.review(id, body.decision, body.reviewNote, req.user.id, body.redlineCategory);
   }
 
-  /** 管理员：违规下架已通过的模板 */
+  /** 管理员：违规下架已通过的模板（红线强制下架） */
   @Patch(':id/takedown')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   takedown(
     @Param('id') id: string,
-    @Body() body: { reason: string },
+    @Body() body: { reason: string; redlineCategory?: string },
     @Req() req: AuthedRequest,
   ) {
-    return this.templateService.takedown(id, body.reason, req.user.id);
+    return this.templateService.takedown(id, body.reason, req.user.id, body.redlineCategory);
   }
 
   /** 服务商：对下架/驳回的模板提交申诉 */

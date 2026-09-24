@@ -59,7 +59,16 @@ export type BadgeKey =
   | 'noticeUnread' // 用户视角·通知公告：本人可见、已发布、未读(无回执)的公告数
   | 'messagePending' // 用户视角·业务消息：本人可见、已发布、未读(无回执)的业务消息数（待处理子集）
   | 'feedbackPending' // 用户视角·我的反馈：本人发起、未关闭的工单数（待回复子集）
-  | 'joinPending'; // 服务商/代理商·团队管理：本组织收到的「加入团队」在途(PENDING)申请数
+  | 'joinPending' // 服务商/代理商·团队管理：本组织收到的「加入团队」在途(PENDING)申请数
+  // ── 代理商视角新增角标语义键（v2 红线闸口 + 辖区治理）──
+  | 'onboarding' // 代理商·入驻审批：辖区待初审/复审的入驻申请数
+  | 'qualification' // 代理商·资质审核：辖区资质待审数
+  | 'templateReview' // 代理商·模板审核：本辖区待审(PENDING)模板数（仅 regionPath，区别于总台 templates）
+  | 'serviceReview' // 代理商·服务审核：本辖区待审(REVIEW_PENDING)服务/作品数
+  | 'agentComplaints' // 代理商·意见反馈：辖区待处理投诉/建议工单数
+  | 'withdrawReview' // 代理商·提现初审：辖区服务商提现待初审(pending)数
+  | 'investPending' // 代理商·招商申请：辖区招商新申请数
+  | 'agentMessages'; // 代理商·业务消息：待处理业务消息数（区别于总台 messages）
 
 /**
  * 侧栏分组键。
@@ -86,12 +95,22 @@ export type MenuGroupKey =
   | 'orderfulfill'
   | 'servicecontent'
   | 'qualification'
-  | 'teamsetting';
+  | 'teamsetting'
+  // ── 代理商视角新增四组（v2 标准化：辖区治理 + 红线把关）──
+  | 'providersupervise' // 辖区服务商（代理商监督簇）
+  | 'contentreview' // 内容审核（红线把关核心，独立成组）
+  | 'regionops' // 辖区运营
+  | 'recruit'; // 招商拓展（代理商专有拓客）
 
 /** 侧栏自上而下的分组展示顺序（不依赖 resources 声明顺序） */
 export const GROUP_ORDER: MenuGroupKey[] = [
   'overview',
   'databoard',
+  // ── 代理商视角四组（紧跟数据看板，相对顺序：辖区服务商 → 内容审核 → 辖区运营 → 招商拓展）──
+  'providersupervise',
+  'contentreview',
+  'regionops',
+  'recruit',
   'trade',
   'orderfulfill',
   'ops',
@@ -121,6 +140,11 @@ export const GROUP_LABEL: Record<MenuGroupKey, string> = {
   servicecontent: '服务与内容',
   qualification: '资质中心',
   teamsetting: '工作台设置',
+  // ── 代理商视角四组（v2）──
+  providersupervise: '辖区服务商',
+  contentreview: '内容审核',
+  regionops: '辖区运营',
+  recruit: '招商拓展',
 };
 
 export interface ResourceMeta {
@@ -243,45 +267,102 @@ export const resources: ResourceProps[] = [
     meta: META('操作日志', 'console', { group: 'system', icon: <FileProtectOutlined /> }),
   },
 
-  // ===================== 代理商中心（AGENT · 8 项）=====================
+  // ===================== 代理商中心（AGENT · v2 标准化 · 8 组 21 项）=====================
   {
     name: 'agent/center',
     meta: META('代理商中心', 'agent', { icon: <ApartmentOutlined />, home: '/agent/dashboard' }),
   },
+  // ── 数据看板 ──
   {
     name: 'agent/dashboard',
     list: '/agent/dashboard',
-    meta: META('辖区概览', 'agent', { icon: <DashboardOutlined /> }),
+    meta: META('辖区经营概览', 'agent', { group: 'databoard', icon: <DashboardOutlined /> }),
   },
-  {
-    name: 'agent/users',
-    list: '/agent/users',
-    meta: META('辖区用户', 'agent', { icon: <TeamOutlined /> }),
-  },
+  // ── 辖区服务商（代理商监督簇）──
   {
     name: 'agent/providers',
     list: '/agent/providers',
-    meta: META('辖区服务商', 'agent', { icon: <ShopOutlined />, badgeKey: 'providerReview' }),
+    meta: META('辖区服务商', 'agent', { group: 'providersupervise', icon: <ShopOutlined />, badgeKey: 'providerReview' }),
+  },
+  {
+    name: 'agent/apply',
+    list: '/agent/apply',
+    meta: META('入驻审批', 'agent', { group: 'providersupervise', icon: <FileDoneOutlined />, badgeKey: 'onboarding' }),
+  },
+  {
+    name: 'agent/qualification',
+    list: '/agent/qualification',
+    meta: META('资质审核', 'agent', { group: 'providersupervise', icon: <SafetyOutlined />, badgeKey: 'qualification' }),
+  },
+  {
+    name: 'agent/contract',
+    list: '/agent/contract',
+    meta: META('合同管理', 'agent', { group: 'providersupervise', icon: <FileProtectOutlined /> }),
+  },
+  // ── 内容审核（v2 红线把关核心，独立成组）──
+  {
+    name: 'agent/template-review',
+    list: '/agent/template-review',
+    meta: META('模板审核', 'agent', { group: 'contentreview', icon: <FileImageOutlined />, badgeKey: 'templateReview' }),
+  },
+  {
+    name: 'agent/service-review',
+    list: '/agent/service-review',
+    meta: META('服务审核', 'agent', { group: 'contentreview', icon: <AppstoreOutlined />, badgeKey: 'serviceReview' }),
+  },
+  // ── 辖区运营 ──
+  {
+    name: 'agent/users',
+    list: '/agent/users',
+    meta: META('辖区用户', 'agent', { group: 'regionops', icon: <TeamOutlined /> }),
   },
   {
     name: 'agent/orders',
     list: '/agent/orders',
-    meta: META('辖区订单', 'agent', { icon: <ShoppingOutlined /> }),
-  },
-  {
-    name: 'agent/wallet',
-    list: '/agent/wallet',
-    meta: META('结算与钱包', 'agent', { icon: <WalletOutlined /> }),
+    meta: META('辖区订单', 'agent', { group: 'regionops', icon: <ShoppingOutlined /> }),
   },
   {
     name: 'agent/feedback',
     list: '/agent/feedback',
-    meta: META('评价与反馈中心', 'agent', { icon: <CommentOutlined />, badgeKey: 'feedback' }),
+    meta: META('服务评价', 'agent', { group: 'regionops', icon: <StarOutlined />, badgeKey: 'feedback' }),
+  },
+  {
+    name: 'agent/complaints',
+    list: '/agent/complaints',
+    meta: META('意见反馈', 'agent', { group: 'regionops', icon: <FileTextOutlined />, badgeKey: 'agentComplaints' }),
+  },
+  // ── 招商拓展（代理商专有）──
+  {
+    name: 'agent/invest',
+    list: '/agent/invest',
+    meta: META('招商申请', 'agent', { group: 'recruit', icon: <UserAddOutlined />, badgeKey: 'investPending' }),
+  },
+  {
+    name: 'agent/pool',
+    list: '/agent/pool',
+    meta: META('意向池', 'agent', { group: 'recruit', icon: <BankOutlined /> }),
+  },
+  // ── 财务中心 ──
+  {
+    name: 'agent/settle',
+    list: '/agent/settle',
+    meta: META('结算总览', 'agent', { group: 'finance', icon: <WalletOutlined /> }),
+  },
+  {
+    name: 'agent/withdraw-review',
+    list: '/agent/withdraw-review',
+    meta: META('提现初审', 'agent', { group: 'finance', icon: <DollarOutlined />, badgeKey: 'withdrawReview' }),
+  },
+  // ── 消息中心 ──
+  {
+    name: 'agent/notices',
+    list: '/agent/notices',
+    meta: META('通知公告', 'agent', { group: 'message', icon: <NotificationOutlined />, badgeKey: 'noticeUnread' }),
   },
   {
     name: 'agent/messages',
     list: '/agent/messages',
-    meta: META('消息中心', 'agent', { icon: <NotificationOutlined />, badgeKey: 'messages' }),
+    meta: META('业务消息', 'agent', { group: 'message', icon: <BellOutlined />, badgeKey: 'agentMessages' }),
   },
   // ── 工作台设置（2026-09-23：与服务商侧完全对齐，拆为「团队管理」+「员工角色」）──
   {

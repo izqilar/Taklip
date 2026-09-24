@@ -21,6 +21,8 @@ import type { JwtUser } from '../common/types/jwt-user';
 import { bucketMonthly, since180 } from './chart-util';
 import { StaffService } from './staff.service';
 import { CreateStaffDto, UpdateStaffDto } from './dto/staff.dto';
+import { TemplateService } from '../template/template.service';
+import { PublishService } from '../publish/publish.service';
 
 type ReqUser = Express.Request & { user: JwtUser };
 
@@ -69,6 +71,8 @@ export class AgentConsoleController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly staff: StaffService,
+    private readonly template: TemplateService,
+    private readonly publish: PublishService,
   ) {}
 
   /** 辖区前缀匹配条件；ADMIN（无 regionPath）返回 undefined → 全量 */
@@ -292,6 +296,97 @@ export class AgentConsoleController {
       this.prisma.templateOrder.count({ where }),
     ]);
     return { items, total, page: p, pageSize: ps };
+  }
+
+  /* ══════════════════ 内容审核 · 模板审核（红线闸口 · 代理一审） ══════════════════
+   * 服务商提交模板 → PENDING → 代理商辖区一审（AGENT）→ APPROVED 公开；
+   * 总台(ADMIN) 通过 ?subject= 视察辖区抽检，或直接走 /api/templates 总台端点。
+   */
+
+  /** 辖区待审模板（PENDING） */
+  @Get('templates/pending')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async templatesPending(@Req() req: ReqUser, @Query('subject') subject?: string) {
+    const scope = await this.resolveAgentScope(req, subject);
+    return this.template.listAgentPending(scope.regionPath);
+  }
+
+  /** 辖区模板审核台（全状态，支持 status / keyword / 分页） */
+  @Get('templates')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async templates(
+    @Req() req: ReqUser,
+    @Query('status') status?: string,
+    @Query('keyword') keyword?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('subject') subject?: string,
+  ) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const p = page ? Number(page) : 1;
+    const ps = Math.min(pageSize ? Number(pageSize) : 20, 100);
+    return this.template.listAgentAll(scope.regionPath, status, keyword, (p - 1) * ps, ps);
+  }
+
+  /** 代理商一审 / 总台抽检：通过或驳回（驳回须带红线类别） */
+  @Patch('templates/:id/review')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async reviewTemplate(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Body() body: { decision: 'APPROVED' | 'REJECTED'; reviewNote?: string; redlineCategory?: string },
+    @Query('subject') subject?: string,
+  ) {
+    const scope = await this.resolveAgentScope(req, subject);
+    return this.template.agentReview(id, body.decision, body.reviewNote, req.user.id, scope.regionPath, body.redlineCategory);
+  }
+
+  /* ══════════════════ 内容审核 · 作品(服务)审核（红线闸口 · 代理一审） ════════════════
+   * 服务商发布作品 → reviewStatus=review_pending（不公开）→ 代理商辖区一审 → approved 公开。
+   */
+
+  /** 辖区待审作品（服务商发布，reviewStatus=review_pending） */
+  @Get('projects/pending')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async projectsPending(@Req() req: ReqUser, @Query('subject') subject?: string) {
+    const scope = await this.resolveAgentScope(req, subject);
+    return this.publish.listAgentPendingProjects(scope.regionPath);
+  }
+
+  /** 辖区作品审核台（仅服务商作品，按 reviewStatus 过滤 + 分页） */
+  @Get('projects')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async projects(
+    @Req() req: ReqUser,
+    @Query('status') status?: string,
+    @Query('keyword') keyword?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('subject') subject?: string,
+  ) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const p = page ? Number(page) : 1;
+    const ps = Math.min(pageSize ? Number(pageSize) : 20, 100);
+    return this.publish.listAgentAllProjects(scope.regionPath, status, keyword, (p - 1) * ps, ps);
+  }
+
+  /** 代理商一审作品：通过或驳回（驳回须带红线类别） */
+  @Patch('projects/:id/review')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async reviewProject(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Body() body: { decision: 'APPROVED' | 'REJECTED'; reviewNote?: string; redlineCategory?: string },
+    @Query('subject') subject?: string,
+  ) {
+    const scope = await this.resolveAgentScope(req, subject);
+    return this.publish.agentReviewProject(id, body.decision, body.reviewNote, req.user.id, scope.regionPath, body.redlineCategory);
   }
 
   /* ══════════════════ 我的团队（OrgStaff · orgType=AGENT） ══════════════════

@@ -52,7 +52,11 @@
     "orderfulfill": "订单履约",
     "servicecontent": "服务与内容",
     "qualification": "资质中心",
-    "teamsetting": "工作台设置"
+    "teamsetting": "工作台设置",
+    "providersupervise": "辖区服务商",
+    "contentreview": "内容审核",
+    "regionops": "辖区运营",
+    "recruit": "招商拓展"
   },
   "status": {
     "ACTIVE": "正常",
@@ -150,7 +154,18 @@
       "team": "团队管理"
     },
     "agent": {
-      "team": "团队管理"
+      "team": "团队管理",
+      "template-review": "模板审核",
+      "service-review": "服务审核",
+      "apply": "入驻审批",
+      "qualification": "资质审核",
+      "contract": "合同管理",
+      "complaints": "意见反馈",
+      "invest": "招商申请",
+      "pool": "意向池",
+      "settle": "结算总览",
+      "withdraw-review": "提现初审",
+      "notices": "通知公告"
     },
     "admin.qualifications": "入驻审批",
     "user.apply": "入驻申请"
@@ -591,6 +606,31 @@
       "removeFailed": "移除失败",
       "authorityNotice": "权威公告",
       "generalMsg": "一般消息"
+    },
+    "col": {
+      "workTitle": "作品标题",
+      "reviewStatus": "审核状态",
+      "redline": "红线类别"
+    },
+    "enum": {
+      "pending": "待审",
+      "onSale": "已上架",
+      "rejected": "已驳回",
+      "takenDown": "已下架",
+      "approvedOnSale": "已通过并上架"
+    },
+    "lbl": {
+      "all": "全部"
+    },
+    "sec": {
+      "templateReview": "模板审核",
+      "serviceReview": "服务审核"
+    },
+    "toast": {
+      "redlineRequired": "驳回必须填写意见并选择红线类别"
+    },
+    "note": {
+      "comingSoonHint": "该模块后端端点将在后续迭代落地"
     }
   }
 }

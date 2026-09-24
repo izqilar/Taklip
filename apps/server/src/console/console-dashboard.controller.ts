@@ -387,6 +387,68 @@ export class ConsoleDashboardController {
       });
     }
 
+    // ⑨ 代理商视角专属角标（v2 红线闸口 + 辖区治理）。
+    //    仅当查看者为 AGENT（rp 为真，含 ADMIN 视察某代理商）时统计；其余角色恒为 0
+    //    （这些 badgeKey 只挂在 AGENT 侧栏菜单上，前端 AGENT 视角才读取）。
+    //    口径与各自列表页默认筛选严格一致（点进去的总数 ≥ 角标数）：
+    //      - onboarding      ：辖区待审(PENDING)服务商（= 入驻审批队列）
+    //      - qualification   ：辖区服务商资质待审（FIRST_PENDING 待初审 / FINAL_PENDING 待终审）
+    //      - templateReview  ：本辖区待审(PENDING)模板数（新红线闸口一审队列）
+    //      - serviceReview   ：本辖区待代理商审核(review_pending)的服务/作品数（v2 新上架管线）
+    //      - agentComplaints ：辖区待处理（未关闭）工单数
+    //      - withdrawReview  ：辖区服务商提现待初审(pending)数
+    //      - agentMessages   ：辖区 REGION 作用域、待审核(PENDING)的业务消息数
+    //      - investPending   ：辖区招商新申请数（招商模块尚未上线，预留为 0，待回填）
+    let onboarding = 0;
+    let qualification = 0;
+    let templateReview = 0;
+    let serviceReview = 0;
+    let agentComplaints = 0;
+    let withdrawReview = 0;
+    let investPending = 0;
+    let agentMessages = 0;
+    if (rp) {
+      const [onb, qual, tplRev, svcRev, comp, wdRev, msg] = await this.prisma.$transaction([
+        // 入驻审批：辖区待审(PENDING)服务商数（与 providerReview 的辖区子集同口径）
+        this.prisma.user.count({
+          where: { ...userRp, role: 'SERVICE_PROVIDER', providerStatus: 'PENDING' },
+        }),
+        // 资质审核：辖区服务商资质待审（FIRST_PENDING 待初审 / FINAL_PENDING 待终审）
+        this.prisma.qualificationApplication.count({
+          where: { kind: 'provider', status: { in: ['FIRST_PENDING', 'FINAL_PENDING'] }, regionPath: { startsWith: rp } },
+        }),
+        // 模板审核：本辖区待审(PENDING)模板数
+        this.prisma.template.count({
+          where: { status: 'PENDING', author: { regionPath: { startsWith: rp } } },
+        }),
+        // 服务审核：本辖区待代理商审核(review_pending)的服务/作品数（v2 新上架管线）
+        this.prisma.project.count({
+          where: { reviewStatus: 'review_pending', user: { regionPath: { startsWith: rp } } },
+        }),
+        // 意见反馈：辖区待处理（未关闭）工单数（与 feedback 的辖区子集同口径）
+        this.prisma.ticket.count({
+          where: { status: { not: 'CLOSED' }, OR: [{ regionPath: { startsWith: rp } }, { assigneeId: me.id }] },
+        }),
+        // 提现初审：辖区服务商提现待初审(pending)数
+        this.prisma.withdrawal.count({
+          where: { status: 'pending', provider: { regionPath: { startsWith: rp } } },
+        }),
+        // 业务消息：辖区 REGION 作用域、待审核(PENDING)的业务消息数
+        this.prisma.message.count({
+          where: { status: 'PENDING', scope: 'REGION', regionPath: { startsWith: rp } },
+        }),
+      ]);
+      onboarding = onb;
+      qualification = qual;
+      templateReview = tplRev;
+      serviceReview = svcRev;
+      agentComplaints = comp;
+      withdrawReview = wdRev;
+      agentMessages = msg;
+      // 招商申请：招商模块尚未上线，暂无独立招商申请表，预留为 0
+      investPending = 0;
+    }
+
     return {
       providerReview,
       withdrawals,
@@ -398,6 +460,15 @@ export class ConsoleDashboardController {
       messagePending,
       feedbackPending,
       joinPending,
+      // ── 代理商视角新增角标 ──
+      onboarding,
+      qualification,
+      templateReview,
+      serviceReview,
+      agentComplaints,
+      withdrawReview,
+      investPending,
+      agentMessages,
     };
   }
 

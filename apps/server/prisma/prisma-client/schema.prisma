@@ -150,23 +150,32 @@ model User {
 }
 
 model Project {
-  id          String   @id @default(cuid())
-  userId      String
-  title       String   @default("未命名作品")
-  cover       String?
-  status      String   @default("draft") // draft | published
-  publishCode String?  @unique // 发布后生成，用于公开访问 /p/:publishCode
+  id              String    @id @default(cuid())
+  userId          String
+  title           String    @default("未命名作品")
+  cover           String?
+  status          String    @default("draft") // draft | published
+  // v2 红线闸口：内容审核态。服务商上架须代理商审核通过才公开。
+  // approved=已通过(公开) / review_pending=待代理商审核(不公开) / rejected=驳回 / redline_takedown=红线强制下架
+  reviewStatus    String    @default("approved") @map("review_status")
+  // v2 红线闸口：审核追溯（与 Template 对齐）
+  reviewedBy      String?   @map("reviewed_by")
+  reviewedAt      DateTime? @map("reviewed_at")
+  reviewStage     String?   @map("review_stage")
+  redlineCategory String?   @map("redline_category")
+  reviewNote      String?   @map("review_note") // 驳回/整改意见（展示给服务商）
+  publishCode     String?   @unique // 发布后生成，用于公开访问 /p/:publishCode
   // 完整 Schema，对应文档中的 Project JSON（Project -> Page[] -> Element[]）
-  schema      Json
+  schema          Json
   // 草稿 Schema（方案 A draft/live）：保存只写草稿，发布才原子替换线上 schema
-  draftSchema Json?    @map("draft_schema")
-  version     Int      @default(1)
+  draftSchema     Json?     @map("draft_schema")
+  version         Int       @default(1)
   // 已发布 H5 的总访问量（每次公开访问 /p/:publishCode 自增）
-  viewCount   Int      @default(0)
+  viewCount       Int       @default(0)
   // 来源模板（字体授权溯源）：从付费模板创建的作品才可使用其中的付费字体
-  templateId  String?  @map("template_id")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  templateId      String?   @map("template_id")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   template Template?        @relation("ProjectTemplate", fields: [templateId], references: [id])
@@ -193,16 +202,20 @@ model Template {
   useCount       Int       @default(0)
 
   // 三层权限 / 审核 / 变现（P0 引入）
-  authorId   String?
-  author     User?          @relation(fields: [authorId], references: [id])
-  status     TemplateStatus @default(PENDING)
-  reviewNote String? // 驳回原因，展示给服务商
-  reviewedBy String? // 审核管理员 id
-  reviewedAt DateTime?
-  price      Int            @default(0) // 价格（分），0=免费
-  currency   String         @default("CNY")
+  authorId        String?
+  author          User?          @relation(fields: [authorId], references: [id])
+  status          TemplateStatus @default(PENDING)
+  reviewNote      String? // 驳回原因，展示给服务商
+  reviewedBy      String? // 审核人 id（代理商或总台）
+  reviewedAt      DateTime?
+  // v2 红线闸口：审核层级（AGENT 一线辖区 / ADMIN 总台抽检），区分谁审的、可追溯
+  reviewStage     String?        @map("review_stage")
+  // v2 红线闸口：命中红线类别（political/ideology/porn/…），仅驳回/强制下架时填写
+  redlineCategory String?        @map("redline_category")
+  price           Int            @default(0) // 价格（分），0=免费
+  currency        String         @default("CNY")
   // 该模板使用的付费字体 family 列表（发布时从 schema 自动解析冗余存储，便于授权校验）
-  paidFonts  String[]       @default([]) @map("paid_fonts")
+  paidFonts       String[]       @default([]) @map("paid_fonts")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -214,6 +227,18 @@ model Template {
   @@index([category])
   @@index([authorId])
   @@index([status])
+}
+
+// 红线词库（v2 内容审核闸口）：总台可维护的内容安全敏感词，优先于硬编码词库。
+// category 用于分类统计与审计；enabled=false 的词临时停用而不删除。
+model RedlineWord {
+  id        String   @id @default(cuid())
+  word      String   @unique
+  category  String   @default("other") // political/ideology/porn/violence/gambling/drug/fraud/infringement/false_ad/other
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([enabled])
 }
 
 // 字体目录（仅元数据 + 文件托管，不单独售卖；授权绑定在付费模板上）

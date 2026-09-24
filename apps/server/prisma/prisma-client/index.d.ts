@@ -34,6 +34,11 @@ export type Project = $Result.DefaultSelection<Prisma.$ProjectPayload>
  */
 export type Template = $Result.DefaultSelection<Prisma.$TemplatePayload>
 /**
+ * Model RedlineWord
+ * 
+ */
+export type RedlineWord = $Result.DefaultSelection<Prisma.$RedlineWordPayload>
+/**
  * Model Font
  * 
  */
@@ -474,6 +479,16 @@ export class PrismaClient<
     * ```
     */
   get template(): Prisma.TemplateDelegate<ExtArgs>;
+
+  /**
+   * `prisma.redlineWord`: Exposes CRUD operations for the **RedlineWord** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more RedlineWords
+    * const redlineWords = await prisma.redlineWord.findMany()
+    * ```
+    */
+  get redlineWord(): Prisma.RedlineWordDelegate<ExtArgs>;
 
   /**
    * `prisma.font`: Exposes CRUD operations for the **Font** model.
@@ -1149,6 +1164,7 @@ export namespace Prisma {
     User: 'User',
     Project: 'Project',
     Template: 'Template',
+    RedlineWord: 'RedlineWord',
     Font: 'Font',
     ProjectVersion: 'ProjectVersion',
     Asset: 'Asset',
@@ -1187,7 +1203,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, ClientOptions = {}> = {
     meta: {
-      modelProps: "region" | "user" | "project" | "template" | "font" | "projectVersion" | "asset" | "templateOrder" | "providerWallet" | "withdrawal" | "templateAppeal" | "ticket" | "message" | "review" | "messageRead" | "qualificationApplication" | "walletLog" | "coupon" | "userCoupon" | "providerSchedule" | "providerContract" | "orgStaff" | "teamJoinApplication" | "providerClient" | "providerClientReach" | "auditLog" | "providerLicense"
+      modelProps: "region" | "user" | "project" | "template" | "redlineWord" | "font" | "projectVersion" | "asset" | "templateOrder" | "providerWallet" | "withdrawal" | "templateAppeal" | "ticket" | "message" | "review" | "messageRead" | "qualificationApplication" | "walletLog" | "coupon" | "userCoupon" | "providerSchedule" | "providerContract" | "orgStaff" | "teamJoinApplication" | "providerClient" | "providerClientReach" | "auditLog" | "providerLicense"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1468,6 +1484,76 @@ export namespace Prisma {
           count: {
             args: Prisma.TemplateCountArgs<ExtArgs>
             result: $Utils.Optional<TemplateCountAggregateOutputType> | number
+          }
+        }
+      }
+      RedlineWord: {
+        payload: Prisma.$RedlineWordPayload<ExtArgs>
+        fields: Prisma.RedlineWordFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.RedlineWordFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RedlineWordPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.RedlineWordFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RedlineWordPayload>
+          }
+          findFirst: {
+            args: Prisma.RedlineWordFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RedlineWordPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.RedlineWordFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RedlineWordPayload>
+          }
+          findMany: {
+            args: Prisma.RedlineWordFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RedlineWordPayload>[]
+          }
+          create: {
+            args: Prisma.RedlineWordCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RedlineWordPayload>
+          }
+          createMany: {
+            args: Prisma.RedlineWordCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.RedlineWordCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RedlineWordPayload>[]
+          }
+          delete: {
+            args: Prisma.RedlineWordDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RedlineWordPayload>
+          }
+          update: {
+            args: Prisma.RedlineWordUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RedlineWordPayload>
+          }
+          deleteMany: {
+            args: Prisma.RedlineWordDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.RedlineWordUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.RedlineWordUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RedlineWordPayload>
+          }
+          aggregate: {
+            args: Prisma.RedlineWordAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateRedlineWord>
+          }
+          groupBy: {
+            args: Prisma.RedlineWordGroupByArgs<ExtArgs>
+            result: $Utils.Optional<RedlineWordGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.RedlineWordCountArgs<ExtArgs>
+            result: $Utils.Optional<RedlineWordCountAggregateOutputType> | number
           }
         }
       }
@@ -6495,6 +6581,12 @@ export namespace Prisma {
     title: string | null
     cover: string | null
     status: string | null
+    reviewStatus: string | null
+    reviewedBy: string | null
+    reviewedAt: Date | null
+    reviewStage: string | null
+    redlineCategory: string | null
+    reviewNote: string | null
     publishCode: string | null
     version: number | null
     viewCount: number | null
@@ -6509,6 +6601,12 @@ export namespace Prisma {
     title: string | null
     cover: string | null
     status: string | null
+    reviewStatus: string | null
+    reviewedBy: string | null
+    reviewedAt: Date | null
+    reviewStage: string | null
+    redlineCategory: string | null
+    reviewNote: string | null
     publishCode: string | null
     version: number | null
     viewCount: number | null
@@ -6523,6 +6621,12 @@ export namespace Prisma {
     title: number
     cover: number
     status: number
+    reviewStatus: number
+    reviewedBy: number
+    reviewedAt: number
+    reviewStage: number
+    redlineCategory: number
+    reviewNote: number
     publishCode: number
     schema: number
     draftSchema: number
@@ -6551,6 +6655,12 @@ export namespace Prisma {
     title?: true
     cover?: true
     status?: true
+    reviewStatus?: true
+    reviewedBy?: true
+    reviewedAt?: true
+    reviewStage?: true
+    redlineCategory?: true
+    reviewNote?: true
     publishCode?: true
     version?: true
     viewCount?: true
@@ -6565,6 +6675,12 @@ export namespace Prisma {
     title?: true
     cover?: true
     status?: true
+    reviewStatus?: true
+    reviewedBy?: true
+    reviewedAt?: true
+    reviewStage?: true
+    redlineCategory?: true
+    reviewNote?: true
     publishCode?: true
     version?: true
     viewCount?: true
@@ -6579,6 +6695,12 @@ export namespace Prisma {
     title?: true
     cover?: true
     status?: true
+    reviewStatus?: true
+    reviewedBy?: true
+    reviewedAt?: true
+    reviewStage?: true
+    redlineCategory?: true
+    reviewNote?: true
     publishCode?: true
     schema?: true
     draftSchema?: true
@@ -6682,6 +6804,12 @@ export namespace Prisma {
     title: string
     cover: string | null
     status: string
+    reviewStatus: string
+    reviewedBy: string | null
+    reviewedAt: Date | null
+    reviewStage: string | null
+    redlineCategory: string | null
+    reviewNote: string | null
     publishCode: string | null
     schema: JsonValue
     draftSchema: JsonValue | null
@@ -6717,6 +6845,12 @@ export namespace Prisma {
     title?: boolean
     cover?: boolean
     status?: boolean
+    reviewStatus?: boolean
+    reviewedBy?: boolean
+    reviewedAt?: boolean
+    reviewStage?: boolean
+    redlineCategory?: boolean
+    reviewNote?: boolean
     publishCode?: boolean
     schema?: boolean
     draftSchema?: boolean
@@ -6737,6 +6871,12 @@ export namespace Prisma {
     title?: boolean
     cover?: boolean
     status?: boolean
+    reviewStatus?: boolean
+    reviewedBy?: boolean
+    reviewedAt?: boolean
+    reviewStage?: boolean
+    redlineCategory?: boolean
+    reviewNote?: boolean
     publishCode?: boolean
     schema?: boolean
     draftSchema?: boolean
@@ -6755,6 +6895,12 @@ export namespace Prisma {
     title?: boolean
     cover?: boolean
     status?: boolean
+    reviewStatus?: boolean
+    reviewedBy?: boolean
+    reviewedAt?: boolean
+    reviewStage?: boolean
+    redlineCategory?: boolean
+    reviewNote?: boolean
     publishCode?: boolean
     schema?: boolean
     draftSchema?: boolean
@@ -6789,6 +6935,12 @@ export namespace Prisma {
       title: string
       cover: string | null
       status: string
+      reviewStatus: string
+      reviewedBy: string | null
+      reviewedAt: Date | null
+      reviewStage: string | null
+      redlineCategory: string | null
+      reviewNote: string | null
       publishCode: string | null
       schema: Prisma.JsonValue
       draftSchema: Prisma.JsonValue | null
@@ -7198,6 +7350,12 @@ export namespace Prisma {
     readonly title: FieldRef<"Project", 'String'>
     readonly cover: FieldRef<"Project", 'String'>
     readonly status: FieldRef<"Project", 'String'>
+    readonly reviewStatus: FieldRef<"Project", 'String'>
+    readonly reviewedBy: FieldRef<"Project", 'String'>
+    readonly reviewedAt: FieldRef<"Project", 'DateTime'>
+    readonly reviewStage: FieldRef<"Project", 'String'>
+    readonly redlineCategory: FieldRef<"Project", 'String'>
+    readonly reviewNote: FieldRef<"Project", 'String'>
     readonly publishCode: FieldRef<"Project", 'String'>
     readonly schema: FieldRef<"Project", 'Json'>
     readonly draftSchema: FieldRef<"Project", 'Json'>
@@ -7611,6 +7769,8 @@ export namespace Prisma {
     reviewNote: string | null
     reviewedBy: string | null
     reviewedAt: Date | null
+    reviewStage: string | null
+    redlineCategory: string | null
     price: number | null
     currency: string | null
     createdAt: Date | null
@@ -7631,6 +7791,8 @@ export namespace Prisma {
     reviewNote: string | null
     reviewedBy: string | null
     reviewedAt: Date | null
+    reviewStage: string | null
+    redlineCategory: string | null
     price: number | null
     currency: string | null
     createdAt: Date | null
@@ -7654,6 +7816,8 @@ export namespace Prisma {
     reviewNote: number
     reviewedBy: number
     reviewedAt: number
+    reviewStage: number
+    redlineCategory: number
     price: number
     currency: number
     paidFonts: number
@@ -7689,6 +7853,8 @@ export namespace Prisma {
     reviewNote?: true
     reviewedBy?: true
     reviewedAt?: true
+    reviewStage?: true
+    redlineCategory?: true
     price?: true
     currency?: true
     createdAt?: true
@@ -7709,6 +7875,8 @@ export namespace Prisma {
     reviewNote?: true
     reviewedBy?: true
     reviewedAt?: true
+    reviewStage?: true
+    redlineCategory?: true
     price?: true
     currency?: true
     createdAt?: true
@@ -7732,6 +7900,8 @@ export namespace Prisma {
     reviewNote?: true
     reviewedBy?: true
     reviewedAt?: true
+    reviewStage?: true
+    redlineCategory?: true
     price?: true
     currency?: true
     paidFonts?: true
@@ -7843,6 +8013,8 @@ export namespace Prisma {
     reviewNote: string | null
     reviewedBy: string | null
     reviewedAt: Date | null
+    reviewStage: string | null
+    redlineCategory: string | null
     price: number
     currency: string
     paidFonts: string[]
@@ -7886,6 +8058,8 @@ export namespace Prisma {
     reviewNote?: boolean
     reviewedBy?: boolean
     reviewedAt?: boolean
+    reviewStage?: boolean
+    redlineCategory?: boolean
     price?: boolean
     currency?: boolean
     paidFonts?: boolean
@@ -7915,6 +8089,8 @@ export namespace Prisma {
     reviewNote?: boolean
     reviewedBy?: boolean
     reviewedAt?: boolean
+    reviewStage?: boolean
+    redlineCategory?: boolean
     price?: boolean
     currency?: boolean
     paidFonts?: boolean
@@ -7940,6 +8116,8 @@ export namespace Prisma {
     reviewNote?: boolean
     reviewedBy?: boolean
     reviewedAt?: boolean
+    reviewStage?: boolean
+    redlineCategory?: boolean
     price?: boolean
     currency?: boolean
     paidFonts?: boolean
@@ -7983,6 +8161,8 @@ export namespace Prisma {
       reviewNote: string | null
       reviewedBy: string | null
       reviewedAt: Date | null
+      reviewStage: string | null
+      redlineCategory: string | null
       price: number
       currency: string
       paidFonts: string[]
@@ -8401,6 +8581,8 @@ export namespace Prisma {
     readonly reviewNote: FieldRef<"Template", 'String'>
     readonly reviewedBy: FieldRef<"Template", 'String'>
     readonly reviewedAt: FieldRef<"Template", 'DateTime'>
+    readonly reviewStage: FieldRef<"Template", 'String'>
+    readonly redlineCategory: FieldRef<"Template", 'String'>
     readonly price: FieldRef<"Template", 'Int'>
     readonly currency: FieldRef<"Template", 'String'>
     readonly paidFonts: FieldRef<"Template", 'String[]'>
@@ -8810,6 +8992,884 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: TemplateInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model RedlineWord
+   */
+
+  export type AggregateRedlineWord = {
+    _count: RedlineWordCountAggregateOutputType | null
+    _min: RedlineWordMinAggregateOutputType | null
+    _max: RedlineWordMaxAggregateOutputType | null
+  }
+
+  export type RedlineWordMinAggregateOutputType = {
+    id: string | null
+    word: string | null
+    category: string | null
+    enabled: boolean | null
+    createdAt: Date | null
+  }
+
+  export type RedlineWordMaxAggregateOutputType = {
+    id: string | null
+    word: string | null
+    category: string | null
+    enabled: boolean | null
+    createdAt: Date | null
+  }
+
+  export type RedlineWordCountAggregateOutputType = {
+    id: number
+    word: number
+    category: number
+    enabled: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type RedlineWordMinAggregateInputType = {
+    id?: true
+    word?: true
+    category?: true
+    enabled?: true
+    createdAt?: true
+  }
+
+  export type RedlineWordMaxAggregateInputType = {
+    id?: true
+    word?: true
+    category?: true
+    enabled?: true
+    createdAt?: true
+  }
+
+  export type RedlineWordCountAggregateInputType = {
+    id?: true
+    word?: true
+    category?: true
+    enabled?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type RedlineWordAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RedlineWord to aggregate.
+     */
+    where?: RedlineWordWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RedlineWords to fetch.
+     */
+    orderBy?: RedlineWordOrderByWithRelationInput | RedlineWordOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: RedlineWordWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RedlineWords from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RedlineWords.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned RedlineWords
+    **/
+    _count?: true | RedlineWordCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: RedlineWordMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: RedlineWordMaxAggregateInputType
+  }
+
+  export type GetRedlineWordAggregateType<T extends RedlineWordAggregateArgs> = {
+        [P in keyof T & keyof AggregateRedlineWord]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateRedlineWord[P]>
+      : GetScalarType<T[P], AggregateRedlineWord[P]>
+  }
+
+
+
+
+  export type RedlineWordGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RedlineWordWhereInput
+    orderBy?: RedlineWordOrderByWithAggregationInput | RedlineWordOrderByWithAggregationInput[]
+    by: RedlineWordScalarFieldEnum[] | RedlineWordScalarFieldEnum
+    having?: RedlineWordScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: RedlineWordCountAggregateInputType | true
+    _min?: RedlineWordMinAggregateInputType
+    _max?: RedlineWordMaxAggregateInputType
+  }
+
+  export type RedlineWordGroupByOutputType = {
+    id: string
+    word: string
+    category: string
+    enabled: boolean
+    createdAt: Date
+    _count: RedlineWordCountAggregateOutputType | null
+    _min: RedlineWordMinAggregateOutputType | null
+    _max: RedlineWordMaxAggregateOutputType | null
+  }
+
+  type GetRedlineWordGroupByPayload<T extends RedlineWordGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<RedlineWordGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof RedlineWordGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], RedlineWordGroupByOutputType[P]>
+            : GetScalarType<T[P], RedlineWordGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type RedlineWordSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    word?: boolean
+    category?: boolean
+    enabled?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["redlineWord"]>
+
+  export type RedlineWordSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    word?: boolean
+    category?: boolean
+    enabled?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["redlineWord"]>
+
+  export type RedlineWordSelectScalar = {
+    id?: boolean
+    word?: boolean
+    category?: boolean
+    enabled?: boolean
+    createdAt?: boolean
+  }
+
+
+  export type $RedlineWordPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "RedlineWord"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      word: string
+      category: string
+      enabled: boolean
+      createdAt: Date
+    }, ExtArgs["result"]["redlineWord"]>
+    composites: {}
+  }
+
+  type RedlineWordGetPayload<S extends boolean | null | undefined | RedlineWordDefaultArgs> = $Result.GetResult<Prisma.$RedlineWordPayload, S>
+
+  type RedlineWordCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<RedlineWordFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: RedlineWordCountAggregateInputType | true
+    }
+
+  export interface RedlineWordDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['RedlineWord'], meta: { name: 'RedlineWord' } }
+    /**
+     * Find zero or one RedlineWord that matches the filter.
+     * @param {RedlineWordFindUniqueArgs} args - Arguments to find a RedlineWord
+     * @example
+     * // Get one RedlineWord
+     * const redlineWord = await prisma.redlineWord.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends RedlineWordFindUniqueArgs>(args: SelectSubset<T, RedlineWordFindUniqueArgs<ExtArgs>>): Prisma__RedlineWordClient<$Result.GetResult<Prisma.$RedlineWordPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one RedlineWord that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {RedlineWordFindUniqueOrThrowArgs} args - Arguments to find a RedlineWord
+     * @example
+     * // Get one RedlineWord
+     * const redlineWord = await prisma.redlineWord.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends RedlineWordFindUniqueOrThrowArgs>(args: SelectSubset<T, RedlineWordFindUniqueOrThrowArgs<ExtArgs>>): Prisma__RedlineWordClient<$Result.GetResult<Prisma.$RedlineWordPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first RedlineWord that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RedlineWordFindFirstArgs} args - Arguments to find a RedlineWord
+     * @example
+     * // Get one RedlineWord
+     * const redlineWord = await prisma.redlineWord.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends RedlineWordFindFirstArgs>(args?: SelectSubset<T, RedlineWordFindFirstArgs<ExtArgs>>): Prisma__RedlineWordClient<$Result.GetResult<Prisma.$RedlineWordPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first RedlineWord that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RedlineWordFindFirstOrThrowArgs} args - Arguments to find a RedlineWord
+     * @example
+     * // Get one RedlineWord
+     * const redlineWord = await prisma.redlineWord.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends RedlineWordFindFirstOrThrowArgs>(args?: SelectSubset<T, RedlineWordFindFirstOrThrowArgs<ExtArgs>>): Prisma__RedlineWordClient<$Result.GetResult<Prisma.$RedlineWordPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more RedlineWords that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RedlineWordFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all RedlineWords
+     * const redlineWords = await prisma.redlineWord.findMany()
+     * 
+     * // Get first 10 RedlineWords
+     * const redlineWords = await prisma.redlineWord.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const redlineWordWithIdOnly = await prisma.redlineWord.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends RedlineWordFindManyArgs>(args?: SelectSubset<T, RedlineWordFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RedlineWordPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a RedlineWord.
+     * @param {RedlineWordCreateArgs} args - Arguments to create a RedlineWord.
+     * @example
+     * // Create one RedlineWord
+     * const RedlineWord = await prisma.redlineWord.create({
+     *   data: {
+     *     // ... data to create a RedlineWord
+     *   }
+     * })
+     * 
+     */
+    create<T extends RedlineWordCreateArgs>(args: SelectSubset<T, RedlineWordCreateArgs<ExtArgs>>): Prisma__RedlineWordClient<$Result.GetResult<Prisma.$RedlineWordPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many RedlineWords.
+     * @param {RedlineWordCreateManyArgs} args - Arguments to create many RedlineWords.
+     * @example
+     * // Create many RedlineWords
+     * const redlineWord = await prisma.redlineWord.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends RedlineWordCreateManyArgs>(args?: SelectSubset<T, RedlineWordCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many RedlineWords and returns the data saved in the database.
+     * @param {RedlineWordCreateManyAndReturnArgs} args - Arguments to create many RedlineWords.
+     * @example
+     * // Create many RedlineWords
+     * const redlineWord = await prisma.redlineWord.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many RedlineWords and only return the `id`
+     * const redlineWordWithIdOnly = await prisma.redlineWord.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends RedlineWordCreateManyAndReturnArgs>(args?: SelectSubset<T, RedlineWordCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RedlineWordPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a RedlineWord.
+     * @param {RedlineWordDeleteArgs} args - Arguments to delete one RedlineWord.
+     * @example
+     * // Delete one RedlineWord
+     * const RedlineWord = await prisma.redlineWord.delete({
+     *   where: {
+     *     // ... filter to delete one RedlineWord
+     *   }
+     * })
+     * 
+     */
+    delete<T extends RedlineWordDeleteArgs>(args: SelectSubset<T, RedlineWordDeleteArgs<ExtArgs>>): Prisma__RedlineWordClient<$Result.GetResult<Prisma.$RedlineWordPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one RedlineWord.
+     * @param {RedlineWordUpdateArgs} args - Arguments to update one RedlineWord.
+     * @example
+     * // Update one RedlineWord
+     * const redlineWord = await prisma.redlineWord.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends RedlineWordUpdateArgs>(args: SelectSubset<T, RedlineWordUpdateArgs<ExtArgs>>): Prisma__RedlineWordClient<$Result.GetResult<Prisma.$RedlineWordPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more RedlineWords.
+     * @param {RedlineWordDeleteManyArgs} args - Arguments to filter RedlineWords to delete.
+     * @example
+     * // Delete a few RedlineWords
+     * const { count } = await prisma.redlineWord.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends RedlineWordDeleteManyArgs>(args?: SelectSubset<T, RedlineWordDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more RedlineWords.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RedlineWordUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many RedlineWords
+     * const redlineWord = await prisma.redlineWord.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends RedlineWordUpdateManyArgs>(args: SelectSubset<T, RedlineWordUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one RedlineWord.
+     * @param {RedlineWordUpsertArgs} args - Arguments to update or create a RedlineWord.
+     * @example
+     * // Update or create a RedlineWord
+     * const redlineWord = await prisma.redlineWord.upsert({
+     *   create: {
+     *     // ... data to create a RedlineWord
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the RedlineWord we want to update
+     *   }
+     * })
+     */
+    upsert<T extends RedlineWordUpsertArgs>(args: SelectSubset<T, RedlineWordUpsertArgs<ExtArgs>>): Prisma__RedlineWordClient<$Result.GetResult<Prisma.$RedlineWordPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of RedlineWords.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RedlineWordCountArgs} args - Arguments to filter RedlineWords to count.
+     * @example
+     * // Count the number of RedlineWords
+     * const count = await prisma.redlineWord.count({
+     *   where: {
+     *     // ... the filter for the RedlineWords we want to count
+     *   }
+     * })
+    **/
+    count<T extends RedlineWordCountArgs>(
+      args?: Subset<T, RedlineWordCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], RedlineWordCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a RedlineWord.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RedlineWordAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends RedlineWordAggregateArgs>(args: Subset<T, RedlineWordAggregateArgs>): Prisma.PrismaPromise<GetRedlineWordAggregateType<T>>
+
+    /**
+     * Group by RedlineWord.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RedlineWordGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends RedlineWordGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: RedlineWordGroupByArgs['orderBy'] }
+        : { orderBy?: RedlineWordGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, RedlineWordGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetRedlineWordGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the RedlineWord model
+   */
+  readonly fields: RedlineWordFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for RedlineWord.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__RedlineWordClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the RedlineWord model
+   */ 
+  interface RedlineWordFieldRefs {
+    readonly id: FieldRef<"RedlineWord", 'String'>
+    readonly word: FieldRef<"RedlineWord", 'String'>
+    readonly category: FieldRef<"RedlineWord", 'String'>
+    readonly enabled: FieldRef<"RedlineWord", 'Boolean'>
+    readonly createdAt: FieldRef<"RedlineWord", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * RedlineWord findUnique
+   */
+  export type RedlineWordFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RedlineWord
+     */
+    select?: RedlineWordSelect<ExtArgs> | null
+    /**
+     * Filter, which RedlineWord to fetch.
+     */
+    where: RedlineWordWhereUniqueInput
+  }
+
+  /**
+   * RedlineWord findUniqueOrThrow
+   */
+  export type RedlineWordFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RedlineWord
+     */
+    select?: RedlineWordSelect<ExtArgs> | null
+    /**
+     * Filter, which RedlineWord to fetch.
+     */
+    where: RedlineWordWhereUniqueInput
+  }
+
+  /**
+   * RedlineWord findFirst
+   */
+  export type RedlineWordFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RedlineWord
+     */
+    select?: RedlineWordSelect<ExtArgs> | null
+    /**
+     * Filter, which RedlineWord to fetch.
+     */
+    where?: RedlineWordWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RedlineWords to fetch.
+     */
+    orderBy?: RedlineWordOrderByWithRelationInput | RedlineWordOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RedlineWords.
+     */
+    cursor?: RedlineWordWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RedlineWords from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RedlineWords.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RedlineWords.
+     */
+    distinct?: RedlineWordScalarFieldEnum | RedlineWordScalarFieldEnum[]
+  }
+
+  /**
+   * RedlineWord findFirstOrThrow
+   */
+  export type RedlineWordFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RedlineWord
+     */
+    select?: RedlineWordSelect<ExtArgs> | null
+    /**
+     * Filter, which RedlineWord to fetch.
+     */
+    where?: RedlineWordWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RedlineWords to fetch.
+     */
+    orderBy?: RedlineWordOrderByWithRelationInput | RedlineWordOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RedlineWords.
+     */
+    cursor?: RedlineWordWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RedlineWords from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RedlineWords.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RedlineWords.
+     */
+    distinct?: RedlineWordScalarFieldEnum | RedlineWordScalarFieldEnum[]
+  }
+
+  /**
+   * RedlineWord findMany
+   */
+  export type RedlineWordFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RedlineWord
+     */
+    select?: RedlineWordSelect<ExtArgs> | null
+    /**
+     * Filter, which RedlineWords to fetch.
+     */
+    where?: RedlineWordWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RedlineWords to fetch.
+     */
+    orderBy?: RedlineWordOrderByWithRelationInput | RedlineWordOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing RedlineWords.
+     */
+    cursor?: RedlineWordWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RedlineWords from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RedlineWords.
+     */
+    skip?: number
+    distinct?: RedlineWordScalarFieldEnum | RedlineWordScalarFieldEnum[]
+  }
+
+  /**
+   * RedlineWord create
+   */
+  export type RedlineWordCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RedlineWord
+     */
+    select?: RedlineWordSelect<ExtArgs> | null
+    /**
+     * The data needed to create a RedlineWord.
+     */
+    data: XOR<RedlineWordCreateInput, RedlineWordUncheckedCreateInput>
+  }
+
+  /**
+   * RedlineWord createMany
+   */
+  export type RedlineWordCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many RedlineWords.
+     */
+    data: RedlineWordCreateManyInput | RedlineWordCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * RedlineWord createManyAndReturn
+   */
+  export type RedlineWordCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RedlineWord
+     */
+    select?: RedlineWordSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many RedlineWords.
+     */
+    data: RedlineWordCreateManyInput | RedlineWordCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * RedlineWord update
+   */
+  export type RedlineWordUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RedlineWord
+     */
+    select?: RedlineWordSelect<ExtArgs> | null
+    /**
+     * The data needed to update a RedlineWord.
+     */
+    data: XOR<RedlineWordUpdateInput, RedlineWordUncheckedUpdateInput>
+    /**
+     * Choose, which RedlineWord to update.
+     */
+    where: RedlineWordWhereUniqueInput
+  }
+
+  /**
+   * RedlineWord updateMany
+   */
+  export type RedlineWordUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update RedlineWords.
+     */
+    data: XOR<RedlineWordUpdateManyMutationInput, RedlineWordUncheckedUpdateManyInput>
+    /**
+     * Filter which RedlineWords to update
+     */
+    where?: RedlineWordWhereInput
+  }
+
+  /**
+   * RedlineWord upsert
+   */
+  export type RedlineWordUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RedlineWord
+     */
+    select?: RedlineWordSelect<ExtArgs> | null
+    /**
+     * The filter to search for the RedlineWord to update in case it exists.
+     */
+    where: RedlineWordWhereUniqueInput
+    /**
+     * In case the RedlineWord found by the `where` argument doesn't exist, create a new RedlineWord with this data.
+     */
+    create: XOR<RedlineWordCreateInput, RedlineWordUncheckedCreateInput>
+    /**
+     * In case the RedlineWord was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<RedlineWordUpdateInput, RedlineWordUncheckedUpdateInput>
+  }
+
+  /**
+   * RedlineWord delete
+   */
+  export type RedlineWordDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RedlineWord
+     */
+    select?: RedlineWordSelect<ExtArgs> | null
+    /**
+     * Filter which RedlineWord to delete.
+     */
+    where: RedlineWordWhereUniqueInput
+  }
+
+  /**
+   * RedlineWord deleteMany
+   */
+  export type RedlineWordDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RedlineWords to delete
+     */
+    where?: RedlineWordWhereInput
+  }
+
+  /**
+   * RedlineWord without action
+   */
+  export type RedlineWordDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RedlineWord
+     */
+    select?: RedlineWordSelect<ExtArgs> | null
   }
 
 
@@ -32154,6 +33214,12 @@ export namespace Prisma {
     title: 'title',
     cover: 'cover',
     status: 'status',
+    reviewStatus: 'reviewStatus',
+    reviewedBy: 'reviewedBy',
+    reviewedAt: 'reviewedAt',
+    reviewStage: 'reviewStage',
+    redlineCategory: 'redlineCategory',
+    reviewNote: 'reviewNote',
     publishCode: 'publishCode',
     schema: 'schema',
     draftSchema: 'draftSchema',
@@ -32184,6 +33250,8 @@ export namespace Prisma {
     reviewNote: 'reviewNote',
     reviewedBy: 'reviewedBy',
     reviewedAt: 'reviewedAt',
+    reviewStage: 'reviewStage',
+    redlineCategory: 'redlineCategory',
     price: 'price',
     currency: 'currency',
     paidFonts: 'paidFonts',
@@ -32192,6 +33260,17 @@ export namespace Prisma {
   };
 
   export type TemplateScalarFieldEnum = (typeof TemplateScalarFieldEnum)[keyof typeof TemplateScalarFieldEnum]
+
+
+  export const RedlineWordScalarFieldEnum: {
+    id: 'id',
+    word: 'word',
+    category: 'category',
+    enabled: 'enabled',
+    createdAt: 'createdAt'
+  };
+
+  export type RedlineWordScalarFieldEnum = (typeof RedlineWordScalarFieldEnum)[keyof typeof RedlineWordScalarFieldEnum]
 
 
   export const FontScalarFieldEnum: {
@@ -33186,6 +34265,12 @@ export namespace Prisma {
     title?: StringFilter<"Project"> | string
     cover?: StringNullableFilter<"Project"> | string | null
     status?: StringFilter<"Project"> | string
+    reviewStatus?: StringFilter<"Project"> | string
+    reviewedBy?: StringNullableFilter<"Project"> | string | null
+    reviewedAt?: DateTimeNullableFilter<"Project"> | Date | string | null
+    reviewStage?: StringNullableFilter<"Project"> | string | null
+    redlineCategory?: StringNullableFilter<"Project"> | string | null
+    reviewNote?: StringNullableFilter<"Project"> | string | null
     publishCode?: StringNullableFilter<"Project"> | string | null
     schema?: JsonFilter<"Project">
     draftSchema?: JsonNullableFilter<"Project">
@@ -33205,6 +34290,12 @@ export namespace Prisma {
     title?: SortOrder
     cover?: SortOrderInput | SortOrder
     status?: SortOrder
+    reviewStatus?: SortOrder
+    reviewedBy?: SortOrderInput | SortOrder
+    reviewedAt?: SortOrderInput | SortOrder
+    reviewStage?: SortOrderInput | SortOrder
+    redlineCategory?: SortOrderInput | SortOrder
+    reviewNote?: SortOrderInput | SortOrder
     publishCode?: SortOrderInput | SortOrder
     schema?: SortOrder
     draftSchema?: SortOrderInput | SortOrder
@@ -33228,6 +34319,12 @@ export namespace Prisma {
     title?: StringFilter<"Project"> | string
     cover?: StringNullableFilter<"Project"> | string | null
     status?: StringFilter<"Project"> | string
+    reviewStatus?: StringFilter<"Project"> | string
+    reviewedBy?: StringNullableFilter<"Project"> | string | null
+    reviewedAt?: DateTimeNullableFilter<"Project"> | Date | string | null
+    reviewStage?: StringNullableFilter<"Project"> | string | null
+    redlineCategory?: StringNullableFilter<"Project"> | string | null
+    reviewNote?: StringNullableFilter<"Project"> | string | null
     schema?: JsonFilter<"Project">
     draftSchema?: JsonNullableFilter<"Project">
     version?: IntFilter<"Project"> | number
@@ -33246,6 +34343,12 @@ export namespace Prisma {
     title?: SortOrder
     cover?: SortOrderInput | SortOrder
     status?: SortOrder
+    reviewStatus?: SortOrder
+    reviewedBy?: SortOrderInput | SortOrder
+    reviewedAt?: SortOrderInput | SortOrder
+    reviewStage?: SortOrderInput | SortOrder
+    redlineCategory?: SortOrderInput | SortOrder
+    reviewNote?: SortOrderInput | SortOrder
     publishCode?: SortOrderInput | SortOrder
     schema?: SortOrder
     draftSchema?: SortOrderInput | SortOrder
@@ -33270,6 +34373,12 @@ export namespace Prisma {
     title?: StringWithAggregatesFilter<"Project"> | string
     cover?: StringNullableWithAggregatesFilter<"Project"> | string | null
     status?: StringWithAggregatesFilter<"Project"> | string
+    reviewStatus?: StringWithAggregatesFilter<"Project"> | string
+    reviewedBy?: StringNullableWithAggregatesFilter<"Project"> | string | null
+    reviewedAt?: DateTimeNullableWithAggregatesFilter<"Project"> | Date | string | null
+    reviewStage?: StringNullableWithAggregatesFilter<"Project"> | string | null
+    redlineCategory?: StringNullableWithAggregatesFilter<"Project"> | string | null
+    reviewNote?: StringNullableWithAggregatesFilter<"Project"> | string | null
     publishCode?: StringNullableWithAggregatesFilter<"Project"> | string | null
     schema?: JsonWithAggregatesFilter<"Project">
     draftSchema?: JsonNullableWithAggregatesFilter<"Project">
@@ -33300,6 +34409,8 @@ export namespace Prisma {
     reviewNote?: StringNullableFilter<"Template"> | string | null
     reviewedBy?: StringNullableFilter<"Template"> | string | null
     reviewedAt?: DateTimeNullableFilter<"Template"> | Date | string | null
+    reviewStage?: StringNullableFilter<"Template"> | string | null
+    redlineCategory?: StringNullableFilter<"Template"> | string | null
     price?: IntFilter<"Template"> | number
     currency?: StringFilter<"Template"> | string
     paidFonts?: StringNullableListFilter<"Template">
@@ -33328,6 +34439,8 @@ export namespace Prisma {
     reviewNote?: SortOrderInput | SortOrder
     reviewedBy?: SortOrderInput | SortOrder
     reviewedAt?: SortOrderInput | SortOrder
+    reviewStage?: SortOrderInput | SortOrder
+    redlineCategory?: SortOrderInput | SortOrder
     price?: SortOrder
     currency?: SortOrder
     paidFonts?: SortOrder
@@ -33359,6 +34472,8 @@ export namespace Prisma {
     reviewNote?: StringNullableFilter<"Template"> | string | null
     reviewedBy?: StringNullableFilter<"Template"> | string | null
     reviewedAt?: DateTimeNullableFilter<"Template"> | Date | string | null
+    reviewStage?: StringNullableFilter<"Template"> | string | null
+    redlineCategory?: StringNullableFilter<"Template"> | string | null
     price?: IntFilter<"Template"> | number
     currency?: StringFilter<"Template"> | string
     paidFonts?: StringNullableListFilter<"Template">
@@ -33387,6 +34502,8 @@ export namespace Prisma {
     reviewNote?: SortOrderInput | SortOrder
     reviewedBy?: SortOrderInput | SortOrder
     reviewedAt?: SortOrderInput | SortOrder
+    reviewStage?: SortOrderInput | SortOrder
+    redlineCategory?: SortOrderInput | SortOrder
     price?: SortOrder
     currency?: SortOrder
     paidFonts?: SortOrder
@@ -33419,11 +34536,65 @@ export namespace Prisma {
     reviewNote?: StringNullableWithAggregatesFilter<"Template"> | string | null
     reviewedBy?: StringNullableWithAggregatesFilter<"Template"> | string | null
     reviewedAt?: DateTimeNullableWithAggregatesFilter<"Template"> | Date | string | null
+    reviewStage?: StringNullableWithAggregatesFilter<"Template"> | string | null
+    redlineCategory?: StringNullableWithAggregatesFilter<"Template"> | string | null
     price?: IntWithAggregatesFilter<"Template"> | number
     currency?: StringWithAggregatesFilter<"Template"> | string
     paidFonts?: StringNullableListFilter<"Template">
     createdAt?: DateTimeWithAggregatesFilter<"Template"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Template"> | Date | string
+  }
+
+  export type RedlineWordWhereInput = {
+    AND?: RedlineWordWhereInput | RedlineWordWhereInput[]
+    OR?: RedlineWordWhereInput[]
+    NOT?: RedlineWordWhereInput | RedlineWordWhereInput[]
+    id?: StringFilter<"RedlineWord"> | string
+    word?: StringFilter<"RedlineWord"> | string
+    category?: StringFilter<"RedlineWord"> | string
+    enabled?: BoolFilter<"RedlineWord"> | boolean
+    createdAt?: DateTimeFilter<"RedlineWord"> | Date | string
+  }
+
+  export type RedlineWordOrderByWithRelationInput = {
+    id?: SortOrder
+    word?: SortOrder
+    category?: SortOrder
+    enabled?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type RedlineWordWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    word?: string
+    AND?: RedlineWordWhereInput | RedlineWordWhereInput[]
+    OR?: RedlineWordWhereInput[]
+    NOT?: RedlineWordWhereInput | RedlineWordWhereInput[]
+    category?: StringFilter<"RedlineWord"> | string
+    enabled?: BoolFilter<"RedlineWord"> | boolean
+    createdAt?: DateTimeFilter<"RedlineWord"> | Date | string
+  }, "id" | "word">
+
+  export type RedlineWordOrderByWithAggregationInput = {
+    id?: SortOrder
+    word?: SortOrder
+    category?: SortOrder
+    enabled?: SortOrder
+    createdAt?: SortOrder
+    _count?: RedlineWordCountOrderByAggregateInput
+    _max?: RedlineWordMaxOrderByAggregateInput
+    _min?: RedlineWordMinOrderByAggregateInput
+  }
+
+  export type RedlineWordScalarWhereWithAggregatesInput = {
+    AND?: RedlineWordScalarWhereWithAggregatesInput | RedlineWordScalarWhereWithAggregatesInput[]
+    OR?: RedlineWordScalarWhereWithAggregatesInput[]
+    NOT?: RedlineWordScalarWhereWithAggregatesInput | RedlineWordScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"RedlineWord"> | string
+    word?: StringWithAggregatesFilter<"RedlineWord"> | string
+    category?: StringWithAggregatesFilter<"RedlineWord"> | string
+    enabled?: BoolWithAggregatesFilter<"RedlineWord"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"RedlineWord"> | Date | string
   }
 
   export type FontWhereInput = {
@@ -35812,6 +36983,12 @@ export namespace Prisma {
     title?: string
     cover?: string | null
     status?: string
+    reviewStatus?: string
+    reviewedBy?: string | null
+    reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
+    reviewNote?: string | null
     publishCode?: string | null
     schema: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -35830,6 +37007,12 @@ export namespace Prisma {
     title?: string
     cover?: string | null
     status?: string
+    reviewStatus?: string
+    reviewedBy?: string | null
+    reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
+    reviewNote?: string | null
     publishCode?: string | null
     schema: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -35846,6 +37029,12 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     cover?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
+    reviewStatus?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     publishCode?: NullableStringFieldUpdateOperationsInput | string | null
     schema?: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -35864,6 +37053,12 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     cover?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
+    reviewStatus?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     publishCode?: NullableStringFieldUpdateOperationsInput | string | null
     schema?: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -35881,6 +37076,12 @@ export namespace Prisma {
     title?: string
     cover?: string | null
     status?: string
+    reviewStatus?: string
+    reviewedBy?: string | null
+    reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
+    reviewNote?: string | null
     publishCode?: string | null
     schema: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -35896,6 +37097,12 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     cover?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
+    reviewStatus?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     publishCode?: NullableStringFieldUpdateOperationsInput | string | null
     schema?: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -35911,6 +37118,12 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     cover?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
+    reviewStatus?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     publishCode?: NullableStringFieldUpdateOperationsInput | string | null
     schema?: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -35937,6 +37150,8 @@ export namespace Prisma {
     reviewNote?: string | null
     reviewedBy?: string | null
     reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
     price?: number
     currency?: string
     paidFonts?: TemplateCreatepaidFontsInput | string[]
@@ -35965,6 +37180,8 @@ export namespace Prisma {
     reviewNote?: string | null
     reviewedBy?: string | null
     reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
     price?: number
     currency?: string
     paidFonts?: TemplateCreatepaidFontsInput | string[]
@@ -35991,6 +37208,8 @@ export namespace Prisma {
     reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
     price?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     paidFonts?: TemplateUpdatepaidFontsInput | string[]
@@ -36019,6 +37238,8 @@ export namespace Prisma {
     reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
     price?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     paidFonts?: TemplateUpdatepaidFontsInput | string[]
@@ -36046,6 +37267,8 @@ export namespace Prisma {
     reviewNote?: string | null
     reviewedBy?: string | null
     reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
     price?: number
     currency?: string
     paidFonts?: TemplateCreatepaidFontsInput | string[]
@@ -36069,6 +37292,8 @@ export namespace Prisma {
     reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
     price?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     paidFonts?: TemplateUpdatepaidFontsInput | string[]
@@ -36093,11 +37318,69 @@ export namespace Prisma {
     reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
     price?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     paidFonts?: TemplateUpdatepaidFontsInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RedlineWordCreateInput = {
+    id?: string
+    word: string
+    category?: string
+    enabled?: boolean
+    createdAt?: Date | string
+  }
+
+  export type RedlineWordUncheckedCreateInput = {
+    id?: string
+    word: string
+    category?: string
+    enabled?: boolean
+    createdAt?: Date | string
+  }
+
+  export type RedlineWordUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    word?: StringFieldUpdateOperationsInput | string
+    category?: StringFieldUpdateOperationsInput | string
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RedlineWordUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    word?: StringFieldUpdateOperationsInput | string
+    category?: StringFieldUpdateOperationsInput | string
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RedlineWordCreateManyInput = {
+    id?: string
+    word: string
+    category?: string
+    enabled?: boolean
+    createdAt?: Date | string
+  }
+
+  export type RedlineWordUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    word?: StringFieldUpdateOperationsInput | string
+    category?: StringFieldUpdateOperationsInput | string
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RedlineWordUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    word?: StringFieldUpdateOperationsInput | string
+    category?: StringFieldUpdateOperationsInput | string
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type FontCreateInput = {
@@ -38983,6 +40266,12 @@ export namespace Prisma {
     title?: SortOrder
     cover?: SortOrder
     status?: SortOrder
+    reviewStatus?: SortOrder
+    reviewedBy?: SortOrder
+    reviewedAt?: SortOrder
+    reviewStage?: SortOrder
+    redlineCategory?: SortOrder
+    reviewNote?: SortOrder
     publishCode?: SortOrder
     schema?: SortOrder
     draftSchema?: SortOrder
@@ -39004,6 +40293,12 @@ export namespace Prisma {
     title?: SortOrder
     cover?: SortOrder
     status?: SortOrder
+    reviewStatus?: SortOrder
+    reviewedBy?: SortOrder
+    reviewedAt?: SortOrder
+    reviewStage?: SortOrder
+    redlineCategory?: SortOrder
+    reviewNote?: SortOrder
     publishCode?: SortOrder
     version?: SortOrder
     viewCount?: SortOrder
@@ -39018,6 +40313,12 @@ export namespace Prisma {
     title?: SortOrder
     cover?: SortOrder
     status?: SortOrder
+    reviewStatus?: SortOrder
+    reviewedBy?: SortOrder
+    reviewedAt?: SortOrder
+    reviewStage?: SortOrder
+    redlineCategory?: SortOrder
+    reviewNote?: SortOrder
     publishCode?: SortOrder
     version?: SortOrder
     viewCount?: SortOrder
@@ -39118,6 +40419,8 @@ export namespace Prisma {
     reviewNote?: SortOrder
     reviewedBy?: SortOrder
     reviewedAt?: SortOrder
+    reviewStage?: SortOrder
+    redlineCategory?: SortOrder
     price?: SortOrder
     currency?: SortOrder
     paidFonts?: SortOrder
@@ -39145,6 +40448,8 @@ export namespace Prisma {
     reviewNote?: SortOrder
     reviewedBy?: SortOrder
     reviewedAt?: SortOrder
+    reviewStage?: SortOrder
+    redlineCategory?: SortOrder
     price?: SortOrder
     currency?: SortOrder
     createdAt?: SortOrder
@@ -39165,6 +40470,8 @@ export namespace Prisma {
     reviewNote?: SortOrder
     reviewedBy?: SortOrder
     reviewedAt?: SortOrder
+    reviewStage?: SortOrder
+    redlineCategory?: SortOrder
     price?: SortOrder
     currency?: SortOrder
     createdAt?: SortOrder
@@ -39193,6 +40500,30 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumTemplateStatusFilter<$PrismaModel>
     _max?: NestedEnumTemplateStatusFilter<$PrismaModel>
+  }
+
+  export type RedlineWordCountOrderByAggregateInput = {
+    id?: SortOrder
+    word?: SortOrder
+    category?: SortOrder
+    enabled?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type RedlineWordMaxOrderByAggregateInput = {
+    id?: SortOrder
+    word?: SortOrder
+    category?: SortOrder
+    enabled?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type RedlineWordMinOrderByAggregateInput = {
+    id?: SortOrder
+    word?: SortOrder
+    category?: SortOrder
+    enabled?: SortOrder
+    createdAt?: SortOrder
   }
 
   export type FontCountOrderByAggregateInput = {
@@ -43074,6 +44405,12 @@ export namespace Prisma {
     title?: string
     cover?: string | null
     status?: string
+    reviewStatus?: string
+    reviewedBy?: string | null
+    reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
+    reviewNote?: string | null
     publishCode?: string | null
     schema: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -43090,6 +44427,12 @@ export namespace Prisma {
     title?: string
     cover?: string | null
     status?: string
+    reviewStatus?: string
+    reviewedBy?: string | null
+    reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
+    reviewNote?: string | null
     publishCode?: string | null
     schema: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -43157,6 +44500,8 @@ export namespace Prisma {
     reviewNote?: string | null
     reviewedBy?: string | null
     reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
     price?: number
     currency?: string
     paidFonts?: TemplateCreatepaidFontsInput | string[]
@@ -43183,6 +44528,8 @@ export namespace Prisma {
     reviewNote?: string | null
     reviewedBy?: string | null
     reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
     price?: number
     currency?: string
     paidFonts?: TemplateCreatepaidFontsInput | string[]
@@ -44071,6 +45418,12 @@ export namespace Prisma {
     title?: StringFilter<"Project"> | string
     cover?: StringNullableFilter<"Project"> | string | null
     status?: StringFilter<"Project"> | string
+    reviewStatus?: StringFilter<"Project"> | string
+    reviewedBy?: StringNullableFilter<"Project"> | string | null
+    reviewedAt?: DateTimeNullableFilter<"Project"> | Date | string | null
+    reviewStage?: StringNullableFilter<"Project"> | string | null
+    redlineCategory?: StringNullableFilter<"Project"> | string | null
+    reviewNote?: StringNullableFilter<"Project"> | string | null
     publishCode?: StringNullableFilter<"Project"> | string | null
     schema?: JsonFilter<"Project">
     draftSchema?: JsonNullableFilter<"Project">
@@ -44147,6 +45500,8 @@ export namespace Prisma {
     reviewNote?: StringNullableFilter<"Template"> | string | null
     reviewedBy?: StringNullableFilter<"Template"> | string | null
     reviewedAt?: DateTimeNullableFilter<"Template"> | Date | string | null
+    reviewStage?: StringNullableFilter<"Template"> | string | null
+    redlineCategory?: StringNullableFilter<"Template"> | string | null
     price?: IntFilter<"Template"> | number
     currency?: StringFilter<"Template"> | string
     paidFonts?: StringNullableListFilter<"Template">
@@ -44895,6 +46250,8 @@ export namespace Prisma {
     reviewNote?: string | null
     reviewedBy?: string | null
     reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
     price?: number
     currency?: string
     paidFonts?: TemplateCreatepaidFontsInput | string[]
@@ -44922,6 +46279,8 @@ export namespace Prisma {
     reviewNote?: string | null
     reviewedBy?: string | null
     reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
     price?: number
     currency?: string
     paidFonts?: TemplateCreatepaidFontsInput | string[]
@@ -45098,6 +46457,8 @@ export namespace Prisma {
     reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
     price?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     paidFonts?: TemplateUpdatepaidFontsInput | string[]
@@ -45125,6 +46486,8 @@ export namespace Prisma {
     reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
     price?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     paidFonts?: TemplateUpdatepaidFontsInput | string[]
@@ -45340,6 +46703,12 @@ export namespace Prisma {
     title?: string
     cover?: string | null
     status?: string
+    reviewStatus?: string
+    reviewedBy?: string | null
+    reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
+    reviewNote?: string | null
     publishCode?: string | null
     schema: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -45357,6 +46726,12 @@ export namespace Prisma {
     title?: string
     cover?: string | null
     status?: string
+    reviewStatus?: string
+    reviewedBy?: string | null
+    reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
+    reviewNote?: string | null
     publishCode?: string | null
     schema: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -45543,6 +46918,12 @@ export namespace Prisma {
     title?: string
     cover?: string | null
     status?: string
+    reviewStatus?: string
+    reviewedBy?: string | null
+    reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
+    reviewNote?: string | null
     publishCode?: string | null
     schema: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -45560,6 +46941,12 @@ export namespace Prisma {
     title?: string
     cover?: string | null
     status?: string
+    reviewStatus?: string
+    reviewedBy?: string | null
+    reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
+    reviewNote?: string | null
     publishCode?: string | null
     schema: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -45591,6 +46978,12 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     cover?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
+    reviewStatus?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     publishCode?: NullableStringFieldUpdateOperationsInput | string | null
     schema?: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -45608,6 +47001,12 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     cover?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
+    reviewStatus?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     publishCode?: NullableStringFieldUpdateOperationsInput | string | null
     schema?: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -45961,6 +47360,8 @@ export namespace Prisma {
     reviewNote?: string | null
     reviewedBy?: string | null
     reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
     price?: number
     currency?: string
     paidFonts?: TemplateCreatepaidFontsInput | string[]
@@ -45988,6 +47389,8 @@ export namespace Prisma {
     reviewNote?: string | null
     reviewedBy?: string | null
     reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
     price?: number
     currency?: string
     paidFonts?: TemplateCreatepaidFontsInput | string[]
@@ -46142,6 +47545,8 @@ export namespace Prisma {
     reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
     price?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     paidFonts?: TemplateUpdatepaidFontsInput | string[]
@@ -46169,6 +47574,8 @@ export namespace Prisma {
     reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
     price?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     paidFonts?: TemplateUpdatepaidFontsInput | string[]
@@ -46736,6 +48143,8 @@ export namespace Prisma {
     reviewNote?: string | null
     reviewedBy?: string | null
     reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
     price?: number
     currency?: string
     paidFonts?: TemplateCreatepaidFontsInput | string[]
@@ -46763,6 +48172,8 @@ export namespace Prisma {
     reviewNote?: string | null
     reviewedBy?: string | null
     reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
     price?: number
     currency?: string
     paidFonts?: TemplateCreatepaidFontsInput | string[]
@@ -46911,6 +48322,8 @@ export namespace Prisma {
     reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
     price?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     paidFonts?: TemplateUpdatepaidFontsInput | string[]
@@ -46938,6 +48351,8 @@ export namespace Prisma {
     reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
     price?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     paidFonts?: TemplateUpdatepaidFontsInput | string[]
@@ -50149,6 +51564,12 @@ export namespace Prisma {
     title?: string
     cover?: string | null
     status?: string
+    reviewStatus?: string
+    reviewedBy?: string | null
+    reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
+    reviewNote?: string | null
     publishCode?: string | null
     schema: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -50185,6 +51606,8 @@ export namespace Prisma {
     reviewNote?: string | null
     reviewedBy?: string | null
     reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
     price?: number
     currency?: string
     paidFonts?: TemplateCreatepaidFontsInput | string[]
@@ -50438,6 +51861,12 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     cover?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
+    reviewStatus?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     publishCode?: NullableStringFieldUpdateOperationsInput | string | null
     schema?: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -50454,6 +51883,12 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     cover?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
+    reviewStatus?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     publishCode?: NullableStringFieldUpdateOperationsInput | string | null
     schema?: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -50470,6 +51905,12 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     cover?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
+    reviewStatus?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     publishCode?: NullableStringFieldUpdateOperationsInput | string | null
     schema?: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -50526,6 +51967,8 @@ export namespace Prisma {
     reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
     price?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     paidFonts?: TemplateUpdatepaidFontsInput | string[]
@@ -50552,6 +51995,8 @@ export namespace Prisma {
     reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
     price?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     paidFonts?: TemplateUpdatepaidFontsInput | string[]
@@ -50578,6 +52023,8 @@ export namespace Prisma {
     reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
     reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
     price?: IntFieldUpdateOperationsInput | number
     currency?: StringFieldUpdateOperationsInput | string
     paidFonts?: TemplateUpdatepaidFontsInput | string[]
@@ -51406,6 +52853,12 @@ export namespace Prisma {
     title?: string
     cover?: string | null
     status?: string
+    reviewStatus?: string
+    reviewedBy?: string | null
+    reviewedAt?: Date | string | null
+    reviewStage?: string | null
+    redlineCategory?: string | null
+    reviewNote?: string | null
     publishCode?: string | null
     schema: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -51492,6 +52945,12 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     cover?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
+    reviewStatus?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     publishCode?: NullableStringFieldUpdateOperationsInput | string | null
     schema?: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -51509,6 +52968,12 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     cover?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
+    reviewStatus?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     publishCode?: NullableStringFieldUpdateOperationsInput | string | null
     schema?: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -51525,6 +52990,12 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     cover?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
+    reviewStatus?: StringFieldUpdateOperationsInput | string
+    reviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reviewStage?: NullableStringFieldUpdateOperationsInput | string | null
+    redlineCategory?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
     publishCode?: NullableStringFieldUpdateOperationsInput | string | null
     schema?: JsonNullValueInput | InputJsonValue
     draftSchema?: NullableJsonNullValueInput | InputJsonValue
@@ -51679,6 +53150,10 @@ export namespace Prisma {
      * @deprecated Use TemplateDefaultArgs instead
      */
     export type TemplateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = TemplateDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use RedlineWordDefaultArgs instead
+     */
+    export type RedlineWordArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = RedlineWordDefaultArgs<ExtArgs>
     /**
      * @deprecated Use FontDefaultArgs instead
      */

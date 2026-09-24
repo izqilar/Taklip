@@ -52,7 +52,11 @@
     "orderfulfill": "Order Fulfillment",
     "servicecontent": "Services & Content",
     "qualification": "Qualification",
-    "teamsetting": "Workspace Settings"
+    "teamsetting": "Workspace Settings",
+    "providersupervise": "Region Providers",
+    "contentreview": "Content Review",
+    "regionops": "Region Ops",
+    "recruit": "Recruitment"
   },
   "status": {
     "ACTIVE": "Active",
@@ -150,7 +154,18 @@
       "team": "Team Management"
     },
     "agent": {
-      "team": "Team Management"
+      "team": "Team Management",
+      "template-review": "Template Review",
+      "service-review": "Service Review",
+      "apply": "Onboarding",
+      "qualification": "Qualification",
+      "contract": "Contracts",
+      "complaints": "Feedback",
+      "invest": "Recruitment",
+      "pool": "Lead Pool",
+      "settle": "Settlement",
+      "withdraw-review": "Withdrawal Review",
+      "notices": "Notices"
     },
     "admin.qualifications": "Settlement Review",
     "user.apply": "Join or Settle In"
@@ -591,6 +606,31 @@
       "removeFailed": "Remove failed",
       "authorityNotice": "Authority notice",
       "generalMsg": "General message"
+    },
+    "col": {
+      "workTitle": "Work Title",
+      "reviewStatus": "Review Status",
+      "redline": "Redline"
+    },
+    "enum": {
+      "pending": "Pending",
+      "onSale": "On sale",
+      "rejected": "Rejected",
+      "takenDown": "Taken down",
+      "approvedOnSale": "Approved & on sale"
+    },
+    "lbl": {
+      "all": "All"
+    },
+    "sec": {
+      "templateReview": "Template Review",
+      "serviceReview": "Service Review"
+    },
+    "toast": {
+      "redlineRequired": "Reject requires opinion and a redline category"
+    },
+    "note": {
+      "comingSoonHint": "This module backend endpoint will land in a later iteration"
     }
   }
 }

@@ -39,6 +39,23 @@ export interface MenuBadges {
   feedbackPending: number;
   /** 服务商 / 代理商·团队管理：本组织收到的「加入团队」在途(PENDING)申请数 */
   joinPending: number;
+  // ── 代理商视角新增角标（v2 红线闸口 + 辖区治理）──
+  /** 代理商·入驻审批：辖区待初审/复审的入驻申请数 */
+  onboarding: number;
+  /** 代理商·资质审核：辖区资质待审数 */
+  qualification: number;
+  /** 代理商·模板审核：本辖区待审(PENDING)模板数（仅 regionPath，区别于总台 templates） */
+  templateReview: number;
+  /** 代理商·服务审核：本辖区待审(REVIEW_PENDING)服务/作品数 */
+  serviceReview: number;
+  /** 代理商·意见反馈：辖区待处理投诉/建议工单数 */
+  agentComplaints: number;
+  /** 代理商·提现初审：辖区服务商提现待初审(pending)数 */
+  withdrawReview: number;
+  /** 代理商·招商申请：辖区招商新申请数 */
+  investPending: number;
+  /** 代理商·业务消息：待处理业务消息数（区别于总台 messages） */
+  agentMessages: number;
 }
 
 const ZERO: MenuBadges = {
@@ -52,6 +69,15 @@ const ZERO: MenuBadges = {
   messagePending: 0,
   feedbackPending: 0,
   joinPending: 0,
+  // ── 代理商视角新增角标 ──
+  onboarding: 0,
+  qualification: 0,
+  templateReview: 0,
+  serviceReview: 0,
+  agentComplaints: 0,
+  withdrawReview: 0,
+  investPending: 0,
+  agentMessages: 0,
 };
 
 /** 角标轮询间隔（毫秒）：审核动作完成后角标自动回落 */
@@ -96,5 +122,14 @@ export function useBadges(): MenuBadges {
     messagePending: raw.messagePending ?? 0,
     feedbackPending: raw.feedbackPending ?? 0,
     joinPending: raw.joinPending ?? 0,
+    // ── 代理商视角新增角标 ──
+    onboarding: raw.onboarding ?? 0,
+    qualification: raw.qualification ?? 0,
+    templateReview: raw.templateReview ?? 0,
+    serviceReview: raw.serviceReview ?? 0,
+    agentComplaints: raw.agentComplaints ?? 0,
+    withdrawReview: raw.withdrawReview ?? 0,
+    investPending: raw.investPending ?? 0,
+    agentMessages: raw.agentMessages ?? 0,
   };
 }

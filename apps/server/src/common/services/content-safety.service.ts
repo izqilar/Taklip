@@ -1,22 +1,106 @@
 /**
- * 内容安全服务 — 敏感词过滤 + 图片机审(预留接口)
+ * 内容安全服务 — 红线词库 + 文本机审 + 图片机审(预留接口)
  *
- * - 敏感词库：覆盖政治敏感、色情、暴力、赌博、毒品、广告欺诈等高频违规类目
- * - 文本扫描：支持纯文本扫描与 Schema 递归提取文本扫描
- * - 图片机审：预留 scanImage 接口，后续接入腾讯云/阿里云内容审核 API
+ * v2 内容审核闸口核心组件：
+ * - 红线词库：优先从数据库 RedlineWord 表加载（总台可维护、可停用），表为空时播种内置高频违规词（含类别）。
+ * - 文本机审：扫描模板/作品名称与 Schema 文本，命中即返回敏感词 + 所属红线类别 + 命中字段路径。
+ * - 图片机审：预留 scanImage 接口，后续接入腾讯云/阿里云内容审核 API。
  */
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 
-/** 敏感词扫描结果 */
+/** 红线类别（固定分类法，机审与人工复核共用；仅词库内容可由总台维护） */
+export const REDLINE_CATEGORIES = [
+  { key: 'political', label: '政治敏感' },
+  { key: 'ideology', label: '意识形态' },
+  { key: 'porn', label: '色情低俗' },
+  { key: 'violence', label: '暴力恐怖' },
+  { key: 'gambling', label: '赌博' },
+  { key: 'drug', label: '毒品' },
+  { key: 'fraud', label: '诈骗' },
+  { key: 'infringement', label: '侵权' },
+  { key: 'false_ad', label: '虚假宣传' },
+  { key: 'other', label: '其他' },
+] as const;
+
+export type RedlineCategoryKey = (typeof REDLINE_CATEGORIES)[number]['key'];
+
+const REDLINE_KEYS: string[] = REDLINE_CATEGORIES.map((c) => c.key);
+
+/**
+ * 审核驳回的红线闸口强校验（决策点 6/7）：
+ * 驳回（reject）必须同时填写审核意见 + 选择有效红线类别，否则拒绝请求。
+ * 这是「前端已强制、后端兜底」的防御纵深，避免绕过前端直接调 API 漏掉红线。
+ */
+export function assertRejectRedline(cat?: string, note?: string): void {
+  if (!cat || !REDLINE_KEYS.includes(cat)) {
+    throw new BadRequestException('驳回操作必须选择有效的红线类别（redlineCategory）');
+  }
+  if (!note || !note.trim()) {
+    throw new BadRequestException('驳回操作必须填写审核意见（reviewNote）');
+  }
+}
+
+/** 内置播种词（表为空时写入 DB，便于总台后续维护） */
+const BUILTIN_REDLINE_WORDS: { word: string; category: RedlineCategoryKey }[] = [
+  // 政治敏感
+  { word: '反动', category: 'political' },
+  { word: '颠覆', category: 'political' },
+  { word: '分裂国家', category: 'political' },
+  { word: '恐怖主义', category: 'political' },
+  { word: '极端主义', category: 'political' },
+  // 色情低俗
+  { word: '色情', category: 'porn' },
+  { word: '淫秽', category: 'porn' },
+  { word: '裸聊', category: 'porn' },
+  { word: '成人电影', category: 'porn' },
+  { word: '招嫖', category: 'porn' },
+  { word: '卖淫', category: 'porn' },
+  // 暴力恐怖
+  { word: '杀人方法', category: 'violence' },
+  { word: '制爆', category: 'violence' },
+  { word: '炸弹制作', category: 'violence' },
+  { word: '种族仇恨', category: 'violence' },
+  { word: '灭族', category: 'violence' },
+  // 赌博
+  { word: '网络赌博', category: 'gambling' },
+  { word: '在线赌场', category: 'gambling' },
+  { word: '六合彩投注', category: 'gambling' },
+  { word: '外围赌球', category: 'gambling' },
+  // 毒品
+  { word: '冰毒制作', category: 'drug' },
+  { word: '海洛因出售', category: 'drug' },
+  { word: '大麻种子', category: 'drug' },
+  { word: '毒品批发', category: 'drug' },
+  // 诈骗 / 违法营销
+  { word: '电信诈骗', category: 'fraud' },
+  { word: '网络刷单', category: 'fraud' },
+  { word: '杀猪盘', category: 'fraud' },
+  { word: '庞氏骗局', category: 'fraud' },
+  { word: '刷单', category: 'fraud' },
+  { word: '套现', category: 'fraud' },
+  // 其他违规
+  { word: '邪教', category: 'other' },
+  { word: '传销组织', category: 'other' },
+  { word: '非法集资', category: 'other' },
+  { word: '代开发票', category: 'other' },
+  { word: '伪造证件', category: 'other' },
+  { word: '办假证', category: 'other' },
+];
+
+/** 纯文本扫描结果 */
 export interface TextScanResult {
   passed: boolean;
   matchedWords: string[];
+  /** 命中词所属红线类别 */
+  categories: RedlineCategoryKey[];
 }
 
-/** 模板内容扫描结果（含命中的字段路径） */
-export interface TemplateScanResult {
+/** 内容扫描结果（含命中的字段路径） */
+export interface ContentScanResult {
   passed: boolean;
   matchedWords: string[];
+  categories: RedlineCategoryKey[];
   /** 命中敏感词的字段路径列表（如 name / pages[0].elements[1].text） */
   flaggedFields: string[];
 }
@@ -27,69 +111,100 @@ export interface ImageScanResult {
   reason?: string;
 }
 
-/**
- * 基础敏感词库。
- * 生产环境应从数据库或外部敏感词服务加载，此处内置高频违规词做基础拦截。
- * 词汇按类目分组，便于后续扩展和审计。
- */
-const SENSITIVE_WORDS: string[] = [
-  // —— 政治敏感（高频子串） ——
-  '反动', '颠覆', '分裂国家', '恐怖主义', '极端主义',
-  // —— 色情 ——
-  '色情', '淫秽', '裸聊', '成人电影', '招嫖', '卖淫',
-  // —— 暴力 / 仇恨 ——
-  '杀人方法', '制爆', '炸弹制作', '种族仇恨', '灭族',
-  // —— 赌博 ——
-  '网络赌博', '在线赌场', '六合彩投注', '外围赌球',
-  // —— 毒品 ——
-  '冰毒制作', '海洛因出售', '大麻种子', '毒品批发',
-  // —— 广告欺诈 / 违法营销 ——
-  '代开发票', '伪造证件', '办假证', '刷单', '套现',
-  // —— 诈骗 ——
-  '电信诈骗', '网络刷单', '杀猪盘', '庞氏骗局',
-  // —— 其他 ——
-  '邪教', '传销组织', '非法集资',
-];
-
 @Injectable()
 export class ContentSafetyService {
   private readonly logger = new Logger(ContentSafetyService.name);
-  private readonly wordSet: Set<string>;
-  /** 预编译的正则，用于高效匹配 */
-  private readonly scanRegex: RegExp;
+  /** 词 → 类别 映射（小写键） */
+  private readonly wordMap = new Map<string, RedlineCategoryKey>();
+  /** 预编译正则，用于高效匹配 */
+  private scanRegex: RegExp = /(?!)/; // 默认空匹配（永不命中）
+  /** 是否已加载词库（懒加载，避免 DI 未完成时访问 DB） */
+  private loaded = false;
 
-  constructor() {
-    this.wordSet = new Set(SENSITIVE_WORDS);
-    // 转义特殊字符并拼接成 (word1|word2|...) 的全局正则
-    const escaped = SENSITIVE_WORDS
-      .map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-      .sort((a, b) => b.length - a.length); // 长词优先匹配
+  constructor(private readonly prisma: PrismaService) {}
+
+  /** 懒加载词库：优先 DB，空则播种内置词 */
+  private async ensureLoaded(): Promise<void> {
+    if (this.loaded) return;
+    let rows: { word: string; category: string }[] = [];
+    try {
+      rows = await this.prisma.redlineWord.findMany({ where: { enabled: true } });
+      if (rows.length === 0) {
+        await this.seedBuiltin();
+        rows = await this.prisma.redlineWord.findMany({ where: { enabled: true } });
+      }
+    } catch (e) {
+      this.logger.error('红线词库加载失败，回退内置词库', e as Error);
+    }
+    this.rebuildIndex(rows);
+    this.loaded = true;
+  }
+
+  /** 将词库写入 DB（幂等：仅当表为空时） */
+  private async seedBuiltin(): Promise<void> {
+    const count = await this.prisma.redlineWord.count();
+    if (count > 0) return;
+    await this.prisma.redlineWord.createMany({
+      data: BUILTIN_REDLINE_WORDS.map((w) => ({ word: w.word, category: w.category })),
+      skipDuplicates: true,
+    });
+  }
+
+  /** 用行数据重建内存索引与正则 */
+  private rebuildIndex(rows: { word: string; category: string }[]): void {
+    this.wordMap.clear();
+    for (const r of rows) {
+      this.wordMap.set(r.word.toLowerCase(), r.category as RedlineCategoryKey);
+    }
+    if (this.wordMap.size === 0) {
+      this.scanRegex = /(?!)/;
+      return;
+    }
+    const escaped = [...this.wordMap.keys()]
+      .sort((a, b) => b.length - a.length) // 长词优先匹配
+      .map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
     this.scanRegex = new RegExp(escaped.join('|'), 'gi');
   }
 
-  /**
-   * 扫描纯文本，返回命中敏感词列表。
-   */
-  scanText(text: string): TextScanResult {
+  /** 重新加载词库（总台维护词库后调用） */
+  async refreshWordCache(): Promise<number> {
+    const rows = await this.prisma.redlineWord.findMany({ where: { enabled: true } });
+    this.rebuildIndex(rows);
+    this.loaded = true;
+    return this.wordMap.size;
+  }
+
+  /** 红线类别清单（供前端人工复核面板渲染勾选项） */
+  getRedlineCategories(): { key: RedlineCategoryKey; label: string }[] {
+    return REDLINE_CATEGORIES.map((c) => ({ key: c.key, label: c.label }));
+  }
+
+  /** 扫描纯文本，返回命中敏感词与所属红线类别 */
+  async scanText(text: string): Promise<TextScanResult> {
+    await this.ensureLoaded();
     if (!text || typeof text !== 'string') {
-      return { passed: true, matchedWords: [] };
+      return { passed: true, matchedWords: [], categories: [] };
     }
     const matches = text.match(this.scanRegex);
     if (!matches || matches.length === 0) {
-      return { passed: true, matchedWords: [] };
+      return { passed: true, matchedWords: [], categories: [] };
     }
-    // 去重
-    const matchedWords = [...new Set(matches.map((m) => m.toLowerCase()))];
-    return { passed: false, matchedWords };
+    const wordSet = new Set<string>();
+    const catSet = new Set<RedlineCategoryKey>();
+    for (const m of matches) {
+      const key = m.toLowerCase();
+      wordSet.add(key);
+      const cat = this.wordMap.get(key);
+      if (cat) catSet.add(cat);
+    }
+    return {
+      passed: false,
+      matchedWords: [...wordSet],
+      categories: [...catSet],
+    };
   }
 
-  /**
-   * 递归提取 Schema 中所有文本字段值。
-   * 遍历 Project JSON 的 pages → elements，提取每个元素的 text/title/venue/address 等文本字段。
-   * 同时扫描 schema 顶层的 title 字段。
-   *
-   * @returns 字段路径 → 文本内容 的映射
-   */
+  /** 递归提取 Schema 中所有文本字段值（字段路径 → 文本） */
   private extractTextFields(obj: unknown, basePath = '', out: Map<string, string> = new Map()): Map<string, string> {
     if (obj === null || obj === undefined) return out;
     if (typeof obj === 'string') {
@@ -104,9 +219,7 @@ export class ContentSafetyService {
     }
     if (typeof obj === 'object') {
       const record = obj as Record<string, unknown>;
-      // 需要扫描的文本类字段名
       const textFields = ['text', 'title', 'name', 'venue', 'address', 'buttonText', 'desc', 'placeholder', 'boardTitle', 'likeText'];
-
       for (const [key, val] of Object.entries(record)) {
         const path = basePath ? `${basePath}.${key}` : key;
         if (textFields.includes(key) && typeof val === 'string') {
@@ -120,58 +233,48 @@ export class ContentSafetyService {
     return out;
   }
 
-  /**
-   * 扫描模板内容（名称 + Schema 中所有文本字段）。
-   * 返回是否通过、命中的敏感词列表、以及命中的字段路径。
-   */
-  scanTemplateContent(name: string, schema: unknown): TemplateScanResult {
-    const allMatchedWords: Set<string> = new Set();
+  /** 扫描内容（名称 + Schema 文本），返回是否通过、命中词、红线类别、命中字段 */
+  async scanContent(name: string, schema: unknown): Promise<ContentScanResult> {
+    const allWords = new Set<string>();
+    const allCats = new Set<RedlineCategoryKey>();
     const flaggedFields: string[] = [];
 
-    // 1. 扫描模板名称
-    const nameResult = this.scanText(name);
+    const nameResult = await this.scanText(name);
     if (!nameResult.passed) {
-      nameResult.matchedWords.forEach((w) => allMatchedWords.add(w));
+      nameResult.matchedWords.forEach((w) => allWords.add(w));
+      nameResult.categories.forEach((c) => allCats.add(c));
       flaggedFields.push('name');
     }
 
-    // 2. 递归提取 Schema 中的文本字段并扫描
     const textFields = this.extractTextFields(schema);
     for (const [path, text] of textFields) {
-      const result = this.scanText(text);
+      const result = await this.scanText(text);
       if (!result.passed) {
-        result.matchedWords.forEach((w) => allMatchedWords.add(w));
-        if (!flaggedFields.includes(path)) {
-          flaggedFields.push(path);
-        }
+        result.matchedWords.forEach((w) => allWords.add(w));
+        result.categories.forEach((c) => allCats.add(c));
+        if (!flaggedFields.includes(path)) flaggedFields.push(path);
       }
     }
 
     return {
-      passed: allMatchedWords.size === 0,
-      matchedWords: [...allMatchedWords],
+      passed: allWords.size === 0,
+      matchedWords: [...allWords],
+      categories: [...allCats],
       flaggedFields,
     };
   }
 
   /**
    * 图片内容审核（预留接口）。
-   *
-   * 当前为占位实现，生产环境应接入：
-   * - 腾讯云内容安全：https://cloud.tencent.com/document/product/1125
-   * - 阿里云内容审核：https://help.aliyun.com/product/46422
-   *
-   * 接入时替换此方法实现，调用外部 API 并返回结果。
+   * 当前为占位实现，生产环境应接入腾讯云/阿里云内容审核 API。
    */
   async scanImage(_url: string): Promise<ImageScanResult> {
     // 预留：实际接入时调用外部内容审核 API
-    // const result = await this.callExternalImageModeration(url);
-    // return { passed: result.passed, reason: result.reason };
     return { passed: true };
   }
 
-  /** 获取当前敏感词库大小（调试/审计用） */
+  /** 当前词库大小（调试/审计用） */
   getWordCount(): number {
-    return this.wordSet.size;
+    return this.wordMap.size;
   }
 }

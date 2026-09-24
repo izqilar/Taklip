@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ContentSafetyService } from '../common/services/content-safety.service';
+import { ContentSafetyService, assertRejectRedline } from '../common/services/content-safety.service';
 import type { Project } from '@h5design/core';
 
 @Injectable()
@@ -134,10 +134,10 @@ export class TemplateService {
       }
     }
 
-    // 内容安全扫描
-    const scanResult = this.contentSafety.scanTemplateContent(data.name, data.schema);
+    // 内容安全扫描（v2 红线闸口：机审命中词 + 红线类别 + 命中字段）
+    const scanResult = await this.contentSafety.scanContent(data.name, data.schema);
 
-    // 命中敏感词 → 自动驳回，记录命中的词和字段
+    // 命中敏感词 → 自动驳回，记录命中的词、红线类别与字段
     if (!scanResult.passed) {
       return this.prisma.template.create({
         data: {
@@ -151,9 +151,11 @@ export class TemplateService {
           currency: data.currency ?? 'CNY',
           authorId,
           status: 'REJECTED',
-          reviewNote: `内容安全自动拦截：命中敏感词 [${scanResult.matchedWords.join(', ')}]，涉及字段 [${scanResult.flaggedFields.join(', ')}]`,
+          reviewNote: `内容安全自动拦截：命中红线词 [${scanResult.matchedWords.join(', ')}]（类别：${scanResult.categories.join('/')}），涉及字段 [${scanResult.flaggedFields.join(', ')}]`,
           reviewedBy: null, // 系统自动拦截，无人工审核员
           reviewedAt: new Date(),
+          reviewStage: 'SYSTEM',
+          redlineCategory: scanResult.categories[0] ?? 'other',
         },
       });
     }
@@ -175,8 +177,8 @@ export class TemplateService {
     });
   }
 
-  /** 管理员用：审核模板（通过 / 驳回） */
-  async review(templateId: string, decision: 'APPROVED' | 'REJECTED', reviewNote?: string, adminId?: string) {
+  /** 管理员用：审核模板（通过 / 驳回，可记录红线类别） */
+  async review(templateId: string, decision: 'APPROVED' | 'REJECTED', reviewNote?: string, adminId?: string, redlineCategory?: string) {
     const template = await this.prisma.template.findUnique({
       where: { id: templateId },
     });
@@ -189,6 +191,7 @@ export class TemplateService {
     if (decision !== 'APPROVED' && decision !== 'REJECTED') {
       throw new BadRequestException('审核决定必须是 APPROVED 或 REJECTED');
     }
+    if (decision === 'REJECTED') assertRejectRedline(redlineCategory, reviewNote);
     return this.prisma.template.update({
       where: { id: templateId },
       data: {
@@ -196,6 +199,93 @@ export class TemplateService {
         reviewNote: reviewNote ?? null,
         reviewedBy: adminId,
         reviewedAt: new Date(),
+        reviewStage: 'ADMIN',
+        redlineCategory: decision === 'REJECTED' ? (redlineCategory ?? 'other') : null,
+      },
+    });
+  }
+
+  /** 代理商辖区待审模板列表（PENDING，按 author.regionPath 前缀收敛） */
+  async listAgentPending(regionPath?: string) {
+    const where: Record<string, unknown> = { status: 'PENDING' };
+    if (regionPath) where.author = { regionPath: { startsWith: regionPath } };
+    return this.prisma.template.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: { select: { id: true, nickname: true, avatar: true, phone: true, regionPath: true } },
+      },
+    });
+  }
+
+  /** 代理商辖区审核台全量（按 status 过滤；排除 DRAFT，避免草稿泄露） */
+  async listAgentAll(
+    regionPath?: string,
+    status?: string,
+    keyword?: string,
+    skip = 0,
+    take = 20,
+  ): Promise<{ items: any[]; total: number }> {
+    const where: Record<string, unknown> = {};
+    if (regionPath) where.author = { regionPath: { startsWith: regionPath } };
+    if (status && status !== 'all') {
+      where.status = status;
+    } else {
+      where.status = { not: 'DRAFT' };
+    }
+    if (keyword) where.name = { contains: keyword, mode: 'insensitive' };
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.template.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+        include: {
+          author: { select: { id: true, nickname: true, avatar: true, phone: true, regionPath: true } },
+        },
+      }),
+      this.prisma.template.count({ where }),
+    ]);
+    return { items, total };
+  }
+
+  /**
+   * 代理商一审（辖区闸口，决策点 6：代理一审 + 总台抽检，不双重审批）。
+   * approve → APPROVED（公开）；reject → REJECTED + 红线类别（redlineCategory）。
+   * 必须校验模板 author 落在代理商辖区内，否则拒绝（越权防护）。
+   */
+  async agentReview(
+    templateId: string,
+    decision: 'APPROVED' | 'REJECTED',
+    reviewNote: string | undefined,
+    agentId: string,
+    regionPath?: string,
+    redlineCategory?: string,
+  ) {
+    const template = await this.prisma.template.findUnique({
+      where: { id: templateId },
+      include: { author: { select: { regionPath: true } } },
+    });
+    if (!template) throw new NotFoundException('模板不存在');
+    if (template.status !== 'PENDING') {
+      throw new ConflictException('该模板已被审核，无法重复操作（STATE_CONFLICT）');
+    }
+    if (decision !== 'APPROVED' && decision !== 'REJECTED') {
+      throw new BadRequestException('审核决定必须是 APPROVED 或 REJECTED');
+    }
+    if (regionPath && template.author?.regionPath && !template.author.regionPath.startsWith(regionPath)) {
+      throw new ForbiddenException('该模板不在你的辖区范围内');
+    }
+    if (decision === 'REJECTED') assertRejectRedline(redlineCategory, reviewNote);
+    return this.prisma.template.update({
+      where: { id: templateId },
+      data: {
+        status: decision,
+        reviewNote: reviewNote ?? null,
+        reviewedBy: agentId,
+        reviewedAt: new Date(),
+        reviewStage: 'AGENT',
+        redlineCategory: decision === 'REJECTED' ? (redlineCategory ?? 'other') : null,
       },
     });
   }
@@ -335,8 +425,8 @@ export class TemplateService {
   //  违规下架与申诉（#256）
   // ────────────────────────────────────────────
 
-  /** 管理员：对已通过的模板执行违规下架 */
-  async takedown(templateId: string, reason: string, adminId: string) {
+  /** 管理员：对已通过的模板执行违规下架（红线强制下架，决策点：总台抽检） */
+  async takedown(templateId: string, reason: string, adminId: string, redlineCategory?: string) {
     const template = await this.prisma.template.findUnique({ where: { id: templateId } });
     if (!template) {
       throw new NotFoundException('模板不存在');
@@ -354,6 +444,8 @@ export class TemplateService {
         reviewNote: `违规下架：${reason}`,
         reviewedBy: adminId,
         reviewedAt: new Date(),
+        reviewStage: 'ADMIN',
+        redlineCategory: redlineCategory ?? template.redlineCategory ?? 'other',
       },
     });
   }
