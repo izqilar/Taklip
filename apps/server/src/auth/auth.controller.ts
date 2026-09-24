@@ -69,7 +69,14 @@ export class AuthController {
     return this.authService.getAccess(req.user as any);
   }
 
-  /** USER → SERVICE_PROVIDER 申请入驻服务商（需登录，可多选服务类型） */
+  /**
+   * 申请入驻服务商（需登录，可多选服务类型）。
+   *
+   * ⚠️ 语义变更（安全缺口 P-A 收口）：本端点**不再直接变更 `User.role`**，
+   * 仅创建 QualificationApplication（status=FIRST_PENDING）进入两段审管线
+   * （代理商一审 → 总台终审）。身份变更只在终审 APPROVED 时落地。
+   * 正规入口见 `POST /api/user/qualifications`（web `Apply.tsx` 已使用）。
+   */
   @Post('apply-provider')
   @UseGuards(AuthGuard('jwt'), new RateLimitGuard(5, 60_000, 'apply-provider'))
   applyProvider(
@@ -79,12 +86,8 @@ export class AuthController {
     return this.authService.applyForProvider(req.user.id, body.serviceRoles ?? []);
   }
 
-  /** 服务商提交资质审核（混合审核模型）：PENDING → APPROVED，需登录且已是 SERVICE_PROVIDER */
-  @Post('submit-provider-review')
-  @UseGuards(AuthGuard('jwt'), new RateLimitGuard(5, 60_000, 'submit-provider-review'))
-  submitProviderReview(@Req() req: Express.Request & { user: { id: string } }) {
-    return this.authService.submitProviderReview(req.user.id);
-  }
+  // ⚠️ `POST /api/auth/submit-provider-review`（自助把 providerStatus 置 APPROVED）已下线 —— 安全缺口 P-A。
+  // 资质审核必须由总台终审落地，禁止自助通过；旧调用方请改走 QualificationApplication 管线。
 
   /** 已入驻且通过审核的服务商申请扩展业务（增加服务子角色） */
   @Post('provider/expand-services')

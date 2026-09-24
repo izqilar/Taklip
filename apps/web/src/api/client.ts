@@ -479,16 +479,18 @@ export const api = {
   exportVideo: (o: { token: string; secondsPerPage?: number; filename?: string }) =>
     requestBlob('/api/export/video', o),
 
-  /** USER → SERVICE_PROVIDER 入驻（复合服务子角色多选） */
+  /**
+   * 申请入驻服务商（复合服务子角色多选）。
+   * ⚠️ 语义变更：不再即时升级身份，仅提交入驻申请进入两段审管线（代理商一审 → 总台终审）。
+   * 返回入驻申请（QualificationApplication）而非更新后的 UserInfo。
+   */
   applyForProvider: (serviceRoles: ServiceRole[]) =>
-    request<UserInfo>('/api/auth/apply-provider', {
+    request<{ id: string; status: string; duplicated?: boolean }>('/api/auth/apply-provider', {
       method: 'POST',
       body: JSON.stringify({ serviceRoles }),
     }),
 
-  /** 服务商提交资质审核（混合审核模型）：PENDING → APPROVED */
-  submitProviderReview: () =>
-    request<UserInfo>('/api/auth/submit-provider-review', { method: 'POST' }),
+  // ⚠️ submitProviderReview 已随后端自批端点一并下线：资质审核改由总台终审落地，禁止自助通过。
 
   /** 已通过审核的服务商申请扩展业务（增加服务子角色，进入 pendingServiceRoles） */
   expandServices: (serviceRoles: ServiceRole[]) =>

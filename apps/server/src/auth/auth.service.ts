@@ -143,12 +143,16 @@ export class AuthService {
   }
 
   /**
-   * USER → SERVICE_PROVIDER 申请入驻（混合审核模型）。
-   * 入驻与升级是同一管线：普通用户申请入驻即成为服务商，可多选服务子角色。
-   * 幂等：已是 SERVICE_PROVIDER/ADMIN 直接返回当前用户，不降级。
-   * 首次申请：role=SERVICE_PROVIDER、写入 serviceRoles、providerStatus=PENDING（需先过资质审核才能上架付费供给）。
-   * 已是 SERVICE_PROVIDER：保留原有 providerStatus，仅更新 serviceRoles（复合角色可扩充）。
-   * 申请时同时确保该服务商有一个 ProviderWallet。
+   * 用户申请入驻服务商 —— **入驻管线唯一真源**（QualificationApplication 两段审）。
+   *
+   * ⚠️ 历史行为（已废弃，安全缺口 P-A）：本方法曾直接把 `role` 改成 SERVICE_PROVIDER、
+   * `providerStatus` 置 PENDING，任何人自助即可成为服务商，完全绕过代理商一审与总台终审。
+   *
+   * 现行语义：**仅创建入驻申请**（status=FIRST_PENDING），不动 role / providerStatus。
+   * 身份变更与资质落地只在 ADMIN 终审 APPROVED 时，由 user-console 的
+   * `applyQualificationResult` 统一执行（含 regionPath / agentId 归属与钱包初始化）。
+   *
+   * 已是已审服务商：转为「扩展业务」管线（写入 pendingServiceRoles 待 ADMIN 批准），不自助生效。
    */
   async applyForProvider(userId: string, serviceRoles: ServiceRole[]) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -162,71 +166,42 @@ export class AuthService {
     // 至少选择一种服务类型；缺省兜底为 DESIGN
     const validRoles: ServiceRole[] =
       serviceRoles && serviceRoles.length > 0 ? serviceRoles : ['DESIGN'];
-    const isFirstApply = user.role !== 'SERVICE_PROVIDER';
-    const updated = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        role: 'SERVICE_PROVIDER',
-        serviceRoles: validRoles,
-        // 仅首次申请时初始化为待审核；已是服务商则不回退审核状态
-        ...(isFirstApply ? { providerStatus: 'PENDING' } : {}),
-      },
-      select: {
-        id: true,
-        phone: true,
-        nickname: true,
-        avatar: true,
-        realName: true,
-        bio: true,
-        email: true,
-        vipLevel: true,
-        locale: true,
-        role: true,
-        serviceRoles: true,
-        pendingServiceRoles: true,
-        providerStatus: true,
-      },
-    });
 
-    await this.prisma.providerWallet.upsert({
-      where: { providerId: userId },
-      create: { providerId: userId },
-      update: {},
-    });
-
-    return updated;
-  }
-
-  /**
-   * 服务商提交资质审核：PENDING → APPROVED。
-   * 入驻后即可进入工作台发免费供给；但上架付费供给前必须 APPROVED。
-   * 当前为自助审核（轻量混合模型）——真实平台可改为管理员后台审核队列，
-   * 此处作为明确的扩展点，复用返回的 providerStatus 驱动前端状态展示。
-   *
-   * 对于已 APPROVED 的服务商，提交审核会同时把 pendingServiceRoles 合并进 serviceRoles，
-   * 实现「增加业务」后的资质审核闭环。
-   */
-  async submitProviderReview(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new UnauthorizedException('用户不存在');
-    if (user.role !== 'SERVICE_PROVIDER') {
-      throw new BadRequestException('仅服务商可提交资质审核');
+    // 已是服务商：不再自助升级，走受审的扩展业务管线
+    if (user.role === 'SERVICE_PROVIDER') {
+      if (user.providerStatus === 'APPROVED') {
+        return this.expandServiceRoles(userId, validRoles);
+      }
+      throw new BadRequestException('您的服务商资质正在审核中，请等待总台审核结果');
     }
 
-    const alreadyApproved = user.providerStatus === 'APPROVED';
-    const mergedRoles = alreadyApproved
-      ? Array.from(new Set([...user.serviceRoles, ...(user.pendingServiceRoles ?? [])]))
-      : undefined;
-
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        providerStatus: 'APPROVED',
-        ...(mergedRoles ? { serviceRoles: mergedRoles, pendingServiceRoles: [] } : {}),
+    // 防重复建单：在途申请（一审待审 / 一审通过 / 终审待审）直接复用
+    const dup = await this.prisma.qualificationApplication.findFirst({
+      where: {
+        userId,
+        kind: 'provider',
+        status: { in: ['FIRST_PENDING', 'FIRST_PASSED', 'FINAL_PENDING'] },
       },
-      select: this.selectUser,
+    });
+    if (dup) return { ...dup, duplicated: true };
+
+    return this.prisma.qualificationApplication.create({
+      data: {
+        userId,
+        kind: 'provider',
+        status: 'FIRST_PENDING',
+        reason: '用户自助提交入驻服务商申请',
+        serviceScopes: validRoles,
+        // 归属基线（M2）：带上申请人当前区域，供终审解析受管代理商
+        regionPath: user.regionPath ?? null,
+      },
     });
   }
+
+  // ⚠️ `submitProviderReview`（自助把 providerStatus 置 APPROVED）已移除 —— 安全缺口 P-A。
+  // 资质审核不再允许自助通过：统一由 QualificationApplication 两段审管线承载
+  // （代理商一审 → 总台终审 APPROVED 时由 user-console.applyQualificationResult 落地）。
+  // 保留此说明以标注端点去向，勿再恢复任何自助审批路径。
 
   /**
    * 已入驻服务商申请扩展业务：把新的服务子角色写入 pendingServiceRoles 等待审核，

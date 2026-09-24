@@ -1340,6 +1340,18 @@ export class UserConsoleController {
   ) {
     const app = await this.prisma.qualificationApplication.findUnique({ where: { id } });
     if (!app) throw new NotFoundException('申请不存在');
+
+    // 代理商终审前置校验（M2 / P-F）：辖区唯一性。
+    // 必须在写入申请状态**之前**拦截，否则会出现「申请已 APPROVED 但身份未落地」的不一致。
+    if (body.final && body.pass && app.kind === 'agent' && app.regionPath) {
+      const conflict = await this.findRegionConflict(app.regionPath, app.userId);
+      if (conflict) {
+        throw new BadRequestException(
+          `代理辖区与既有代理商重叠（${conflict.regionPath}），同一辖区仅允许一个代理商`,
+        );
+      }
+    }
+
     const status = body.final
       ? body.pass
         ? 'APPROVED'
@@ -1375,13 +1387,32 @@ export class UserConsoleController {
       const valid = scopes.filter((s): s is any =>
         ['DESIGN', 'PHOTO', 'VENUE', 'FLORAL', 'STEWARD', 'PERFORM'].includes(s),
       );
+
+      // —— 归属判定（M2 / P-C、P-D）——
+      // 旧缺陷：终审只写 role/providerStatus/serviceRoles，不落 regionPath / agentId，
+      // 导致已审服务商可能 regionPath=null，永不出现在代理商辖区列表中（agentOf 反向列表恒空）。
+      const regionPath = app.regionPath ?? null;
+      const agentId = regionPath ? await this.resolveAgentId(regionPath) : null;
+
       await this.prisma.user.update({
         where: { id: app.userId },
         data: {
           role: 'SERVICE_PROVIDER',
           providerStatus: 'APPROVED',
           ...(valid.length ? { serviceRoles: valid } : {}),
+          // 固化申请区域到用户本体
+          ...(regionPath ? { regionPath } : {}),
+          // 受管代理商：最长前缀匹配；无辖区覆盖时留空，留待人工分配（不阻断审批）
+          ...(agentId ? { agentId } : {}),
         },
+      });
+
+      // 钱包初始化：随「入驻真源收敛」从 auth.applyForProvider 迁移至此
+      // （原自助升级即建钱包；现只有终审通过的服务商才是真服务商，故在此建）
+      await this.prisma.providerWallet.upsert({
+        where: { providerId: app.userId },
+        create: { providerId: app.userId },
+        update: {},
       });
       return;
     }
@@ -1448,6 +1479,66 @@ export class UserConsoleController {
         status: 'FINAL_PENDING',
       },
     });
+  }
+
+  /* ══════════ 归属判定辅助（M2）══════════
+   * 服务商 ↔ 代理商的显式归属落点是 `User.agentId`（受管于某代理商）。
+   * 历史实现仅靠 regionPath 前缀「软匹配」，agentId 全仓零写入（缺陷 P-C），
+   * 且终审不固化 regionPath，导致已审服务商可能不出现在任何代理商辖区（P-D）。
+   * 以下两个方法在终审落地时完成「区域 → 受管代理商」的解析与冲突拦截。
+   */
+
+  /**
+   * 按「最长前缀匹配」解析受管代理商：
+   * 在 role=AGENT 且 ACTIVE 且 regionPath 非空的用户中，取 regionPath 与入参
+   * 精确相等或为其前缀（+ "/"）的**最长**一条 —— 最精确辖区优先。
+   * 无匹配返回 null（无辖区覆盖，留待人工分配），不阻断审批。
+   */
+  private async resolveAgentId(regionPath: string): Promise<string | null> {
+    const agents = await this.prisma.user.findMany({
+      where: { role: 'AGENT', status: 'ACTIVE', regionPath: { not: null } },
+      select: { id: true, regionPath: true },
+    });
+    const candidates = agents
+      .filter(
+        (a) =>
+          !!a.regionPath &&
+          (regionPath === a.regionPath || regionPath.startsWith(`${a.regionPath}/`)),
+      )
+      .sort((a, b) => (b.regionPath?.length ?? 0) - (a.regionPath?.length ?? 0));
+
+    if (candidates.length === 0) return null;
+    if (candidates.length > 1 && candidates[0].regionPath === candidates[1].regionPath) {
+      // 辖区重叠属配置异常，应由代理商入驻时的 findRegionConflict 拦截；此处仅告警不阻断
+      console.warn(
+        `[onboarding] 辖区重叠：${candidates[0].regionPath} 存在多个代理商，归属取其中一个`,
+      );
+    }
+    return candidates[0].id;
+  }
+
+  /**
+   * 辖区冲突检测：判断新辖区与既有代理商辖区是否重叠（相等 / 互为前缀）。
+   * 双向覆盖：既有辖区为新辖区的祖先（65 vs 65/6501）或后代（65/6501 vs 65）均算重叠。
+   *
+   * 说明：未采用 DB 唯一约束，因为 regionPath 需被同辖区多个服务商共用，
+   * 硬唯一约束会误伤服务商；故在代理商入驻写入侧做应用层拦截（P-F）。
+   */
+  private async findRegionConflict(regionPath: string, excludeUserId: string) {
+    const agents = await this.prisma.user.findMany({
+      where: { role: 'AGENT', status: 'ACTIVE', regionPath: { not: null } },
+      select: { id: true, regionPath: true },
+    });
+    return (
+      agents.find(
+        (a) =>
+          a.id !== excludeUserId &&
+          !!a.regionPath &&
+          (a.regionPath === regionPath ||
+            a.regionPath.startsWith(`${regionPath}/`) ||
+            regionPath.startsWith(`${a.regionPath}/`)),
+      ) ?? null
+    );
   }
 }
 

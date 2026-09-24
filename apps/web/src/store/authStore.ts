@@ -40,10 +40,13 @@ interface AuthState {
    * 模块顶层缓存的 store 状态已过时，需手动刷新一次（避免首屏误判未登录停在 /login）。
    */
   rehydrate: () => void;
-  /** USER → SERVICE_PROVIDER 入驻（复合服务子角色多选） */
+  /**
+   * 申请入驻服务商（复合服务子角色多选）。
+   * ⚠️ 语义变更：仅提交入驻申请进入两段审管线，不再即时升级身份
+   *（身份变更在总台终审 APPROVED 时落地）。
+   */
   applyForProvider: (serviceRoles: ServiceRole[]) => Promise<boolean>;
-  /** 服务商提交资质审核（混合审核模型）：PENDING → APPROVED */
-  submitProviderReview: () => Promise<boolean>;
+  // ⚠️ submitProviderReview 已下线（后端自助审批端点移除），资质审核改由总台终审落地。
   /** 已通过审核的服务商申请扩展业务（增加服务子角色） */
   expandServices: (serviceRoles: ServiceRole[]) => Promise<boolean>;
   /** 管理员批准服务商的 pendingServiceRoles */
@@ -132,9 +135,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   applyForProvider: async (serviceRoles) => {
     set({ isLoading: true, error: null });
     try {
-      const updated = await api.applyForProvider(serviceRoles);
-      setStoredUser(updated);
-      set({ user: updated, isLoading: false, ...roleFlags(updated) });
+      // 仅提交入驻申请：身份此时不变，故不刷新本地 user（待总台终审通过后生效）
+      await api.applyForProvider(serviceRoles);
+      set({ isLoading: false });
       return true;
     } catch (err) {
       if (import.meta.env.DEV) console.error('[auth] applyForProvider failed:', err);
@@ -143,19 +146,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  submitProviderReview: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const updated = await api.submitProviderReview();
-      setStoredUser(updated);
-      set({ user: updated, isLoading: false, ...roleFlags(updated) });
-      return true;
-    } catch (err) {
-      if (import.meta.env.DEV) console.error('[auth] submitProviderReview failed:', err);
-      set({ error: 'errors:error.submitProviderReviewFailed', isLoading: false });
-      return false;
-    }
-  },
+  // ⚠️ submitProviderReview 实现已移除（后端自助审批端点下线，禁止自助通过资质审核）。
 
   expandServices: async (serviceRoles) => {
     set({ isLoading: true, error: null });
