@@ -848,6 +848,10 @@
       "needTarget": "请选择要加入的团队",
       "needRegion": "代理商入驻须选择完整辖区（省 / 市 / 区县）",
       "needRegionAny": "请选择所属区域（服务商区域决定由哪个代理商管辖）",
+      "resubmit": "重新提交",
+      "resubmitTip": "正在基于原申请重新提交（旧单保留为历史，材料已预填）",
+      "resubmitRegion": "原区域",
+      "resubmitCancel": "取消重提",
       "material": {
         "title": "主体资质材料",
         "hint": "材料随申请一并提交，代理商据此做资质一审；请填写与证件一致的信息。",

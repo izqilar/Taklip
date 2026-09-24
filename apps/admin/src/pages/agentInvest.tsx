@@ -5,7 +5,7 @@
  * 下方同步展示辖区内最近登记的招商意向，便于即时确认落库。
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Form, Input, Button, Alert, message as antdMessage } from 'antd';
+import { Form, Input, Button, Alert, Modal, message as antdMessage } from 'antd';
 import { PageHead } from '../components/ui/PageHead';
 import { Panel } from '../components/ui/Panel';
 import { DataTable } from '../components/ui/DataTable';
@@ -104,12 +104,53 @@ export const AgentInvest = () => {
     }
   };
 
+  /** 招商意向 → 入驻邀请：只置 WON 并产出邀请链接，申请由意向主体本人提交（代理不代客填材料） */
+  const convertToInvite = async (row: any) => {
+    try {
+      const r: any = await dataProvider.custom!({
+        url: `agent/recruits/${row.id}/convert`,
+        method: 'post',
+      });
+      Modal.success({
+        title: t('pages.lbl.inviteCreated', '已转为入驻邀请'),
+        content: (
+          <div>
+            <div style={{ fontSize: 13, marginBottom: 6 }}>
+              {t('pages.desc.inviteHint', '请将链接发送给意向主体，由其本人完成注册与资料提交（代理商不代填材料，避免既招揽又自审）')}
+            </div>
+            <Input.TextArea readOnly rows={3} value={r?.data?.inviteUrl ?? ''} />
+          </div>
+        ),
+        okText: t('button.cancel', '关闭'),
+      });
+      loadRecent();
+    } catch (e: any) {
+      antdMessage.error(e?.message || t('pages.toast.actionFailed', '操作失败'));
+    }
+  };
+
   const recentCols: any[] = [
     { title: t('col.name', '名称'), dataIndex: 'name', ellipsis: true },
     { title: t('col.phone', '手机'), dataIndex: 'phone', width: 140 },
     { title: t('col.region', '区域'), dataIndex: 'regionLabel', ellipsis: true, render: (v: string) => v || '—' },
     { title: t('col.stage', '阶段'), dataIndex: 'stage', width: 100, render: (v: string) => stagePill(v) },
     { title: t('col.createdAt', '创建时间'), dataIndex: 'createdAt', width: 170, render: (v: string) => fmt(v) },
+    {
+      title: t('col.action', '操作'),
+      key: 'op',
+      width: 110,
+      render: (_: any, r: any) =>
+        r.stage === 'WON' ? (
+          <span style={{ color: T.ink3, fontSize: 13 }}>—</span>
+        ) : (
+          <span
+            onClick={() => convertToInvite(r)}
+            style={{ color: T.accent, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' }}
+          >
+            {t('btn.convertToInvite', '转为入驻')}
+          </span>
+        ),
+    },
   ];
 
   return (

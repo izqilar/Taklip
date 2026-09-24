@@ -877,6 +877,54 @@ export class AgentConsoleController {
     return this.prisma.recruitLead.update({ where: { id }, data: { stage } });
   }
 
+  /**
+   * 招商意向 → 入驻邀请（方案 §3.4 / §7-9）。
+   *
+   * 设计取舍：**不代客提交入驻申请**。意向主体此时通常尚未注册、也没有资质材料，
+   * 由代理商代填既无法提供真实材料（材料已强制必填），也会让代理商既招揽又自审
+   * （第一闸口形同虚设）。因此本端点只做两件事：意向置 WON + 产出带手机号预填的
+   * 入驻邀请链接，由意向主体本人完成注册与资料提交，走标准两段审。
+   */
+  @Post('recruits/:id/convert')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async convertRecruit(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Query('subject') subject?: string,
+  ) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath;
+    const lead = await this.prisma.recruitLead.findUnique({ where: { id } });
+    if (!lead) throw new NotFoundException('招商意向不存在');
+    if (rp) {
+      if (!lead.regionPath || !lead.regionPath.startsWith(rp)) {
+        throw new ForbiddenException('超出辖区范围');
+      }
+    } else if (req.user.role === 'AGENT') {
+      throw new ForbiddenException('代理商未配置辖区');
+    }
+
+    const updated = await this.prisma.recruitLead.update({
+      where: { id },
+      data: { stage: 'WON' },
+    });
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: req.user.id,
+        action: 'RECRUIT_CONVERT_TO_INVITE',
+        targetType: 'RECRUIT_LEAD',
+        targetId: id,
+        reason: '招商意向转为入驻邀请（由意向主体本人提交申请）',
+        after: { stage: 'WON', phone: lead.phone },
+      },
+    });
+
+    const webOrigin = process.env.WEB_ORIGIN || 'http://localhost:5173';
+    const inviteUrl = `${webOrigin}/onboarding?intent=provider&phone=${encodeURIComponent(lead.phone)}`;
+    return { ...updated, inviteUrl };
+  }
+
   /* ══════════════════ 批量代理一审（与单条同守卫：辖区收敛 + 状态校验 + 审计） ══════════════════
    * 批量仅做一审标记（入驻 FIRST_PASSED/REJECTED；提现 reviewStage），不触碰身份变更 / 资金闸门；
    * 二者仍由总台 ADMIN 终审。任一条越权 / 状态不可审均计入 failed，不影响其余条（部分成功）。

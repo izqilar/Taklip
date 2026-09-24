@@ -1129,6 +1129,8 @@ export class UserConsoleController {
       certLongTerm?: boolean;
       issuer?: string;
       attachments?: string[];
+      // 驳回 / 撤回后重提：指向上一份申请，保留历史与溯源（重提生成**新申请**，不就地复活旧单）
+      resubmitOfId?: string;
     },
   ) {
     const id = await this.resolveUserId(body.userId, req.user);
@@ -1215,6 +1217,22 @@ export class UserConsoleController {
       else if (!(await this.resolveAgentId(rp))) riskFlags.push('NO_AGENT_COVERAGE');
     }
 
+    // —— 重提溯源校验（方案 §5-4）——
+    // 仅允许基于自己「被驳回 / 已撤回」的申请重提，且层次须一致；
+    // 旧单保留为 WITHDRAWN / REJECTED 历史，生成的是新申请，便于统计重提次数。
+    const resubmitOfId = (body.resubmitOfId ?? '').toString().trim() || null;
+    if (resubmitOfId) {
+      const prev = await this.prisma.qualificationApplication.findFirst({
+        where: { id: resubmitOfId, userId: id },
+        select: { id: true, status: true, kind: true },
+      });
+      if (!prev) throw new BadRequestException('原申请不存在');
+      if (!['REJECTED', 'WITHDRAWN'].includes(prev.status)) {
+        throw new BadRequestException('仅被驳回 / 已撤回的申请可重新提交');
+      }
+      if (prev.kind !== kind) throw new BadRequestException('重新提交的入驻层次须与原申请一致');
+    }
+
     const dup = await this.prisma.qualificationApplication.findFirst({
       where: { userId: id, kind, status: { in: ['FIRST_PENDING', 'FIRST_PASSED', 'FINAL_PENDING'] } },
     });
@@ -1239,6 +1257,7 @@ export class UserConsoleController {
         attachments,
         materialSubmittedAt: materialComplete ? new Date() : null,
         riskFlags,
+        ...(resubmitOfId ? { resubmitOfId } : {}),
       },
     });
   }

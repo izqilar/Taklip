@@ -61,6 +61,8 @@ interface MyApplication {
   status: string;
   createdAt: string;
   reviewNote?: string | null;
+  /** 原始记录（重提时回填材料用） */
+  raw?: any;
 }
 
 /** 6 种服务类型（与 admin SERVICE_ROLE_KEYS 同一语义，键指向 userCenter.svc.*） */
@@ -127,6 +129,11 @@ export default function Apply() {
   const [certLongTerm, setCertLongTerm] = useState(false);
   const [issuer, setIssuer] = useState('');
   const [attachText, setAttachText] = useState('');
+  /** 驳回 / 撤回后重提：指向原申请（生成新申请，旧单保留为历史） */
+  const [resubmitOfId, setResubmitOfId] = useState<string | null>(null);
+  const [fallbackRegion, setFallbackRegion] = useState<{ regionPath: string | null; label: string | null } | null>(
+    null,
+  );
   const [reason, setReason] = useState('');
   const [mine, setMine] = useState<MyApplication[]>([]);
   const [teams, setTeams] = useState<string[]>([]);
@@ -218,6 +225,8 @@ export default function Apply() {
         layer: (q.kind === 'agent' ? 'AGENT' : 'PROVIDER') as OrgLayer,
         status: q.status,
         createdAt: q.createdAt,
+        reviewNote: q.reviewNote,
+        raw: q,
       })),
     ]);
     setLoadingMine(false);
@@ -235,11 +244,13 @@ export default function Apply() {
       return;
     }
     // 入驻：区域必填（服务商区域决定归属代理商，留空会产出无人管辖的孤立主体）
-    if (!isJoin && !selectedRegion) {
+    // 重提时若未重新选择，沿用原申请区域
+    const region = selectedRegion ?? fallbackRegion;
+    if (!isJoin && !region) {
       setError(t('userCenter.apply.needRegionAny'));
       return;
     }
-    if (!isJoin && layer === 'AGENT' && !districtId) {
+    if (!isJoin && layer === 'AGENT' && !districtId && !resubmitOfId) {
       setError(t('userCenter.apply.needRegion'));
       return;
     }
@@ -289,8 +300,10 @@ export default function Apply() {
           kind: layer === 'AGENT' ? 'agent' : 'provider',
           reason: reason.trim(),
           serviceScopes: layer === 'PROVIDER' ? scopes : [],
-          regionPath: selectedRegion?.regionPath ?? null,
-          regionLabel: selectedRegion?.label ?? null,
+          regionPath: region?.regionPath ?? null,
+          regionLabel: region?.label ?? null,
+          // 重提溯源：新申请指向旧单，旧单保留为历史
+          ...(resubmitOfId ? { resubmitOfId } : {}),
           applicantName: applicantName.trim(),
           phone: contactPhone.trim(),
           certType,
@@ -310,12 +323,34 @@ export default function Apply() {
       setCertLongTerm(false);
       setIssuer('');
       setAttachText('');
+      setResubmitOfId(null);
+      setFallbackRegion(null);
       await loadMine();
     } catch (e: any) {
       setError(e?.message || t('userCenter.apply.submitFailed'));
     } finally {
       setSubmitting(false);
     }
+  }
+
+  /** 驳回 / 撤回后重新提交：预填原申请材料，生成新申请并指向旧单（保留历史与整改轨迹） */
+  function resubmit(m: MyApplication) {
+    const q = m.raw ?? {};
+    setMode('SETTLE');
+    setLayer(m.layer);
+    setScopes(Array.isArray(q.serviceScopes) ? q.serviceScopes : []);
+    setApplicantName(q.applicantName ?? applicantName);
+    setContactPhone(q.phone ?? contactPhone);
+    setCertType(q.certType ?? 'ID_CARD');
+    setCertNo(q.certNo ?? '');
+    setCertExpire(q.certExpire ?? '');
+    setCertLongTerm(!!q.certLongTerm);
+    setIssuer(q.issuer ?? '');
+    setAttachText(Array.isArray(q.attachments) ? q.attachments.join('\n') : '');
+    setFallbackRegion({ regionPath: q.regionPath ?? null, label: q.regionLabel ?? null });
+    setResubmitOfId(m.id);
+    setError('');
+    setToast('');
   }
 
   async function withdraw(id: string, kind: 'JOIN' | 'SETTLE') {
@@ -454,6 +489,15 @@ export default function Apply() {
                         {t('userCenter.apply.withdraw')}
                       </button>
                     )}
+                    {m.kind === 'SETTLE' && ['REJECTED', 'WITHDRAWN'].includes(m.status) && (
+                      <button
+                        type="button"
+                        onClick={() => resubmit(m)}
+                        className="rounded-lg border border-[#D24830]/40 px-3 py-1 text-[12.5px] text-[#D24830] transition hover:bg-[rgba(210,72,48,0.08)]"
+                      >
+                        {t('userCenter.apply.resubmit')}
+                      </button>
+                    )}
                   </div>
                   {m.reviewNote && (
                     <div className="mt-1.5 rounded-md bg-[rgba(192,43,51,0.06)] px-2.5 py-1.5 text-[12.5px] text-[#8f1d24]">
@@ -470,6 +514,24 @@ export default function Apply() {
       {/* ── 申请方式 ── */}
       <Panel title={t('userCenter.apply.wayTitle')}>
         <div className="space-y-4 px-4 py-4">
+          {resubmitOfId && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[#D24830]/40 bg-[rgba(210,72,48,0.06)] px-3 py-2 text-[12.5px] text-[#8f1d24]">
+              <span>
+                {t('userCenter.apply.resubmitTip')}
+                {fallbackRegion?.label ? ` · ${t('userCenter.apply.resubmitRegion')}：${fallbackRegion.label}` : ''}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setResubmitOfId(null);
+                  setFallbackRegion(null);
+                }}
+                className="rounded-md border border-[#D24830]/40 px-2.5 py-1 text-[12.5px]"
+              >
+                {t('userCenter.apply.resubmitCancel')}
+              </button>
+            </div>
+          )}
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <Label>{t('userCenter.apply.mode.label')}</Label>

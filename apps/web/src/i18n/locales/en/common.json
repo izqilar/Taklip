@@ -848,6 +848,10 @@
       "needTarget": "Please select the team you want to join",
       "needRegion": "Agent applications require a full territory (province / city / district)",
       "needRegionAny": "Select your region (it determines which agent governs you)",
+      "resubmit": "Resubmit",
+      "resubmitTip": "Resubmitting based on the previous application (old one is kept as history, materials pre-filled)",
+      "resubmitRegion": "Previous region",
+      "resubmitCancel": "Cancel",
       "material": {
         "title": "Entity qualification materials",
         "hint": "Materials are submitted with the application; the agent reviews them at first review. Use the exact info shown on your certificate.",
