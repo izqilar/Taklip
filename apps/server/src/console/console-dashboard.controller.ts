@@ -395,8 +395,8 @@ export class ConsoleDashboardController {
     //    仅当查看者为 AGENT（rp 为真，含 ADMIN 视察某代理商）时统计；其余角色恒为 0
     //    （这些 badgeKey 只挂在 AGENT 侧栏菜单上，前端 AGENT 视角才读取）。
     //    口径与各自列表页默认筛选严格一致（点进去的总数 ≥ 角标数）：
-    //      - onboarding      ：辖区待审(PENDING)服务商（= 入驻审批队列）
-    //      - qualification   ：辖区服务商资质待审（FIRST_PENDING 待初审 / FINAL_PENDING 待终审）
+    //      - onboarding      ：辖区待初审/复审的「入驻 / 资格升级」申请（QualificationApplication）
+    //      - qualification   ：辖区服务商资质待审（providerStatus=PENDING，与「服务商资质审核队列」同口径）
     //      - templateReview  ：本辖区待审(PENDING)模板数（新红线闸口一审队列）
     //      - serviceReview   ：本辖区待代理商审核(review_pending)的服务/作品数（v2 新上架管线）
     //      - agentComplaints ：辖区待处理（未关闭）工单数
@@ -413,13 +413,14 @@ export class ConsoleDashboardController {
     let agentMessages = 0;
     if (rp) {
       const [onb, qual, tplRev, svcRev, comp, wdRev, msg] = await this.prisma.$transaction([
-        // 入驻审批：辖区待审(PENDING)服务商数（与 providerReview 的辖区子集同口径）
-        this.prisma.user.count({
-          where: { ...userRp, role: 'SERVICE_PROVIDER', providerStatus: 'PENDING' },
-        }),
-        // 资质审核：辖区服务商资质待审（FIRST_PENDING 待初审 / FINAL_PENDING 待终审）
+        // 入驻审批（onboarding）：辖区待初审/复审的「入驻 / 资格升级」申请（QualificationApplication）
         this.prisma.qualificationApplication.count({
           where: { kind: 'provider', status: { in: ['FIRST_PENDING', 'FINAL_PENDING'] }, regionPath: { startsWith: rp } },
+        }),
+        // 资质审核（qualification）：辖区服务商资质待审（providerStatus=PENDING），
+        // 与「服务商资质审核队列」admin/provider-review 的辖区子集严格同口径（点进去总数 ≥ 角标）
+        this.prisma.user.count({
+          where: { ...userRp, role: 'SERVICE_PROVIDER', providerStatus: 'PENDING' },
         }),
         // 模板审核：本辖区待审(PENDING)模板数
         this.prisma.template.count({

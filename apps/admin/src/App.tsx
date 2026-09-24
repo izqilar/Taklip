@@ -288,9 +288,10 @@ export const App = () => (
                 {/* 内容审核（v2 红线把关核心，独立成组）：模板审核 / 服务审核 —— 真实审核台 */}
                 <Route path="/agent/template-review" element={<AgentTemplateReview />} />
                 <Route path="/agent/service-review" element={<AgentServiceReview />} />
-                {/* 辖区服务商（代理商监督簇）：入驻审批 / 资质审核 / 合同管理（后续迭代落地后端端点） */}
+                {/* 辖区服务商（代理商监督簇）：入驻审批 / 资质审核 / 合同管理 */}
+                {/* 资质审核：复用总台「服务商资质审核队列」（后端已 AGENT 辖区收敛，无新增权限） */}
+                <Route path="/agent/qualification" element={<ProviderReviewList />} />
                 <Route path="/agent/apply" element={<AgentComingSoon title="入驻审批" />} />
-                <Route path="/agent/qualification" element={<AgentComingSoon title="资质审核" />} />
                 <Route path="/agent/contract" element={<AgentComingSoon title="合同管理" />} />
                 {/* 辖区运营：意见反馈（占位）；通知公告（占位） */}
                 <Route path="/agent/complaints" element={<AgentComingSoon title="意见反馈" />} />

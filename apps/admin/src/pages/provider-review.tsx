@@ -339,7 +339,9 @@ const EditModal = ({
  * 通过 → 合并待审子角色进 serviceRoles；驳回 → 清空 pending（原因后端记录）。
  */
 export const ProviderReviewList = () => {
-  const { readonly } = useLayer();
+  const { readonly, view } = useLayer();
+  // 同一「服务商资质审核队列」双端复用：总台=全量，代理商=本辖区（后端 DataScopeInterceptor 已收敛）。
+  const isAgent = view === 'agent';
   const { mutateAsync: approve } = useCustomMutation();
   const { mutateAsync: reject } = useCustomMutation();
   const [current, setCurrent] = useState<ProviderReviewRow | null>(null);
@@ -410,9 +412,9 @@ export const ProviderReviewList = () => {
     <>
       <GenericListPage
         key={refreshTick}
-        title={t('menu.admin.provider-review')}
-        sub="入驻审核队列 · 总台统一把关"
-        chip="总台 · 审核队列"
+        title={isAgent ? t('menu.agent.qualification', '资质审核') : t('menu.admin.provider-review')}
+        sub={isAgent ? '辖区服务商资质审核 · 初审 / 复审' : '入驻审核队列 · 总台统一把关'}
+        chip={isAgent ? '代理商 · 审核队列' : '总台 · 审核队列'}
         resource="admin/provider-review"
         searchable
         searchField="nickname"
@@ -474,7 +476,7 @@ export const ProviderReviewList = () => {
       <ReviewModal
         open={(mode === 'ok' || mode === 'no') && current != null}
         tag="审核"
-        title="服务商入驻审核"
+        title={isAgent ? '辖区服务商资质审核' : '服务商入驻审核'}
         readonly={readonly}
         loading={busy}
         onClose={close}
