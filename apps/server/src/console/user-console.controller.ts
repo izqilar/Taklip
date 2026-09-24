@@ -1104,6 +1104,16 @@ export class UserConsoleController {
       serviceScopes?: string[];
       regionPath?: string;
       regionLabel?: string;
+      // —— M3：材料前置 —— 允许在提交申请时即带上真实资质材料，
+      // 使代理商第一闸口审的是真材料（原流程材料只能在一审通过后补填）。
+      applicantName?: string;
+      phone?: string;
+      certType?: string;
+      certNo?: string;
+      certExpire?: string;
+      certLongTerm?: boolean;
+      issuer?: string;
+      attachments?: string[];
     },
   ) {
     const id = await this.resolveUserId(body.userId, req.user);
@@ -1131,6 +1141,15 @@ export class UserConsoleController {
         serviceScopes: body.serviceScopes ?? [],
         regionPath: body.regionPath,
         regionLabel: body.regionLabel ?? null,
+        // M3：材料随申请一并落库（可选）
+        applicantName: body.applicantName ?? null,
+        phone: body.phone ?? null,
+        certType: body.certType ?? null,
+        certNo: body.certNo ?? null,
+        certExpire: body.certExpire ?? null,
+        certLongTerm: !!body.certLongTerm,
+        issuer: body.issuer ?? null,
+        attachments: body.attachments ?? [],
       },
     });
   }
@@ -1414,6 +1433,10 @@ export class UserConsoleController {
         create: { providerId: app.userId },
         update: {},
       });
+
+      // M4：终审通过后由系统自动生成标准主合同草稿（服务商线上签署）。
+      // 注意 partyA 恒为平台主体 —— 代理商**不是**签约方，避免产生错误法律外观。
+      await this.ensureProviderContract(app.userId, regionPath, valid[0] ?? 'DESIGN');
       return;
     }
 
@@ -1460,7 +1483,11 @@ export class UserConsoleController {
     await this.resolveTarget(uid, req.user);
     const app = await this.prisma.qualificationApplication.findUnique({ where: { id } });
     if (!app || app.userId !== uid) throw new NotFoundException('申请不存在');
-    if (app.status !== 'FIRST_PASSED') throw new BadRequestException('当前阶段不可填写资料');
+    // M3：材料提交前移 —— 允许在代理商一审之前（FIRST_PENDING）提交真实资质，
+    // 让第一闸口审的是真材料而非空壳；仍兼容原「一审通过后补填」流程。
+    if (!['FIRST_PENDING', 'FIRST_PASSED'].includes(app.status)) {
+      throw new BadRequestException('当前阶段不可填写资料');
+    }
     if (!body.applicantName?.trim()) throw new BadRequestException('请填写申请方名称');
     if (!/^\d{11}$/.test(String(body.phone ?? ''))) throw new BadRequestException('请填写 11 位手机号');
     if (!body.certNo?.trim()) throw new BadRequestException('请填写证件编号');
@@ -1476,7 +1503,9 @@ export class UserConsoleController {
         certLongTerm: !!body.certLongTerm,
         issuer: body.issuer ?? null,
         attachments: body.attachments ?? [],
-        status: 'FINAL_PENDING',
+        // 一审通过（FIRST_PASSED）后补填 → 直接进入终审待审；
+        // 一审前（FIRST_PENDING）提交 → 维持待一审，待代理商审完再进终审。
+        ...(app.status === 'FIRST_PASSED' ? { status: 'FINAL_PENDING' } : {}),
       },
     });
   }
@@ -1539,6 +1568,56 @@ export class UserConsoleController {
             regionPath.startsWith(`${a.regionPath}/`)),
       ) ?? null
     );
+  }
+
+  /**
+   * M4：确保服务商持有一份标准主合同（终审通过后由系统自动生成草稿，
+   * 无需人工起草、代理商也不介入 —— 这才是真正的减负）。
+   *
+   * - 幂等：已存在 MAIN 合同则直接返回，不重复生成。
+   * - 签约方：甲方恒为平台（管理总台），**代理商不作为签约方**，
+   *   避免产生「代理商是合同一方」的错误法律外观。
+   * - 生成后置于 AWAIT_PROVIDER_SIGN，由服务商线上发起签署；
+   *   再由总台推进 APPROVING → EFFECTIVE（见 provider-console 的 advance 端点）。
+   */
+  private async ensureProviderContract(
+    providerId: string,
+    regionPath: string | null,
+    serviceType: string,
+  ) {
+    const existing = await this.prisma.providerContract.findFirst({
+      where: { providerId, type: 'MAIN' },
+    });
+    if (existing) return existing;
+
+    const year = new Date().getFullYear();
+    const prefix = `HT-${year}-SP`;
+    const last = await this.prisma.providerContract.findMany({
+      where: { contractNo: { startsWith: prefix } },
+      orderBy: { contractNo: 'desc' },
+      take: 1,
+      select: { contractNo: true },
+    });
+    const seqRaw = last.length ? Number(last[0].contractNo.slice(prefix.length)) : 0;
+    const seq = Number.isFinite(seqRaw) ? seqRaw + 1 : 1;
+    const contractNo = `${prefix}${String(seq).padStart(3, '0')}`;
+
+    const expireDate = new Date();
+    expireDate.setFullYear(expireDate.getFullYear() + 1);
+
+    return this.prisma.providerContract.create({
+      data: {
+        providerId,
+        contractNo,
+        type: 'MAIN',
+        name: '平台服务主合同',
+        partyA: '庆柬云平台（管理总台）',
+        serviceType,
+        region: regionPath ?? null,
+        signStage: 'AWAIT_PROVIDER_SIGN',
+        expireDate,
+      },
+    });
   }
 }
 

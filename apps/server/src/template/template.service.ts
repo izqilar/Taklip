@@ -132,6 +132,18 @@ export class TemplateService {
       if (author.providerStatus !== 'APPROVED') {
         throw new ForbiddenException('发布付费模板前需先通过服务商资质审核');
       }
+      // M4：合同硬闸门 —— 已持有主合同的服务商，须合同签署生效后方可上架付费供给。
+      // 兼容说明：主合同是本次改造新增的「终审通过后自动生成」产物，存量服务商可能尚未持有，
+      // 故仅在**存在 MAIN 合同**时才强制 EFFECTIVE，避免一刀切误伤存量业务。
+      const mainContract = await this.prisma.providerContract.findFirst({
+        where: { providerId: authorId, type: 'MAIN' },
+        select: { signStage: true, contractNo: true },
+      });
+      if (mainContract && mainContract.signStage !== 'EFFECTIVE') {
+        throw new ForbiddenException(
+          `主合同（${mainContract.contractNo}）尚未签署生效，生效后方可上架付费供给`,
+        );
+      }
     }
 
     // 内容安全扫描（v2 红线闸口：机审命中词 + 红线类别 + 命中字段）

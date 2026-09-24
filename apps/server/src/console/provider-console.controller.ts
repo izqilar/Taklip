@@ -401,6 +401,32 @@ export class ProviderConsoleController {
     if (!category) throw new BadRequestException('模板分类必填');
     const price = Number(body.price);
     if (!Number.isFinite(price) || price < 0) throw new BadRequestException('售价须为不小于 0 的数值（元）');
+    // M4：合同硬闸门（与 template.service 的付费校验同一口径）。
+    // 本接口此前直接写库，绕过了 template.service 的付费资质校验，故在此补齐：
+    // 已持有主合同的服务商，须合同签署生效后方可上架付费供给。
+    // 兼容说明：主合同是本次改造新增的「终审通过后自动生成」产物，存量服务商可能尚未持有，
+    // 故仅在**存在 MAIN 合同**时才强制 EFFECTIVE，避免一刀切误伤存量业务。
+    if (price > 0) {
+      const author = await this.prisma.user.findUnique({
+        where: { id: uid },
+        select: { role: true, providerStatus: true },
+      });
+      if (!author || author.role !== 'SERVICE_PROVIDER') {
+        throw new ForbiddenException('仅服务商可以上架付费供给');
+      }
+      if (author.providerStatus !== 'APPROVED') {
+        throw new ForbiddenException('上架付费供给前需先通过服务商资质审核');
+      }
+      const mainContract = await this.prisma.providerContract.findFirst({
+        where: { providerId: uid, type: 'MAIN' },
+        select: { signStage: true, contractNo: true },
+      });
+      if (mainContract && mainContract.signStage !== 'EFFECTIVE') {
+        throw new ForbiddenException(
+          `主合同（${mainContract.contractNo}）尚未签署生效，生效后方可上架付费供给`,
+        );
+      }
+    }
     const tags = Array.isArray(body.tags) ? body.tags.map((x: any) => String(x)) : [];
     const isOfficial = req.user.role === 'ADMIN' ? !!body.isOfficial : false;
     const status = ['DRAFT', 'PENDING', 'APPROVED', 'TAKEN_DOWN'].includes(body.status) ? body.status : 'PENDING';
@@ -1917,6 +1943,47 @@ export class ProviderConsoleController {
       });
     }
     throw new BadRequestException('当前签署阶段不可发起在线签署');
+  }
+
+  /**
+   * 总台推进签署阶段（M4）：补全 AWAIT_SENIOR_SIGN → APPROVING → EFFECTIVE 生命周期。
+   *
+   * 历史缺陷：系统仅有「服务商发起签署」动作，且只推进到 AWAIT_SENIOR_SIGN，
+   * **没有任何接口能把合同推进到 EFFECTIVE**，合同永远停在「待上级签署」，
+   * 既无法生效也不能作为业务闸门。本端点由总台（ADMIN）完成后续签署阶段。
+   */
+  @Post('contracts/:id/advance')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async advanceContract(
+    @Param('id') id: string,
+    @Body() body: { stage: 'APPROVING' | 'EFFECTIVE'; note?: string },
+  ) {
+    const c = await this.prisma.providerContract.findUnique({ where: { id } });
+    if (!c) throw new NotFoundException('合同不存在');
+
+    if (body.stage === 'APPROVING') {
+      if (c.signStage !== 'AWAIT_SENIOR_SIGN') {
+        throw new BadRequestException('仅「待上级签署」的合同可进入审批中');
+      }
+      const stamp = new Date().toLocaleString('zh-CN', { hour12: false });
+      return this.prisma.providerContract.update({
+        where: { id },
+        data: {
+          signStage: 'APPROVING',
+          negotiation: [...(c.negotiation ?? []), `[${stamp}] 总台：${body.note ?? '进入审批'}`],
+        },
+      });
+    }
+
+    // EFFECTIVE
+    if (!['APPROVING', 'AWAIT_SENIOR_SIGN'].includes(c.signStage)) {
+      throw new BadRequestException('仅「审批中 / 待上级签署」的合同可置为已生效');
+    }
+    return this.prisma.providerContract.update({
+      where: { id },
+      data: { signStage: 'EFFECTIVE', signDate: c.signDate ?? new Date() },
+    });
   }
 
   /** 我的评价：客户对我（服务商）的评价（含服务商回评字段） */
