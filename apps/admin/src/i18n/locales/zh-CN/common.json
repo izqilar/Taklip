@@ -451,6 +451,9 @@
     "btn.recruitContacted": "标记已联系",
     "btn.recruitWon": "标记已转化",
     "btn.recruitLost": "标记已流失",
+    "btn.batchPass": "批量通过",
+    "btn.batchReject": "批量驳回",
+    "btn.clearSelection": "清空",
     "empty.noContract": "辖区内暂无合同",
     "empty.noQualification": "辖区内暂无入驻申请",
     "empty.noWithdraw": "辖区内暂无提现",
@@ -667,7 +670,8 @@
       "registerRecruit": "登记招商意向",
       "recentRecruit": "最近登记",
       "intentPool": "意向池",
-      "lockedJurisdiction": "归属辖区（系统自动锁定）"
+      "lockedJurisdiction": "归属辖区（系统自动锁定）",
+      "selectedCount": "已选"
     },
     "sec": {
       "templateReview": "模板审核",
@@ -675,7 +679,9 @@
     },
     "toast": {
       "redlineRequired": "驳回必须填写意见并选择红线类别",
-      "actionFailed": "操作失败"
+      "actionFailed": "操作失败",
+      "batchReviewed": "批量一审已提交",
+      "batchPartial": "批量一审部分完成"
     },
     "note": {
       "comingSoonHint": "该模块后端端点将在后续迭代落地"

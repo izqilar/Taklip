@@ -5,7 +5,7 @@
  * （status 仍 pending）；资金放行（status pending→paid）与驳回退款仅总台 ADMIN 终审执行。
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Modal, message as antdMessage, Descriptions, Drawer } from 'antd';
+import { Modal, message as antdMessage, Descriptions, Drawer, Button } from 'antd';
 import { PageHead } from '../components/ui/PageHead';
 import { Panel } from '../components/ui/Panel';
 import { DataTable } from '../components/ui/DataTable';
@@ -62,6 +62,7 @@ export const AgentWithdrawReview = () => {
   const [current, setCurrent] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -90,6 +91,32 @@ export const AgentWithdrawReview = () => {
       antdMessage.success(t('toast.agentReviewed', '一审已提交'));
       setOpen(false);
       setCurrent(null);
+      load();
+    } catch (e: any) {
+      antdMessage.error(e?.message || t('pages.toast.actionFailed', '操作失败'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const batchReview = async (pass: boolean) => {
+    if (!selectedKeys.length) return;
+    setBusy(true);
+    try {
+      const r: any = await dataProvider.custom!({
+        url: 'agent/withdrawals/batch-review',
+        method: 'patch',
+        payload: { ids: selectedKeys, pass },
+      });
+      const d = r?.data ?? r ?? {};
+      const ok = d.success ?? 0;
+      const fail = Array.isArray(d.failed) ? d.failed : [];
+      if (fail.length === 0) {
+        antdMessage.success(`${t('toast.batchReviewed', '批量一审已提交')} · ${ok}`);
+      } else {
+        antdMessage.warning(`${t('toast.batchPartial', '批量一审部分完成')} · ${ok} / ${fail.length}`);
+      }
+      setSelectedKeys([]);
       load();
     } catch (e: any) {
       antdMessage.error(e?.message || t('pages.toast.actionFailed', '操作失败'));
@@ -137,6 +164,12 @@ export const AgentWithdrawReview = () => {
     },
   ];
 
+  const rowSelection: any = {
+    selectedRowKeys: selectedKeys,
+    onChange: (keys: any[]) => setSelectedKeys(keys as string[]),
+    getCheckboxProps: (r: any) => ({ disabled: !(r.status === 'pending' && r.reviewStage === 'AGENT_PENDING') }),
+  };
+
   const pendingTotal = rows.filter((r) => r.status === 'pending' && r.reviewStage === 'AGENT_PENDING').length;
 
   return (
@@ -161,6 +194,33 @@ export const AgentWithdrawReview = () => {
       >
         <span>{t('lbl.agentFbHint', '代理商仅做一审，身份变更与资金放行仅总台终审。')}</span>
       </div>
+      {selectedKeys.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 10,
+            alignItems: 'center',
+            padding: '8px 14px',
+            borderRadius: T.rMd,
+            background: T.panel2,
+            border: `1px solid ${T.border}`,
+            marginBottom: 12,
+          }}
+        >
+          <span style={{ fontSize: 13, color: T.ink2 }}>
+            {t('lbl.selectedCount', '已选')} <b style={{ color: T.accent }}>{selectedKeys.length}</b> {t('pages.enum.unit', '条')}
+          </span>
+          <Button type="primary" size="small" loading={busy} onClick={() => batchReview(true)}>
+            {t('btn.batchPass', '批量通过')}
+          </Button>
+          <Button danger size="small" loading={busy} onClick={() => batchReview(false)}>
+            {t('btn.batchReject', '批量驳回')}
+          </Button>
+          <Button size="small" onClick={() => setSelectedKeys([])}>
+            {t('btn.clearSelection', '清空')}
+          </Button>
+        </div>
+      )}
       <Panel
         title={t('sec.agentWithdraw', '提现初审')}
         hint={
@@ -177,7 +237,15 @@ export const AgentWithdrawReview = () => {
           scroll={{ x: 1100 }}
           locale={{ emptyText: <EmptyState description={t('empty.noWithdraw', '辖区内暂无提现')} /> }}
           columns={columns}
-          onRow={(r: any) => ({ onClick: () => { setCurrent(r); setOpen(true); }, style: { cursor: 'pointer' } })}
+          rowSelection={rowSelection}
+          onRow={(r: any) => ({
+            onClick: (e: any) => {
+              if ((e.target as HTMLElement).closest('.ant-table-selection-column')) return;
+              setCurrent(r);
+              setOpen(true);
+            },
+            style: { cursor: 'pointer' },
+          })}
         />
         <Pager total={rows.length} current={page} pageSize={PAGE_SIZE} onChange={setPage} />
       </Panel>

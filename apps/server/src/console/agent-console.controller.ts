@@ -822,4 +822,97 @@ export class AgentConsoleController {
     const stage = body.stage && STAGES.includes(body.stage) ? body.stage : lead.stage;
     return this.prisma.recruitLead.update({ where: { id }, data: { stage } });
   }
+
+  /* ══════════════════ 批量代理一审（与单条同守卫：辖区收敛 + 状态校验 + 审计） ══════════════════
+   * 批量仅做一审标记（入驻 FIRST_PASSED/REJECTED；提现 reviewStage），不触碰身份变更 / 资金闸门；
+   * 二者仍由总台 ADMIN 终审。任一条越权 / 状态不可审均计入 failed，不影响其余条（部分成功）。
+   */
+
+  /** 批量代理一审 · 入驻审批 */
+  @Patch('qualifications/batch-review')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async batchReviewQualification(
+    @Req() req: ReqUser,
+    @Body() body: { ids: string[]; pass: boolean; note?: string },
+    @Query('subject') subject?: string,
+  ) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath;
+    if (!Array.isArray(body.ids) || !body.ids.length) throw new BadRequestException('请选择至少一条记录');
+    const failed: { id: string; reason: string }[] = [];
+    let success = 0;
+    for (const id of body.ids) {
+      try {
+        const app = await this.prisma.qualificationApplication.findUnique({ where: { id } });
+        if (!app) { failed.push({ id, reason: '申请不存在' }); continue; }
+        if (rp) {
+          if (!app.regionPath || !app.regionPath.startsWith(rp)) { failed.push({ id, reason: '超出辖区范围' }); continue; }
+        } else if (req.user.role === 'AGENT') { failed.push({ id, reason: '代理商未配置辖区' }); continue; }
+        if (app.status !== 'FIRST_PENDING') { failed.push({ id, reason: '状态不可初审' }); continue; }
+        const status = body.pass ? 'FIRST_PASSED' : 'REJECTED';
+        await this.prisma.qualificationApplication.update({ where: { id }, data: { status } });
+        await this.prisma.auditLog.create({
+          data: {
+            actorId: req.user.id,
+            action: 'AGENT_QUALIFICATION_FIRST_REVIEW',
+            targetType: 'QUALIFICATION_APPLICATION',
+            targetId: id,
+            reason: body.note ?? null,
+            after: { status, batch: true },
+          },
+        });
+        success++;
+      } catch (e: any) {
+        failed.push({ id, reason: e?.message || '处理失败' });
+      }
+    }
+    return { success, failed };
+  }
+
+  /** 批量代理一审 · 提现初审 */
+  @Patch('withdrawals/batch-review')
+  @Roles('AGENT', 'ADMIN')
+  @UseGuards(RolesGuard)
+  async batchReviewWithdrawal(
+    @Req() req: ReqUser,
+    @Body() body: { ids: string[]; pass: boolean; note?: string },
+    @Query('subject') subject?: string,
+  ) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath;
+    if (!Array.isArray(body.ids) || !body.ids.length) throw new BadRequestException('请选择至少一条记录');
+    const failed: { id: string; reason: string }[] = [];
+    let success = 0;
+    for (const id of body.ids) {
+      try {
+        const w = await this.prisma.withdrawal.findUnique({ where: { id }, include: { provider: { select: { regionPath: true } } } });
+        if (!w) { failed.push({ id, reason: '提现记录不存在' }); continue; }
+        if (rp) {
+          if (!w.provider?.regionPath || !w.provider.regionPath.startsWith(rp)) { failed.push({ id, reason: '超出辖区范围' }); continue; }
+        } else if (req.user.role === 'AGENT') { failed.push({ id, reason: '代理商未配置辖区' }); continue; }
+        if (w.status !== 'pending') { failed.push({ id, reason: '资金闸门已闭合' }); continue; }
+        if (w.reviewStage !== 'AGENT_PENDING') { failed.push({ id, reason: '已初审' }); continue; }
+        const stage = body.pass ? 'AGENT_PASSED' : 'AGENT_REJECTED';
+        await this.prisma.withdrawal.update({
+          where: { id },
+          data: { reviewStage: stage, agentReviewedById: req.user.id, agentReviewedAt: new Date() },
+        });
+        await this.prisma.auditLog.create({
+          data: {
+            actorId: req.user.id,
+            action: 'AGENT_WITHDRAWAL_FIRST_REVIEW',
+            targetType: 'WITHDRAWAL',
+            targetId: id,
+            reason: body.note ?? null,
+            after: { reviewStage: stage, batch: true },
+          },
+        });
+        success++;
+      } catch (e: any) {
+        failed.push({ id, reason: e?.message || '处理失败' });
+      }
+    }
+    return { success, failed };
+  }
 }

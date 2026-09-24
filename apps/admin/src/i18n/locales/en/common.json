@@ -447,6 +447,9 @@
     "btn.recruitContacted": "Mark contacted",
     "btn.recruitWon": "Mark won",
     "btn.recruitLost": "Mark lost",
+    "btn.batchPass": "Batch pass",
+    "btn.batchReject": "Batch reject",
+    "btn.clearSelection": "Clear",
     "empty.noContract": "No contracts in your region",
     "empty.noQualification": "No onboarding applications in your region",
     "empty.noWithdraw": "No withdrawals in your region",
@@ -667,7 +670,8 @@
       "registerRecruit": "Register lead",
       "recentRecruit": "Recent",
       "intentPool": "Intent pool",
-      "lockedJurisdiction": "Jurisdiction (auto-locked by system)"
+      "lockedJurisdiction": "Jurisdiction (auto-locked by system)",
+      "selectedCount": "Selected"
     },
     "sec": {
       "templateReview": "Template Review",
@@ -675,7 +679,9 @@
     },
     "toast": {
       "redlineRequired": "Reject requires opinion and a redline category",
-      "actionFailed": "Action failed"
+      "actionFailed": "Action failed",
+      "batchReviewed": "Batch first review submitted",
+      "batchPartial": "Batch first review partially completed"
     },
     "note": {
       "comingSoonHint": "This module backend endpoint will land in a later iteration"
