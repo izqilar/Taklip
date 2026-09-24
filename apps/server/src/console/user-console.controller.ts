@@ -1558,6 +1558,11 @@ export class UserConsoleController {
         recipientId: app.userId,
       },
     });
+    // 通知留痕：运营端据此显示「已通知」，便于确认申请人是否真的收到回执
+    await this.prisma.qualificationApplication.update({
+      where: { id: app.id },
+      data: { notifiedAt: new Date() },
+    });
   }
 
   /**
@@ -1567,7 +1572,14 @@ export class UserConsoleController {
    * 仅 APPROVED 落变更；REJECTED 仅改申请自身状态（用户仍为普通用户）。
    */
   private async applyQualificationResult(
-    app: { id: string; userId: string; kind: string; serviceScopes: string[]; regionPath: string | null },
+    app: {
+      id: string;
+      userId: string;
+      kind: string;
+      serviceScopes: string[];
+      regionPath: string | null;
+      applicantName?: string | null;
+    },
     status: string,
   ) {
     if (status !== 'APPROVED') return;
@@ -1594,6 +1606,12 @@ export class UserConsoleController {
           ...(regionPath ? { regionPath } : {}),
           // 受管代理商：最长前缀匹配；无辖区覆盖时留空，留待人工分配（不阻断审批）
           ...(agentId ? { agentId } : {}),
+          // —— 实名联动（决策 3）——
+          // 终审是人工核验过证件材料的环节，故在此同步置实名通过并固化实名姓名，
+          // 不再要求申请人另走一遍独立实名审核；实名仍保留独立状态字段供后续监管复查。
+          ...(app.applicantName ? { realName: app.applicantName } : {}),
+          realNameStatus: 'APPROVED' as any,
+          realNameVerifiedAt: new Date(),
         },
       });
 
@@ -1626,8 +1644,17 @@ export class UserConsoleController {
         role: 'AGENT',
         ...(regionId ? { regionId } : {}),
         ...(app.regionPath ? { regionPath: app.regionPath } : {}),
+        // 实名联动（同服务商分支）：终审已核验材料，同步置实名通过
+        ...(app.applicantName ? { realName: app.applicantName } : {}),
+        realNameStatus: 'APPROVED' as any,
+        realNameVerifiedAt: new Date(),
       },
     });
+
+    // —— 代理协议（决策 4）—— M4 只做了服务商主合同；代理商与平台之间同样需要线上协议。
+    // 复用 ProviderContract（providerId 指向 User，代理商亦为 User），type=AGENCY 区分，
+    // 甲方恒为平台主体，代理商为签约乙方，与服务主合同的签署生命周期一致。
+    await this.ensureAgencyContract(app.userId, app.regionPath);
   }
 
   /** 填写资料（原型 pg-fill 提交）：初审通过后补充完整资料进入终审 */
@@ -1785,6 +1812,48 @@ export class UserConsoleController {
         partyA: '庆柬云平台（管理总台）',
         serviceType,
         region: regionPath ?? null,
+        signStage: 'AWAIT_PROVIDER_SIGN',
+        expireDate,
+      },
+    });
+  }
+
+  /**
+   * 代理商代理协议（决策 4）：终审通过即由系统生成草稿，甲方恒为平台。
+   * 与服务商主合同共用同一张 ProviderContract（providerId 指向 User），以 type=AGENCY 区分，
+   * 避免为代理商另起一套合同模型造成双轨。幂等：同一代理商只生成一份有效期内的 AGENCY 协议。
+   */
+  private async ensureAgencyContract(agentId: string, regionPath: string | null) {
+    const existing = await this.prisma.providerContract.findFirst({
+      where: { providerId: agentId, type: 'AGENCY' },
+    });
+    if (existing) return existing;
+
+    const year = new Date().getFullYear();
+    const prefix = `HT-${year}-AG`;
+    const last = await this.prisma.providerContract.findMany({
+      where: { contractNo: { startsWith: prefix } },
+      orderBy: { contractNo: 'desc' },
+      take: 1,
+      select: { contractNo: true },
+    });
+    const seqRaw = last.length ? Number(last[0].contractNo.slice(prefix.length)) : 0;
+    const seq = Number.isFinite(seqRaw) ? seqRaw + 1 : 1;
+
+    const expireDate = new Date();
+    expireDate.setFullYear(expireDate.getFullYear() + 1);
+
+    return this.prisma.providerContract.create({
+      data: {
+        providerId: agentId,
+        contractNo: `${prefix}${String(seq).padStart(3, '0')}`,
+        type: 'AGENCY',
+        name: '区域代理协议',
+        partyA: '庆柬云平台（管理总台）',
+        serviceType: 'AGENCY',
+        region: regionPath ?? null,
+        businessMode: 'REGION_EXCLUSIVE',
+        exclusive: true,
         signStage: 'AWAIT_PROVIDER_SIGN',
         expireDate,
       },

@@ -5,7 +5,7 @@
  * 身份变更（role 落地）仅总台 ADMIN 终审执行。终审环节由总台处理，代理商侧对 FINAL_PENDING 显示「待总台终审」。
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Modal, message as antdMessage, Descriptions, Drawer, Button, Input } from 'antd';
+import { Modal, message as antdMessage, Descriptions, Drawer, Button, Input, Select, Tag } from 'antd';
 import { PageHead } from '../components/ui/PageHead';
 import { Panel } from '../components/ui/Panel';
 import { DataTable } from '../components/ui/DataTable';
@@ -21,6 +21,15 @@ const STATUS_TEXT: Record<string, string> = {
   FINAL_PENDING: '待终审',
   APPROVED: '已通过',
   REJECTED: '已驳回',
+  WITHDRAWN: '已撤回',
+};
+
+/** 提交时风险旗标（与后端 riskFlags 同键） */
+const RISK_TEXT: Record<string, string> = {
+  DUPLICATE_CERT_NO: '重复证件号',
+  MATERIAL_MISSING: '材料缺失',
+  NO_REGION: '未选区域',
+  NO_AGENT_COVERAGE: '辖区无覆盖',
 };
 
 const statusPill = (s: string) => {
@@ -63,18 +72,21 @@ export const AgentQualifications = () => {
   const [rejectNote, setRejectNote] = useState('');
   const [rejectMode, setRejectMode] = useState<'single' | 'batch'>('single');
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
+  const [kindFilter, setKindFilter] = useState<string>('');
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const r: any = await dataProvider.custom!({ url: 'agent/qualifications', method: 'get' });
+      // 代理商一审队列默认只看服务商入驻（代理商自身的入驻申请由总台终审，不进辖区一审）
+      const url = kindFilter ? `agent/qualifications?kind=${kindFilter}` : 'agent/qualifications?kind=provider';
+      const r: any = await dataProvider.custom!({ url, method: 'get' });
       setRows(Array.isArray(r?.data?.items) ? r.data.items : []);
     } catch {
       setRows([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [kindFilter]);
 
   useEffect(() => {
     load();
@@ -270,6 +282,24 @@ export const AgentQualifications = () => {
           </>
         }
       >
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 16px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13, color: T.ink3 }}>{t('col.kind', '入驻层次')}</span>
+          <Select
+            size="small"
+            style={{ width: 140 }}
+            value={kindFilter || undefined}
+            placeholder={t('pages.lbl.providerDefault', '服务商（默认）')}
+            onChange={(v) => setKindFilter(v ?? '')}
+            allowClear
+            options={[
+              { value: 'provider', label: t('pages.enum.provider', '服务商') },
+              { value: 'agent', label: t('pages.enum.agent', '代理商') },
+            ]}
+          />
+          <span style={{ marginLeft: 'auto', fontSize: 12.5, color: T.ink3 }}>
+            {t('lbl.clickRowForDetail', '点击行查看完整材料与审批意见')}
+          </span>
+        </div>
         <DataTable<any>
           rowKey="id"
           dataSource={rows}
@@ -299,10 +329,74 @@ export const AgentQualifications = () => {
             <Descriptions.Item label={t('col.region', '区域')}>{current.regionLabel ?? '—'}</Descriptions.Item>
             <Descriptions.Item label={t('col.status', '状态')}>{statusPill(current.status)}</Descriptions.Item>
             <Descriptions.Item label={t('col.reason', '申请说明')}>{current.reason || '—'}</Descriptions.Item>
-            {current.applicantName && <Descriptions.Item label={t('col.name', '名称')}>{current.applicantName}</Descriptions.Item>}
-            {current.certNo && <Descriptions.Item label={t('col.certNo', '证件编号')}>{current.certNo}</Descriptions.Item>}
+            <Descriptions.Item label={t('col.serviceScopes', '服务类型')}>
+              {(current.serviceScopes ?? []).length ? (current.serviceScopes ?? []).join(' / ') : '—'}
+            </Descriptions.Item>
+            {/* ── 主体资质材料（材料前置后一审即可看到真实材料） ── */}
+            <Descriptions.Item label={t('col.name', '申请人姓名')}>{current.applicantName || '—'}</Descriptions.Item>
+            <Descriptions.Item label={t('col.contactPhone', '联系手机')}>{current.phone || '—'}</Descriptions.Item>
+            <Descriptions.Item label={t('col.certType', '证件类型')}>{current.certType || '—'}</Descriptions.Item>
+            <Descriptions.Item label={t('col.certNo', '证件编号')}>{current.certNo || '—'}</Descriptions.Item>
+            <Descriptions.Item label={t('col.certExpire', '证件有效期')}>
+              {current.certLongTerm ? t('pages.enum.longTerm', '长期有效') : current.certExpire || '—'}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('col.issuer', '发证机关')}>{current.issuer || '—'}</Descriptions.Item>
+            <Descriptions.Item label={t('col.attachments', '资质附件')}>
+              {(current.attachments ?? []).length ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {(current.attachments ?? []).map((a: string, i: number) => (
+                    <a key={i} href={a} target="_blank" rel="noreferrer" style={{ fontSize: 12.5 }}>
+                      {a}
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                '—'
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('col.riskFlags', '风险旗标')}>
+              {(current.riskFlags ?? []).length ? (
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {(current.riskFlags ?? []).map((f: string) => (
+                    <Tag key={f} color={f === 'MATERIAL_MISSING' ? 'red' : 'orange'}>
+                      {RISK_TEXT[f] ?? f}
+                    </Tag>
+                  ))}
+                </div>
+              ) : (
+                '—'
+              )}
+            </Descriptions.Item>
             <Descriptions.Item label={t('col.createdAt', '提交时间')}>{fmt(current.createdAt)}</Descriptions.Item>
+            <Descriptions.Item label={t('col.materialSubmittedAt', '材料提交时间')}>
+              {fmt(current.materialSubmittedAt)}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('col.firstReview', '本次一审')}>
+              {fmt(current.firstReviewedAt)}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('col.notified', '结果通知')}>
+              {current.notifiedAt ? (
+                <Tag color="green">{`${t('pages.enum.notified', '已通知')} · ${fmt(current.notifiedAt)}`}</Tag>
+              ) : (
+                t('pages.enum.notNotified', '未通知')
+              )}
+            </Descriptions.Item>
           </Descriptions>
+        )}
+        {current?.reviewNote && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: '10px 12px',
+              borderRadius: 8,
+              background: 'rgba(192,43,51,0.08)',
+              color: '#8f1d24',
+              fontSize: 13,
+            }}
+          >
+            <b>{t('col.reviewNote', '审批意见')}：</b>
+            {current.reviewNote}
+          </div>
         )}
       </Drawer>
 

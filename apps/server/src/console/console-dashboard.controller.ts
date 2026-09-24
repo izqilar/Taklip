@@ -404,6 +404,10 @@ export class ConsoleDashboardController {
     //      - agentMessages   ：辖区 REGION 作用域、待审核(PENDING)的业务消息数
     //      - investPending   ：辖区招商新申请数（招商模块尚未上线，预留为 0，待回填）
     let onboarding = 0;
+    // 入驻待办细分（方案 §3.4）：代理商只看「待本辖区一审」，总台只看「待终审」，
+    // 避免同一个数字在两端口径混淆（代理商点了进去发现是总台的活 / 反之）。
+    let onboardingFirst = 0;
+    let onboardingFinal = 0;
     let qualification = 0;
     let templateReview = 0;
     let serviceReview = 0;
@@ -412,11 +416,19 @@ export class ConsoleDashboardController {
     let investPending = 0;
     let agentMessages = 0;
     if (rp) {
-      const [onb, qual, tplRev, svcRev, comp, wdRev, msg] = await this.prisma.$transaction([
+      const [onb, onbFirst, onbFinal, qual, tplRev, svcRev, comp, wdRev, msg] = await this.prisma.$transaction([
         // 入驻审批（onboarding）：辖区待初审/复审的「入驻 / 资格升级」申请（QualificationApplication）
         // 口径与「入驻审批」页(agent/apply)一致：辖区内全部入驻层次（代理商 / 服务商）的待审申请
         this.prisma.qualificationApplication.count({
           where: { kind: { in: ['provider', 'agent'] }, status: { in: ['FIRST_PENDING', 'FINAL_PENDING'] }, regionPath: { startsWith: rp } },
+        }),
+        // 待本辖区一审（FIRST_PENDING）—— 代理商自己的活
+        this.prisma.qualificationApplication.count({
+          where: { kind: { in: ['provider', 'agent'] }, status: 'FIRST_PENDING', regionPath: { startsWith: rp } },
+        }),
+        // 本辖区已进入终审（FINAL_PENDING）—— 总台的活，代理商可查看进度
+        this.prisma.qualificationApplication.count({
+          where: { kind: { in: ['provider', 'agent'] }, status: 'FINAL_PENDING', regionPath: { startsWith: rp } },
         }),
         // 资质审核（qualification）：辖区服务商资质待审（providerStatus=PENDING），
         // 与「服务商资质审核队列」admin/provider-review 的辖区子集严格同口径（点进去总数 ≥ 角标）
@@ -445,6 +457,8 @@ export class ConsoleDashboardController {
         }),
       ]);
       onboarding = onb;
+      onboardingFirst = onbFirst;
+      onboardingFinal = onbFinal;
       qualification = qual;
       templateReview = tplRev;
       serviceReview = svcRev;
@@ -455,6 +469,12 @@ export class ConsoleDashboardController {
       investPending = await this.prisma.recruitLead.count({
         where: { stage: 'NEW', regionPath: { startsWith: rp } },
       });
+    } else {
+      // 总台视角：入驻待办只看「待终审」全量（不按辖区收敛）—— 一审是代理商的活
+      onboardingFinal = await this.prisma.qualificationApplication.count({
+        where: { kind: { in: ['provider', 'agent'] }, status: 'FINAL_PENDING' },
+      });
+      onboarding = onboardingFinal;
     }
 
     return {
@@ -470,6 +490,8 @@ export class ConsoleDashboardController {
       joinPending,
       // ── 代理商视角新增角标 ──
       onboarding,
+      onboardingFirst,
+      onboardingFinal,
       qualification,
       templateReview,
       serviceReview,

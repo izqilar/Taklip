@@ -550,6 +550,8 @@ model QualificationApplication {
   resubmitOfId        String?   @map("resubmit_of_id")
   // 风险旗标（提交时自动预检产出，供总台终审参考）：如 DUPLICATE_CERT_NO 重复主体
   riskFlags           String[]  @default([]) @map("risk_flags")
+  // 结果通知留痕：审核回执已投递（Message scope=USER）的时间，运营端据此显示「已通知」
+  notifiedAt          DateTime? @map("notified_at")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 

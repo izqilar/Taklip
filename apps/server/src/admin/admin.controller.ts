@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Req,
+  NotFoundException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { Prisma } from '../../prisma/prisma-client';
@@ -118,9 +119,13 @@ export class AdminController {
   @Get('qualifications')
   @Roles('ADMIN')
   @UseGuards(RolesGuard)
-  async listQualifications(@Query('status') status?: string) {
+  async listQualifications(@Query('status') status?: string, @Query('kind') kind?: string) {
+    const where: any = {};
+    if (status) where.status = status;
+    // 入驻层次筛选（服务商 / 代理商），与代理商侧 kind 过滤同口径
+    if (kind) where.kind = kind;
     const items = await this.prisma.qualificationApplication.findMany({
-      where: status ? { status } : undefined,
+      where,
       orderBy: { createdAt: 'desc' },
       take: 200,
       include: {
@@ -129,7 +134,179 @@ export class AdminController {
         },
       },
     });
-    return { items, total: items.length };
+
+    // 审核人姓名与历史申请数（运营端详情需要「谁审的 / 申请人往期是否多次被拒」）
+    const reviewerIds = [
+      ...new Set(
+        items
+          .flatMap((i: any) => [i.firstReviewedById, i.finalReviewedById])
+          .filter((x): x is string => !!x),
+      ),
+    ];
+    const reviewers = reviewerIds.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: reviewerIds } },
+          select: { id: true, nickname: true, realName: true },
+        })
+      : [];
+    const reviewerMap = new Map(reviewers.map((r) => [r.id, r.realName || r.nickname || '—']));
+
+    const userIds = [...new Set(items.map((i: any) => i.userId).filter(Boolean))];
+    const hist = userIds.length
+      ? await this.prisma.qualificationApplication.groupBy({
+          by: ['userId'],
+          where: { userId: { in: userIds as string[] }, status: { in: ['REJECTED', 'WITHDRAWN'] } },
+          _count: { _all: true },
+        })
+      : [];
+    const histMap = new Map(hist.map((h: any) => [h.userId, h._count?._all ?? 0]));
+
+    const data = items.map((i: any) => ({
+      ...i,
+      firstReviewerName: i.firstReviewedById ? reviewerMap.get(i.firstReviewedById) ?? null : null,
+      finalReviewerName: i.finalReviewedById ? reviewerMap.get(i.finalReviewedById) ?? null : null,
+      historyCount: histMap.get(i.userId) ?? 0,
+    }));
+    return { items: data, total: data.length };
+  }
+
+  /**
+   * 入驻申请风险预检（M5 / 方案 §3.3）——**只标记、不自动放行**。
+   *
+   * 设计取舍：自动审批一旦误批，不良主体即可开展业务并收取消费者定金，损失不可逆；
+   * 因此本端点只把风险信号结构化呈现给总台审核人（并在终审时写入审计），
+   * 裁定权始终在人工。触发项：重复主体 / 证件过期 / 材料缺失 / 辖区无代理商覆盖 /
+   * 申请人账户异常 / 申请人已有被驳回历史。
+   */
+  @Get('qualifications/:id/precheck')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async precheckQualification(@Param('id') id: string) {
+    const app = await this.prisma.qualificationApplication.findUnique({
+      where: { id },
+      include: { user: { select: { id: true, status: true, role: true, providerStatus: true, regionPath: true } } },
+    });
+    if (!app) throw new NotFoundException('申请不存在');
+
+    const items: { code: string; level: 'HIGH' | 'MID' | 'LOW'; text: string }[] = [];
+    const push = (code: string, level: 'HIGH' | 'MID' | 'LOW', text: string) => items.push({ code, level, text });
+
+    // ① 重复主体：同证件号命中其它已入驻主体 / 在途申请
+    if (app.certNo) {
+      const dupApproved = await this.prisma.qualificationApplication.count({
+        where: { certNo: app.certNo, userId: { not: app.userId }, status: 'APPROVED' },
+      });
+      if (dupApproved > 0) push('DUPLICATE_SUBJECT', 'HIGH', `证件号 ${app.certNo} 已存在已入驻主体，疑似重复入驻`);
+      else {
+        const dupPending = await this.prisma.qualificationApplication.count({
+          where: {
+            certNo: app.certNo,
+            userId: { not: app.userId },
+            status: { in: ['FIRST_PENDING', 'FIRST_PASSED', 'FINAL_PENDING'] },
+          },
+        });
+        if (dupPending > 0) push('DUPLICATE_PENDING', 'MID', `证件号 ${app.certNo} 存在他人在途申请，需人工比对是否同一主体`);
+      }
+    }
+    // ② 证件过期
+    if (app.certExpire && !app.certLongTerm) {
+      const exp = new Date(app.certExpire);
+      if (!Number.isNaN(exp.getTime()) && exp.getTime() < Date.now()) {
+        push('CERT_EXPIRED', 'HIGH', `证件已于 ${app.certExpire} 过期`);
+      }
+    }
+    // ③ 材料缺失
+    const missing: string[] = [];
+    if (!app.applicantName) missing.push('申请人姓名');
+    if (!app.phone) missing.push('联系手机');
+    if (!app.certNo) missing.push('证件号码');
+    if (!app.certLongTerm && !app.certExpire) missing.push('证件有效期');
+    if (!(app.attachments ?? []).length) missing.push('资质附件');
+    if (missing.length) push('MATERIAL_MISSING', 'HIGH', `资料缺失：${missing.join('、')}`);
+    // ④ 辖区无代理商覆盖（仅服务商）
+    let covered: string | null = null;
+    if (app.kind === 'provider' && app.regionPath) {
+      const agents = await this.prisma.user.findMany({
+        where: { role: 'AGENT', status: 'ACTIVE', regionPath: { not: null } },
+        select: { id: true, regionPath: true },
+      });
+      const hit = agents
+        .filter((a) => a.regionPath && (app.regionPath!.startsWith(`${a.regionPath}/`) || app.regionPath === a.regionPath))
+        .sort((a, b) => (b.regionPath?.length ?? 0) - (a.regionPath?.length ?? 0))[0];
+      if (hit) covered = hit.id;
+      else push('NO_AGENT_COVERAGE', 'MID', '所选区域暂无代理商覆盖，通过后将成为无人一审的孤立主体');
+    }
+    // ⑤ 申请人账户异常
+    if ((app.user as any)?.status && (app.user as any).status !== 'ACTIVE') {
+      push('ACCOUNT_ABNORMAL', 'HIGH', `申请人账户状态为 ${(app.user as any).status}`);
+    }
+    // ⑥ 往期被驳回 / 撤回次数（重提风险）
+    const history = await this.prisma.qualificationApplication.count({
+      where: { userId: app.userId, status: { in: ['REJECTED', 'WITHDRAWN'] } },
+    });
+    if (history > 0) push('RESUBMIT_HISTORY', 'LOW', `该申请人有 ${history} 次历史被驳回 / 撤回记录`);
+
+    const high = items.filter((i) => i.level === 'HIGH').length;
+    return {
+      id: app.id,
+      flags: app.riskFlags ?? [],
+      items,
+      // 人工裁定提示：有 HIGH 项时建议重点核查，但**不阻断**终审（裁定权归人工）
+      suggestion: high > 0 ? 'MANUAL_REQUIRED' : items.length ? 'REVIEW_CAREFULLY' : 'CLEAN',
+      agentIdCovered: covered,
+    };
+  }
+
+  /**
+   * 代理商一审质量护栏（M6）—— 供总台逆向审计「第一闸口」是否形同橡皮图章。
+   * 指标：一审通过 / 驳回量、平均一审时长、一审通过但被总台终审驳回的「推翻数」。
+   * 推翻率过高说明该代理商把关失效，需总台介入复核。
+   */
+  @Get('agent-review-quality')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async agentReviewQuality() {
+    const agents = await this.prisma.user.findMany({
+      where: { role: 'AGENT' },
+      select: { id: true, nickname: true, realName: true, regionPath: true },
+    });
+    const reviewed = await this.prisma.qualificationApplication.findMany({
+      where: { firstReviewedById: { not: null } },
+      select: {
+        firstReviewedById: true,
+        firstReviewedAt: true,
+        createdAt: true,
+        status: true,
+        finalReviewedAt: true,
+        kind: true,
+      },
+    });
+    const rows = agents.map((a) => {
+      const mine = reviewed.filter((r) => r.firstReviewedById === a.id);
+      const passed = mine.filter((r) => r.status !== 'REJECTED');
+      const rejected = mine.filter((r) => r.status === 'REJECTED');
+      // 推翻：一审已通过（进入过终审环节）但最终被终审驳回
+      const overturned = mine.filter((r) => r.status === 'REJECTED' && !!r.finalReviewedAt);
+      const durations = mine
+        .map((r) => (r.firstReviewedAt ? r.firstReviewedAt.getTime() - r.createdAt.getTime() : null))
+        .filter((x): x is number => typeof x === 'number' && x >= 0);
+      const avgHours = durations.length
+        ? durations.reduce((s, x) => s + x, 0) / durations.length / 3600_000
+        : 0;
+      return {
+        agentId: a.id,
+        agentName: a.realName || a.nickname || '—',
+        regionPath: a.regionPath,
+        firstReviewed: mine.length,
+        passed: passed.length,
+        rejected: rejected.length,
+        overturned: overturned.length,
+        overturnRate: mine.length ? Number((overturned.length / mine.length).toFixed(3)) : 0,
+        avgFirstReviewHours: Number(avgHours.toFixed(2)),
+      };
+    });
+    rows.sort((x, y) => y.firstReviewed - x.firstReviewed);
+    return { items: rows, total: rows.length };
   }
 
   /** 批准服务商扩展业务 */

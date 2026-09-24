@@ -39,6 +39,7 @@ export const SPContractDetail = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [signing, setSigning] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
   const [nego, setNego] = useState('');
 
   useEffect(() => {
@@ -115,6 +116,28 @@ export const SPContractDetail = () => {
     }
   };
 
+  /** 推进上级签署（仅总台 ADMIN）：AWAIT_SENIOR_SIGN → APPROVING → EFFECTIVE。
+   *  M4 只实现了服务商侧发起签署，缺少审批→生效的推进端点，合同会永远停在「待上级签署」。 */
+  const advance = async () => {
+    setAdvancing(true);
+    try {
+      const res: any = await dataProvider.custom!({
+        url: `provider/contracts/${id}/advance`,
+        method: 'post',
+        // 两阶段推进：待上级签署 → 审批中 → 已生效（端点按入参 stage 判定，不可缺省）
+        payload: { stage: stage === 'APPROVING' ? 'EFFECTIVE' : 'APPROVING' },
+      });
+      const s = res?.data?.signStage ?? 'EFFECTIVE';
+      form.setFieldsValue({ signStage: s });
+      setRec((p: any) => ({ ...p, signStage: s }));
+      message.success(s === 'EFFECTIVE' ? '合同已生效归档' : '已推进至审批中');
+    } catch (e: any) {
+      message.error(e?.message || '推进失败');
+    } finally {
+      setAdvancing(false);
+    }
+  };
+
   const addNego = async () => {
     const text = nego.trim();
     if (!text) return;
@@ -130,6 +153,9 @@ export const SPContractDetail = () => {
 
   // signStage 非表单可编辑字段，直接以数据 rec 为唯一真值，避免渲染期调用 form.getFieldValue 触发「useForm 未连接」告警
   const stage = (rec?.signStage || 'NEGOTIATING') as string;
+  // 「推进审批 / 确认生效」是总台的活，服务商侧不暴露该动作
+  const isAdmin = getStoredUser<{ role?: string }>()?.role === 'ADMIN';
+  const canAdvance = isAdmin && ['AWAIT_SENIOR_SIGN', 'APPROVING'].includes(stage);
   const stageOrder = ['NEGOTIATING', 'AWAIT_PROVIDER_SIGN', 'AWAIT_SENIOR_SIGN', 'APPROVING', 'EFFECTIVE'];
   const curIdx = stageOrder.indexOf(stage);
   const flowSteps = [
@@ -170,6 +196,11 @@ export const SPContractDetail = () => {
           <Button onClick={() => nav('/sp/contract')}>取消</Button>
           <Button type="primary" loading={saving} onClick={save}>保存合同</Button>
           <Button loading={signing} onClick={sign}>发起在线签署</Button>
+          {canAdvance && (
+            <Button loading={advancing} onClick={advance}>
+              {stage === 'APPROVING' ? '确认生效' : '推进至审批'}
+            </Button>
+          )}
         </>
       }
     >
