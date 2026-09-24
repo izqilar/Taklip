@@ -60,6 +60,9 @@ const TeamManagePage = lazy(() => import('./pages/teamManage').then((m) => ({ de
 const QualificationReviewPage = lazy(() =>
   import('./pages/qualificationReview').then((m) => ({ default: m.QualificationReviewPage })),
 );
+const RedlineWordAdmin = lazy(() =>
+  import('./pages/redlineWordAdmin').then((m) => ({ default: m.RedlineWordAdmin })),
+);
 const ProfilePage = lazy(() => import('./pages/account/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const AgentDashboard = lazy(() => import('./pages/consolePages').then((m) => ({ default: m.AgentDashboard })));
 const AgentUsers = lazy(() => import('./pages/consolePages').then((m) => ({ default: m.AgentUsers })));
@@ -268,6 +271,8 @@ export const App = () => (
                 <Route path="/admin/roles" element={<RolesPage />} />
                 {/* 入驻审批台：用户资格升级（USER → 服务商 / 代理商）两阶段审核 */}
                 <Route path="/admin/qualifications" element={<QualificationReviewPage />} />
+                {/* 总台：红线词库管理（决策点 8 · DB 可配置 + 总台可维护） */}
+                <Route path="/admin/redline-words" element={<RedlineWordAdmin />} />
 
                 {/* ===================== 代理商中心（AGENT） ===================== */}
                 <Route path="/agent/dashboard" element={<AgentDashboard />} />

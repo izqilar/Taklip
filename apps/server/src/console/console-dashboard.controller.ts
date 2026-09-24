@@ -1,8 +1,9 @@
-import { Controller, Get, Query, Req, UseGuards, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Query, Param, Body, Req, UseGuards, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { PrismaService } from '../prisma/prisma.service';
+import { ContentSafetyService } from '../common/services/content-safety.service';
 import type { JwtUser } from '../common/types/jwt-user';
 
 type ReqUser = Express.Request & { user: JwtUser };
@@ -36,7 +37,10 @@ function lastDays(n: number, now: Date = new Date()): string[] {
 @Controller('api/console')
 @UseGuards(AuthGuard('jwt'))
 export class ConsoleDashboardController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly contentSafety: ContentSafetyService,
+  ) {}
 
   @Get('dashboard')
   @Roles('ADMIN')
@@ -482,5 +486,61 @@ export class ConsoleDashboardController {
     or.push({ scope: 'OWN', targetRole });
     if (userId) or.push({ scope: 'USER', recipientId: userId });
     return { OR: or };
+  }
+
+  /* ===================== 红线词库维护（ADMIN 总台可维护，决策点 8） ===================== */
+
+  /** 红线类别清单（供前端下拉） */
+  @Get('redline-categories')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  redlineCategories() {
+    return this.contentSafety.getRedlineCategories();
+  }
+
+  /** 全量红线词（含已停用） */
+  @Get('redline-words')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async listRedlineWords() {
+    return this.contentSafety.listWords();
+  }
+
+  /** 新增红线词 */
+  @Post('redline-words')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async createRedlineWord(
+    @Body() body: { word: string; category: string; enabled?: boolean },
+  ) {
+    return this.contentSafety.addWord(body.word, body.category as any, body.enabled);
+  }
+
+  /** 更新红线词（改词面 / 改类别 / 启停） */
+  @Patch('redline-words/:id')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async updateRedlineWord(
+    @Param('id') id: string,
+    @Body() body: { word?: string; category?: string; enabled?: boolean },
+  ) {
+    return this.contentSafety.updateWord(id, body as any);
+  }
+
+  /** 删除红线词 */
+  @Delete('redline-words/:id')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async deleteRedlineWord(@Param('id') id: string) {
+    return this.contentSafety.removeWord(id);
+  }
+
+  /** 手动刷新机审内存词库（总台改完词库后即时生效） */
+  @Post('redline-words/reload')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async reloadRedlineWords() {
+    const count = await this.contentSafety.refreshWordCache();
+    return { reloaded: true, activeCount: count };
   }
 }

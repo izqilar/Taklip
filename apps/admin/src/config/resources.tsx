@@ -266,6 +266,11 @@ export const resources: ResourceProps[] = [
     list: '/admin/audit-logs',
     meta: META('操作日志', 'console', { group: 'system', icon: <FileProtectOutlined /> }),
   },
+  {
+    name: 'admin/redline-words',
+    list: '/admin/redline-words',
+    meta: META('红线词库', 'console', { group: 'system', icon: <FileProtectOutlined /> }),
+  },
 
   // ===================== 代理商中心（AGENT · v2 标准化 · 8 组 21 项）=====================
   {

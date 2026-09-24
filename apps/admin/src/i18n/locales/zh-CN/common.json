@@ -631,6 +631,42 @@
     },
     "note": {
       "comingSoonHint": "该模块后端端点将在后续迭代落地"
+    },
+    "redlineAdmin": {
+      "title": "红线词库管理",
+      "desc": "维护内容审核红线词（增删改 / 启停），并一键刷新机审词库，使服务与模板发布时的红线机审即时生效。",
+      "total": "共",
+      "items": "条",
+      "add": "新增红线词",
+      "reload": "刷新机审词库",
+      "word": "敏感词",
+      "category": "红线类别",
+      "enabled": "状态",
+      "actions": "操作",
+      "edit": "编辑",
+      "delete": "删除",
+      "editTitle": "编辑红线词",
+      "addTitle": "新增红线词",
+      "wordRequired": "请输入敏感词",
+      "wordPlaceholder": "如：违规示例词",
+      "categoryRequired": "请选择红线类别",
+      "categoryPlaceholder": "选择红线类别",
+      "empty": "暂无红线词，点击右上角新增",
+      "loading": "加载中…",
+      "created": "已新增",
+      "updated": "已更新",
+      "deleted": "已删除",
+      "enabledText": "已启用",
+      "disabled": "已停用",
+      "reloaded": "机审词库已刷新",
+      "activeCount": "生效词数",
+      "loadFail": "红线词库加载失败",
+      "loadCatFail": "红线类别加载失败",
+      "saveFail": "保存失败",
+      "toggleFail": "状态切换失败",
+      "deleteFail": "删除失败",
+      "reloadFail": "刷新失败",
+      "deleteConfirm": "确认删除该红线词？"
     }
   }
 }

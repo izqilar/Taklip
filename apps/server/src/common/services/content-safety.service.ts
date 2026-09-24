@@ -277,4 +277,79 @@ export class ContentSafetyService {
   getWordCount(): number {
     return this.wordMap.size;
   }
+
+  /** 总台可维护：列出全量红线词（含已停用），按类别、词序排序 */
+  async listWords(): Promise<
+    { id: string; word: string; category: RedlineCategoryKey; enabled: boolean }[]
+  > {
+    const rows = await this.prisma.redlineWord.findMany({
+      orderBy: [{ category: 'asc' }, { word: 'asc' }],
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      word: r.word,
+      category: r.category as RedlineCategoryKey,
+      enabled: r.enabled,
+    }));
+  }
+
+  /** 总台可维护：新增一个红线词（word 唯一，重复则按类别更新） */
+  async addWord(
+    word: string,
+    category: RedlineCategoryKey,
+    enabled = true,
+  ): Promise<{ id: string; word: string; category: RedlineCategoryKey; enabled: boolean }> {
+    const w = (word || '').trim();
+    if (!w) throw new BadRequestException('红线词不能为空');
+    if (!REDLINE_CATEGORIES.some((c) => c.key === category)) {
+      throw new BadRequestException(`无效的红线类别: ${category}`);
+    }
+    const created = await this.prisma.redlineWord.upsert({
+      where: { word: w },
+      update: { category, enabled },
+      create: { word: w, category, enabled },
+    });
+    await this.refreshWordCache();
+    return {
+      id: created.id,
+      word: created.word,
+      category: created.category as RedlineCategoryKey,
+      enabled: created.enabled,
+    };
+  }
+
+  /** 总台可维护：更新红线词（改词面 / 改类别 / 启停） */
+  async updateWord(
+    id: string,
+    patch: { word?: string; category?: RedlineCategoryKey; enabled?: boolean },
+  ): Promise<{ id: string; word: string; category: RedlineCategoryKey; enabled: boolean }> {
+    const data: { word?: string; category?: string; enabled?: boolean } = {};
+    if (patch.word !== undefined) {
+      const w = patch.word.trim();
+      if (!w) throw new BadRequestException('红线词不能为空');
+      data.word = w;
+    }
+    if (patch.category !== undefined) {
+      if (!REDLINE_CATEGORIES.some((c) => c.key === patch.category)) {
+        throw new BadRequestException(`无效的红线类别: ${patch.category}`);
+      }
+      data.category = patch.category;
+    }
+    if (patch.enabled !== undefined) data.enabled = patch.enabled;
+    const updated = await this.prisma.redlineWord.update({ where: { id }, data });
+    await this.refreshWordCache();
+    return {
+      id: updated.id,
+      word: updated.word,
+      category: updated.category as RedlineCategoryKey,
+      enabled: updated.enabled,
+    };
+  }
+
+  /** 总台可维护：删除红线词 */
+  async removeWord(id: string): Promise<{ id: string }> {
+    await this.prisma.redlineWord.delete({ where: { id } });
+    await this.refreshWordCache();
+    return { id };
+  }
 }

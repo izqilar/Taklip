@@ -631,6 +631,42 @@
     },
     "note": {
       "comingSoonHint": "This module backend endpoint will land in a later iteration"
+    },
+    "redlineAdmin": {
+      "title": "Red-line Word Library",
+      "desc": "Maintain content-safety red-line words (add/edit/delete, enable/disable) and refresh the machine-scan cache so red-line checks on service/template publishing take effect instantly.",
+      "total": "Total",
+      "items": "items",
+      "add": "Add red-line word",
+      "reload": "Refresh scan cache",
+      "word": "Sensitive word",
+      "category": "Red-line category",
+      "enabled": "Status",
+      "actions": "Actions",
+      "edit": "Edit",
+      "delete": "Delete",
+      "editTitle": "Edit red-line word",
+      "addTitle": "Add red-line word",
+      "wordRequired": "Enter the sensitive word",
+      "wordPlaceholder": "e.g. example violation word",
+      "categoryRequired": "Select a red-line category",
+      "categoryPlaceholder": "Select a red-line category",
+      "empty": "No red-line words yet. Click Add on the top right.",
+      "loading": "Loading…",
+      "created": "Created",
+      "updated": "Updated",
+      "deleted": "Deleted",
+      "enabledText": "Enabled",
+      "disabled": "Disabled",
+      "reloaded": "Scan cache refreshed",
+      "activeCount": "active words",
+      "loadFail": "Failed to load red-line words",
+      "loadCatFail": "Failed to load red-line categories",
+      "saveFail": "Save failed",
+      "toggleFail": "Toggle failed",
+      "deleteFail": "Delete failed",
+      "reloadFail": "Refresh failed",
+      "deleteConfirm": "Confirm deleting this red-line word?"
     }
   }
 }

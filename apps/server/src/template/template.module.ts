@@ -6,6 +6,6 @@ import { ContentSafetyService } from '../common/services/content-safety.service'
 @Module({
   controllers: [TemplateController],
   providers: [TemplateService, ContentSafetyService],
-  exports: [TemplateService],
+  exports: [TemplateService, ContentSafetyService],
 })
 export class TemplateModule {}
