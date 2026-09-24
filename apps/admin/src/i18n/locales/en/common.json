@@ -52,7 +52,7 @@
     "orderfulfill": "Order Fulfillment",
     "servicecontent": "Services & Content",
     "qualification": "Qualification",
-    "teamsetting": "Team & Settings"
+    "teamsetting": "Workspace Settings"
   },
   "status": {
     "ACTIVE": "Active",
@@ -114,7 +114,7 @@
     "agent.wallet": "Settlement & Wallet",
     "agent.feedback": "Feedback Center",
     "agent.messages": "Message Center",
-    "agent.roles": "Roles & Permissions",
+    "agent.roles": "Staff Roles",
     "sp.center": "Service Center",
     "sp.studio": "My Workspace",
     "sp.services": "Services",
@@ -123,7 +123,7 @@
     "sp.wallet": "My Wallet",
     "sp.feedback": "My Reviews",
     "sp.messages": "Messages",
-    "sp.roles": "Roles & Permissions",
+    "sp.roles": "Staff Roles",
     "user.center": "用户视角",
     "user.dashboard": "我的工作台",
     "user.orders": "我的订单",
@@ -140,18 +140,20 @@
     "sp.complaints": "Feedback",
     "sp.apply": "Applications",
     "sp.contract": "Contracts",
-    "sp.income": "Income",
+    "sp.income": "Billing",
     "sp.withdraw": "Withdrawals",
     "sp.notices": "Notices",
-    "sp.team": "My Team",
+    "sp.team": "Team Management",
     "sp.clients": "My Clients",
     "account.profile-provider": "Account",
     "admin": {
-      "team": "My team"
+      "team": "Team Management"
     },
     "agent": {
-      "team": "My team"
-    }
+      "team": "Team Management"
+    },
+    "admin.qualifications": "Settlement Review",
+    "user.apply": "Join or Settle In"
   },
   "pages": {
     "col.status": "Status",
@@ -586,7 +588,9 @@
       "requiredPhone": "Phone is required",
       "phoneFormat": "Must be 11 digits",
       "requiredRole": "Select or type a role",
-      "removeFailed": "Remove failed"
+      "removeFailed": "Remove failed",
+      "authorityNotice": "Authority notice",
+      "generalMsg": "General message"
     }
   }
 }

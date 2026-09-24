@@ -260,6 +260,9 @@ export const USER_CENTER_NAV: NavItem[] = [
   { to: '/user/messages', labelKey: 'common:userCenter.menu.messages', group: '消息中心', icon: I(<><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" /><path d="m4 6 8 6 8-6" /></>) },
   { to: '/user/wallet', labelKey: 'common:userCenter.menu.wallet', group: '个人中心', icon: I(<><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></>) },
   { to: '/user/coupons', labelKey: 'common:userCenter.menu.coupons', group: '个人中心', icon: I(<><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4a2 2 0 0 0 0 4v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2a2 2 0 0 0 0-4Z" /><path d="M12 6v16" /></>) },
+  // 入驻申请：加入团队（身份不变）/ 入驻（资格升级）双隧道入口
+  // 位置：排在「账户详情」之前（2026-09-24 调整），与运营端用户视角「个人中心」分组顺序一致
+  { to: '/user/apply', labelKey: 'common:userCenter.menu.apply', group: '个人中心', icon: I(<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" /></>) },
   { to: '/user/account', labelKey: 'common:userCenter.menu.account', group: '个人中心', icon: I(<><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 12 0v1" /></>) },
 ];
 

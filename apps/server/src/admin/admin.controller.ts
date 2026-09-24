@@ -22,6 +22,7 @@ import type { JwtUser } from '../common/types/jwt-user';
 import { AdminService } from './admin.service';
 import { WalletService } from '../wallet/wallet.service';
 import { StaffService } from '../console/staff.service';
+import { PrismaService } from '../prisma/prisma.service';
 import {
   UpdateUserStatusDto,
   AssignRoleDto,
@@ -45,6 +46,7 @@ export class AdminController {
     private readonly adminService: AdminService,
     private readonly walletService: WalletService,
     private readonly staff: StaffService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /** 用户列表（ADMIN 全量 / AGENT 辖区） */
@@ -106,6 +108,28 @@ export class AdminController {
     @Query('providerStatus') providerStatus?: string,
   ) {
     return this.adminService.listProviderReview(req.dataScope ?? {}, providerStatus);
+  }
+
+  /**
+   * 入驻申请审核队列（总台 ADMIN）——「入驻资格升级」隧道的总台审批台。
+   * 状态含义：FIRST_PENDING 待初审 / FIRST_PASSED 待用户补资料 / FINAL_PENDING 待终审 / APPROVED / REJECTED。
+   * 与 provider-review（已有服务商的扩展业务资质）是两条不同的队列，勿混用。
+   */
+  @Get('qualifications')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async listQualifications(@Query('status') status?: string) {
+    const items = await this.prisma.qualificationApplication.findMany({
+      where: status ? { status } : undefined,
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      include: {
+        user: {
+          select: { id: true, nickname: true, realName: true, phone: true, role: true, regionPath: true },
+        },
+      },
+    });
+    return { items, total: items.length };
   }
 
   /** 批准服务商扩展业务 */

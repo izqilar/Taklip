@@ -58,7 +58,7 @@ export const LayerHeader = ({
   onMenu?: () => void;
 }) => {
   const { i18n } = useTranslation();
-  const { view, setView, objectScope, setObjectScope } = useLayer();
+  const { view, setView, objectScope } = useLayer();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -71,8 +71,11 @@ export const LayerHeader = ({
   );
 
   const onViewChange = (v: LayerKey) => {
+    // 注意：不再在切换视角时清空 objectScope（旧全局模型下需清共享槽位）。
+    // 现 objectScope 按视角隔离（见 layerContext），清空反而会抹掉「源视角」自己保留的
+    // 选中对象。目标视角由 setView 同步其自身槽位的 subject，输入框由 ObjectScopeBar
+    // 的 view 副作用回落到目标视角自己的对象（或空），各视角互不串扰。
     setView(v);
-    setObjectScope(null);
     navigate(LAYER_HOME[v]);
   };
 

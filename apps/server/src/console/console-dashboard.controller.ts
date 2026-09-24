@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Req, UseGuards, ForbiddenException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -247,8 +247,24 @@ export class ConsoleDashboardController {
   @Get('badges')
   @Roles('ADMIN', 'AGENT', 'SERVICE_PROVIDER', 'USER')
   @UseGuards(RolesGuard)
-  async badges(@Req() req: ReqUser) {
-    const me = req.user;
+  async badges(@Req() req: ReqUser, @Query('subject') subject?: string) {
+    // 视察视角：ADMIN 带 ?subject=<被视察对象id> 时，按被视察对象的作用域统计角标，
+    // 使服务商/代理商/用户视角检索到某账号后，侧栏气泡数字反映该账号的真实待办，
+    // 而非当前登录管理员的全局聚合数据。无 subject（总台自身视角）时取登录者作用域。
+    let me: JwtUser = req.user;
+    if (subject && (req.user.role === 'ADMIN' || req.user.role === 'AGENT')) {
+      const target = await this.prisma.user.findUnique({ where: { id: subject } });
+      if (!target) throw new ForbiddenException('被视察对象不存在');
+      // AGENT 辖区校验：被视察对象必须在其辖区内
+      if (
+        req.user.role === 'AGENT' &&
+        req.user.regionPath &&
+        !(target.regionPath ?? '').startsWith(req.user.regionPath)
+      ) {
+        throw new ForbiddenException('该用户不在你的辖区内');
+      }
+      me = target as JwtUser;
+    }
     const isAdmin = me.role === 'ADMIN';
     const rp = me.role === 'AGENT' && me.regionPath ? me.regionPath : null;
 
@@ -320,6 +336,80 @@ export class ConsoleDashboardController {
             where: { status: 'paid', template: { authorId: me.id } },
           });
 
-    return { providerReview, withdrawals, templates, feedback, messages, orders };
+    // ⑦ 用户 / 服务商视角专属角标（被视察对象或登录者为 USER / SERVICE_PROVIDER 时统计）
+    //    与各自视角「通知公告 / 业务消息」列表页默认筛选口径一致（provider-console 的
+    //    notices/messages 端点可见性为 GLOBAL/REGION(前缀)/OWN(targetRole=SERVICE_PROVIDER)）：
+    //     - noticeUnread   ：本人可见、已发布、ANNOUNCEMENT 类型、且未读（无 MessageRead 回执）
+    //     - messagePending ：本人可见、已发布、非 ANNOUNCEMENT（业务/诉求）、且未读
+    //     - feedbackPending：本人发起、且未关闭的工单数（仅 USER 视角的「我的反馈·待回复」；
+    //                        服务商视角的意见反馈走 feedback 待处理工单数，已在上面 ④ 统计）
+    const isEndUser = me.role === 'USER' || me.role === 'SERVICE_PROVIDER';
+    let noticeUnread = 0;
+    let messagePending = 0;
+    let feedbackPending = 0;
+    // ⑧ 「团队管理」待办：本组织收到的「加入团队」在途申请数（仅服务商 / 代理商自身视角统计）
+    let joinPending = 0;
+    if (isEndUser) {
+      const targetRole = me.role === 'USER' ? 'USER' : 'SERVICE_PROVIDER';
+      const vis = this.messageVisibleWhere(me.regionPath, targetRole, me.id);
+      const [nu, mp] = await this.prisma.$transaction([
+        // 通知公告「未读」：已发布 + ANNOUNCEMENT + 本人可见 + 无已读回执
+        this.prisma.message.count({
+          where: {
+            status: 'PUBLISHED',
+            type: 'ANNOUNCEMENT',
+            ...vis,
+            NOT: { reads: { some: { userId: me.id } } },
+          },
+        }),
+        // 业务消息「待处理」：已发布 + 非 ANNOUNCEMENT（业务/诉求）+ 本人可见 + 无已读回执
+        this.prisma.message.count({
+          where: {
+            status: 'PUBLISHED',
+            type: { not: 'ANNOUNCEMENT' },
+            ...vis,
+            NOT: { reads: { some: { userId: me.id } } },
+          },
+        }),
+      ]);
+      noticeUnread = nu;
+      messagePending = mp;
+      // 我的反馈「待回复」：仅 USER 视角（服务商意见反馈已计入 feedback 待处理工单）
+      if (me.role === 'USER') {
+        feedbackPending = await this.prisma.ticket.count({
+          where: { reporterId: me.id, status: { not: 'CLOSED' } },
+        });
+      }
+    }
+    if (me.role === 'SERVICE_PROVIDER' || me.role === 'AGENT') {
+      joinPending = await this.prisma.teamJoinApplication.count({
+        where: { orgType: me.role === 'AGENT' ? 'AGENT' : 'PROVIDER', orgId: me.id, status: 'PENDING' },
+      });
+    }
+
+    return {
+      providerReview,
+      withdrawals,
+      templates,
+      feedback,
+      messages,
+      orders,
+      noticeUnread,
+      messagePending,
+      feedbackPending,
+      joinPending,
+    };
+  }
+
+  /**
+   * 用户/服务商可见消息的 Prisma where（与 User/Provider ConsoleController 的可见性同口径）。
+   * 额外纳入 scope=USER 的定向消息（加入团队申请的接收 / 拒绝回执）。
+   */
+  private messageVisibleWhere(regionPath: string | null | undefined, targetRole: string, userId?: string) {
+    const or: any[] = [{ scope: 'GLOBAL' }];
+    if (regionPath) or.push({ scope: 'REGION', regionPath: { startsWith: regionPath } });
+    or.push({ scope: 'OWN', targetRole });
+    if (userId) or.push({ scope: 'USER', recipientId: userId });
+    return { OR: or };
   }
 }

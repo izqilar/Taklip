@@ -196,8 +196,6 @@
     "fb.suggestion": "Suggestion",
     "fb.appeal": "Appeal",
     "fb.escalateArbitration": "Escalate to arbitration",
-    "msg.authorityNotice": "Authority notice",
-    "msg.generalMsg": "General message",
     "msg.negotiating": "Negotiating",
     "msg.arbitrating": "Arbitrating",
     "msg.escalating": "Escalating",
@@ -307,7 +305,11 @@
     "note.fbAgent": "سىز ۋاكالەتچى سۈپىتىدە يوللىغان ئىنكاس رايونىڭىزغا تەۋە بولىدۇ؛ كېڭىشىش ياكى باشقۇرۇش مەركىزىگە ئۆستۈرۈشكە بولىدۇ.",
     "note.fbAdmin": "باشقۇرۇش مەركىزى بارلىق ئىنكاسلارنى كۆرەلەيدۇ ۋە تەرتىپكە سالالايدۇ.",
     "note.fbUser": "سىز يوللىغان ئىنكاس دەرىجە بويىچە بىر تەرەپ قىلىش ئېقىمىغا كىرىدۇ.",
-    "msg.plsInputContent": "مەزمۇن كىرگۈزۈڭ"
+    "msg.plsInputContent": "مەزمۇن كىرگۈزۈڭ",
+    "msg": {
+      "authorityNotice": "Authority notice",
+      "generalMsg": "General message"
+    }
   },
   "group": {
     "trade": "交易中心",
@@ -317,7 +319,7 @@
     "orderfulfill": "Order Fulfillment",
     "servicecontent": "Services & Content",
     "qualification": "Qualification",
-    "teamsetting": "Team & Settings"
+    "teamsetting": "Workspace Settings"
   },
   "menu": {
     "user.center": "用户视角",
@@ -342,13 +344,17 @@
     "sp.apply": "Applications",
     "sp.qualification": "Qualification",
     "sp.contract": "Contracts",
-    "sp.income": "Income",
+    "sp.income": "Billing",
     "sp.withdraw": "Withdrawals",
     "sp.wallet": "My Wallet",
     "sp.notices": "Notices",
     "sp.messages": "Messages",
-    "sp.team": "My Team",
+    "sp.team": "ئەترەت باشقۇرۇش",
     "sp.clients": "My Clients",
-    "account.profile-provider": "Account"
+    "account.profile-provider": "Account",
+    "sp.roles": "خىزمەتچى رولى",
+    "agent.roles": "خىزمەتچى رولى",
+    "admin.qualifications": "ئورۇنلىشىش تەستىقى",
+    "user.apply": "ئەترەتكە كىرىش / ئورۇنلىشىش"
   }
 }

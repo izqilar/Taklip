@@ -1,0 +1,344 @@
+[2m10:36:18[22m [31m[1m[vite][22m[39m [31mInternal server error: D:\MyWorkBuddy\2026-08-10-22-39-56\apps\admin\src\components\layout\ObjectScopeBar.tsx: Unexpected token, expected "..." (120:69)
+
+[0m [90m 118 |[31m           open[33m=[31m{open}
+ [90m 119 |[31m           data[33m-[31mtestid[33m=[31m[32m"objscope-search"[31m
+[31m[1m>[22m[31m[90m 120 |[31m           {[90m/* antd 5.25+ 弃用 onDropdownVisibleChange → onOpenChange */[31m}
+ [90m     |[31m                                                                      [31m[1m^[22m[31m
+ [90m 121 |[31m           onOpenChange[33m=[31m{(v) [33m=>[31m setOpen(v)}
+ [90m 122 |[31m           onChange[33m=[31m{(v) [33m=>[31m setValue(v)}
+ [90m 123 |[31m           onSearch[33m=[31m{(v) [33m=>[31m {[0m[39m
+  Plugin: [35mvite:react-babel[39m
+  File: [36mD:/MyWorkBuddy/2026-08-10-22-39-56/apps/admin/src/components/layout/ObjectScopeBar.tsx[39m:120:69
+[33m  122|            onChange={(v) => setValue(v)}
+  123|            onSearch={(v) => {
+  124|              setValue(v);
+     |       ^
+  125|              runSearch(v);
+  126|            }}[39m
+      at constructor (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:369:19)
+      at TypeScriptParserMixin.raise (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6620:19)
+      at TypeScriptParserMixin.unexpected (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6640:16)
+      at TypeScriptParserMixin.expect (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6920:12)
+      at TypeScriptParserMixin.jsxParseAttribute (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4661:12)
+      at TypeScriptParserMixin.jsxParseOpeningElementAfterName (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4683:28)
+      at TypeScriptParserMixin.jsxParseOpeningElementAfterName (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10064:18)
+      at TypeScriptParserMixin.jsxParseOpeningElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4678:17)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4702:33)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4714:32)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4714:32)
+      at TypeScriptParserMixin.jsxParseElement (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4765:17)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4775:19)
+      at TypeScriptParserMixin.parseExprSubscripts (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11102:23)
+      at TypeScriptParserMixin.parseUpdate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11087:21)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11067:23)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9858:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10920:61)
+      at TypeScriptParserMixin.parseExprOps (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10925:23)
+      at TypeScriptParserMixin.parseMaybeConditional (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10902:23)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10852:21)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9796:39
+      at TypeScriptParserMixin.tryParse (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6928:20)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9796:18)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10821:39
+      at TypeScriptParserMixin.allowInAnd (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12455:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10821:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12522:17)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11701:28)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11357:23)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4780:20)
+      at TypeScriptParserMixin.parseExprSubscripts (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11102:23)
+      at TypeScriptParserMixin.parseUpdate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11087:21)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11067:23)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9858:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10920:61)
+      at TypeScriptParserMixin.parseExprOps (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10925:23)
+      at TypeScriptParserMixin.parseMaybeConditional (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10902:23)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10852:21)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9807:20)
+      at TypeScriptParserMixin.parseExpressionBase (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10805:23)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10801:39
+      at TypeScriptParserMixin.allowInAnd (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12450:16)
+      at TypeScriptParserMixin.parseExpression (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10801:17)
+      at TypeScriptParserMixin.parseReturnStatement (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:13171:28)
+      at TypeScriptParserMixin.parseStatementContent (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12827:21)
+      at TypeScriptParserMixin.parseStatementContent (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9529:18)
+      at TypeScriptParserMixin.parseStatementLike (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12796:17)
+      at TypeScriptParserMixin.parseStatementListItem (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12776:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:13345:61)
+[2m10:37:26[22m [31m[1m[vite][22m[39m Pre-transform error: D:\MyWorkBuddy\2026-08-10-22-39-56\apps\admin\src\components\layout\ObjectScopeBar.tsx: Unexpected token, expected "..." (120:69)
+
+[0m [90m 118 |[39m           open[33m=[39m{open}
+ [90m 119 |[39m           data[33m-[39mtestid[33m=[39m[32m"objscope-search"[39m
+[31m[1m>[22m[39m[90m 120 |[39m           {[90m/* antd 5.25+ 弃用 onDropdownVisibleChange → onOpenChange */[39m}
+ [90m     |[39m                                                                      [31m[1m^[22m[39m
+ [90m 121 |[39m           onOpenChange[33m=[39m{(v) [33m=>[39m setOpen(v)}
+ [90m 122 |[39m           onChange[33m=[39m{(v) [33m=>[39m setValue(v)}
+ [90m 123 |[39m           onSearch[33m=[39m{(v) [33m=>[39m {[0m
+[2m10:37:27[22m [31m[1m[vite][22m[39m [31mInternal server error: D:\MyWorkBuddy\2026-08-10-22-39-56\apps\admin\src\components\layout\ObjectScopeBar.tsx: Unexpected token, expected "..." (120:69)
+
+[0m [90m 118 |[31m           open[33m=[31m{open}
+ [90m 119 |[31m           data[33m-[31mtestid[33m=[31m[32m"objscope-search"[31m
+[31m[1m>[22m[31m[90m 120 |[31m           {[90m/* antd 5.25+ 弃用 onDropdownVisibleChange → onOpenChange */[31m}
+ [90m     |[31m                                                                      [31m[1m^[22m[31m
+ [90m 121 |[31m           onOpenChange[33m=[31m{(v) [33m=>[31m setOpen(v)}
+ [90m 122 |[31m           onChange[33m=[31m{(v) [33m=>[31m setValue(v)}
+ [90m 123 |[31m           onSearch[33m=[31m{(v) [33m=>[31m {[0m[39m
+  Plugin: [35mvite:react-babel[39m
+  File: [36mD:/MyWorkBuddy/2026-08-10-22-39-56/apps/admin/src/components/layout/ObjectScopeBar.tsx[39m:120:69
+[33m  122|            onChange={(v) => setValue(v)}
+  123|            onSearch={(v) => {
+  124|              setValue(v);
+     |       ^
+  125|              runSearch(v);
+  126|            }}[39m
+      at constructor (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:369:19)
+      at TypeScriptParserMixin.raise (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6620:19)
+      at TypeScriptParserMixin.unexpected (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6640:16)
+      at TypeScriptParserMixin.expect (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6920:12)
+      at TypeScriptParserMixin.jsxParseAttribute (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4661:12)
+      at TypeScriptParserMixin.jsxParseOpeningElementAfterName (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4683:28)
+      at TypeScriptParserMixin.jsxParseOpeningElementAfterName (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10064:18)
+      at TypeScriptParserMixin.jsxParseOpeningElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4678:17)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4702:33)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4714:32)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4714:32)
+      at TypeScriptParserMixin.jsxParseElement (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4765:17)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4775:19)
+      at TypeScriptParserMixin.parseExprSubscripts (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11102:23)
+      at TypeScriptParserMixin.parseUpdate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11087:21)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11067:23)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9858:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10920:61)
+      at TypeScriptParserMixin.parseExprOps (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10925:23)
+      at TypeScriptParserMixin.parseMaybeConditional (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10902:23)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10852:21)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9796:39
+      at TypeScriptParserMixin.tryParse (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6928:20)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9796:18)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10821:39
+      at TypeScriptParserMixin.allowInAnd (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12455:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10821:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12522:17)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11701:28)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11357:23)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4780:20)
+      at TypeScriptParserMixin.parseExprSubscripts (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11102:23)
+      at TypeScriptParserMixin.parseUpdate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11087:21)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11067:23)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9858:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10920:61)
+      at TypeScriptParserMixin.parseExprOps (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10925:23)
+      at TypeScriptParserMixin.parseMaybeConditional (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10902:23)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10852:21)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9807:20)
+      at TypeScriptParserMixin.parseExpressionBase (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10805:23)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10801:39
+      at TypeScriptParserMixin.allowInAnd (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12450:16)
+      at TypeScriptParserMixin.parseExpression (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10801:17)
+      at TypeScriptParserMixin.parseReturnStatement (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:13171:28)
+      at TypeScriptParserMixin.parseStatementContent (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12827:21)
+      at TypeScriptParserMixin.parseStatementContent (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9529:18)
+      at TypeScriptParserMixin.parseStatementLike (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12796:17)
+      at TypeScriptParserMixin.parseStatementListItem (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12776:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:13345:61)
+[2m10:37:27[22m [31m[1m[vite][22m[39m [31mInternal server error: D:\MyWorkBuddy\2026-08-10-22-39-56\apps\admin\src\components\layout\ObjectScopeBar.tsx: Unexpected token, expected "..." (120:69)
+
+[0m [90m 118 |[31m           open[33m=[31m{open}
+ [90m 119 |[31m           data[33m-[31mtestid[33m=[31m[32m"objscope-search"[31m
+[31m[1m>[22m[31m[90m 120 |[31m           {[90m/* antd 5.25+ 弃用 onDropdownVisibleChange → onOpenChange */[31m}
+ [90m     |[31m                                                                      [31m[1m^[22m[31m
+ [90m 121 |[31m           onOpenChange[33m=[31m{(v) [33m=>[31m setOpen(v)}
+ [90m 122 |[31m           onChange[33m=[31m{(v) [33m=>[31m setValue(v)}
+ [90m 123 |[31m           onSearch[33m=[31m{(v) [33m=>[31m {[0m[39m
+  Plugin: [35mvite:react-babel[39m
+  File: [36mD:/MyWorkBuddy/2026-08-10-22-39-56/apps/admin/src/components/layout/ObjectScopeBar.tsx[39m:120:69
+[33m  122|            onChange={(v) => setValue(v)}
+  123|            onSearch={(v) => {
+  124|              setValue(v);
+     |       ^
+  125|              runSearch(v);
+  126|            }}[39m
+      at constructor (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:369:19)
+      at TypeScriptParserMixin.raise (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6620:19)
+      at TypeScriptParserMixin.unexpected (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6640:16)
+      at TypeScriptParserMixin.expect (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6920:12)
+      at TypeScriptParserMixin.jsxParseAttribute (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4661:12)
+      at TypeScriptParserMixin.jsxParseOpeningElementAfterName (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4683:28)
+      at TypeScriptParserMixin.jsxParseOpeningElementAfterName (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10064:18)
+      at TypeScriptParserMixin.jsxParseOpeningElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4678:17)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4702:33)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4714:32)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4714:32)
+      at TypeScriptParserMixin.jsxParseElement (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4765:17)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4775:19)
+      at TypeScriptParserMixin.parseExprSubscripts (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11102:23)
+      at TypeScriptParserMixin.parseUpdate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11087:21)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11067:23)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9858:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10920:61)
+      at TypeScriptParserMixin.parseExprOps (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10925:23)
+      at TypeScriptParserMixin.parseMaybeConditional (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10902:23)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10852:21)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9796:39
+      at TypeScriptParserMixin.tryParse (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6928:20)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9796:18)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10821:39
+      at TypeScriptParserMixin.allowInAnd (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12455:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10821:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12522:17)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11701:28)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11357:23)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4780:20)
+      at TypeScriptParserMixin.parseExprSubscripts (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11102:23)
+      at TypeScriptParserMixin.parseUpdate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11087:21)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11067:23)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9858:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10920:61)
+      at TypeScriptParserMixin.parseExprOps (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10925:23)
+      at TypeScriptParserMixin.parseMaybeConditional (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10902:23)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10852:21)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9807:20)
+      at TypeScriptParserMixin.parseExpressionBase (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10805:23)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10801:39
+      at TypeScriptParserMixin.allowInAnd (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12450:16)
+      at TypeScriptParserMixin.parseExpression (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10801:17)
+      at TypeScriptParserMixin.parseReturnStatement (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:13171:28)
+      at TypeScriptParserMixin.parseStatementContent (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12827:21)
+      at TypeScriptParserMixin.parseStatementContent (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9529:18)
+      at TypeScriptParserMixin.parseStatementLike (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12796:17)
+      at TypeScriptParserMixin.parseStatementListItem (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12776:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:13345:61)
+[2m10:38:45[22m [31m[1m[vite][22m[39m [31mInternal server error: D:\MyWorkBuddy\2026-08-10-22-39-56\apps\admin\src\components\layout\ObjectScopeBar.tsx: Unexpected token, expected "..." (120:69)
+
+[0m [90m 118 |[31m           open[33m=[31m{open}
+ [90m 119 |[31m           data[33m-[31mtestid[33m=[31m[32m"objscope-search"[31m
+[31m[1m>[22m[31m[90m 120 |[31m           {[90m/* antd 5.25+ 弃用 onDropdownVisibleChange → onOpenChange */[31m}
+ [90m     |[31m                                                                      [31m[1m^[22m[31m
+ [90m 121 |[31m           onOpenChange[33m=[31m{(v) [33m=>[31m setOpen(v)}
+ [90m 122 |[31m           onChange[33m=[31m{(v) [33m=>[31m setValue(v)}
+ [90m 123 |[31m           onSearch[33m=[31m{(v) [33m=>[31m {[0m[39m
+  Plugin: [35mvite:react-babel[39m
+  File: [36mD:/MyWorkBuddy/2026-08-10-22-39-56/apps/admin/src/components/layout/ObjectScopeBar.tsx[39m:120:69
+[33m  122|            onChange={(v) => setValue(v)}
+  123|            onSearch={(v) => {
+  124|              setValue(v);
+     |       ^
+  125|              runSearch(v);
+  126|            }}[39m
+      at constructor (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:369:19)
+      at TypeScriptParserMixin.raise (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6620:19)
+      at TypeScriptParserMixin.unexpected (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6640:16)
+      at TypeScriptParserMixin.expect (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6920:12)
+      at TypeScriptParserMixin.jsxParseAttribute (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4661:12)
+      at TypeScriptParserMixin.jsxParseOpeningElementAfterName (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4683:28)
+      at TypeScriptParserMixin.jsxParseOpeningElementAfterName (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10064:18)
+      at TypeScriptParserMixin.jsxParseOpeningElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4678:17)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4702:33)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4714:32)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4714:32)
+      at TypeScriptParserMixin.jsxParseElement (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4765:17)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4775:19)
+      at TypeScriptParserMixin.parseExprSubscripts (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11102:23)
+      at TypeScriptParserMixin.parseUpdate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11087:21)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11067:23)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9858:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10920:61)
+      at TypeScriptParserMixin.parseExprOps (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10925:23)
+      at TypeScriptParserMixin.parseMaybeConditional (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10902:23)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10852:21)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9796:39
+      at TypeScriptParserMixin.tryParse (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6928:20)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9796:18)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10821:39
+      at TypeScriptParserMixin.allowInAnd (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12455:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10821:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12522:17)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11701:28)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11357:23)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4780:20)
+      at TypeScriptParserMixin.parseExprSubscripts (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11102:23)
+      at TypeScriptParserMixin.parseUpdate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11087:21)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11067:23)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9858:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10920:61)
+      at TypeScriptParserMixin.parseExprOps (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10925:23)
+      at TypeScriptParserMixin.parseMaybeConditional (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10902:23)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10852:21)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9807:20)
+      at TypeScriptParserMixin.parseExpressionBase (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10805:23)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10801:39
+      at TypeScriptParserMixin.allowInAnd (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12450:16)
+      at TypeScriptParserMixin.parseExpression (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10801:17)
+      at TypeScriptParserMixin.parseReturnStatement (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:13171:28)
+      at TypeScriptParserMixin.parseStatementContent (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12827:21)
+      at TypeScriptParserMixin.parseStatementContent (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9529:18)
+      at TypeScriptParserMixin.parseStatementLike (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12796:17)
+      at TypeScriptParserMixin.parseStatementListItem (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12776:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:13345:61)
+[2m10:38:45[22m [31m[1m[vite][22m[39m [31mInternal server error: D:\MyWorkBuddy\2026-08-10-22-39-56\apps\admin\src\components\layout\ObjectScopeBar.tsx: Unexpected token, expected "..." (120:69)
+
+[0m [90m 118 |[31m           open[33m=[31m{open}
+ [90m 119 |[31m           data[33m-[31mtestid[33m=[31m[32m"objscope-search"[31m
+[31m[1m>[22m[31m[90m 120 |[31m           {[90m/* antd 5.25+ 弃用 onDropdownVisibleChange → onOpenChange */[31m}
+ [90m     |[31m                                                                      [31m[1m^[22m[31m
+ [90m 121 |[31m           onOpenChange[33m=[31m{(v) [33m=>[31m setOpen(v)}
+ [90m 122 |[31m           onChange[33m=[31m{(v) [33m=>[31m setValue(v)}
+ [90m 123 |[31m           onSearch[33m=[31m{(v) [33m=>[31m {[0m[39m
+  Plugin: [35mvite:react-babel[39m
+  File: [36mD:/MyWorkBuddy/2026-08-10-22-39-56/apps/admin/src/components/layout/ObjectScopeBar.tsx[39m:120:69
+[33m  122|            onChange={(v) => setValue(v)}
+  123|            onSearch={(v) => {
+  124|              setValue(v);
+     |       ^
+  125|              runSearch(v);
+  126|            }}[39m
+      at constructor (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:369:19)
+      at TypeScriptParserMixin.raise (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6620:19)
+      at TypeScriptParserMixin.unexpected (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6640:16)
+      at TypeScriptParserMixin.expect (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6920:12)
+      at TypeScriptParserMixin.jsxParseAttribute (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4661:12)
+      at TypeScriptParserMixin.jsxParseOpeningElementAfterName (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4683:28)
+      at TypeScriptParserMixin.jsxParseOpeningElementAfterName (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10064:18)
+      at TypeScriptParserMixin.jsxParseOpeningElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4678:17)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4702:33)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4714:32)
+      at TypeScriptParserMixin.jsxParseElementAt (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4714:32)
+      at TypeScriptParserMixin.jsxParseElement (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4765:17)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4775:19)
+      at TypeScriptParserMixin.parseExprSubscripts (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11102:23)
+      at TypeScriptParserMixin.parseUpdate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11087:21)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11067:23)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9858:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10920:61)
+      at TypeScriptParserMixin.parseExprOps (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10925:23)
+      at TypeScriptParserMixin.parseMaybeConditional (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10902:23)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10852:21)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9796:39
+      at TypeScriptParserMixin.tryParse (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:6928:20)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9796:18)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10821:39
+      at TypeScriptParserMixin.allowInAnd (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12455:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10821:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12522:17)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11701:28)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11357:23)
+      at TypeScriptParserMixin.parseExprAtom (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:4780:20)
+      at TypeScriptParserMixin.parseExprSubscripts (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11102:23)
+      at TypeScriptParserMixin.parseUpdate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11087:21)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:11067:23)
+      at TypeScriptParserMixin.parseMaybeUnary (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9858:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10920:61)
+      at TypeScriptParserMixin.parseExprOps (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10925:23)
+      at TypeScriptParserMixin.parseMaybeConditional (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10902:23)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10852:21)
+      at TypeScriptParserMixin.parseMaybeAssign (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9807:20)
+      at TypeScriptParserMixin.parseExpressionBase (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10805:23)
+      at D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10801:39
+      at TypeScriptParserMixin.allowInAnd (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12450:16)
+      at TypeScriptParserMixin.parseExpression (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:10801:17)
+      at TypeScriptParserMixin.parseReturnStatement (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:13171:28)
+      at TypeScriptParserMixin.parseStatementContent (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12827:21)
+      at TypeScriptParserMixin.parseStatementContent (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:9529:18)
+      at TypeScriptParserMixin.parseStatementLike (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12796:17)
+      at TypeScriptParserMixin.parseStatementListItem (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:12776:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@babel+parser@7.29.8\node_modules\@babel\parser\lib\index.js:13345:61)

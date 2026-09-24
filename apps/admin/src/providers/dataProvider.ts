@@ -4,8 +4,8 @@ import { getSubject } from './scopeStore';
 
 /**
  * 视察窗口 subject 注入：ADMIN 在服务商/代理商/用户视角下选定被视察对象后，
- * 对 provider/* 与 wallet/* 的 GET 请求追加 ?subject=<id>，使总台视察窗口看到的数据
- * 与被视察账号登录后看到的数据严格一致（后端 InspectSubjectGuard 据此改写作用域）。
+ * 对 provider/* / wallet/* / agent/* 的 GET 请求追加 ?subject=<id>，使总台视察窗口看到的数据
+ * 与被视察账号登录后看到的数据严格一致（后端据此改写作用域）。
  * 仅 ADMIN + 只读 GET 生效；SP/Agent/User 自身登录不带 subject，走各自的 req.user.id。
  * 注意：
  *  - api/messages/audit（权威公告审核队列）属总台职能，不注入 subject。
@@ -30,7 +30,7 @@ export function withSubject(path: string, method?: string): string {
     const p = path.replace(/^\//, '');
     const isGet = (method ?? 'GET').toUpperCase() === 'GET';
     const matched = isGet
-      ? /^(provider|wallet|export)\//.test(p) || p === 'messages'
+      ? /^(provider|wallet|export|agent)\//.test(p) || p === 'messages'
       : /^(provider|export)\//.test(p);
     if (matched) {
       const sep = path.includes('?') ? '&' : '?';

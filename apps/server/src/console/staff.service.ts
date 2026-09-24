@@ -6,6 +6,7 @@ import { CreateStaffDto, UpdateStaffDto } from './dto/staff.dto';
 import {
   checkFuncPerms,
   staffPermPool,
+  staffRoleMetaOf,
   staffRolePool,
   teamRolesOf,
   validDataScope,
@@ -386,4 +387,215 @@ export class StaffService {
       : orgType === 'AGENT' ? 'self / region / agent'
       : 'self / all';
   }
+
+  /* ══════════════════ 加入申请（用户主动入职隧道 · JOIN）══════════════════
+   *
+   * 与「入驻」（QualificationApplication，由总台 ADMIN 审批、会变更 User.role）区分：
+   * 本隧道的申请人**始终是普通用户**，只是获得组织内员工关系（OrgStaff）。
+   *
+   * 流程：用户 POST /api/user/join-applications → 本组织「团队管理」队列
+   *      → 拥有者 accept（生成 OrgStaff，默认岗位来自岗位池首项，细粒度权限留待「员工角色」页编辑）
+   *      → 拥有者 reject（填拒绝详情 → 原样投递到用户「业务消息」）
+   *
+   * 审批粒度：单人审批（目标团队拥有者）—— 决策 4。
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  /** 本组织的申请员工消息队列（默认仅 PENDING，status=ALL 查全部历史） */
+  async listJoinQueue(orgType: OrgType, orgId: string, status = 'PENDING') {
+    const where =
+      status && status !== 'ALL' ? { orgType, orgId, status } : { orgType, orgId };
+    const rows = await this.prisma.teamJoinApplication.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      include: {
+        user: { select: { id: true, nickname: true, realName: true, phone: true, avatar: true, role: true } },
+      },
+    });
+    return {
+      items: rows.map((r) => ({ ...r, code: joinAppCode(r.createdAt, r.id) })),
+      total: rows.length,
+    };
+  }
+
+  /** 单条申请（受组织归属约束） */
+  async oneJoin(orgType: OrgType, orgId: string, id: string) {
+    const app = await this.prisma.teamJoinApplication.findFirst({
+      where: { id, orgType, orgId },
+      include: {
+        user: { select: { id: true, nickname: true, realName: true, phone: true, avatar: true, role: true } },
+      },
+    });
+    if (!app) throw new NotFoundException('申请不存在或无权操作');
+    return { ...app, code: joinAppCode(app.createdAt, app.id) };
+  }
+
+  /**
+   * 接收：把申请转为团队成员档案。
+   * 默认岗位 = 该层岗位池首项（服务商层随 serviceType 联动），并带出岗位模板的
+   * 默认职责 / 功能权限 / 数据范围；拥有者可传 staffRole 覆盖，细粒度权限随后在
+   * 「员工角色」页编辑 —— 决策 3（定岗在审批侧）。
+   */
+  async acceptJoin(
+    actor: JwtUser,
+    orgType: OrgType,
+    orgId: string,
+    orgName: string,
+    id: string,
+    opts?: { staffRole?: string; serviceType?: string },
+  ) {
+    const app = await this.prisma.teamJoinApplication.findFirst({ where: { id, orgType, orgId } });
+    if (!app) throw new NotFoundException('申请不存在或无权操作');
+    if (app.status !== 'PENDING') throw new BadRequestException('该申请已处理，无法重复操作');
+
+    const applicant = await this.prisma.user.findUnique({
+      where: { id: app.userId },
+      select: { id: true, nickname: true, realName: true, phone: true, status: true, role: true },
+    });
+    if (!applicant) throw new NotFoundException('申请人账号不存在');
+    if (applicant.status === 'DISABLED') throw new BadRequestException('该账号已被停用，无法接收');
+
+    const existed = await this.prisma.orgStaff.findFirst({
+      where: { orgType, orgId, userId: applicant.id },
+      select: { id: true, memberNo: true },
+    });
+    if (existed) throw new BadRequestException('该用户已是本团队成员');
+
+    const serviceType = orgType === 'PROVIDER' ? (opts?.serviceType ?? '').toString().trim() || null : null;
+    const rolePool = staffRolePool(orgType, serviceType);
+    // 默认岗位（决策 3：定岗在审批侧）。取「执行专员」这类最小权限内置岗位作为兜底，
+    // 避免直接套用「负责人」（该岗位默认带全量权限 + provider 数据范围）造成默认越权；
+    // 随后由拥有者在「员工角色」页按实际情况调整。
+    const defaultRole = ['执行专员', '客服专员'].find((r) => rolePool.includes(r)) ?? rolePool[0] ?? '成员';
+    const staffRole = (opts?.staffRole ?? '').toString().trim() || defaultRole;
+    if (!staffRole) throw new BadRequestException('岗位不能为空');
+    const meta = staffRoleMetaOf(orgType, staffRole);
+    const chk = checkFuncPerms(orgType, meta?.perms ?? []);
+    const dataScope =
+      meta?.dataScope && validDataScope(orgType, meta.dataScope) ? meta.dataScope : 'self';
+
+    let created: StaffRow | undefined;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const memberNo = await nextMemberNo(this.prisma, orgType, orgId);
+      try {
+        created = (await this.prisma.orgStaff.create({
+          data: {
+            orgType,
+            orgId,
+            userId: applicant.id,
+            memberNo,
+            name: applicant.realName || applicant.nickname || '未命名成员',
+            phone: applicant.phone ?? '',
+            accountStatus: 'ACTIVE',
+            serviceType,
+            staffRole,
+            duties: meta?.duties ?? [],
+            funcPerms: chk.value,
+            dataScope,
+            // 用户自述的申请说明落到「特长 / 画像」，便于拥有者后续调整岗位时参考
+            personality: app.reason,
+          },
+        })) as StaffRow;
+        break;
+      } catch (e: any) {
+        const target = Array.isArray(e?.meta?.target) ? e.meta.target.join(',') : String(e?.meta?.target ?? '');
+        if (e?.code === 'P2002' && target.includes('member_no')) continue;
+        throw e;
+      }
+    }
+    if (!created) throw new BadRequestException('工号生成冲突，请稍后重试');
+
+    await this.prisma.teamJoinApplication.update({
+      where: { id: app.id },
+      data: { status: 'APPROVED', reviewerId: actor.id, reviewedAt: new Date(), staffId: created.id },
+    });
+
+    await this.audit.log({
+      actor,
+      action: 'JOIN_ACCEPT',
+      targetType: 'ORG_STAFF',
+      targetId: created.id,
+      after: {
+        fromApplication: app.id,
+        userId: applicant.id,
+        staffRole,
+        dataScope,
+        accountStatus: 'ACTIVE',
+      },
+    });
+
+    await this.notifyJoinResult(
+      actor,
+      applicant.id,
+      '加入团队申请已通过',
+      `您申请加入「${orgName}」已通过，当前岗位：${staffRole}。请登录后在个人中心查看团队信息。`,
+    );
+
+    return toView(created);
+  }
+
+  /** 拒绝：必填拒绝详情，内容原样以业务消息投递给申请人 */
+  async rejectJoin(
+    actor: JwtUser,
+    orgType: OrgType,
+    orgId: string,
+    orgName: string,
+    id: string,
+    reviewNote: string,
+  ) {
+    const note = (reviewNote ?? '').toString().trim();
+    if (!note) throw new BadRequestException('请填写拒绝详情');
+
+    const app = await this.prisma.teamJoinApplication.findFirst({ where: { id, orgType, orgId } });
+    if (!app) throw new NotFoundException('申请不存在或无权操作');
+    if (app.status !== 'PENDING') throw new BadRequestException('该申请已处理，无法重复操作');
+
+    const updated = await this.prisma.teamJoinApplication.update({
+      where: { id: app.id },
+      data: { status: 'REJECTED', reviewerId: actor.id, reviewedAt: new Date(), reviewNote: note },
+    });
+
+    await this.audit.log({
+      actor,
+      action: 'JOIN_REJECT',
+      targetType: 'TEAM_JOIN_APPLICATION',
+      targetId: app.id,
+      after: { userId: app.userId, status: 'REJECTED', reviewNote: note },
+    });
+
+    await this.notifyJoinResult(
+      actor,
+      app.userId,
+      '加入团队申请未通过',
+      `您申请加入「${orgName}」未通过。拒绝详情：${note}`,
+    );
+
+    return updated;
+  }
+
+  /**
+   * 申请回执：以「指定接收人」消息投递（MessageScope=USER），
+   * 用户在 web 端「业务消息」详情页可见，且与 messagePending 角标口径一致。
+   */
+  private async notifyJoinResult(actor: JwtUser, userId: string, title: string, content: string) {
+    await this.prisma.message.create({
+      data: {
+        type: 'NOTICE',
+        scope: 'USER',
+        title,
+        content,
+        status: 'PUBLISHED',
+        authorId: actor.id,
+        authorRole: actor.role as any,
+        recipientId: userId,
+      },
+    });
+  }
+}
+
+/** 加入申请业务编号 JA-YYYYMMDD-XXXX（沿用控制台编号风格，仅展示用） */
+function joinAppCode(createdAt: Date, id: string): string {
+  const d = new Date(createdAt);
+  const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+  return `JA-${ymd}-${(id || '').slice(-4).toUpperCase()}`;
 }

@@ -9,7 +9,6 @@ import { SettingPage, PreviewCard, FlowSteps, Timeline, MemberCard, TemplatePrev
 import { Pill } from '../components/ui/Pill';
 import { PermCheckGroup } from '../components/detail/PermCheckGroup';
 import { TEMPLATE_CAT_OPTS, TEMPLATE_TAG_OPTS, COVER_COLORS, TITLE_COLORS, CONTRACT_TYPE, CONTRACT_STAGE, CONTRACT_MODE, SETTLE, SVC_OPTIONS, REGION_OPTIONS, TEAM_STATUS } from '../config/providerConstants';
-import { StaffTeamCreate, StaffTeamMember } from './staffTeamPages';
 
 /* ════════════ 模板发布常量（与 providerPages 同源口径，避免跨文件耦合） ════════════ */
 /* ════════════ 模板发布状态（本地发布态，区别于 providerPages 的审核态） ════════════ */
@@ -205,39 +204,6 @@ export const SPContractDetail = () => {
     </SettingPage>
   );
 };
-
-/* ════════════ 我的团队 · 新建成员（pg-teamcfg：整页 + 名片预览） ════════════
- * 复用三层同构实现（staffTeamPages.StaffTeamCreate），服务商层带「服务类型」联动。
- * 岗位由自由文本 Input 升级为 AutoComplete（岗位池联动 + 允许自填），
- * 并新增职责 / 功能权限 / 数据权限 / 特长字段。文档：docs/平台角色边界规范化.md
- */
-export const SPTeamCreate = () => (
-  <StaffTeamCreate
-    org="PROVIDER"
-    resource="provider/team"
-    basePath="/sp/team"
-    title={t('pages.team.newTitle', '新建团队成员')}
-    sub={t('pages.team.newSub', '按服务类型配置成员岗位、职责与权限')}
-    chip="服务商 · 自身作用域"
-    withServiceType
-  />
-);
-
-/* ════════════ 我的团队 · 成员详情（pg-teamcfg 查看） ════════════
- * 复用三层同构实现（staffTeamPages.StaffTeamMember）。
- * 相比旧实现新增：数据权限 / 特长展示、功能权限用只读复选框组回显、停用 / 启用按钮。
- */
-export const SPTeamMember = () => (
-  <StaffTeamMember
-    org="PROVIDER"
-    resource="provider/team"
-    basePath="/sp/team"
-    title={t('pages.team.detailTitle', '团队成员详情')}
-    sub={t('pages.team.detailSub', '角色化团队建设 · 按服务类型差异化岗位')}
-    chip="服务商 · 自身作用域"
-    withServiceType
-  />
-);
 
 /* ════════════ 模板发布详情（pg-tplcfg：整页 + 封面预览卡） ════════════ */
 export const SPTemplateDetail = () => {

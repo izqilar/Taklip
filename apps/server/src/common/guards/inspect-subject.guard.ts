@@ -42,17 +42,19 @@ export class InspectSubjectGuard implements CanActivate {
       where: { id: subject },
       select: { id: true, role: true, regionPath: true },
     });
-    if (!target || (target.role !== 'SERVICE_PROVIDER' && target.role !== 'USER')) {
-      throw new ForbiddenException('被视察对象必须是服务商或终端用户');
+    if (!target || (target.role !== 'SERVICE_PROVIDER' && target.role !== 'USER' && target.role !== 'AGENT')) {
+      throw new ForbiddenException('被视察对象必须是服务商、代理商或终端用户');
     }
-    if (target.role === 'SERVICE_PROVIDER') {
-      // 整体改写为本请求作用域内的「被视察服务商」身份（仅 GET 生效，写操作不走到这里）
-      req.user = { ...u, id: target.id, role: target.role, regionPath: target.regionPath };
-    } else {
+    if (target.role === 'USER') {
       // USER 被视察对象（用户视角编辑个人作品走 provider/works 端点）：只改写 id / regionPath，
       // role 保持 ADMIN —— 本控制器端点 @Roles 含 ADMIN 但不含 USER，改写成 USER 会被 RolesGuard 拦下；
       // 数据作用域由端点内 subjectId(req, subject) 以显式 subject 解析，不依赖 role 改写。
       req.user = { ...u, id: target.id, regionPath: target.regionPath };
+    } else {
+      // SERVICE_PROVIDER / AGENT：整体改写为本请求作用域内的「被视察对象」身份
+      // （仅 GET 生效，写操作不走到这里），使收件箱按被视察角色的作用域收敛，
+      // 与「该对象自己登录」看到的消息严格一致。
+      req.user = { ...u, id: target.id, role: target.role, regionPath: target.regionPath };
     }
     return true;
   }

@@ -52,7 +52,7 @@
     "orderfulfill": "订单履约",
     "servicecontent": "服务与内容",
     "qualification": "资质中心",
-    "teamsetting": "团队与设置"
+    "teamsetting": "工作台设置"
   },
   "status": {
     "ACTIVE": "正常",
@@ -114,7 +114,7 @@
     "agent.wallet": "结算与钱包",
     "agent.feedback": "评价与反馈中心",
     "agent.messages": "消息中心",
-    "agent.roles": "角色与权限",
+    "agent.roles": "员工角色",
     "sp.center": "服务商中心",
     "sp.studio": "我的工作台",
     "sp.services": "服务管理",
@@ -123,7 +123,7 @@
     "sp.wallet": "我的钱包",
     "sp.feedback": "我的评价",
     "sp.messages": "业务消息",
-    "sp.roles": "角色与权限",
+    "sp.roles": "员工角色",
     "user.center": "用户视角",
     "user.dashboard": "我的工作台",
     "user.orders": "我的订单",
@@ -140,18 +140,20 @@
     "sp.complaints": "意见反馈",
     "sp.apply": "业务申请",
     "sp.contract": "合同管理",
-    "sp.income": "收入明细",
+    "sp.income": "账单明细",
     "sp.withdraw": "提现管理",
     "sp.notices": "通知公告",
-    "sp.team": "我的团队",
+    "sp.team": "团队管理",
     "sp.clients": "我的客户",
     "account.profile-provider": "账户详情",
     "admin": {
-      "team": "我的团队"
+      "team": "团队管理"
     },
     "agent": {
-      "team": "我的团队"
-    }
+      "team": "团队管理"
+    },
+    "admin.qualifications": "入驻审批",
+    "user.apply": "入驻申请"
   },
   "pages": {
     "col.status": "状态",
@@ -586,7 +588,9 @@
       "requiredPhone": "请填写手机号",
       "phoneFormat": "须为 11 位数字",
       "requiredRole": "请填写或选择岗位",
-      "removeFailed": "移除失败"
+      "removeFailed": "移除失败",
+      "authorityNotice": "权威公告",
+      "generalMsg": "一般消息"
     }
   }
 }

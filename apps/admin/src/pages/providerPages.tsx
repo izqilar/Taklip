@@ -35,7 +35,6 @@ import { DesignGalleryCard, type DesignActionCaps } from '@h5design/ui';
 import { WorkPreviewModal, type WorkPreviewWork } from '../components/user/WorkPreviewModal';
 import { WorkShareLinks } from '../components/user/WorkShareLinks';
 import type { WorkExportTarget } from '../components/user/WorkExportDialog';
-import { StaffTeamList } from './staffTeamPages';
 
 // 导出对话框：与编辑器顶栏「导出」同一个内核弹窗（内含 Konva/GSAP，必须懒加载）
 const WorkExportDialog = lazy(() => import('../components/user/WorkExportDialog'));
@@ -784,22 +783,6 @@ export const SPReviews = () => {
   );
 };
 
-/* ===================== 我的团队 =====================
- * 复用三层同构实现（staffTeamPages.StaffTeamList），服务商层展示「服务类型」列。
- * 相比旧实现新增「数据权限」「功能权限」两列（原 funcPerms / dataScope 落库但不可见）。
- */
-export const SPTeam = () => (
-  <StaffTeamList
-    org="PROVIDER"
-    resource="provider/team"
-    basePath="/sp/team"
-    title="我的团队"
-    sub="角色化团队建设 · 按服务类型差异化岗位"
-    chip={CHIP}
-    withServiceType
-  />
-);
-
 /* ===================== 我的客户 ===================== */
 
 type ReachRecord = {
@@ -893,7 +876,7 @@ export const SPApply = () => {
   return (
     <GenericListPage
       title="业务申请"
-      sub="入住 / 资质申请全流程跟踪"
+      sub="入驻 / 资质申请全流程跟踪"
       chip={CHIP}
       resource="provider/applications"
       rowKey="id"
@@ -1197,7 +1180,7 @@ export const SPMessageDetail = () => {
   );
 };
 
-/* ===================== 收入明细（财务统计卡 + 列表） ===================== */
+/* ===================== 账单明细（财务统计卡 + 列表） ===================== */
 interface IncomeData {
   items: any[];
   totalIncomeCents: number;
@@ -1220,8 +1203,8 @@ export const SPIncome = () => {
   if (isLoading || !d) {
     return (
       <>
-        <PageHead title="收入明细" sub="订单收入 / 结算明细" chip={CHIP} />
-        <Panel title="收入明细" hint="加载中…">
+        <PageHead title="账单明细" sub="订单收入 / 结算明细" chip={CHIP} />
+        <Panel title="账单明细" hint="加载中…">
           <DataTable<any> rowKey="id" dataSource={[]} columns={[]} loading />
         </Panel>
       </>
@@ -1230,7 +1213,7 @@ export const SPIncome = () => {
 
   return (
     <>
-      <PageHead title="收入明细" sub="订单收入 / 结算明细" chip={CHIP} />
+      <PageHead title="账单明细" sub="订单收入 / 结算明细" chip={CHIP} />
       <div className={GRID.kpis}>
         <KpiCard main label="累计入账" value={money(d.totalIncomeCents)} delta="订单结算入账" deltaTrend="up" />
         <KpiCard label="待结算挂账" value={money(d.pendingCents)} delta="待 T+3 入账" />

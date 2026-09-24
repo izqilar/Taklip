@@ -956,3 +956,78 @@ Unique constraint failed on the fields: (`member_no`)
     at async StaffService.create (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\staff.service.js:77:26)
     at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
     at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[31m[Nest] 49900  - [39m2026/09/24 01:16:44 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.messageRead.upsert()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\user-console.controller.js:665:39
+
+  662 async readMessage(req, id, body) {
+  663     const uid = await this.resolveUserId(body?.userId, req.user);
+  664     await this.resolveTarget(uid, req.user);
+→ 665     await this.prisma.messageRead.upsert(
+Unique constraint failed on the fields: (`message_id`,`user_id`)[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.messageRead.upsert()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\user-console.controller.js:665:39
+
+  662 async readMessage(req, id, body) {
+  663     const uid = await this.resolveUserId(body?.userId, req.user);
+  664     await this.resolveTarget(uid, req.user);
+→ 665     await this.prisma.messageRead.upsert(
+Unique constraint failed on the fields: (`message_id`,`user_id`)
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+    at async UserConsoleController.readMessage (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\user-console.controller.js:665:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[31m[Nest] 49900  - [39m2026/09/24 01:43:07 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.messageRead.upsert()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\user-console.controller.js:665:39
+
+  662 async readMessage(req, id, body) {
+  663     const uid = await this.resolveUserId(body?.userId, req.user);
+  664     await this.resolveTarget(uid, req.user);
+→ 665     await this.prisma.messageRead.upsert(
+Unique constraint failed on the fields: (`message_id`,`user_id`)[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.messageRead.upsert()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\user-console.controller.js:665:39
+
+  662 async readMessage(req, id, body) {
+  663     const uid = await this.resolveUserId(body?.userId, req.user);
+  664     await this.resolveTarget(uid, req.user);
+→ 665     await this.prisma.messageRead.upsert(
+Unique constraint failed on the fields: (`message_id`,`user_id`)
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+    at async UserConsoleController.readMessage (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\user-console.controller.js:665:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17
+[31m[Nest] 58420  - [39m2026/09/24 01:47:12 [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39m[31m
+Invalid `this.prisma.messageRead.upsert()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\user-console.controller.js:683:39
+
+  680 async readMessage(req, id, body) {
+  681     const uid = await this.resolveUserId(body?.userId, req.user);
+  682     await this.resolveTarget(uid, req.user);
+→ 683     await this.prisma.messageRead.upsert(
+Unique constraint failed on the fields: (`message_id`,`user_id`)[39m
+PrismaClientKnownRequestError: 
+Invalid `this.prisma.messageRead.upsert()` invocation in
+D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\user-console.controller.js:683:39
+
+  680 async readMessage(req, id, body) {
+  681     const uid = await this.resolveUserId(body?.userId, req.user);
+  682     await this.resolveTarget(uid, req.user);
+→ 683     await this.prisma.messageRead.upsert(
+Unique constraint failed on the fields: (`message_id`,`user_id`)
+    at $n.handleRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6623)
+    at $n.request (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:121:6307)
+    at async l (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\prisma\prisma-client\runtime\library.js:130:9633)
+    at async UserConsoleController.readMessage (D:\MyWorkBuddy\2026-08-10-22-39-56\apps\server\dist\console\user-console.controller.js:683:9)
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-execution-context.js:46:28
+    at async D:\MyWorkBuddy\2026-08-10-22-39-56\node_modules\.pnpm\@nestjs+core@10.4.22_@nestj_5bc39d0bec9a04b08eeeddf30f694a57\node_modules\@nestjs\core\router\router-proxy.js:9:17

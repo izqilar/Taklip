@@ -1,7 +1,7 @@
 /**
  * SiteHeader — 新版固定顶部导航栏（红色主题）
  * Logo「庆柬」金+「云」白；导航 首页/模板库/服务云/设计工坊（带二级菜单）；
- * 金色「服务商入住」按钮；登录前显示 登录/注册，登录后显示账号胶囊（红底白边）+ 账号下拉面板。
+ * 金色「服务商入驻」按钮；登录前显示 登录/注册，登录后显示账号胶囊（红底白边）+ 账号下拉面板。
  * 底部 6 Tab 已合并至此，全局固定顶部。
  */
 import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react';
@@ -245,7 +245,7 @@ export default function SiteHeader() {
     window.setTimeout(() => setCopied(false), 1200);
   };
 
-  // 普通 USER（未登录或角色为 USER）不显示「服务商入住」金色按钮
+  // 普通 USER（未登录或角色为 USER）不显示「服务商入驻」金色按钮
   const isPlainUser = !user || user.role === 'USER';
 
   // 退出登录：先清登录态，再整页跳回 web 端公开首页。
@@ -418,7 +418,7 @@ export default function SiteHeader() {
               )}
             </svg>
           </button>
-          {/* 服务商入住（金色药丸按钮）：普通 USER 不显示 */}
+          {/* 服务商入驻（金色药丸按钮）：普通 USER 不显示 */}
           {!isPlainUser && (
             <Link
               to="/find-services"

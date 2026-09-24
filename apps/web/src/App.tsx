@@ -38,6 +38,7 @@ const UserProviders = lazy(() => import('./user/Providers'));
 const UserMessages = lazy(() => import('./user/Messages'));
 const UserNotices = lazy(() => import('./user/Notices'));
 const UserAccount = lazy(() => import('./user/Account'));
+const UserApply = lazy(() => import('./user/Apply'));
 
 /**
  * 发布页（/p/:publishCode）需要注入 GSAP 动画播放器，会额外带上 gsap（约 166KB 未压缩）。
@@ -100,6 +101,8 @@ export default function App() {
             <Route path="messages" element={<UserMessages />} />
             <Route path="notices" element={<UserNotices />} />
             <Route path="account" element={<UserAccount />} />
+            {/* 入驻申请：加入团队 / 资格升级双隧道入口 */}
+            <Route path="apply" element={<UserApply />} />
           </Route>
 
           {/* 旧「我的作品」独立路由：重定向到个人中心内的同名页（保留深链 / 书签兼容） */}

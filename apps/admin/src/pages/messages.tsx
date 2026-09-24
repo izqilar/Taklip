@@ -19,16 +19,17 @@ const PAGE_SIZE = 15;
 
 const { Text } = Typography;
 
+/** 消息类型/范围 → i18n 键（调用时经 t() 解析，避免模块加载期把标签冻结为当时语言） */
 const MSG_TYPE: Record<string, string> = {
-  ANNOUNCEMENT: t("pages.msg.authorityNotice"),
-  ANNOUNCED: t("pages.msg.authorityNotice"),
-  NOTICE: t("pages.msg.generalMsg"),
-  APPEAL: t("pages.fb.appeal"),
+  ANNOUNCEMENT: "pages.msg.authorityNotice",
+  ANNOUNCED: "pages.msg.authorityNotice",
+  NOTICE: "pages.msg.generalMsg",
+  APPEAL: "pages.fb.appeal",
 };
 const MSG_SCOPE: Record<string, string> = {
-  GLOBAL: t("pages.lbl.global"),
-  REGION: t("pages.col.regionSlash"),
-  OWN: t("pages.col.targetRole"),
+  GLOBAL: "pages.lbl.global",
+  REGION: "pages.col.regionSlash",
+  OWN: "pages.col.targetRole",
 };
 const MSG_STATUS: Record<string, { key: string; color: string }> = {
   DRAFT: { key: 'pages.enum.draft', color: 'default' },
@@ -104,16 +105,16 @@ export const MessageList = () => {
   }, [tab]);
 
   const getTypeOptions = () => {
-    if (isSp) return [{ value: 'NOTICE', label: MSG_TYPE.NOTICE }];
-    if (isAgent) return [{ value: 'ANNOUNCEMENT', label: MSG_TYPE.ANNOUNCEMENT }, { value: 'NOTICE', label: MSG_TYPE.NOTICE }];
-    return [{ value: 'ANNOUNCEMENT', label: MSG_TYPE.ANNOUNCEMENT }, { value: 'NOTICE', label: MSG_TYPE.NOTICE }];
+    if (isSp) return [{ value: 'NOTICE', label: t(MSG_TYPE.NOTICE) }];
+    if (isAgent) return [{ value: 'ANNOUNCEMENT', label: t(MSG_TYPE.ANNOUNCEMENT) }, { value: 'NOTICE', label: t(MSG_TYPE.NOTICE) }];
+    return [{ value: 'ANNOUNCEMENT', label: t(MSG_TYPE.ANNOUNCEMENT) }, { value: 'NOTICE', label: t(MSG_TYPE.NOTICE) }];
   };
   // 发布范围：代理商固定辖区；服务商固定指定角色；管理员可选全局/区域
   const scopeOptions = isAdmin
-    ? [{ value: 'GLOBAL', label: MSG_SCOPE.GLOBAL }, { value: 'REGION', label: MSG_SCOPE.REGION }]
+    ? [{ value: 'GLOBAL', label: t(MSG_SCOPE.GLOBAL) }, { value: 'REGION', label: t(MSG_SCOPE.REGION) }]
     : isAgent
-      ? [{ value: 'REGION', label: MSG_SCOPE.REGION }]
-      : [{ value: 'OWN', label: MSG_SCOPE.OWN }];
+      ? [{ value: 'REGION', label: t(MSG_SCOPE.REGION) }]
+      : [{ value: 'OWN', label: t(MSG_SCOPE.OWN) }];
 
   const submit = async () => {
     const v = await form.validateFields();
@@ -146,12 +147,12 @@ export const MessageList = () => {
 
   const inboxCols = useMemo(
     () => [
-      { title: t("pages.col.type"), dataIndex: 'type', width: 110, render: (t: string) => MSG_TYPE[t] ?? t },
+      { title: t("pages.col.type"), dataIndex: 'type', width: 110, render: (v: string) => t(MSG_TYPE[v] ?? v) },
       {
         title: t("pages.lbl.scope"),
         dataIndex: 'scope',
         width: 100,
-        render: (s: string, r: any) => (s === 'REGION' ? `${MSG_SCOPE.REGION}${r.regionPath ? `(${r.regionPath})` : ''}` : MSG_SCOPE[s]),
+        render: (s: string, r: any) => (s === 'REGION' ? `${t(MSG_SCOPE.REGION)}${r.regionPath ? `(${r.regionPath})` : ''}` : t(MSG_SCOPE[s] ?? s)),
       },
       { title: t("pages.col.title"), dataIndex: 'title', ellipsis: true },
       {
@@ -438,7 +439,7 @@ export const MessageList = () => {
         fields={
           auditCurrent
             ? [
-                { label: t("pages.col.type"), value: MSG_TYPE[auditCurrent.type] ?? auditCurrent.type },
+                { label: t("pages.col.type"), value: t(MSG_TYPE[auditCurrent.type] ?? auditCurrent.type) },
                 { label: t("pages.col.title"), value: auditCurrent.title },
                 {
                   label: t("pages.col.content"),

@@ -27,6 +27,7 @@ import {
   FileProtectOutlined,
   BankOutlined,
   GiftOutlined,
+  UserAddOutlined,
   FontSizeOutlined,
 } from '@ant-design/icons';
 import type { LayerKey } from './permGroups';
@@ -54,7 +55,11 @@ export type BadgeKey =
   | 'templates' // 模板审核：待审(PENDING)的模板数（待处理子集）
   | 'feedback' // 评价与反馈中心：未关闭(待处理)的工单数（待处理子集，非全表）
   | 'messages' // 消息中心：待审核(PENDING)的公告数（待处理子集）
-  | 'orders'; // 订单处理：已支付待履约(paid)的订单数（服务商待处理子集）
+  | 'orders' // 订单处理：已支付待履约(paid)的订单数（服务商待处理子集）
+  | 'noticeUnread' // 用户视角·通知公告：本人可见、已发布、未读(无回执)的公告数
+  | 'messagePending' // 用户视角·业务消息：本人可见、已发布、未读(无回执)的业务消息数（待处理子集）
+  | 'feedbackPending' // 用户视角·我的反馈：本人发起、未关闭的工单数（待回复子集）
+  | 'joinPending'; // 服务商/代理商·团队管理：本组织收到的「加入团队」在途(PENDING)申请数
 
 /**
  * 侧栏分组键。
@@ -115,7 +120,7 @@ export const GROUP_LABEL: Record<MenuGroupKey, string> = {
   orderfulfill: '订单履约',
   servicecontent: '服务与内容',
   qualification: '资质中心',
-  teamsetting: '团队与设置',
+  teamsetting: '工作台设置',
 };
 
 export interface ResourceMeta {
@@ -201,6 +206,12 @@ export const resources: ResourceProps[] = [
     list: '/admin/feedback',
     meta: META('评价与反馈中心', 'console', { group: 'feedback', icon: <CommentOutlined />, badgeKey: 'feedback' }),
   },
+  // 入驻审批台（总台 ADMIN）：用户「入驻」资格升级隧道的两阶段审核
+  {
+    name: 'admin/qualifications',
+    list: '/admin/qualifications',
+    meta: META('入驻审批', 'console', { group: 'ops', icon: <FileDoneOutlined /> }),
+  },
   {
     name: 'admin/regions',
     list: '/regions',
@@ -230,11 +241,6 @@ export const resources: ResourceProps[] = [
     name: 'admin/audit-logs',
     list: '/admin/audit-logs',
     meta: META('操作日志', 'console', { group: 'system', icon: <FileProtectOutlined /> }),
-  },
-  {
-    name: 'admin/team',
-    list: '/admin/team',
-    meta: META('我的团队', 'console', { group: 'system', icon: <TeamOutlined /> }),
   },
 
   // ===================== 代理商中心（AGENT · 8 项）=====================
@@ -277,20 +283,21 @@ export const resources: ResourceProps[] = [
     list: '/agent/messages',
     meta: META('消息中心', 'agent', { icon: <NotificationOutlined />, badgeKey: 'messages' }),
   },
-  {
-    name: 'agent/roles',
-    list: '/agent/roles',
-    meta: META('角色与权限', 'agent', { group: 'system', icon: <SafetyOutlined /> }),
-  },
+  // ── 工作台设置（2026-09-23：与服务商侧完全对齐，拆为「团队管理」+「员工角色」）──
   {
     name: 'agent/team',
     list: '/agent/team',
-    meta: META('我的团队', 'agent', { group: 'system', icon: <TeamOutlined /> }),
+    meta: META('团队管理', 'agent', { group: 'teamsetting', icon: <TeamOutlined />, badgeKey: 'joinPending' }),
+  },
+  {
+    name: 'agent/roles',
+    list: '/agent/roles',
+    meta: META('员工角色', 'agent', { group: 'teamsetting', icon: <SafetyOutlined /> }),
   },
   {
     name: 'account/profile-agent',
     list: '/account/profile',
-    meta: META('账户详情', 'agent', { group: 'system', icon: <IdcardOutlined /> }),
+    meta: META('账户详情', 'agent', { group: 'teamsetting', icon: <IdcardOutlined /> }),
   },
 
   // ===================== 服务商中心（SERVICE_PROVIDER · 原型 MENU.provider · 7 组 18 项）=====================
@@ -298,11 +305,11 @@ export const resources: ResourceProps[] = [
     name: 'sp/center',
     meta: META('服务商中心', 'provider', { icon: <ShopOutlined />, home: '/sp/studio' }),
   },
-  // ── 数据看板 ──
+  // ── 我的工作台（顶层项，不归入任何分组：既是视角落点也是经营首页）──
   {
     name: 'sp/studio',
     list: '/sp/studio',
-    meta: META('我的工作台', 'provider', { group: 'databoard', icon: <DashboardOutlined /> }),
+    meta: META('我的工作台', 'provider', { icon: <DashboardOutlined /> }),
   },
   // ── 订单履约 ──
   {
@@ -317,9 +324,9 @@ export const resources: ResourceProps[] = [
   },
   // ── 服务与内容 ──
   {
-    name: 'sp/services',
-    list: '/sp/services',
-    meta: META('服务管理', 'provider', { group: 'servicecontent', icon: <FileImageOutlined /> }),
+    name: 'sp/clients',
+    list: '/sp/clients',
+    meta: META('我的客户', 'provider', { group: 'servicecontent', icon: <BankOutlined /> }),
   },
   {
     name: 'sp/works',
@@ -332,14 +339,20 @@ export const resources: ResourceProps[] = [
     meta: META('模板管理', 'provider', { group: 'servicecontent', icon: <AppstoreOutlined />, badgeKey: 'templates' }),
   },
   {
+    name: 'sp/services',
+    list: '/sp/services',
+    meta: META('服务管理', 'provider', { group: 'servicecontent', icon: <FileImageOutlined /> }),
+  },
+  // ── 评价与反馈（与用户视角同组名，归并「我的评价 / 意见反馈」）──
+  {
     name: 'sp/feedback',
     list: '/sp/feedback',
-    meta: META('我的评价', 'provider', { group: 'servicecontent', icon: <StarOutlined /> }),
+    meta: META('我的评价', 'provider', { group: 'feedback', icon: <StarOutlined /> }),
   },
   {
     name: 'sp/complaints',
     list: '/sp/complaints',
-    meta: META('意见反馈', 'provider', { group: 'servicecontent', icon: <FileTextOutlined />, badgeKey: 'feedback' }),
+    meta: META('意见反馈', 'provider', { group: 'feedback', icon: <FileTextOutlined />, badgeKey: 'feedback' }),
   },
   // ── 资质中心 ──
   {
@@ -361,7 +374,7 @@ export const resources: ResourceProps[] = [
   {
     name: 'sp/income',
     list: '/sp/income',
-    meta: META('收入明细', 'provider', { group: 'finance', icon: <WalletOutlined /> }),
+    meta: META('账单明细', 'provider', { group: 'finance', icon: <WalletOutlined /> }),
   },
   {
     name: 'sp/withdraw',
@@ -377,23 +390,25 @@ export const resources: ResourceProps[] = [
   {
     name: 'sp/notices',
     list: '/sp/notices',
-    meta: META('通知公告', 'provider', { group: 'message', icon: <NotificationOutlined /> }),
+    meta: META('通知公告', 'provider', { group: 'message', icon: <NotificationOutlined />, badgeKey: 'noticeUnread' }),
   },
   {
     name: 'sp/messages',
     list: '/sp/messages',
-    meta: META('业务消息', 'provider', { group: 'message', icon: <BellOutlined /> }),
+    meta: META('业务消息', 'provider', { group: 'message', icon: <BellOutlined />, badgeKey: 'messagePending' }),
   },
-  // ── 团队与设置 ──
+  // ── 工作台设置（2026-09-23 拆分：「团队与角色」→「团队管理」+「员工角色」）──
+  // 团队管理：引入按钮（web 端「入驻申请」加入隧道）→ 接收 / 拒绝
   {
     name: 'sp/team',
     list: '/sp/team',
-    meta: META('我的团队', 'provider', { group: 'teamsetting', icon: <TeamOutlined /> }),
+    meta: META('团队管理', 'provider', { group: 'teamsetting', icon: <TeamOutlined />, badgeKey: 'joinPending' }),
   },
+  // 员工角色：已组队成员的岗位 / 权限配置（仍走 provider/team API）
   {
-    name: 'sp/clients',
-    list: '/sp/clients',
-    meta: META('我的客户', 'provider', { group: 'teamsetting', icon: <BankOutlined /> }),
+    name: 'sp/roles',
+    list: '/sp/roles',
+    meta: META('员工角色', 'provider', { group: 'teamsetting', icon: <SafetyOutlined /> }),
   },
   {
     name: 'account/profile-provider',
@@ -401,12 +416,12 @@ export const resources: ResourceProps[] = [
     meta: META('账户详情', 'provider', { group: 'teamsetting', icon: <IdcardOutlined /> }),
   },
 
-  // ===================== 用户视角（USER · 10 项 · 原型 MENU.user 四组）=====================
+  // ===================== 用户视角（USER · 11 项 · 原型 MENU.user 四组）=====================
   // 还原依据：docs/庆柬云 · 用户视角UI原型还原开发文档.md §三 + UI_Design/index.html MENU.user
   // 交易中心：我的工作台 / 我的服务商 / 我的订单
   // 评价与反馈：我的评价 / 我的反馈
   // 消息中心：通知公告 / 业务消息
-  // 个人中心：我的钱包 / 优惠与权益 / 账户详情
+  // 个人中心：我的钱包 / 优惠与权益 / 入驻申请 / 账户详情（与 web 端同序，2026-09-24 对齐）
   {
     name: 'user/center',
     meta: META('用户视角', 'user', { icon: <UserOutlined />, home: '/user/dashboard' }),
@@ -440,17 +455,17 @@ export const resources: ResourceProps[] = [
     name: 'user/complaints',
     list: '/user/complaints',
     create: '/user/complaints/new',
-    meta: META('我的反馈', 'user', { group: 'feedback', icon: <FileTextOutlined /> }),
+    meta: META('我的反馈', 'user', { group: 'feedback', icon: <FileTextOutlined />, badgeKey: 'feedbackPending' }),
   },
   {
     name: 'user/notices',
     list: '/user/notices',
-    meta: META('通知公告', 'user', { group: 'message', icon: <NotificationOutlined /> }),
+    meta: META('通知公告', 'user', { group: 'message', icon: <NotificationOutlined />, badgeKey: 'noticeUnread' }),
   },
   {
     name: 'user/messages',
     list: '/user/messages',
-    meta: META('业务消息', 'user', { group: 'message', icon: <BellOutlined /> }),
+    meta: META('业务消息', 'user', { group: 'message', icon: <BellOutlined />, badgeKey: 'messagePending' }),
   },
   {
     name: 'user/wallet',
@@ -461,6 +476,13 @@ export const resources: ResourceProps[] = [
     name: 'user/coupons',
     list: '/user/coupons',
     meta: META('优惠与权益', 'user', { group: 'personal', icon: <GiftOutlined /> }),
+  },
+  // 入驻申请：与 web 端个人中心分组对齐（2026-09-24 新增 —— JOIN 加入 / SETTLE 入驻双隧道）
+  // 位置同 web 端：我的钱包 → 优惠与权益 → 入驻申请 → 账户详情
+  {
+    name: 'user/apply',
+    list: '/user/apply',
+    meta: META('入驻申请', 'user', { group: 'personal', icon: <UserAddOutlined /> }),
   },
   {
     name: 'account/profile-user',

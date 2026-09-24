@@ -980,6 +980,73 @@ export class ProviderConsoleController {
     return this.staff.rolePool('PROVIDER', serviceType);
   }
 
+  /* ───────── 加入申请队列（用户「入驻申请」JOIN 隧道 · 拥有者审批台）─────────
+   * 申请人始终是普通用户，接收后成为本服务商团队成员（身份不变）。
+   * 审批粒度：拥有者单人审批（与「入驻」由总台 ADMIN 审批区分）。
+   */
+
+  @Get('team/join-applications')
+  @OrgAccess('PROVIDER', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async listJoinApplications(
+    @Req() req: ReqUser,
+    @Query('status') status?: string,
+    @Query('subject') subject?: string,
+  ) {
+    return this.staff.listJoinQueue('PROVIDER', providerTeamOrg(req, subject), status ?? 'PENDING');
+  }
+
+  @Get('team/join-applications/:id')
+  @OrgAccess('PROVIDER', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async oneJoinApplication(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Query('subject') subject?: string,
+  ) {
+    return this.staff.oneJoin('PROVIDER', providerTeamOrg(req, subject), id);
+  }
+
+  /** 接收：生成团队成员档案（默认岗位取自岗位池首项，细粒度权限在「员工角色」页编辑） */
+  @Post('team/join-applications/:id/accept')
+  @OrgAccess('PROVIDER', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async acceptJoinApplication(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Body() body: { staffRole?: string; serviceType?: string },
+    @Query('subject') subject?: string,
+  ) {
+    const orgId = providerTeamOrg(req, subject);
+    const name = await this.orgDisplayName(orgId);
+    return this.staff.acceptJoin(req.user, 'PROVIDER', orgId, name, id, body);
+  }
+
+  /** 拒绝：拒绝详情原样投递到申请人的「业务消息」 */
+  @Post('team/join-applications/:id/reject')
+  @OrgAccess('PROVIDER', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async rejectJoinApplication(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Body() body: { reviewNote?: string },
+    @Query('subject') subject?: string,
+  ) {
+    const orgId = providerTeamOrg(req, subject);
+    const name = await this.orgDisplayName(orgId);
+    return this.staff.rejectJoin(req.user, 'PROVIDER', orgId, name, id, body?.reviewNote ?? '');
+  }
+
+  /** 团队展示名（用于给申请人投递回执消息） */
+  private async orgDisplayName(orgId: string): Promise<string> {
+    const u = await this.prisma.user.findUnique({
+      where: { id: orgId },
+      select: { nickname: true, realName: true, phone: true },
+    });
+    if (!u) return '该团队';
+    return u.realName || u.nickname || (u.phone ? `${u.phone.slice(0, 3)}****${u.phone.slice(-4)}` : '该团队');
+  }
+
   @Post('team')
   @OrgAccess('PROVIDER', { requirePerm: 'team:manage' })
   @UseGuards(OrgAccessGuard)

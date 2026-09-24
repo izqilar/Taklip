@@ -1,6 +1,6 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { Refine, Authenticated } from '@refinedev/core';
+import { Refine, Authenticated, useInvalidate } from '@refinedev/core';
 import { ErrorComponent } from '@refinedev/antd';
 import routerProvider, { CatchAllNavigate } from '@refinedev/react-router-v6';
 import { BrowserRouter, Routes, Route, Outlet, Navigate } from 'react-router-dom';
@@ -17,12 +17,14 @@ import { isRTL } from './i18n';
 import { dataProvider } from './providers/dataProvider';
 import { authProvider } from './providers/authProvider';
 import { accessControlProvider } from './providers/accessControlProvider';
-import { LayerProvider } from './providers/layerContext';
+import { LayerProvider, useLayer } from './providers/layerContext';
+import type { LayerKey } from './config/permGroups';
 import { Login } from './pages/Login';
 
 import { resources } from './config/resources';
 import { antdTheme } from './config/theme';
 import { AdminLayout } from './components/layout/AdminLayout';
+import { InspectionGate } from './components/layout/InspectionGate';
 import { getStoredUser } from './utility';
 
 /**
@@ -54,6 +56,10 @@ const SettingsPage = lazy(() => import('./pages/settings').then((m) => ({ defaul
 const FontAdminList = lazy(() => import('./pages/fonts').then((m) => ({ default: m.FontAdminList })));
 const TemplateReviewList = lazy(() => import('./pages/templates').then((m) => ({ default: m.TemplateReviewList })));
 const RolesPage = lazy(() => import('./pages/roles').then((m) => ({ default: m.RolesPage })));
+const TeamManagePage = lazy(() => import('./pages/teamManage').then((m) => ({ default: m.TeamManagePage })));
+const QualificationReviewPage = lazy(() =>
+  import('./pages/qualificationReview').then((m) => ({ default: m.QualificationReviewPage })),
+);
 const ProfilePage = lazy(() => import('./pages/account/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const AgentDashboard = lazy(() => import('./pages/consolePages').then((m) => ({ default: m.AgentDashboard })));
 const AgentUsers = lazy(() => import('./pages/consolePages').then((m) => ({ default: m.AgentUsers })));
@@ -76,13 +82,13 @@ const UserNotices = lazy(() => import('./pages/userPages').then((m) => ({ defaul
 const UserMessages = lazy(() => import('./pages/userPages').then((m) => ({ default: m.UserMessages })));
 const UserWorks = lazy(() => import('./pages/userPages').then((m) => ({ default: m.UserWorks })));
 const UserComplaintNew = lazy(() => import('./pages/user/UserComplaintNew').then((m) => ({ default: m.UserComplaintNew })));
+const UserApply = lazy(() => import('./pages/user/UserApply').then((m) => ({ default: m.UserApply })));
 const UserComplaintDetail = lazy(() => import('./pages/user/UserComplaintDetail').then((m) => ({ default: m.UserComplaintDetail })));
 const UserNoticeFill = lazy(() => import('./pages/user/UserNoticeFill').then((m) => ({ default: m.UserNoticeFill })));
 const ScheduleList = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.ScheduleList })));
 const TemplatesList = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.TemplatesList })));
 const WorksList = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.WorksList })));
 const SPContract = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.SPContract })));
-const SPTeam = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.SPTeam })));
 const SPClients = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.SPClients })));
 const SPComplaints = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.SPComplaints })));
 const SPApply = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.SPApply })));
@@ -94,15 +100,6 @@ const SPIncome = lazy(() => import('./pages/providerPages').then((m) => ({ defau
 const SPWithdraw = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.SPWithdraw })));
 const SPReviews = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.SPReviews })));
 const SPContractDetail = lazy(() => import('./pages/providerDetailPages').then((m) => ({ default: m.SPContractDetail })));
-const SPTeamCreate = lazy(() => import('./pages/providerDetailPages').then((m) => ({ default: m.SPTeamCreate })));
-const SPTeamMember = lazy(() => import('./pages/providerDetailPages').then((m) => ({ default: m.SPTeamMember })));
-// 代理商 / 总台的「我的团队」（本单位内部员工，三层同构）
-const AgentTeam = lazy(() => import('./pages/staffTeamLayers').then((m) => ({ default: m.AgentTeam })));
-const AgentTeamCreate = lazy(() => import('./pages/staffTeamLayers').then((m) => ({ default: m.AgentTeamCreate })));
-const AgentTeamMember = lazy(() => import('./pages/staffTeamLayers').then((m) => ({ default: m.AgentTeamMember })));
-const AdminTeam = lazy(() => import('./pages/staffTeamLayers').then((m) => ({ default: m.AdminTeam })));
-const AdminTeamCreate = lazy(() => import('./pages/staffTeamLayers').then((m) => ({ default: m.AdminTeamCreate })));
-const AdminTeamMember = lazy(() => import('./pages/staffTeamLayers').then((m) => ({ default: m.AdminTeamMember })));
 const SPTemplateDetail = lazy(() => import('./pages/providerDetailPages').then((m) => ({ default: m.SPTemplateDetail })));
 const SPServiceDetail = lazy(() => import('./pages/providerDetailPages').then((m) => ({ default: m.SPServiceDetail })));
 const SPWorkDetail = lazy(() => import('./pages/providerDetailPages').then((m) => ({ default: m.SPWorkDetail })));
@@ -151,6 +148,42 @@ const HomeRedirect = () => {
 
 const theme: ThemeConfig = antdTheme;
 
+/**
+ * 视察视角 subject 失效重取桥。
+ *
+ * 缺陷背景：console/agent/provider 视角的菜单页不订阅 objectScope，选中视察对象后
+ * subject 只存在于 scopeStore 模块变量（dataProvider.withSubject() 发请求那一刻才读取），
+ * 不在 react-query 的 queryKey 内 —— 改 subject 不触发重渲染/重请求，必须等路由切换
+ * remount 才用新 subject 重拉（user 视角把 userId 显式并入 queryKey 所以即时）。
+ *
+ * 实现约束：LayerProvider 包在 <BrowserRouter> 之外，不能直接调 useInvalidate
+ * （其内部依赖 Router 上下文，否则 useLocation 崩溃，见 2026-09-22 白屏回归）；
+ * 故本桥必须挂在 Router 内部，订阅 objectScope 变化后使当前页全部激活 query 失效重取，
+ * 让带 ?subject= 的接口（provider/wallet/export/messages）立即反映被视察对象的数据。
+ */
+const ObjectScopeInvalidationBridge = () => {
+  const { view, objectScope } = useLayer();
+  const invalidate = useInvalidate();
+  const prevView = useRef<LayerKey | null>(view);
+  const prevId = useRef<string | null>(objectScope?.id ?? null);
+  const subjectId = objectScope?.id ?? null;
+  useEffect(() => {
+    // 视角切换：只更新 ref，不失效重取 —— 路由变化会让目标视角菜单页重新挂载，
+    // 并以「目标视角」自己的 subject（已由 layerContext.setView 同步到 scopeStore）重新拉取；
+    // 此处若失效反倒会先用旧视角的 subject 跑一次错误请求。
+    if (view !== prevView.current) {
+      prevView.current = view;
+      prevId.current = subjectId;
+      return;
+    }
+    if (subjectId === prevId.current) return;
+    prevId.current = subjectId;
+    // 'all' 失效当前 dataProvider 下全部激活 query（含 useTable 列表与 useCustom 概览）
+    void invalidate({ invalidates: ['all'] });
+  }, [view, subjectId, invalidate]);
+  return null;
+};
+
 /** 响应式外壳：按当前语言切换 antd locale 与 RTL 方向（文档 §13） */
 const Shell = ({ children }: { children: ReactNode }) => {
   const { i18n } = useTranslation();
@@ -191,6 +224,7 @@ export const App = () => (
         {/* LayerProvider 必须在 Refine 内：它要用 useGetIdentity 感知登录态并重新定层 */}
         <LayerProvider>
           <BrowserRouter>
+            <ObjectScopeInvalidationBridge />
             <Routes>
               <Route
                 element={
@@ -199,7 +233,9 @@ export const App = () => (
                     fallback={<CatchAllNavigate to="/login" />}
                   >
                     <AdminLayout>
-                      <Outlet />
+                      <InspectionGate>
+                        <Outlet />
+                      </InspectionGate>
                     </AdminLayout>
                   </Authenticated>
                 }
@@ -227,9 +263,8 @@ export const App = () => (
                 {/* 总台：模板审核 / 角色与权限（M2 真实化） */}
                 <Route path="/admin/templates" element={<TemplateReviewList />} />
                 <Route path="/admin/roles" element={<RolesPage />} />
-                <Route path="/admin/team" element={<AdminTeam />} />
-                <Route path="/admin/team/new" element={<AdminTeamCreate />} />
-                <Route path="/admin/team/:id" element={<AdminTeamMember />} />
+                {/* 入驻审批台：用户资格升级（USER → 服务商 / 代理商）两阶段审核 */}
+                <Route path="/admin/qualifications" element={<QualificationReviewPage />} />
 
                 {/* ===================== 代理商中心（AGENT） ===================== */}
                 <Route path="/agent/dashboard" element={<AgentDashboard />} />
@@ -239,10 +274,9 @@ export const App = () => (
                 <Route path="/agent/wallet" element={<AgentWallet />} />
                 <Route path="/agent/feedback" element={<FeedbackList />} />
                 <Route path="/agent/messages" element={<MessageList />} />
+                {/* 工作台设置：团队管理（加入申请队列） / 员工角色（成员权限） */}
+                <Route path="/agent/team" element={<TeamManagePage />} />
                 <Route path="/agent/roles" element={<RolesPage />} />
-                <Route path="/agent/team" element={<AgentTeam />} />
-                <Route path="/agent/team/new" element={<AgentTeamCreate />} />
-                <Route path="/agent/team/:id" element={<AgentTeamMember />} />
 
                 {/* ===================== 服务商中心（SERVICE_PROVIDER） ===================== */}
                 <Route path="/sp/studio" element={<SPStudio />} />
@@ -257,6 +291,8 @@ export const App = () => (
                 <Route path="/sp/feedback" element={<SPReviews />} />
                 <Route path="/sp/messages" element={<SPMessages />} />
                 <Route path="/sp/messages/:id" element={<SPMessageDetail />} />
+                {/* 工作台设置：团队管理（加入申请队列） / 员工角色（成员权限） */}
+                <Route path="/sp/team" element={<TeamManagePage />} />
                 <Route path="/sp/roles" element={<RolesPage />} />
                 {/* 服务商视角新增模块（SELF 作用域端点） */}
                 <Route path="/sp/schedule" element={<ScheduleList />} />
@@ -313,18 +349,16 @@ export const App = () => (
                 <Route path="/sp/withdraw" element={<SPWithdraw />} />
                 <Route path="/sp/notices" element={<SPNotices />} />
                 <Route path="/sp/notices/:id" element={<SPNoticeDetail />} />
-                <Route path="/sp/team" element={<SPTeam />} />
-                <Route path="/sp/team/new" element={<SPTeamCreate />} />
-                <Route path="/sp/team/:id" element={<SPTeamMember />} />
                 <Route path="/sp/clients" element={<SPClients />} />
                 <Route path="/sp/clients/new" element={<SPClientCreate />} />
                 <Route path="/sp/clients/:id" element={<SPClientsDetail />} />
 
-                {/* ===================== 用户视角（USER · 原型四组十项） =====================
+                {/* ===================== 用户视角（USER · 原型四组） =====================
                     交易中心：我的工作台 / 我的服务商 / 我的订单
                     评价与反馈：我的评价 / 我的反馈（新增反馈 + 反馈详情）
                     消息中心：通知公告（填写资料） / 业务消息
-                    个人中心：我的钱包 / 优惠与权益 / 账户详情 */}
+                    个人中心：我的钱包 / 优惠与权益 / 入驻申请 / 账户详情
+                    （入驻申请 2026-09-24 与 web 端对齐后新增，位于优惠与权益与账户详情之间） */}
                 <Route path="/user/dashboard" element={<UserDashboard />} />
                 <Route path="/user/orders" element={<UserOrders />} />
                 <Route path="/user/works" element={<UserWorks />} />
@@ -338,6 +372,8 @@ export const App = () => (
                 <Route path="/user/messages" element={<UserMessages />} />
                 <Route path="/user/wallet" element={<UserWallet />} />
                 <Route path="/user/coupons" element={<UserCoupons />} />
+                {/* 入驻申请（JOIN 加入 / SETTLE 入驻双隧道，与 web 端 /user/apply 同构） */}
+                <Route path="/user/apply" element={<UserApply />} />
 
                 <Route path="*" element={<ErrorComponent />} />
               </Route>

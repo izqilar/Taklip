@@ -312,6 +312,7 @@ exports.Prisma.MessageScalarFieldEnum = {
   approvedBy: 'approvedBy',
   approvedAt: 'approvedAt',
   rejectNote: 'rejectNote',
+  recipientId: 'recipientId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -444,6 +445,23 @@ exports.Prisma.OrgStaffScalarFieldEnum = {
   funcPerms: 'funcPerms',
   dataScope: 'dataScope',
   personality: 'personality',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.TeamJoinApplicationScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  orgType: 'orgType',
+  orgId: 'orgId',
+  regionPath: 'regionPath',
+  regionLabel: 'regionLabel',
+  reason: 'reason',
+  status: 'status',
+  reviewNote: 'reviewNote',
+  reviewerId: 'reviewerId',
+  reviewedAt: 'reviewedAt',
+  staffId: 'staffId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -610,7 +628,8 @@ exports.MessageType = exports.$Enums.MessageType = {
 exports.MessageScope = exports.$Enums.MessageScope = {
   GLOBAL: 'GLOBAL',
   REGION: 'REGION',
-  OWN: 'OWN'
+  OWN: 'OWN',
+  USER: 'USER'
 };
 
 exports.MessageStatus = exports.$Enums.MessageStatus = {
@@ -643,6 +662,7 @@ exports.Prisma.ModelName = {
   ProviderSchedule: 'ProviderSchedule',
   ProviderContract: 'ProviderContract',
   OrgStaff: 'OrgStaff',
+  TeamJoinApplication: 'TeamJoinApplication',
   ProviderClient: 'ProviderClient',
   ProviderClientReach: 'ProviderClientReach',
   AuditLog: 'AuditLog',

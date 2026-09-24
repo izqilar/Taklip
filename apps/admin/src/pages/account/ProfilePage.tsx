@@ -9,6 +9,7 @@ import { roleText, serviceRolesText, cleanCode } from '../../config/labels';
 import { SUPPORTED_LANGS } from '../../i18n';
 import { t } from '../../i18n/t';
 import { StatusTag } from '../../components/common/StatusTag';
+import { useLayer } from '../../providers/layerContext';
 
 /** 账户详情页（运营端）：四层角色通用，按角色渲染 4 个全宽 panel。仅 operator 自身可编辑。 */
 
@@ -144,30 +145,49 @@ export const AccountDetailSections = ({ profile }: { profile: AccountProfile }) 
 
 export const ProfilePage = () => {
   const [params, setParams] = useSearchParams();
+  const { view, objectScope, isOwnView } = useLayer();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  // 视察模式：非总台视角 + 已选定被视察对象 → 只读展示该对象档案，禁止代编辑
+  const [inspecting, setInspecting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Partial<Record<EditableKey, string | null>>>({});
 
   const load = async () => {
     setLoading(true);
-    const res = await fetch(API_URL + '/auth/me', { headers: authHeaders() });
-    const data = await res.json();
-    setProfile(data);
+    setEditing(false);
+    setForm({});
+    // 自身视角（ADMIN 总台自查 + 真实 SERVICE_PROVIDER/AGENT/USER 自有工作台）：
+    // 展示当前登录账号自身，可编辑。注意：isOwnView 才是正确判据，不能只看 view==='console'，
+    // 否则真实角色登录运营端会被误判为「视察」去拉 /admin/users/:id（objectScope 为空=崩溃）。
+    // 仅仅 ADMIN 在 agent/provider/user 视察他人（非自身视角）才走只读分支。
+    if (isOwnView) {
+      setInspecting(false);
+      const res = await fetch(API_URL + '/auth/me', { headers: authHeaders() });
+      const data = await res.json();
+      setProfile(data);
+    } else {
+      setInspecting(true);
+      const res = await fetch(`${API_URL}/admin/users/${encodeURIComponent(objectScope!.id)}`, {
+        headers: authHeaders(),
+      });
+      const data = await res.json();
+      setProfile(res.ok ? data : null);
+    }
     setLoading(false);
-    if (params.get('mode') === 'edit') setEditing(true);
+    if (params.get('mode') === 'edit' && !isOwnView) setEditing(true);
   };
 
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [view, objectScope?.id]);
 
   // 若以 ?mode=edit 进入（外部直达同路由），组件已挂载、mount 效应不会重跑，
-  // 故这里监听 query 变化，进入页面即进入编辑态。
+  // 故这里监听 query 变化，进入页面即进入编辑态（仅自身账号允许）。
   useEffect(() => {
-    if (profile && params.get('mode') === 'edit' && !editing) {
+    if (profile && params.get('mode') === 'edit' && !editing && !inspecting) {
       startEdit();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -207,7 +227,7 @@ export const ProfilePage = () => {
   };
 
   const save = async () => {
-    if (!profile) return;
+    if (!profile || inspecting) return;
     const payload: Record<string, string> = {};
     EDITABLE.forEach((k) => {
       const v = form[k];
@@ -247,17 +267,38 @@ export const ProfilePage = () => {
     message.success('资料已保存');
   };
 
-  if (loading || !profile) {
+  // 非自身视角（仅为 ADMIN 视察他人）且未选定任何被视察对象 → 提示先选对象
+  const needSelection = !isOwnView && !objectScope?.id;
+  if (loading) {
     return (
       <div style={{ padding: 48, display: 'grid', placeItems: 'center' }}>
         <Spin />
       </div>
     );
   }
+  if (!profile) {
+    return (
+      <div style={{ padding: 48, display: 'grid', placeItems: 'center', gap: 8, color: T.ink3 }}>
+        {needSelection ? (
+          <span>请在顶部检索框选择具体对象后，再查看其账号详情</span>
+        ) : (
+          <span>未找到该对象的账号档案</span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page" style={{ padding: '20px 24px 32px', ...profileCssVars }}>
-      <Hero profile={profile} editing={editing} saving={saving} onEdit={startEdit} onSave={save} onCancel={cancel} />
+      <Hero
+        profile={profile}
+        editing={editing}
+        saving={saving}
+        inspecting={inspecting}
+        onEdit={startEdit}
+        onSave={save}
+        onCancel={cancel}
+      />
       {/* 原型 .profile-hero 的 margin-bottom: 14px */}
       <div className="profile-sections" style={{ marginTop: 14 }}>
         <RoleSections profile={profile} editing={editing} form={form} setForm={setForm} />
@@ -271,6 +312,7 @@ const Hero = ({
   profile,
   editing,
   saving,
+  inspecting,
   onEdit,
   onSave,
   onCancel,
@@ -278,6 +320,7 @@ const Hero = ({
   profile: Profile;
   editing: boolean;
   saving: boolean;
+  inspecting: boolean;
   onEdit: () => void;
   onSave: () => void;
   onCancel: () => void;
@@ -320,7 +363,9 @@ const Hero = ({
         </div>
       </div>
       <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flex: 'none' }}>
-        {editing ? (
+        {inspecting ? (
+          <StatusTag type="mut">视察模式 · 只读</StatusTag>
+        ) : editing ? (
           <>
             <Button icon={<SaveOutlined />} type="primary" loading={saving} onClick={onSave}>
               保存

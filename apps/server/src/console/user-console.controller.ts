@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  Delete,
   Query,
   Req,
   UseGuards,
@@ -126,13 +127,16 @@ export class UserConsoleController {
   /** 用户可见消息判定（复用 MessageService.inbox 的可见性规则） */
   private visibleToUser(
     regionPath: string | null,
-    m: { scope: string; regionPath: string | null; targetRole: string | null },
+    m: { scope: string; regionPath: string | null; targetRole: string | null; recipientId?: string | null },
+    userId?: string,
   ): boolean {
     if (m.scope === 'GLOBAL') return true;
     if (m.scope === 'REGION') {
       return !!regionPath && !!m.regionPath && regionPath.startsWith(m.regionPath);
     }
     if (m.scope === 'OWN') return m.targetRole === 'USER';
+    // 指定接收人（加入团队申请的接收 / 拒绝回执）
+    if (m.scope === 'USER') return !!m.recipientId && !!userId && m.recipientId === userId;
     return false;
   }
 
@@ -215,11 +219,14 @@ export class UserConsoleController {
       this.prisma.providerWallet.findUnique({ where: { providerId: id } }),
       this.prisma.message.findMany({
         where: { status: 'PUBLISHED' },
-        select: { scope: true, regionPath: true, targetRole: true },
+        select: { type: true, scope: true, regionPath: true, targetRole: true },
       }),
     ]);
     const providers = provRows.length;
-    const messages = msgRows.filter((m) => this.visibleToUser(target.regionPath, m)).length;
+    // KPI「业务消息」同列表口径：排除权威公告（归通知公告页）
+    const messages = msgRows.filter(
+      (m) => m.type !== 'ANNOUNCEMENT' && this.visibleToUser(target.regionPath, m, id),
+    ).length;
     const totalPayCents = payAgg._sum.amount ?? 0;
     const refundCents = refundAgg._sum.amount ?? 0;
     // 工作台 KPI：积分 / 钱包余额 / 待评价订单（已支付且未评价）
@@ -538,7 +545,10 @@ export class UserConsoleController {
       orderBy: { createdAt: 'desc' },
       include: { author: { select: { id: true, nickname: true, phone: true, role: true } } },
     });
-    const visible = all.filter((m) => this.visibleToUser(target.regionPath, m));
+    // 业务消息不含权威公告（ANNOUNCEMENT 归「通知公告」页），与侧栏气泡 messagePending 口径一致
+    const visible = all.filter(
+      (m) => m.type !== 'ANNOUNCEMENT' && this.visibleToUser(target.regionPath, m, id),
+    );
     const reads = await this.prisma.messageRead.findMany({ where: { userId: id } });
     const readSet = new Set(reads.map((r) => r.messageId));
     const p = page ? Number(page) : 1;
@@ -563,6 +573,40 @@ export class UserConsoleController {
       page: p,
       pageSize: ps,
     };
+  }
+
+  /**
+   * 业务消息详情（web MessageDetail 弹窗取数）。
+   * 2026-09-24 E2E 发现：前端一直调 GET /api/user/messages/:id，但服务端从未实现该路由
+   * （404 Not Found），详情弹窗永远停在「加载中…」。与列表同口径过滤（含 scope=USER 定向投递），
+   * 编号按其在可见列表中的序号生成，保证与列表行 M-10xx 一致。
+   */
+  @Get('messages/:id')
+  @Roles('ADMIN', 'AGENT', 'USER')
+  @UseGuards(RolesGuard)
+  async messageDetail(
+    @Req() req: ReqUser,
+    @Param('id') mid: string,
+    @Query('userId') userId?: string,
+  ) {
+    const id = await this.resolveUserId(userId, req.user);
+    const target = await this.resolveTarget(id, req.user);
+    const all = await this.prisma.message.findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: { createdAt: 'desc' },
+      include: { author: { select: { id: true, nickname: true, phone: true, role: true } } },
+    });
+    const visible = all.filter(
+      (m) => m.type !== 'ANNOUNCEMENT' && this.visibleToUser(target.regionPath, m, id),
+    );
+    const idx = visible.findIndex((m) => m.id === mid);
+    // 不可见 / 不存在一律 404：不给越权探测空间
+    if (idx < 0) throw new NotFoundException('消息不存在或不可见');
+    const m = visible[idx];
+    const readRow = await this.prisma.messageRead.findUnique({
+      where: { messageId_userId: { messageId: mid, userId: id } },
+    });
+    return { ...m, code: CODE.message(idx), read: !!readRow, status: readRow ? '已读' : '未读' };
   }
 
   /** 我的钱包（诚实：普通 USER 无钱包，isProvider=false 且余额为 0） */
@@ -838,7 +882,7 @@ export class UserConsoleController {
     ]);
     const readSet = new Set(reads.map((r) => r.messageId));
     const anns = all.filter(
-      (m) => m.type === 'ANNOUNCEMENT' && this.visibleToUser(target.regionPath, m),
+      (m) => m.type === 'ANNOUNCEMENT' && this.visibleToUser(target.regionPath, m, id),
     );
     const rows: any[] = anns.map((m) => ({
       id: m.id,
@@ -1070,7 +1114,10 @@ export class UserConsoleController {
     if (kind === 'provider' && !(body.serviceScopes ?? []).length) {
       throw new BadRequestException('请至少选择一项服务类型');
     }
-    if (!body.regionPath) throw new BadRequestException('请选择完整区域（省 / 市 / 区县）');
+    // 区域语义（决策 5）：代理商 = 辖区（必填）；服务商 = 开展服务区域（选填）
+    if (kind === 'agent' && !body.regionPath) {
+      throw new BadRequestException('请选择完整的代理辖区（省 / 市 / 区县）');
+    }
     const dup = await this.prisma.qualificationApplication.findFirst({
       where: { userId: id, kind, status: { in: ['FIRST_PENDING', 'FIRST_PASSED', 'FINAL_PENDING'] } },
     });
@@ -1086,6 +1133,196 @@ export class UserConsoleController {
         regionLabel: body.regionLabel ?? null,
       },
     });
+  }
+
+  /* ══════════════════ 加入团队申请（JOIN 隧道）══════════════════
+   * 与「入驻」（QualificationApplication，会变更 User.role）区分：
+   * 加入只建立 OrgStaff 员工关系，申请人身份仍是普通用户。
+   * 审批方为**目标团队拥有者**（单人审批），回执经「业务消息」投递。
+   */
+
+  /** 团队候选检索：按层次（服务商 / 代理商）+ 区域 + 关键词过滤可加入的团队 */
+  @Get('join-targets')
+  @Roles('ADMIN', 'AGENT', 'USER')
+  @UseGuards(RolesGuard)
+  async joinTargets(
+    @Query('orgType') orgType?: string,
+    @Query('regionId') regionId?: string,
+    @Query('keyword') keyword?: string,
+  ) {
+    const wantRole = orgType === 'AGENT' ? 'AGENT' : 'SERVICE_PROVIDER';
+    const rows = await this.prisma.user.findMany({
+      where: { role: wantRole, status: 'ACTIVE' },
+      select: {
+        id: true,
+        nickname: true,
+        realName: true,
+        phone: true,
+        regionPath: true,
+        providerStatus: true,
+        region: { select: { name: true } },
+      },
+      take: 200,
+    });
+
+    // 区域过滤：选中区域的 regionPath 前缀与被检索团队互相包含其一都算命中
+    // （团队档案可能只登记到市 / 省级，而用户选择了区县，反之亦然）
+    let rp: string | null = null;
+    if (regionId) {
+      const r = await this.prisma.region.findUnique({
+        where: { id: regionId },
+        select: { regionPath: true },
+      });
+      rp = r?.regionPath ?? null;
+    }
+    const kw = (keyword ?? '').toString().trim();
+
+    return rows
+      .filter((u) => {
+        if (rp) {
+          const up = u.regionPath ?? '';
+          if (!up) return false;
+          if (!(up.startsWith(rp) || rp.startsWith(up))) return false;
+        }
+        if (kw) {
+          const name = u.realName || u.nickname || '';
+          if (!name.includes(kw) && !(u.phone ?? '').includes(kw)) return false;
+        }
+        return true;
+      })
+      .map((u) => ({
+        id: u.id,
+        name: u.realName || u.nickname || '未命名团队',
+        phone: u.phone ? `${u.phone.slice(0, 3)}****${u.phone.slice(-4)}` : null,
+        regionLabel: u.region?.name ?? null,
+        regionPath: u.regionPath,
+      }));
+  }
+
+  /** 提交加入申请 */
+  @Post('join-applications')
+  @Roles('ADMIN', 'AGENT', 'USER')
+  @UseGuards(RolesGuard)
+  async createJoinApplication(
+    @Req() req: ReqUser,
+    @Body()
+    body: {
+      userId?: string;
+      orgType?: string;
+      orgId?: string;
+      regionPath?: string;
+      regionLabel?: string;
+      reason?: string;
+    },
+  ) {
+    const id = await this.resolveUserId(body.userId, req.user);
+    const target = await this.resolveTarget(id, req.user);
+    if (target.role !== 'USER') {
+      throw new BadRequestException('当前身份不支持加入团队（仅普通用户可申请）');
+    }
+
+    const orgType = body.orgType === 'AGENT' ? 'AGENT' : 'PROVIDER';
+    const orgId = (body.orgId ?? '').toString().trim();
+    if (!orgId) throw new BadRequestException('请选择要加入的团队');
+
+    const org = await this.prisma.user.findUnique({
+      where: { id: orgId },
+      select: { id: true, role: true, status: true },
+    });
+    if (!org) throw new NotFoundException('目标团队不存在');
+    if (org.role !== (orgType === 'AGENT' ? 'AGENT' : 'SERVICE_PROVIDER')) {
+      throw new BadRequestException('目标团队与所选层次不匹配');
+    }
+    if (org.status !== 'ACTIVE') throw new BadRequestException('该团队暂不接受新成员');
+
+    const existed = await this.prisma.orgStaff.findFirst({
+      where: { orgType, orgId, userId: id },
+      select: { id: true },
+    });
+    if (existed) throw new BadRequestException('你已是该团队成员');
+
+    const reason = String(body.reason ?? '').trim();
+    if (!reason) throw new BadRequestException('请填写申请说明');
+
+    const dup = await this.prisma.teamJoinApplication.findFirst({
+      where: { userId: id, orgType, orgId, status: 'PENDING' },
+    });
+    if (dup) return { ...dup, duplicated: true };
+
+    return this.prisma.teamJoinApplication.create({
+      data: {
+        userId: id,
+        orgType,
+        orgId,
+        regionPath: body.regionPath ?? null,
+        regionLabel: body.regionLabel ?? null,
+        reason,
+      },
+    });
+  }
+
+  /** 我的加入申请（含团队名 + 拒绝详情 + 业务编号） */
+  @Get('join-applications')
+  @Roles('ADMIN', 'AGENT', 'USER')
+  @UseGuards(RolesGuard)
+  async myJoinApplications(@Req() req: ReqUser, @Query('userId') userId?: string) {
+    const id = await this.resolveUserId(userId, req.user);
+    const items = await this.prisma.teamJoinApplication.findMany({
+      where: { userId: id },
+      orderBy: { createdAt: 'desc' },
+    });
+    const orgIds = Array.from(new Set(items.map((i) => i.orgId)));
+    const orgs = await this.prisma.user.findMany({
+      where: { id: { in: orgIds } },
+      select: { id: true, nickname: true, realName: true, phone: true },
+    });
+    const map = new Map(orgs.map((o) => [o.id, o]));
+    return items.map((it, i) => {
+      const o = map.get(it.orgId);
+      const d = new Date(it.createdAt);
+      const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+      return {
+        ...it,
+        code: `JA-${ymd}-${(it.id || '').slice(-4).toUpperCase()}`,
+        orgName: o ? o.realName || o.nickname || `${(o.phone ?? '').slice(0, 3)}****${(o.phone ?? '').slice(-4)}` : '未知团队',
+      };
+    });
+  }
+
+  /** 撤回入驻申请（本人自助；仅未进入终审结果态可撤） */
+  @Delete('qualifications/:id')
+  @Roles('ADMIN', 'AGENT', 'USER')
+  @UseGuards(RolesGuard)
+  async withdrawQualification(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Query('userId') userId?: string,
+  ) {
+    const uid = await this.resolveUserId(userId, req.user);
+    const cur = await this.prisma.qualificationApplication.findFirst({ where: { id, userId: uid } });
+    if (!cur) throw new NotFoundException('申请不存在或无权操作');
+    if (!['FIRST_PENDING', 'FIRST_PASSED'].includes(cur.status)) {
+      throw new BadRequestException('当前申请状态不可撤回');
+    }
+    await this.prisma.qualificationApplication.delete({ where: { id } });
+    return { ok: true };
+  }
+
+  /** 撤回（仅 PENDING 可撤） */
+  @Delete('join-applications/:id')
+  @Roles('ADMIN', 'AGENT', 'USER')
+  @UseGuards(RolesGuard)
+  async withdrawJoinApplication(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Query('userId') userId?: string,
+  ) {
+    const uid = await this.resolveUserId(userId, req.user);
+    const cur = await this.prisma.teamJoinApplication.findFirst({ where: { id, userId: uid } });
+    if (!cur) throw new NotFoundException('申请不存在或无权操作');
+    if (cur.status !== 'PENDING') throw new BadRequestException('已处理的申请不可撤回');
+    await this.prisma.teamJoinApplication.update({ where: { id }, data: { status: 'WITHDRAWN' } });
+    return { ok: true };
   }
 
   /**
@@ -1110,7 +1347,62 @@ export class UserConsoleController {
       : body.pass
         ? 'FIRST_PASSED'
         : 'REJECTED';
-    return this.prisma.qualificationApplication.update({ where: { id }, data: { status } });
+    const updated = await this.prisma.qualificationApplication.update({
+      where: { id },
+      data: { status },
+    });
+
+    // 终审通过 → 落地资格升级（决策：入驻走总台 ADMIN 审批，通过后用户成为服务商 / 代理商，
+    // 登录落点由既有 ROLE_HOME 自动切换到对应工作台）
+    await this.applyQualificationResult(app, status);
+    return updated;
+  }
+
+  /**
+   * 入驻终审结果落地（SETTLE 隧道的「身份变更」环节）：
+   *  - kind=provider → role=SERVICE_PROVIDER，资质状态 APPROVED，写入服务类型
+   *  - kind=agent    → role=AGENT，绑定辖区 regionId / regionPath
+   * 仅 APPROVED 落变更；REJECTED 仅改申请自身状态（用户仍为普通用户）。
+   */
+  private async applyQualificationResult(
+    app: { id: string; userId: string; kind: string; serviceScopes: string[]; regionPath: string | null },
+    status: string,
+  ) {
+    if (status !== 'APPROVED') return;
+
+    if (app.kind === 'provider') {
+      const scopes = app.serviceScopes ?? [];
+      const valid = scopes.filter((s): s is any =>
+        ['DESIGN', 'PHOTO', 'VENUE', 'FLORAL', 'STEWARD', 'PERFORM'].includes(s),
+      );
+      await this.prisma.user.update({
+        where: { id: app.userId },
+        data: {
+          role: 'SERVICE_PROVIDER',
+          providerStatus: 'APPROVED',
+          ...(valid.length ? { serviceRoles: valid } : {}),
+        },
+      });
+      return;
+    }
+
+    // 代理商：辖区落到 User.regionId / regionPath（regionPath 为该区域的代码前缀链）
+    let regionId: string | null = null;
+    if (app.regionPath) {
+      const region = await this.prisma.region.findFirst({
+        where: { regionPath: app.regionPath },
+        select: { id: true },
+      });
+      regionId = region?.id ?? null;
+    }
+    await this.prisma.user.update({
+      where: { id: app.userId },
+      data: {
+        role: 'AGENT',
+        ...(regionId ? { regionId } : {}),
+        ...(app.regionPath ? { regionPath: app.regionPath } : {}),
+      },
+    });
   }
 
   /** 填写资料（原型 pg-fill 提交）：初审通过后补充完整资料进入终审 */

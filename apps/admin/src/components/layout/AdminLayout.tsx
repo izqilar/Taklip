@@ -5,7 +5,7 @@ import { LayerSider } from './LayerSider';
 import { ReadonlyBanner } from './ReadonlyBanner';
 import { ObjectScopeBar } from './ObjectScopeBar';
 import { StatePreview } from '../ui/StatePreview';
-import { useLayer } from '../../providers/layerContext';
+import { useLayer, viewOfRole } from '../../providers/layerContext';
 import { getStoredUser } from '../../utility';
 
 /** 懒加载页面的统一占位（配色取主题令牌，不硬编码） */
@@ -36,10 +36,10 @@ const PageLoading = () => (
 export const AdminLayout = ({ children }: { children: ReactNode }) => {
   const { view, preview, setPreview } = useLayer();
   const role = getStoredUser<{ role?: string }>()?.role;
-  const isAdmin = role === 'ADMIN';
-  const viewAs = view === 'agent' || view === 'provider' || view === 'user';
-  // 对象检索条（视察窗口）仅 ADMIN 可见：服务商/Agent/用户自身登录即是对象，无需检索。
-  const showScopeBar = viewAs && isAdmin;
+  // 对象检索条（视察窗口）：仅在「非自身视角」显示 —— 即 ADMIN 视察他人，
+  // 或真实 AGENT 在用户视角视察辖区用户。真实 SERVICE_PROVIDER/AGENT/USER 登录后的
+  // 自身工作台（view 即等于自身角色）不显示检索条，因为他们就是对象本身。
+  const showScopeBar = view !== viewOfRole(role);
 
   // 响应式断点：窄屏（≤900px）侧栏转抽屉；监听变化，回到宽屏自动收起抽屉
   const [narrow, setNarrow] = useState(

@@ -29,7 +29,9 @@ type ReqUser = Express.Request & { user: JwtUser };
  * - 员工（USER 身份 + AGENT 成员关系）：取其在 OrgStaff 上绑定的代理商 orgId；
  * - legacy 拥有者（AGENT）/ ADMIN 视察：自身即组织（无 subject 机制时回退 req.user.id）。
  */
-const agentTeamOrg = (req: ReqUser): string => {
+const agentTeamOrg = (req: ReqUser, subject?: string): string => {
+  // 视察视角：ADMIN 选定某代理商后，团队组织落到被视察代理商
+  if (subject && req.user.role === 'ADMIN') return subject;
   if (req.user.role === 'USER') {
     const oid = staffOrgIdOf(req.user, 'AGENT');
     if (!oid) throw new ForbiddenException('非该代理商成员');
@@ -76,12 +78,39 @@ export class AgentConsoleController {
       : undefined;
   }
 
+  /**
+   * 视察视角作用域解析（对标 provider-console 的 subjectId）：
+   * ADMIN 带 ?subject=<代理商id> 时按被视察代理商的辖区(regionPath)/组织(id)收敛，
+   * 否则取自身辖区。被视察对象必须是有效代理商且已配置辖区，否则拒绝（避免数据越权泄漏）。
+   */
+  private async resolveAgentScope(
+    req: ReqUser,
+    subject?: string,
+  ): Promise<{ regionPath?: string; orgId: string }> {
+    if (subject && req.user.role === 'ADMIN') {
+      const agent = await this.prisma.user.findUnique({
+        where: { id: subject },
+        select: { id: true, role: true, regionPath: true },
+      });
+      if (!agent || agent.role !== 'AGENT') {
+        throw new ForbiddenException('被视察对象不是有效代理商');
+      }
+      if (!agent.regionPath) {
+        throw new ForbiddenException('被视察代理商未配置辖区');
+      }
+      return { regionPath: agent.regionPath, orgId: agent.id };
+    }
+    const rp = this.regionPrefix(req.user);
+    return { regionPath: rp?.startsWith, orgId: req.user.id };
+  }
+
   /** 辖区概览：注册用户 / 服务商 / 订单 / 反馈 + 流水汇总 */
   @Get('dashboard')
   @Roles('AGENT', 'ADMIN')
   @UseGuards(RolesGuard)
-  async dashboard(@Req() req: ReqUser) {
-    const rp = this.regionPrefix(req.user);
+  async dashboard(@Req() req: ReqUser, @Query('subject') subject?: string) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath ? { startsWith: scope.regionPath } : undefined;
     const userWhere = rp ? { regionPath: rp } : {};
     const orderWhere = rp ? { buyer: { regionPath: rp } } : {};
     const [
@@ -170,8 +199,10 @@ export class AgentConsoleController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('keyword') keyword?: string,
+    @Query('subject') subject?: string,
   ) {
-    const rp = this.regionPrefix(req.user);
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath ? { startsWith: scope.regionPath } : undefined;
     const where: any = { role: 'USER', ...(rp ? { regionPath: rp } : {}) };
     if (keyword) {
       where.OR = [
@@ -203,8 +234,10 @@ export class AgentConsoleController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('keyword') keyword?: string,
+    @Query('subject') subject?: string,
   ) {
-    const rp = this.regionPrefix(req.user);
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath ? { startsWith: scope.regionPath } : undefined;
     const where: any = { role: 'SERVICE_PROVIDER', ...(rp ? { regionPath: rp } : {}) };
     if (keyword) {
       where.OR = [
@@ -237,8 +270,10 @@ export class AgentConsoleController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('status') status?: string,
+    @Query('subject') subject?: string,
   ) {
-    const rp = this.regionPrefix(req.user);
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath ? { startsWith: scope.regionPath } : undefined;
     const where: any = rp ? { buyer: { regionPath: rp } } : {};
     if (status) where.status = status;
     const p = page ? Number(page) : 1;
@@ -271,8 +306,9 @@ export class AgentConsoleController {
     @Req() req: ReqUser,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
+    @Query('subject') subject?: string,
   ) {
-    return this.staff.list('AGENT', agentTeamOrg(req), page ? Number(page) : 1, pageSize ? Number(pageSize) : 20);
+    return this.staff.list('AGENT', agentTeamOrg(req, subject), page ? Number(page) : 1, pageSize ? Number(pageSize) : 20);
   }
 
   @Get('team/role-pool')
@@ -280,6 +316,60 @@ export class AgentConsoleController {
   @UseGuards(OrgAccessGuard)
   async teamRolePool() {
     return this.staff.rolePool('AGENT');
+  }
+
+  /* ───────── 加入申请队列（用户「入驻申请」JOIN 隧道 · 拥有者审批台）─────────
+   * 与服务商侧完全对齐：申请人始终是普通用户，接收后成为本代理商团队成员。
+   */
+
+  @Get('team/join-applications')
+  @OrgAccess('AGENT', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async listJoinApplications(@Req() req: ReqUser, @Query('status') status?: string) {
+    return this.staff.listJoinQueue('AGENT', agentTeamOrg(req), status ?? 'PENDING');
+  }
+
+  @Get('team/join-applications/:id')
+  @OrgAccess('AGENT', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async oneJoinApplication(@Req() req: ReqUser, @Param('id') id: string) {
+    return this.staff.oneJoin('AGENT', agentTeamOrg(req), id);
+  }
+
+  @Post('team/join-applications/:id/accept')
+  @OrgAccess('AGENT', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async acceptJoinApplication(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Body() body: { staffRole?: string },
+  ) {
+    const orgId = agentTeamOrg(req);
+    const name = await this.orgDisplayName(orgId);
+    return this.staff.acceptJoin(req.user, 'AGENT', orgId, name, id, body);
+  }
+
+  @Post('team/join-applications/:id/reject')
+  @OrgAccess('AGENT', { requirePerm: 'team:manage' })
+  @UseGuards(OrgAccessGuard)
+  async rejectJoinApplication(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Body() body: { reviewNote?: string },
+  ) {
+    const orgId = agentTeamOrg(req);
+    const name = await this.orgDisplayName(orgId);
+    return this.staff.rejectJoin(req.user, 'AGENT', orgId, name, id, body?.reviewNote ?? '');
+  }
+
+  /** 团队展示名（用于给申请人投递回执消息） */
+  private async orgDisplayName(orgId: string): Promise<string> {
+    const u = await this.prisma.user.findUnique({
+      where: { id: orgId },
+      select: { nickname: true, realName: true, phone: true },
+    });
+    if (!u) return '该团队';
+    return u.realName || u.nickname || (u.phone ? `${u.phone.slice(0, 3)}****${u.phone.slice(-4)}` : '该团队');
   }
 
   @Post('team')
@@ -322,8 +412,9 @@ export class AgentConsoleController {
   @Get('wallet')
   @Roles('AGENT', 'ADMIN')
   @UseGuards(RolesGuard)
-  async wallet(@Req() req: ReqUser) {
-    const rp = this.regionPrefix(req.user);
+  async wallet(@Req() req: ReqUser, @Query('subject') subject?: string) {
+    const scope = await this.resolveAgentScope(req, subject);
+    const rp = scope.regionPath ? { startsWith: scope.regionPath } : undefined;
     const where = rp ? { provider: { regionPath: rp } } : {};
     const [count, agg] = await this.prisma.$transaction([
       this.prisma.providerWallet.count({ where }),

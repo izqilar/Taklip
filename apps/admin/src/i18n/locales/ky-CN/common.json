@@ -196,8 +196,6 @@
     "fb.suggestion": "Suggestion",
     "fb.appeal": "Appeal",
     "fb.escalateArbitration": "Escalate to arbitration",
-    "msg.authorityNotice": "Authority notice",
-    "msg.generalMsg": "General message",
     "msg.negotiating": "Negotiating",
     "msg.arbitrating": "Arbitrating",
     "msg.escalating": "Escalating",
@@ -307,7 +305,11 @@
     "note.fbAgent": "Feedback you submit as an agent belongs to your region; it can be negotiated or escalated to the console.",
     "note.fbAdmin": "The console can view all feedback and perform arbitration.",
     "note.fbUser": "Your feedback enters the processing flow by hierarchy.",
-    "msg.plsInputContent": "Please enter content"
+    "msg.plsInputContent": "Please enter content",
+    "msg": {
+      "authorityNotice": "Authority notice",
+      "generalMsg": "General message"
+    }
   },
   "group": {
     "trade": "交易中心",
@@ -317,7 +319,7 @@
     "orderfulfill": "Order Fulfillment",
     "servicecontent": "Services & Content",
     "qualification": "Qualification",
-    "teamsetting": "Team & Settings"
+    "teamsetting": "Workspace Settings"
   },
   "menu": {
     "user.center": "用户视角",
@@ -342,13 +344,17 @@
     "sp.apply": "Applications",
     "sp.qualification": "Qualification",
     "sp.contract": "Contracts",
-    "sp.income": "Income",
+    "sp.income": "Billing",
     "sp.withdraw": "Withdrawals",
     "sp.wallet": "My Wallet",
     "sp.notices": "Notices",
     "sp.messages": "Messages",
-    "sp.team": "My Team",
+    "sp.team": "Топту башкаруу",
     "sp.clients": "My Clients",
-    "account.profile-provider": "Account"
+    "account.profile-provider": "Account",
+    "sp.roles": "Кызматкер ролу",
+    "agent.roles": "Кызматкер ролу",
+    "admin.qualifications": "Жайгашууну кароо",
+    "user.apply": "Кошулуу / Жайгашуу"
   }
 }

@@ -51,6 +51,8 @@ function canSeeByRole(resource: string | undefined, role: string | undefined, st
     resource === 'admin/finance' ||
     resource === 'admin/fonts' ||
     resource === 'admin/templates' ||
+    // 入驻审批台：用户资格升级（USER → 服务商 / 代理商）由总台 ADMIN 独家裁定
+    resource === 'admin/qualifications' ||
     resource === 'admin/roles' ||
     resource === 'admin/settings' ||
     resource === 'admin/audit-logs'
@@ -96,7 +98,13 @@ export const accessControlProvider: AccessControlProvider = {
     //    - 该层拥有者（legacy 角色）天然可写；
     //    - 员工须具备 team:manage 权限（由 funcPerms 推导）。
     if (res.endsWith('/team') && (action === 'create' || action === 'edit' || action === 'delete')) {
-      const layer = res.startsWith('agent/') ? 'AGENT' : res.startsWith('sp/') ? 'PROVIDER' : 'CONSOLE';
+      // 注意：资源名是后端 API 路径，服务商层是 `provider/team`（不是 `sp/team`；`sp/` 只是前端路由前缀）。
+      // 早期只判 `sp/` → 服务商老板被误判成 CONSOLE 层而遭拒绝（写按钮消失），此处补齐双写。
+      const layer = res.startsWith('agent/')
+        ? 'AGENT'
+        : res.startsWith('provider/') || res.startsWith('sp/')
+          ? 'PROVIDER'
+          : 'CONSOLE';
       const isOwner =
         (layer === 'CONSOLE' && role === 'ADMIN') ||
         (layer === 'AGENT' && (role === 'AGENT' || role === 'ADMIN')) ||

@@ -18,10 +18,24 @@ interface LayerState {
   /** 当前视角（总台/代理商/服务商/用户） */
   view: LayerKey;
   setView: (v: LayerKey) => void;
+  /** 当前登录账号的真实角色（用于区分「ADMIN 视察他人」与「真实角色自有工作台」） */
+  role: string | undefined;
+  /**
+   * 当前视角是否为「登录账号自身的工作台」。
+   * - ADMIN 登录：仅 console 视图是自身（其余 agent/provider/user 为视察他人，需选 subject）。
+   * - 真实 SERVICE_PROVIDER / AGENT / USER 登录：其 view 即等于自身角色，
+   *   此时不是「视察」，而是他们自己的运营工作台，应直接展示自身数据、绝不强制选 subject。
+   */
+  isOwnView: boolean;
   /** 只读模式（文档 §4.3）：黄条 + 操作禁用 + 后端 403 */
   readonly: boolean;
   setReadonly: (b: boolean) => void;
-  /** 对象视角选中项，整页联动到该对象名下 */
+  /**
+   * 当前视角的对象选中项（整页联动到该对象名下）。
+   * 注意：objectScope 是「按视角隔离」的 —— 每个视角（console/agent/provider/user）
+   * 各自记忆自己选中的被视察对象，切换视角不会把 A 视角的选中账号带进 B 视角的
+   * 检索框 / 数据边界（防止越权数据穿插）。取数时永远返回「当前 view」对应的槽位。
+   */
   objectScope: ObjectScope | null;
   setObjectScope: (o: ObjectScope | null) => void;
   /** 四态预览：data=真实数据，其余为原型演示态 */
@@ -32,7 +46,7 @@ interface LayerState {
 const LayerCtx = createContext<LayerState | null>(null);
 
 /** 登录即定层：按 JWT role 决定初始视角（文档 §4.1） */
-function viewOfRole(role?: string | null): LayerKey {
+export function viewOfRole(role?: string | null): LayerKey {
   switch (role) {
     case 'AGENT':
       return 'agent';
@@ -101,11 +115,26 @@ export const LayerProvider = ({ children }: { children: ReactNode }) => {
   // 「超级管理员」解除只读 —— 与代理商/服务商视角的双模式切换行为对齐（§4.3）。
   const [userReadonly, setUserReadonly] = useState(true);
   const readonly = view === 'user' ? userReadonly : manualReadonly;
-  const [objectScope, setObjectScope] = useState<ObjectScope | null>(null);
+  // 按视角隔离的视察对象：每个视角各自记忆自己选中的被视察对象，互不串扰。
+  // 取数时只读「当前 view」对应的槽位（objectScope 派生值）。
+  const [scopesByView, setScopesByView] = useState<Record<LayerKey, ObjectScope | null>>({
+    console: null,
+    agent: null,
+    provider: null,
+    user: null,
+  });
+  // 当前视角的对象选中项（派生，随 view 切换自动指向对应槽位）。
+  const objectScope = scopesByView[view] ?? null;
   const [preview, setPreview] = useState<PreviewState>('data');
 
   const { data: identity } = useGetIdentity<{ role?: string }>();
   const role = identity?.role ?? getStoredUser<{ role?: string }>()?.role;
+  // 当前视角是否登录账号自身的工作台（核心：区分 ADMIN 视察他人 vs 真实角色自有工作台）
+  const isOwnView = view === viewOfRole(role);
+  // 注意：本 Provider 包在 <BrowserRouter> 之外（见 App.tsx），故此处【不能】调用
+  // 任何依赖 Router 上下文的 refine hooks（如 useInvalidate，其内部走 useLocation），
+  // 否则整页崩溃。subject 变化后的 query 失效重取由 Router 内的
+  // ObjectScopeInvalidationBridge（App.tsx）订阅 objectScope 完成。
 
   // 仅在「角色真的变了」时重新定层：登录(undefined→AGENT)会触发，
   // 而管理员手动切视角不会（identity 没变），避免把用户的选择冲掉。
@@ -123,6 +152,8 @@ export const LayerProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     setView(viewOfRole(role));
+    // 角色更换（重新登录 / 切换账号）时清空 subject，避免沿用上一会话残留的视察对象。
+    setSubject(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
@@ -130,8 +161,14 @@ export const LayerProvider = ({ children }: { children: ReactNode }) => {
     <LayerCtx.Provider
       value={{
         view,
+        role,
+        isOwnView,
         setView: (v: LayerKey) => {
           persistView(v);
+          // 切换视角时：把 dataProvider 的 subject 同步切到「目标视角」自己槽位的对象，
+          // 避免新视角发出的请求仍携带旧视角的 subject（越权数据穿插）。
+          // 同步执行（非 effect）：确保新视角菜单页挂载时 module 变量已是目标视角的 subject。
+          setSubject(scopesByView[v]?.id ?? null);
           setView(v);
         },
         readonly,
@@ -143,9 +180,11 @@ export const LayerProvider = ({ children }: { children: ReactNode }) => {
         },
         objectScope,
         setObjectScope: (o: ObjectScope | null) => {
+          // 写入「当前视角」自己的槽位（按视角隔离，不污染其它视角）。
+          setScopesByView((prev) => ({ ...prev, [view]: o }));
           // 同步视察窗口 subject 到 scopeStore，供 dataProvider 注入 ?subject=
+          // （query 失效重取见 App.tsx 的 ObjectScopeInvalidationBridge）
           setSubject(o?.id ?? null);
-          setObjectScope(o);
         },
         preview,
         setPreview,

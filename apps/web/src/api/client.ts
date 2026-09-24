@@ -444,6 +444,9 @@ export const api = {
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'POST', body: JSON.stringify(body ?? {}) }),
 
+  /** 通用 DELETE —— 用于撤回申请等尚未逐一封装的端点 */
+  del: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+
   /** 字体目录（自定义 / 艺术字体），供编辑器字体选择器拉取 */
   // ⚠️ 必须走 `/api` 前缀：web 端 BASE_URL=''，vite 只代理 /api、/uploads、/public，
   // 写 `/fonts` 会打到 dev server 上拿到 index.html（JSON 解析失败被静默吞掉）。

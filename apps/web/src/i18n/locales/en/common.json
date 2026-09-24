@@ -57,7 +57,8 @@
   "button": {
     "create": "Start Designing",
     "preview": "Preview",
-    "publish": "Publish", "export": "Export",
+    "publish": "Publish",
+    "export": "Export",
     "save": "Save",
     "cancel": "Cancel",
     "confirm": "Confirm",
@@ -143,11 +144,27 @@
     "guide3Desc": "Trusted by millions of users",
     "guide4Title": "No Ads, No Limits",
     "guide4Desc": "Pure access and worry-free sharing",
-    "hotTags": ["HR Recruitment H5", "Invitation", "Wedding Invitation H5", "Meeting Invitation H5", "Birthday Invitation H5", "Housewarming"],
+    "hotTags": [
+      "HR Recruitment H5",
+      "Invitation",
+      "Wedding Invitation H5",
+      "Meeting Invitation H5",
+      "Birthday Invitation H5",
+      "Housewarming"
+    ],
     "slides": [
-      { "eyebrow": "Wedding Season", "title": "Curated Wedding Invitations" },
-      { "eyebrow": "Brand Promotion", "title": "Publish Brand Campaigns with Ease" },
-      { "eyebrow": "Event Invitation", "title": "Efficient Meeting Invitation Tool" }
+      {
+        "eyebrow": "Wedding Season",
+        "title": "Curated Wedding Invitations"
+      },
+      {
+        "eyebrow": "Brand Promotion",
+        "title": "Publish Brand Campaigns with Ease"
+      },
+      {
+        "eyebrow": "Event Invitation",
+        "title": "Efficient Meeting Invitation Tool"
+      }
     ]
   },
   "scene": {
@@ -491,7 +508,8 @@
       "providers": "My Providers",
       "messages": "Business Messages",
       "notices": "Announcements",
-      "account": "Account"
+      "account": "Account",
+      "apply": "Join or Settle In"
     },
     "overview": {
       "balance": "Balance",
@@ -734,6 +752,67 @@
       "feedback": "Search feedback topic…",
       "messages": "Search message title…",
       "notices": "Search announcement title…"
+    },
+    "apply": {
+      "sub": "Join an existing provider / agent team, or apply to upgrade to provider / agent",
+      "identityTitle": "My identity",
+      "identityUser": "Regular user",
+      "joinedTeams": "Teams joined",
+      "myTitle": "My applications",
+      "myHint": "You may withdraw before the review is completed",
+      "mode": {
+        "label": "Application type",
+        "join": "Join",
+        "joinDesc": "Join an existing provider / agent team — you stay a regular user",
+        "settle": "Settle in",
+        "settleDesc": "Upgrade to a provider / agent entity, reviewed by the platform"
+      },
+      "layer": {
+        "label": "Level",
+        "provider": "Service provider",
+        "providerDesc": "Delivers services, manages works and templates",
+        "agent": "Agent",
+        "agentDesc": "Administers an assigned territory (province / city / district)"
+      },
+      "region": {
+        "label": "Region",
+        "province": "Select province",
+        "city": "Select city",
+        "district": "Select district",
+        "optional": "optional"
+      },
+      "target": {
+        "label": "Affiliated team",
+        "placeholder": "Select the team you want to join",
+        "search": "Search team name / phone…",
+        "count": "Matches"
+      },
+      "scope": {
+        "label": "Service types"
+      },
+      "wayTitle": "Application method",
+      "reasonTitle": "Application note",
+      "reasonPlaceholder": "Describe your skills or why you want to join…",
+      "reasonHint": "The owner assigns your position on approval; permissions are configured afterwards",
+      "reasonRequired": "Please fill in the application note",
+      "submit": "Submit application",
+      "submitted": "Application submitted, awaiting review",
+      "submitFailed": "Submission failed, please try again",
+      "withdraw": "Withdraw",
+      "withdrawFailed": "Withdrawal failed",
+      "needTarget": "Please select the team you want to join",
+      "needRegion": "Agent applications require a full territory (province / city / district)",
+      "needScope": "Please select at least one service type",
+      "reviewNote": "Review feedback",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "withdrawn": "Withdrawn",
+        "firstPending": "Pending first review",
+        "firstPassed": "First review passed",
+        "finalPending": "Pending final review"
+      }
     }
   }
 }

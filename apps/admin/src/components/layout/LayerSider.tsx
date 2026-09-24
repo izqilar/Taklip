@@ -161,7 +161,7 @@ export const LayerSider = ({ onNavigate }: { onNavigate?: () => void }) => {
         </span>
         {badge > 0 && (
           <span
-            title={labelText + ' · 待处理 ' + badge + ' 项'}
+            title={labelText + ' · ' + badge + ' 项'}
             style={{
               minWidth: 18,
               height: 18,

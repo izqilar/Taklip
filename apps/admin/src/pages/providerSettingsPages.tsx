@@ -617,7 +617,7 @@ export const SPApplyDetail = () => {
   return (
     <SettingPage
       title={isEdit ? '业务申请详情' : '新建入驻申请'}
-      sub="入住 / 资质申请全流程跟踪"
+      sub="入驻 / 资质申请全流程跟踪"
       chip="服务商 · 自身作用域"
       backTo="/sp/apply"
       aside={aside}

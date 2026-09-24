@@ -400,5 +400,71 @@
       "fail": "Failed, please retry",
       "loginRedirect": "Log in to continue Quick Make"
     }
+  },
+  "userCenter": {
+    "menu": {
+      "apply": "Qo'shilish / O'rnashish"
+    },
+    "apply": {
+      "sub": "Mavjud agent / xizmat ko'rsatuvchi jamoaga qo'shilish yoki mavqeni oshirish arizasi",
+      "identityTitle": "Mening maqomim",
+      "identityUser": "Oddiy foydalanuvchi",
+      "joinedTeams": "Qo'shilgan jamoalar",
+      "myTitle": "Mening arizalarim",
+      "myHint": "Ko'rib chiqish tugaguncha qaytarib olish mumkin",
+      "mode": {
+        "label": "Ariza turi",
+        "join": "Qo'shilish",
+        "joinDesc": "Mavjud jamoaga qo'shilish — maqom o'zgarmaydi",
+        "settle": "O'rnashish",
+        "settleDesc": "Xizmat ko'rsatuvchi / agent bo'lib mavqeni oshirish"
+      },
+      "layer": {
+        "label": "Ariza darajasi",
+        "provider": "Xizmat ko'rsatuvchi",
+        "providerDesc": "Xizmat ko'rsatadi, ishlarni boshqaradi",
+        "agent": "Agent",
+        "agentDesc": "Belgilangan hududni boshqaradi"
+      },
+      "region": {
+        "label": "Hudud",
+        "province": "Viloyatni tanlang",
+        "city": "Shaharni tanlang",
+        "district": "Tumanni tanlang",
+        "optional": "ixtiyoriy"
+      },
+      "target": {
+        "label": "Tegishli jamoa",
+        "placeholder": "Qo'shilmoqchi bo'lgan jamoani tanlang",
+        "search": "Jamoa nomi / telefon…",
+        "count": "Mos jamoalar"
+      },
+      "scope": {
+        "label": "Xizmat turlari"
+      },
+      "wayTitle": "Ariza usuli",
+      "reasonTitle": "Ariza izohi",
+      "reasonPlaceholder": "Mahoratingiz yoki ariza sababini yozing…",
+      "reasonHint": "Lavozimni jamoa rahbari qabul qilganda belgilaydi",
+      "reasonRequired": "Ariza izohini to'ldiring",
+      "submit": "Ariza yuborish",
+      "submitted": "Ariza yuborildi, ko'rib chiqish kutilmoqda",
+      "submitFailed": "Yuborish muvaffaqiyatsiz, qayta urinib ko'ring",
+      "withdraw": "Qaytarib olish",
+      "withdrawFailed": "Qaytarib olish muvaffaqiyatsiz",
+      "needTarget": "Qo'shiladigan jamoani tanlang",
+      "needRegion": "Agent arizasi uchun to'liq hudud tanlanishi kerak",
+      "needScope": "Kamida bitta xizmat turini tanlang",
+      "reviewNote": "Ko'rib chiqish javobi",
+      "status": {
+        "pending": "Qabul qilish kutilmoqda",
+        "approved": "Tasdiqlandi",
+        "rejected": "Rad etildi",
+        "withdrawn": "Qaytarib olindi",
+        "firstPending": "Dastlabki ko'rib chiqish kutilmoqda",
+        "firstPassed": "Dastlabki ko'rib chiqishdan o'tdi",
+        "finalPending": "Yakuniy ko'rib chiqish kutilmoqda"
+      }
+    }
   }
 }

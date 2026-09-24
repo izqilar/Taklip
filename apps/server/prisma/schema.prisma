@@ -137,6 +137,8 @@ model User {
   ticketsTarget   Ticket[] @relation("TicketTarget")
   ticketsAssignee Ticket[] @relation("TicketAssignee")
   messagesAuthor  Message[] @relation("MessageAuthor")
+  // scope=USER 的定向消息（如加入团队申请的接收 / 拒绝回执）
+  messagesReceived Message[] @relation("MessageRecipient")
   // —— 用户评价（我的评价 / 订单评价与追评）——
   reviews         Review[] @relation("ReviewUser")
   reviewsReceived Review[] @relation("ReviewProvider")
@@ -144,6 +146,7 @@ model User {
   qualifications  QualificationApplication[] @relation("QualificationUser")
   walletLogs      WalletLog[] @relation("WalletLogUser")
   coupons         UserCoupon[] @relation("UserCouponUser")
+  joinApplications TeamJoinApplication[] @relation("JoinApplicationUser")
 }
 
 model Project {
@@ -394,6 +397,7 @@ enum MessageScope {
   GLOBAL // 全局
   REGION // 指定区域（regionPath）
   OWN    // 指定接收角色（targetRole）
+  USER   // 指定接收人（recipientId）—— 「加入团队」申请的接收 / 拒绝回执定向投递
 }
 
 enum MessageStatus {
@@ -420,14 +424,18 @@ model Message {
   approvedBy  String?      @map("approved_by")
   approvedAt  DateTime?    @map("approved_at")
   rejectNote  String?      @map("reject_note")
+  // scope=USER 时的唯一接收人（申请的接收 / 拒绝回执；REVIEW_FEEDBACK 语义）
+  recipientId String?      @map("recipient_id")
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
   reads       MessageRead[]
+  recipient   User?        @relation("MessageRecipient", fields: [recipientId], references: [id])
 
   @@index([authorId])
   @@index([status])
   @@index([regionPath])
+  @@index([recipientId])
 }
 
 // ————————————————————————————————————————————————
@@ -641,6 +649,39 @@ model OrgStaff {
 
   @@index([orgType, orgId])
   @@index([userId])
+  // 同一用户在同一组织内只能有一条员工档案（防「接收」被并发重复执行；userId 为空时不参与唯一）
+  @@unique([orgType, orgId, userId])
+}
+
+// ————————————————————————————————————————————————
+// 加入团队申请（用户视角「入驻申请」的「加入」隧道）
+// · 性质：身份不变（仍是普通用户），仅加入某个服务商 / 代理商团队成为团队成员
+// · 审批方：目标团队拥有者（单人审批；与「入驻」由总台 ADMIN 审批区分）
+// · 接收（accept）→ 生成 OrgStaff（默认岗位由审批侧给定，细粒度权限在「员工角色」页编辑）
+// · 用户可同时加入多个团队，故唯一性仅约束「同一组织 + 同一用户」的在途 / 已完成申请
+// status: PENDING 待接收 | APPROVED 已接收 | REJECTED 已拒绝 | WITHDRAWN 已撤回
+// ————————————————————————————————————————————————
+model TeamJoinApplication {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  user        User     @relation("JoinApplicationUser", fields: [userId], references: [id])
+  orgType     String   @map("org_type") // PROVIDER 服务商团队 | AGENT 代理商团队
+  orgId       String   @map("org_id")   // 目标服务商 / 代理商 User.id
+  // 提交时的检索区域（冗余留痕，供队列与「查看」弹窗回放）
+  regionPath  String?  @map("region_path")
+  regionLabel String?  @map("region_label")
+  reason      String                    // 申请说明 / 特长说明（用户自述，不用于定岗）
+  status      String   @default("PENDING")
+  reviewNote  String?  @map("review_note") // 拒绝详情（原样反馈到用户「业务消息」）
+  reviewerId  String?  @map("reviewer_id")
+  reviewedAt  DateTime? @map("reviewed_at")
+  // 接收后生成的员工档案（可回溯：申请单 → 团队成员）
+  staffId     String?  @map("staff_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([orgType, orgId, status])
+  @@index([userId, status])
 }
 
 // 我的客户：客户档案与精准维护触达

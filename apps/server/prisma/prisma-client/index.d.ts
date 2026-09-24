@@ -124,6 +124,11 @@ export type ProviderContract = $Result.DefaultSelection<Prisma.$ProviderContract
  */
 export type OrgStaff = $Result.DefaultSelection<Prisma.$OrgStaffPayload>
 /**
+ * Model TeamJoinApplication
+ * 
+ */
+export type TeamJoinApplication = $Result.DefaultSelection<Prisma.$TeamJoinApplicationPayload>
+/**
  * Model ProviderClient
  * 
  */
@@ -245,7 +250,8 @@ export type MessageType = (typeof MessageType)[keyof typeof MessageType]
 export const MessageScope: {
   GLOBAL: 'GLOBAL',
   REGION: 'REGION',
-  OWN: 'OWN'
+  OWN: 'OWN',
+  USER: 'USER'
 };
 
 export type MessageScope = (typeof MessageScope)[keyof typeof MessageScope]
@@ -648,6 +654,16 @@ export class PrismaClient<
     * ```
     */
   get orgStaff(): Prisma.OrgStaffDelegate<ExtArgs>;
+
+  /**
+   * `prisma.teamJoinApplication`: Exposes CRUD operations for the **TeamJoinApplication** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more TeamJoinApplications
+    * const teamJoinApplications = await prisma.teamJoinApplication.findMany()
+    * ```
+    */
+  get teamJoinApplication(): Prisma.TeamJoinApplicationDelegate<ExtArgs>;
 
   /**
    * `prisma.providerClient`: Exposes CRUD operations for the **ProviderClient** model.
@@ -1151,6 +1167,7 @@ export namespace Prisma {
     ProviderSchedule: 'ProviderSchedule',
     ProviderContract: 'ProviderContract',
     OrgStaff: 'OrgStaff',
+    TeamJoinApplication: 'TeamJoinApplication',
     ProviderClient: 'ProviderClient',
     ProviderClientReach: 'ProviderClientReach',
     AuditLog: 'AuditLog',
@@ -1170,7 +1187,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, ClientOptions = {}> = {
     meta: {
-      modelProps: "region" | "user" | "project" | "template" | "font" | "projectVersion" | "asset" | "templateOrder" | "providerWallet" | "withdrawal" | "templateAppeal" | "ticket" | "message" | "review" | "messageRead" | "qualificationApplication" | "walletLog" | "coupon" | "userCoupon" | "providerSchedule" | "providerContract" | "orgStaff" | "providerClient" | "providerClientReach" | "auditLog" | "providerLicense"
+      modelProps: "region" | "user" | "project" | "template" | "font" | "projectVersion" | "asset" | "templateOrder" | "providerWallet" | "withdrawal" | "templateAppeal" | "ticket" | "message" | "review" | "messageRead" | "qualificationApplication" | "walletLog" | "coupon" | "userCoupon" | "providerSchedule" | "providerContract" | "orgStaff" | "teamJoinApplication" | "providerClient" | "providerClientReach" | "auditLog" | "providerLicense"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2714,6 +2731,76 @@ export namespace Prisma {
           }
         }
       }
+      TeamJoinApplication: {
+        payload: Prisma.$TeamJoinApplicationPayload<ExtArgs>
+        fields: Prisma.TeamJoinApplicationFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.TeamJoinApplicationFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TeamJoinApplicationPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.TeamJoinApplicationFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TeamJoinApplicationPayload>
+          }
+          findFirst: {
+            args: Prisma.TeamJoinApplicationFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TeamJoinApplicationPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.TeamJoinApplicationFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TeamJoinApplicationPayload>
+          }
+          findMany: {
+            args: Prisma.TeamJoinApplicationFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TeamJoinApplicationPayload>[]
+          }
+          create: {
+            args: Prisma.TeamJoinApplicationCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TeamJoinApplicationPayload>
+          }
+          createMany: {
+            args: Prisma.TeamJoinApplicationCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.TeamJoinApplicationCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TeamJoinApplicationPayload>[]
+          }
+          delete: {
+            args: Prisma.TeamJoinApplicationDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TeamJoinApplicationPayload>
+          }
+          update: {
+            args: Prisma.TeamJoinApplicationUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TeamJoinApplicationPayload>
+          }
+          deleteMany: {
+            args: Prisma.TeamJoinApplicationDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.TeamJoinApplicationUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.TeamJoinApplicationUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TeamJoinApplicationPayload>
+          }
+          aggregate: {
+            args: Prisma.TeamJoinApplicationAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateTeamJoinApplication>
+          }
+          groupBy: {
+            args: Prisma.TeamJoinApplicationGroupByArgs<ExtArgs>
+            result: $Utils.Optional<TeamJoinApplicationGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.TeamJoinApplicationCountArgs<ExtArgs>
+            result: $Utils.Optional<TeamJoinApplicationCountAggregateOutputType> | number
+          }
+        }
+      }
       ProviderClient: {
         payload: Prisma.$ProviderClientPayload<ExtArgs>
         fields: Prisma.ProviderClientFieldRefs
@@ -3206,12 +3293,14 @@ export namespace Prisma {
     ticketsTarget: number
     ticketsAssignee: number
     messagesAuthor: number
+    messagesReceived: number
     reviews: number
     reviewsReceived: number
     messageReads: number
     qualifications: number
     walletLogs: number
     coupons: number
+    joinApplications: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3226,12 +3315,14 @@ export namespace Prisma {
     ticketsTarget?: boolean | UserCountOutputTypeCountTicketsTargetArgs
     ticketsAssignee?: boolean | UserCountOutputTypeCountTicketsAssigneeArgs
     messagesAuthor?: boolean | UserCountOutputTypeCountMessagesAuthorArgs
+    messagesReceived?: boolean | UserCountOutputTypeCountMessagesReceivedArgs
     reviews?: boolean | UserCountOutputTypeCountReviewsArgs
     reviewsReceived?: boolean | UserCountOutputTypeCountReviewsReceivedArgs
     messageReads?: boolean | UserCountOutputTypeCountMessageReadsArgs
     qualifications?: boolean | UserCountOutputTypeCountQualificationsArgs
     walletLogs?: boolean | UserCountOutputTypeCountWalletLogsArgs
     coupons?: boolean | UserCountOutputTypeCountCouponsArgs
+    joinApplications?: boolean | UserCountOutputTypeCountJoinApplicationsArgs
   }
 
   // Custom InputTypes
@@ -3325,6 +3416,13 @@ export namespace Prisma {
   /**
    * UserCountOutputType without action
    */
+  export type UserCountOutputTypeCountMessagesReceivedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: MessageWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
   export type UserCountOutputTypeCountReviewsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ReviewWhereInput
   }
@@ -3362,6 +3460,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountCouponsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: UserCouponWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountJoinApplicationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: TeamJoinApplicationWhereInput
   }
 
 
@@ -4998,12 +5103,14 @@ export namespace Prisma {
     ticketsTarget?: boolean | User$ticketsTargetArgs<ExtArgs>
     ticketsAssignee?: boolean | User$ticketsAssigneeArgs<ExtArgs>
     messagesAuthor?: boolean | User$messagesAuthorArgs<ExtArgs>
+    messagesReceived?: boolean | User$messagesReceivedArgs<ExtArgs>
     reviews?: boolean | User$reviewsArgs<ExtArgs>
     reviewsReceived?: boolean | User$reviewsReceivedArgs<ExtArgs>
     messageReads?: boolean | User$messageReadsArgs<ExtArgs>
     qualifications?: boolean | User$qualificationsArgs<ExtArgs>
     walletLogs?: boolean | User$walletLogsArgs<ExtArgs>
     coupons?: boolean | User$couponsArgs<ExtArgs>
+    joinApplications?: boolean | User$joinApplicationsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -5088,12 +5195,14 @@ export namespace Prisma {
     ticketsTarget?: boolean | User$ticketsTargetArgs<ExtArgs>
     ticketsAssignee?: boolean | User$ticketsAssigneeArgs<ExtArgs>
     messagesAuthor?: boolean | User$messagesAuthorArgs<ExtArgs>
+    messagesReceived?: boolean | User$messagesReceivedArgs<ExtArgs>
     reviews?: boolean | User$reviewsArgs<ExtArgs>
     reviewsReceived?: boolean | User$reviewsReceivedArgs<ExtArgs>
     messageReads?: boolean | User$messageReadsArgs<ExtArgs>
     qualifications?: boolean | User$qualificationsArgs<ExtArgs>
     walletLogs?: boolean | User$walletLogsArgs<ExtArgs>
     coupons?: boolean | User$couponsArgs<ExtArgs>
+    joinApplications?: boolean | User$joinApplicationsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -5118,12 +5227,14 @@ export namespace Prisma {
       ticketsTarget: Prisma.$TicketPayload<ExtArgs>[]
       ticketsAssignee: Prisma.$TicketPayload<ExtArgs>[]
       messagesAuthor: Prisma.$MessagePayload<ExtArgs>[]
+      messagesReceived: Prisma.$MessagePayload<ExtArgs>[]
       reviews: Prisma.$ReviewPayload<ExtArgs>[]
       reviewsReceived: Prisma.$ReviewPayload<ExtArgs>[]
       messageReads: Prisma.$MessageReadPayload<ExtArgs>[]
       qualifications: Prisma.$QualificationApplicationPayload<ExtArgs>[]
       walletLogs: Prisma.$WalletLogPayload<ExtArgs>[]
       coupons: Prisma.$UserCouponPayload<ExtArgs>[]
+      joinApplications: Prisma.$TeamJoinApplicationPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -5533,12 +5644,14 @@ export namespace Prisma {
     ticketsTarget<T extends User$ticketsTargetArgs<ExtArgs> = {}>(args?: Subset<T, User$ticketsTargetArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TicketPayload<ExtArgs>, T, "findMany"> | Null>
     ticketsAssignee<T extends User$ticketsAssigneeArgs<ExtArgs> = {}>(args?: Subset<T, User$ticketsAssigneeArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TicketPayload<ExtArgs>, T, "findMany"> | Null>
     messagesAuthor<T extends User$messagesAuthorArgs<ExtArgs> = {}>(args?: Subset<T, User$messagesAuthorArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, "findMany"> | Null>
+    messagesReceived<T extends User$messagesReceivedArgs<ExtArgs> = {}>(args?: Subset<T, User$messagesReceivedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, "findMany"> | Null>
     reviews<T extends User$reviewsArgs<ExtArgs> = {}>(args?: Subset<T, User$reviewsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReviewPayload<ExtArgs>, T, "findMany"> | Null>
     reviewsReceived<T extends User$reviewsReceivedArgs<ExtArgs> = {}>(args?: Subset<T, User$reviewsReceivedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReviewPayload<ExtArgs>, T, "findMany"> | Null>
     messageReads<T extends User$messageReadsArgs<ExtArgs> = {}>(args?: Subset<T, User$messageReadsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MessageReadPayload<ExtArgs>, T, "findMany"> | Null>
     qualifications<T extends User$qualificationsArgs<ExtArgs> = {}>(args?: Subset<T, User$qualificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$QualificationApplicationPayload<ExtArgs>, T, "findMany"> | Null>
     walletLogs<T extends User$walletLogsArgs<ExtArgs> = {}>(args?: Subset<T, User$walletLogsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WalletLogPayload<ExtArgs>, T, "findMany"> | Null>
     coupons<T extends User$couponsArgs<ExtArgs> = {}>(args?: Subset<T, User$couponsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserCouponPayload<ExtArgs>, T, "findMany"> | Null>
+    joinApplications<T extends User$joinApplicationsArgs<ExtArgs> = {}>(args?: Subset<T, User$joinApplicationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TeamJoinApplicationPayload<ExtArgs>, T, "findMany"> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -6180,6 +6293,26 @@ export namespace Prisma {
   }
 
   /**
+   * User.messagesReceived
+   */
+  export type User$messagesReceivedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Message
+     */
+    select?: MessageSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MessageInclude<ExtArgs> | null
+    where?: MessageWhereInput
+    orderBy?: MessageOrderByWithRelationInput | MessageOrderByWithRelationInput[]
+    cursor?: MessageWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: MessageScalarFieldEnum | MessageScalarFieldEnum[]
+  }
+
+  /**
    * User.reviews
    */
   export type User$reviewsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -6297,6 +6430,26 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: UserCouponScalarFieldEnum | UserCouponScalarFieldEnum[]
+  }
+
+  /**
+   * User.joinApplications
+   */
+  export type User$joinApplicationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TeamJoinApplication
+     */
+    select?: TeamJoinApplicationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TeamJoinApplicationInclude<ExtArgs> | null
+    where?: TeamJoinApplicationWhereInput
+    orderBy?: TeamJoinApplicationOrderByWithRelationInput | TeamJoinApplicationOrderByWithRelationInput[]
+    cursor?: TeamJoinApplicationWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: TeamJoinApplicationScalarFieldEnum | TeamJoinApplicationScalarFieldEnum[]
   }
 
   /**
@@ -16741,6 +16894,7 @@ export namespace Prisma {
     approvedBy: string | null
     approvedAt: Date | null
     rejectNote: string | null
+    recipientId: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -16759,6 +16913,7 @@ export namespace Prisma {
     approvedBy: string | null
     approvedAt: Date | null
     rejectNote: string | null
+    recipientId: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -16777,6 +16932,7 @@ export namespace Prisma {
     approvedBy: number
     approvedAt: number
     rejectNote: number
+    recipientId: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -16797,6 +16953,7 @@ export namespace Prisma {
     approvedBy?: true
     approvedAt?: true
     rejectNote?: true
+    recipientId?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -16815,6 +16972,7 @@ export namespace Prisma {
     approvedBy?: true
     approvedAt?: true
     rejectNote?: true
+    recipientId?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -16833,6 +16991,7 @@ export namespace Prisma {
     approvedBy?: true
     approvedAt?: true
     rejectNote?: true
+    recipientId?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -16924,6 +17083,7 @@ export namespace Prisma {
     approvedBy: string | null
     approvedAt: Date | null
     rejectNote: string | null
+    recipientId: string | null
     createdAt: Date
     updatedAt: Date
     _count: MessageCountAggregateOutputType | null
@@ -16959,10 +17119,12 @@ export namespace Prisma {
     approvedBy?: boolean
     approvedAt?: boolean
     rejectNote?: boolean
+    recipientId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     author?: boolean | UserDefaultArgs<ExtArgs>
     reads?: boolean | Message$readsArgs<ExtArgs>
+    recipient?: boolean | Message$recipientArgs<ExtArgs>
     _count?: boolean | MessageCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["message"]>
 
@@ -16980,9 +17142,11 @@ export namespace Prisma {
     approvedBy?: boolean
     approvedAt?: boolean
     rejectNote?: boolean
+    recipientId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     author?: boolean | UserDefaultArgs<ExtArgs>
+    recipient?: boolean | Message$recipientArgs<ExtArgs>
   }, ExtArgs["result"]["message"]>
 
   export type MessageSelectScalar = {
@@ -16999,6 +17163,7 @@ export namespace Prisma {
     approvedBy?: boolean
     approvedAt?: boolean
     rejectNote?: boolean
+    recipientId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
@@ -17006,10 +17171,12 @@ export namespace Prisma {
   export type MessageInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     author?: boolean | UserDefaultArgs<ExtArgs>
     reads?: boolean | Message$readsArgs<ExtArgs>
+    recipient?: boolean | Message$recipientArgs<ExtArgs>
     _count?: boolean | MessageCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type MessageIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     author?: boolean | UserDefaultArgs<ExtArgs>
+    recipient?: boolean | Message$recipientArgs<ExtArgs>
   }
 
   export type $MessagePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -17017,6 +17184,7 @@ export namespace Prisma {
     objects: {
       author: Prisma.$UserPayload<ExtArgs>
       reads: Prisma.$MessageReadPayload<ExtArgs>[]
+      recipient: Prisma.$UserPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -17032,6 +17200,7 @@ export namespace Prisma {
       approvedBy: string | null
       approvedAt: Date | null
       rejectNote: string | null
+      recipientId: string | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["message"]>
@@ -17400,6 +17569,7 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     author<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
     reads<T extends Message$readsArgs<ExtArgs> = {}>(args?: Subset<T, Message$readsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MessageReadPayload<ExtArgs>, T, "findMany"> | Null>
+    recipient<T extends Message$recipientArgs<ExtArgs> = {}>(args?: Subset<T, Message$recipientArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -17442,6 +17612,7 @@ export namespace Prisma {
     readonly approvedBy: FieldRef<"Message", 'String'>
     readonly approvedAt: FieldRef<"Message", 'DateTime'>
     readonly rejectNote: FieldRef<"Message", 'String'>
+    readonly recipientId: FieldRef<"Message", 'String'>
     readonly createdAt: FieldRef<"Message", 'DateTime'>
     readonly updatedAt: FieldRef<"Message", 'DateTime'>
   }
@@ -17779,6 +17950,21 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: MessageReadScalarFieldEnum | MessageReadScalarFieldEnum[]
+  }
+
+  /**
+   * Message.recipient
+   */
+  export type Message$recipientArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
   }
 
   /**
@@ -26929,6 +27115,1047 @@ export namespace Prisma {
 
 
   /**
+   * Model TeamJoinApplication
+   */
+
+  export type AggregateTeamJoinApplication = {
+    _count: TeamJoinApplicationCountAggregateOutputType | null
+    _min: TeamJoinApplicationMinAggregateOutputType | null
+    _max: TeamJoinApplicationMaxAggregateOutputType | null
+  }
+
+  export type TeamJoinApplicationMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    orgType: string | null
+    orgId: string | null
+    regionPath: string | null
+    regionLabel: string | null
+    reason: string | null
+    status: string | null
+    reviewNote: string | null
+    reviewerId: string | null
+    reviewedAt: Date | null
+    staffId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type TeamJoinApplicationMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    orgType: string | null
+    orgId: string | null
+    regionPath: string | null
+    regionLabel: string | null
+    reason: string | null
+    status: string | null
+    reviewNote: string | null
+    reviewerId: string | null
+    reviewedAt: Date | null
+    staffId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type TeamJoinApplicationCountAggregateOutputType = {
+    id: number
+    userId: number
+    orgType: number
+    orgId: number
+    regionPath: number
+    regionLabel: number
+    reason: number
+    status: number
+    reviewNote: number
+    reviewerId: number
+    reviewedAt: number
+    staffId: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type TeamJoinApplicationMinAggregateInputType = {
+    id?: true
+    userId?: true
+    orgType?: true
+    orgId?: true
+    regionPath?: true
+    regionLabel?: true
+    reason?: true
+    status?: true
+    reviewNote?: true
+    reviewerId?: true
+    reviewedAt?: true
+    staffId?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type TeamJoinApplicationMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    orgType?: true
+    orgId?: true
+    regionPath?: true
+    regionLabel?: true
+    reason?: true
+    status?: true
+    reviewNote?: true
+    reviewerId?: true
+    reviewedAt?: true
+    staffId?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type TeamJoinApplicationCountAggregateInputType = {
+    id?: true
+    userId?: true
+    orgType?: true
+    orgId?: true
+    regionPath?: true
+    regionLabel?: true
+    reason?: true
+    status?: true
+    reviewNote?: true
+    reviewerId?: true
+    reviewedAt?: true
+    staffId?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type TeamJoinApplicationAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which TeamJoinApplication to aggregate.
+     */
+    where?: TeamJoinApplicationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TeamJoinApplications to fetch.
+     */
+    orderBy?: TeamJoinApplicationOrderByWithRelationInput | TeamJoinApplicationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: TeamJoinApplicationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TeamJoinApplications from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TeamJoinApplications.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned TeamJoinApplications
+    **/
+    _count?: true | TeamJoinApplicationCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: TeamJoinApplicationMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: TeamJoinApplicationMaxAggregateInputType
+  }
+
+  export type GetTeamJoinApplicationAggregateType<T extends TeamJoinApplicationAggregateArgs> = {
+        [P in keyof T & keyof AggregateTeamJoinApplication]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateTeamJoinApplication[P]>
+      : GetScalarType<T[P], AggregateTeamJoinApplication[P]>
+  }
+
+
+
+
+  export type TeamJoinApplicationGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: TeamJoinApplicationWhereInput
+    orderBy?: TeamJoinApplicationOrderByWithAggregationInput | TeamJoinApplicationOrderByWithAggregationInput[]
+    by: TeamJoinApplicationScalarFieldEnum[] | TeamJoinApplicationScalarFieldEnum
+    having?: TeamJoinApplicationScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: TeamJoinApplicationCountAggregateInputType | true
+    _min?: TeamJoinApplicationMinAggregateInputType
+    _max?: TeamJoinApplicationMaxAggregateInputType
+  }
+
+  export type TeamJoinApplicationGroupByOutputType = {
+    id: string
+    userId: string
+    orgType: string
+    orgId: string
+    regionPath: string | null
+    regionLabel: string | null
+    reason: string
+    status: string
+    reviewNote: string | null
+    reviewerId: string | null
+    reviewedAt: Date | null
+    staffId: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: TeamJoinApplicationCountAggregateOutputType | null
+    _min: TeamJoinApplicationMinAggregateOutputType | null
+    _max: TeamJoinApplicationMaxAggregateOutputType | null
+  }
+
+  type GetTeamJoinApplicationGroupByPayload<T extends TeamJoinApplicationGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<TeamJoinApplicationGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof TeamJoinApplicationGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], TeamJoinApplicationGroupByOutputType[P]>
+            : GetScalarType<T[P], TeamJoinApplicationGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type TeamJoinApplicationSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    orgType?: boolean
+    orgId?: boolean
+    regionPath?: boolean
+    regionLabel?: boolean
+    reason?: boolean
+    status?: boolean
+    reviewNote?: boolean
+    reviewerId?: boolean
+    reviewedAt?: boolean
+    staffId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["teamJoinApplication"]>
+
+  export type TeamJoinApplicationSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    orgType?: boolean
+    orgId?: boolean
+    regionPath?: boolean
+    regionLabel?: boolean
+    reason?: boolean
+    status?: boolean
+    reviewNote?: boolean
+    reviewerId?: boolean
+    reviewedAt?: boolean
+    staffId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["teamJoinApplication"]>
+
+  export type TeamJoinApplicationSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    orgType?: boolean
+    orgId?: boolean
+    regionPath?: boolean
+    regionLabel?: boolean
+    reason?: boolean
+    status?: boolean
+    reviewNote?: boolean
+    reviewerId?: boolean
+    reviewedAt?: boolean
+    staffId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type TeamJoinApplicationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type TeamJoinApplicationIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $TeamJoinApplicationPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "TeamJoinApplication"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      userId: string
+      orgType: string
+      orgId: string
+      regionPath: string | null
+      regionLabel: string | null
+      reason: string
+      status: string
+      reviewNote: string | null
+      reviewerId: string | null
+      reviewedAt: Date | null
+      staffId: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["teamJoinApplication"]>
+    composites: {}
+  }
+
+  type TeamJoinApplicationGetPayload<S extends boolean | null | undefined | TeamJoinApplicationDefaultArgs> = $Result.GetResult<Prisma.$TeamJoinApplicationPayload, S>
+
+  type TeamJoinApplicationCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<TeamJoinApplicationFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: TeamJoinApplicationCountAggregateInputType | true
+    }
+
+  export interface TeamJoinApplicationDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['TeamJoinApplication'], meta: { name: 'TeamJoinApplication' } }
+    /**
+     * Find zero or one TeamJoinApplication that matches the filter.
+     * @param {TeamJoinApplicationFindUniqueArgs} args - Arguments to find a TeamJoinApplication
+     * @example
+     * // Get one TeamJoinApplication
+     * const teamJoinApplication = await prisma.teamJoinApplication.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends TeamJoinApplicationFindUniqueArgs>(args: SelectSubset<T, TeamJoinApplicationFindUniqueArgs<ExtArgs>>): Prisma__TeamJoinApplicationClient<$Result.GetResult<Prisma.$TeamJoinApplicationPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one TeamJoinApplication that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {TeamJoinApplicationFindUniqueOrThrowArgs} args - Arguments to find a TeamJoinApplication
+     * @example
+     * // Get one TeamJoinApplication
+     * const teamJoinApplication = await prisma.teamJoinApplication.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends TeamJoinApplicationFindUniqueOrThrowArgs>(args: SelectSubset<T, TeamJoinApplicationFindUniqueOrThrowArgs<ExtArgs>>): Prisma__TeamJoinApplicationClient<$Result.GetResult<Prisma.$TeamJoinApplicationPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first TeamJoinApplication that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TeamJoinApplicationFindFirstArgs} args - Arguments to find a TeamJoinApplication
+     * @example
+     * // Get one TeamJoinApplication
+     * const teamJoinApplication = await prisma.teamJoinApplication.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends TeamJoinApplicationFindFirstArgs>(args?: SelectSubset<T, TeamJoinApplicationFindFirstArgs<ExtArgs>>): Prisma__TeamJoinApplicationClient<$Result.GetResult<Prisma.$TeamJoinApplicationPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first TeamJoinApplication that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TeamJoinApplicationFindFirstOrThrowArgs} args - Arguments to find a TeamJoinApplication
+     * @example
+     * // Get one TeamJoinApplication
+     * const teamJoinApplication = await prisma.teamJoinApplication.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends TeamJoinApplicationFindFirstOrThrowArgs>(args?: SelectSubset<T, TeamJoinApplicationFindFirstOrThrowArgs<ExtArgs>>): Prisma__TeamJoinApplicationClient<$Result.GetResult<Prisma.$TeamJoinApplicationPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more TeamJoinApplications that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TeamJoinApplicationFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all TeamJoinApplications
+     * const teamJoinApplications = await prisma.teamJoinApplication.findMany()
+     * 
+     * // Get first 10 TeamJoinApplications
+     * const teamJoinApplications = await prisma.teamJoinApplication.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const teamJoinApplicationWithIdOnly = await prisma.teamJoinApplication.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends TeamJoinApplicationFindManyArgs>(args?: SelectSubset<T, TeamJoinApplicationFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TeamJoinApplicationPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a TeamJoinApplication.
+     * @param {TeamJoinApplicationCreateArgs} args - Arguments to create a TeamJoinApplication.
+     * @example
+     * // Create one TeamJoinApplication
+     * const TeamJoinApplication = await prisma.teamJoinApplication.create({
+     *   data: {
+     *     // ... data to create a TeamJoinApplication
+     *   }
+     * })
+     * 
+     */
+    create<T extends TeamJoinApplicationCreateArgs>(args: SelectSubset<T, TeamJoinApplicationCreateArgs<ExtArgs>>): Prisma__TeamJoinApplicationClient<$Result.GetResult<Prisma.$TeamJoinApplicationPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many TeamJoinApplications.
+     * @param {TeamJoinApplicationCreateManyArgs} args - Arguments to create many TeamJoinApplications.
+     * @example
+     * // Create many TeamJoinApplications
+     * const teamJoinApplication = await prisma.teamJoinApplication.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends TeamJoinApplicationCreateManyArgs>(args?: SelectSubset<T, TeamJoinApplicationCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many TeamJoinApplications and returns the data saved in the database.
+     * @param {TeamJoinApplicationCreateManyAndReturnArgs} args - Arguments to create many TeamJoinApplications.
+     * @example
+     * // Create many TeamJoinApplications
+     * const teamJoinApplication = await prisma.teamJoinApplication.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many TeamJoinApplications and only return the `id`
+     * const teamJoinApplicationWithIdOnly = await prisma.teamJoinApplication.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends TeamJoinApplicationCreateManyAndReturnArgs>(args?: SelectSubset<T, TeamJoinApplicationCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TeamJoinApplicationPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a TeamJoinApplication.
+     * @param {TeamJoinApplicationDeleteArgs} args - Arguments to delete one TeamJoinApplication.
+     * @example
+     * // Delete one TeamJoinApplication
+     * const TeamJoinApplication = await prisma.teamJoinApplication.delete({
+     *   where: {
+     *     // ... filter to delete one TeamJoinApplication
+     *   }
+     * })
+     * 
+     */
+    delete<T extends TeamJoinApplicationDeleteArgs>(args: SelectSubset<T, TeamJoinApplicationDeleteArgs<ExtArgs>>): Prisma__TeamJoinApplicationClient<$Result.GetResult<Prisma.$TeamJoinApplicationPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one TeamJoinApplication.
+     * @param {TeamJoinApplicationUpdateArgs} args - Arguments to update one TeamJoinApplication.
+     * @example
+     * // Update one TeamJoinApplication
+     * const teamJoinApplication = await prisma.teamJoinApplication.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends TeamJoinApplicationUpdateArgs>(args: SelectSubset<T, TeamJoinApplicationUpdateArgs<ExtArgs>>): Prisma__TeamJoinApplicationClient<$Result.GetResult<Prisma.$TeamJoinApplicationPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more TeamJoinApplications.
+     * @param {TeamJoinApplicationDeleteManyArgs} args - Arguments to filter TeamJoinApplications to delete.
+     * @example
+     * // Delete a few TeamJoinApplications
+     * const { count } = await prisma.teamJoinApplication.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends TeamJoinApplicationDeleteManyArgs>(args?: SelectSubset<T, TeamJoinApplicationDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more TeamJoinApplications.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TeamJoinApplicationUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many TeamJoinApplications
+     * const teamJoinApplication = await prisma.teamJoinApplication.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends TeamJoinApplicationUpdateManyArgs>(args: SelectSubset<T, TeamJoinApplicationUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one TeamJoinApplication.
+     * @param {TeamJoinApplicationUpsertArgs} args - Arguments to update or create a TeamJoinApplication.
+     * @example
+     * // Update or create a TeamJoinApplication
+     * const teamJoinApplication = await prisma.teamJoinApplication.upsert({
+     *   create: {
+     *     // ... data to create a TeamJoinApplication
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the TeamJoinApplication we want to update
+     *   }
+     * })
+     */
+    upsert<T extends TeamJoinApplicationUpsertArgs>(args: SelectSubset<T, TeamJoinApplicationUpsertArgs<ExtArgs>>): Prisma__TeamJoinApplicationClient<$Result.GetResult<Prisma.$TeamJoinApplicationPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of TeamJoinApplications.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TeamJoinApplicationCountArgs} args - Arguments to filter TeamJoinApplications to count.
+     * @example
+     * // Count the number of TeamJoinApplications
+     * const count = await prisma.teamJoinApplication.count({
+     *   where: {
+     *     // ... the filter for the TeamJoinApplications we want to count
+     *   }
+     * })
+    **/
+    count<T extends TeamJoinApplicationCountArgs>(
+      args?: Subset<T, TeamJoinApplicationCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], TeamJoinApplicationCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a TeamJoinApplication.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TeamJoinApplicationAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends TeamJoinApplicationAggregateArgs>(args: Subset<T, TeamJoinApplicationAggregateArgs>): Prisma.PrismaPromise<GetTeamJoinApplicationAggregateType<T>>
+
+    /**
+     * Group by TeamJoinApplication.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TeamJoinApplicationGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends TeamJoinApplicationGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: TeamJoinApplicationGroupByArgs['orderBy'] }
+        : { orderBy?: TeamJoinApplicationGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, TeamJoinApplicationGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetTeamJoinApplicationGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the TeamJoinApplication model
+   */
+  readonly fields: TeamJoinApplicationFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for TeamJoinApplication.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__TeamJoinApplicationClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the TeamJoinApplication model
+   */ 
+  interface TeamJoinApplicationFieldRefs {
+    readonly id: FieldRef<"TeamJoinApplication", 'String'>
+    readonly userId: FieldRef<"TeamJoinApplication", 'String'>
+    readonly orgType: FieldRef<"TeamJoinApplication", 'String'>
+    readonly orgId: FieldRef<"TeamJoinApplication", 'String'>
+    readonly regionPath: FieldRef<"TeamJoinApplication", 'String'>
+    readonly regionLabel: FieldRef<"TeamJoinApplication", 'String'>
+    readonly reason: FieldRef<"TeamJoinApplication", 'String'>
+    readonly status: FieldRef<"TeamJoinApplication", 'String'>
+    readonly reviewNote: FieldRef<"TeamJoinApplication", 'String'>
+    readonly reviewerId: FieldRef<"TeamJoinApplication", 'String'>
+    readonly reviewedAt: FieldRef<"TeamJoinApplication", 'DateTime'>
+    readonly staffId: FieldRef<"TeamJoinApplication", 'String'>
+    readonly createdAt: FieldRef<"TeamJoinApplication", 'DateTime'>
+    readonly updatedAt: FieldRef<"TeamJoinApplication", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * TeamJoinApplication findUnique
+   */
+  export type TeamJoinApplicationFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TeamJoinApplication
+     */
+    select?: TeamJoinApplicationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TeamJoinApplicationInclude<ExtArgs> | null
+    /**
+     * Filter, which TeamJoinApplication to fetch.
+     */
+    where: TeamJoinApplicationWhereUniqueInput
+  }
+
+  /**
+   * TeamJoinApplication findUniqueOrThrow
+   */
+  export type TeamJoinApplicationFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TeamJoinApplication
+     */
+    select?: TeamJoinApplicationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TeamJoinApplicationInclude<ExtArgs> | null
+    /**
+     * Filter, which TeamJoinApplication to fetch.
+     */
+    where: TeamJoinApplicationWhereUniqueInput
+  }
+
+  /**
+   * TeamJoinApplication findFirst
+   */
+  export type TeamJoinApplicationFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TeamJoinApplication
+     */
+    select?: TeamJoinApplicationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TeamJoinApplicationInclude<ExtArgs> | null
+    /**
+     * Filter, which TeamJoinApplication to fetch.
+     */
+    where?: TeamJoinApplicationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TeamJoinApplications to fetch.
+     */
+    orderBy?: TeamJoinApplicationOrderByWithRelationInput | TeamJoinApplicationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for TeamJoinApplications.
+     */
+    cursor?: TeamJoinApplicationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TeamJoinApplications from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TeamJoinApplications.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of TeamJoinApplications.
+     */
+    distinct?: TeamJoinApplicationScalarFieldEnum | TeamJoinApplicationScalarFieldEnum[]
+  }
+
+  /**
+   * TeamJoinApplication findFirstOrThrow
+   */
+  export type TeamJoinApplicationFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TeamJoinApplication
+     */
+    select?: TeamJoinApplicationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TeamJoinApplicationInclude<ExtArgs> | null
+    /**
+     * Filter, which TeamJoinApplication to fetch.
+     */
+    where?: TeamJoinApplicationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TeamJoinApplications to fetch.
+     */
+    orderBy?: TeamJoinApplicationOrderByWithRelationInput | TeamJoinApplicationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for TeamJoinApplications.
+     */
+    cursor?: TeamJoinApplicationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TeamJoinApplications from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TeamJoinApplications.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of TeamJoinApplications.
+     */
+    distinct?: TeamJoinApplicationScalarFieldEnum | TeamJoinApplicationScalarFieldEnum[]
+  }
+
+  /**
+   * TeamJoinApplication findMany
+   */
+  export type TeamJoinApplicationFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TeamJoinApplication
+     */
+    select?: TeamJoinApplicationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TeamJoinApplicationInclude<ExtArgs> | null
+    /**
+     * Filter, which TeamJoinApplications to fetch.
+     */
+    where?: TeamJoinApplicationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TeamJoinApplications to fetch.
+     */
+    orderBy?: TeamJoinApplicationOrderByWithRelationInput | TeamJoinApplicationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing TeamJoinApplications.
+     */
+    cursor?: TeamJoinApplicationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TeamJoinApplications from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TeamJoinApplications.
+     */
+    skip?: number
+    distinct?: TeamJoinApplicationScalarFieldEnum | TeamJoinApplicationScalarFieldEnum[]
+  }
+
+  /**
+   * TeamJoinApplication create
+   */
+  export type TeamJoinApplicationCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TeamJoinApplication
+     */
+    select?: TeamJoinApplicationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TeamJoinApplicationInclude<ExtArgs> | null
+    /**
+     * The data needed to create a TeamJoinApplication.
+     */
+    data: XOR<TeamJoinApplicationCreateInput, TeamJoinApplicationUncheckedCreateInput>
+  }
+
+  /**
+   * TeamJoinApplication createMany
+   */
+  export type TeamJoinApplicationCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many TeamJoinApplications.
+     */
+    data: TeamJoinApplicationCreateManyInput | TeamJoinApplicationCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * TeamJoinApplication createManyAndReturn
+   */
+  export type TeamJoinApplicationCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TeamJoinApplication
+     */
+    select?: TeamJoinApplicationSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many TeamJoinApplications.
+     */
+    data: TeamJoinApplicationCreateManyInput | TeamJoinApplicationCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TeamJoinApplicationIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * TeamJoinApplication update
+   */
+  export type TeamJoinApplicationUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TeamJoinApplication
+     */
+    select?: TeamJoinApplicationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TeamJoinApplicationInclude<ExtArgs> | null
+    /**
+     * The data needed to update a TeamJoinApplication.
+     */
+    data: XOR<TeamJoinApplicationUpdateInput, TeamJoinApplicationUncheckedUpdateInput>
+    /**
+     * Choose, which TeamJoinApplication to update.
+     */
+    where: TeamJoinApplicationWhereUniqueInput
+  }
+
+  /**
+   * TeamJoinApplication updateMany
+   */
+  export type TeamJoinApplicationUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update TeamJoinApplications.
+     */
+    data: XOR<TeamJoinApplicationUpdateManyMutationInput, TeamJoinApplicationUncheckedUpdateManyInput>
+    /**
+     * Filter which TeamJoinApplications to update
+     */
+    where?: TeamJoinApplicationWhereInput
+  }
+
+  /**
+   * TeamJoinApplication upsert
+   */
+  export type TeamJoinApplicationUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TeamJoinApplication
+     */
+    select?: TeamJoinApplicationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TeamJoinApplicationInclude<ExtArgs> | null
+    /**
+     * The filter to search for the TeamJoinApplication to update in case it exists.
+     */
+    where: TeamJoinApplicationWhereUniqueInput
+    /**
+     * In case the TeamJoinApplication found by the `where` argument doesn't exist, create a new TeamJoinApplication with this data.
+     */
+    create: XOR<TeamJoinApplicationCreateInput, TeamJoinApplicationUncheckedCreateInput>
+    /**
+     * In case the TeamJoinApplication was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<TeamJoinApplicationUpdateInput, TeamJoinApplicationUncheckedUpdateInput>
+  }
+
+  /**
+   * TeamJoinApplication delete
+   */
+  export type TeamJoinApplicationDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TeamJoinApplication
+     */
+    select?: TeamJoinApplicationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TeamJoinApplicationInclude<ExtArgs> | null
+    /**
+     * Filter which TeamJoinApplication to delete.
+     */
+    where: TeamJoinApplicationWhereUniqueInput
+  }
+
+  /**
+   * TeamJoinApplication deleteMany
+   */
+  export type TeamJoinApplicationDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which TeamJoinApplications to delete
+     */
+    where?: TeamJoinApplicationWhereInput
+  }
+
+  /**
+   * TeamJoinApplication without action
+   */
+  export type TeamJoinApplicationDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TeamJoinApplication
+     */
+    select?: TeamJoinApplicationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: TeamJoinApplicationInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model ProviderClient
    */
 
@@ -31100,6 +32327,7 @@ export namespace Prisma {
     approvedBy: 'approvedBy',
     approvedAt: 'approvedAt',
     rejectNote: 'rejectNote',
+    recipientId: 'recipientId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -31264,6 +32492,26 @@ export namespace Prisma {
   };
 
   export type OrgStaffScalarFieldEnum = (typeof OrgStaffScalarFieldEnum)[keyof typeof OrgStaffScalarFieldEnum]
+
+
+  export const TeamJoinApplicationScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    orgType: 'orgType',
+    orgId: 'orgId',
+    regionPath: 'regionPath',
+    regionLabel: 'regionLabel',
+    reason: 'reason',
+    status: 'status',
+    reviewNote: 'reviewNote',
+    reviewerId: 'reviewerId',
+    reviewedAt: 'reviewedAt',
+    staffId: 'staffId',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type TeamJoinApplicationScalarFieldEnum = (typeof TeamJoinApplicationScalarFieldEnum)[keyof typeof TeamJoinApplicationScalarFieldEnum]
 
 
   export const ProviderClientScalarFieldEnum: {
@@ -31736,12 +32984,14 @@ export namespace Prisma {
     ticketsTarget?: TicketListRelationFilter
     ticketsAssignee?: TicketListRelationFilter
     messagesAuthor?: MessageListRelationFilter
+    messagesReceived?: MessageListRelationFilter
     reviews?: ReviewListRelationFilter
     reviewsReceived?: ReviewListRelationFilter
     messageReads?: MessageReadListRelationFilter
     qualifications?: QualificationApplicationListRelationFilter
     walletLogs?: WalletLogListRelationFilter
     coupons?: UserCouponListRelationFilter
+    joinApplications?: TeamJoinApplicationListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -31788,12 +33038,14 @@ export namespace Prisma {
     ticketsTarget?: TicketOrderByRelationAggregateInput
     ticketsAssignee?: TicketOrderByRelationAggregateInput
     messagesAuthor?: MessageOrderByRelationAggregateInput
+    messagesReceived?: MessageOrderByRelationAggregateInput
     reviews?: ReviewOrderByRelationAggregateInput
     reviewsReceived?: ReviewOrderByRelationAggregateInput
     messageReads?: MessageReadOrderByRelationAggregateInput
     qualifications?: QualificationApplicationOrderByRelationAggregateInput
     walletLogs?: WalletLogOrderByRelationAggregateInput
     coupons?: UserCouponOrderByRelationAggregateInput
+    joinApplications?: TeamJoinApplicationOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -31843,12 +33095,14 @@ export namespace Prisma {
     ticketsTarget?: TicketListRelationFilter
     ticketsAssignee?: TicketListRelationFilter
     messagesAuthor?: MessageListRelationFilter
+    messagesReceived?: MessageListRelationFilter
     reviews?: ReviewListRelationFilter
     reviewsReceived?: ReviewListRelationFilter
     messageReads?: MessageReadListRelationFilter
     qualifications?: QualificationApplicationListRelationFilter
     walletLogs?: WalletLogListRelationFilter
     coupons?: UserCouponListRelationFilter
+    joinApplications?: TeamJoinApplicationListRelationFilter
   }, "id" | "phone" | "wxOpenid">
 
   export type UserOrderByWithAggregationInput = {
@@ -32809,10 +34063,12 @@ export namespace Prisma {
     approvedBy?: StringNullableFilter<"Message"> | string | null
     approvedAt?: DateTimeNullableFilter<"Message"> | Date | string | null
     rejectNote?: StringNullableFilter<"Message"> | string | null
+    recipientId?: StringNullableFilter<"Message"> | string | null
     createdAt?: DateTimeFilter<"Message"> | Date | string
     updatedAt?: DateTimeFilter<"Message"> | Date | string
     author?: XOR<UserRelationFilter, UserWhereInput>
     reads?: MessageReadListRelationFilter
+    recipient?: XOR<UserNullableRelationFilter, UserWhereInput> | null
   }
 
   export type MessageOrderByWithRelationInput = {
@@ -32829,10 +34085,12 @@ export namespace Prisma {
     approvedBy?: SortOrderInput | SortOrder
     approvedAt?: SortOrderInput | SortOrder
     rejectNote?: SortOrderInput | SortOrder
+    recipientId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     author?: UserOrderByWithRelationInput
     reads?: MessageReadOrderByRelationAggregateInput
+    recipient?: UserOrderByWithRelationInput
   }
 
   export type MessageWhereUniqueInput = Prisma.AtLeast<{
@@ -32852,10 +34110,12 @@ export namespace Prisma {
     approvedBy?: StringNullableFilter<"Message"> | string | null
     approvedAt?: DateTimeNullableFilter<"Message"> | Date | string | null
     rejectNote?: StringNullableFilter<"Message"> | string | null
+    recipientId?: StringNullableFilter<"Message"> | string | null
     createdAt?: DateTimeFilter<"Message"> | Date | string
     updatedAt?: DateTimeFilter<"Message"> | Date | string
     author?: XOR<UserRelationFilter, UserWhereInput>
     reads?: MessageReadListRelationFilter
+    recipient?: XOR<UserNullableRelationFilter, UserWhereInput> | null
   }, "id">
 
   export type MessageOrderByWithAggregationInput = {
@@ -32872,6 +34132,7 @@ export namespace Prisma {
     approvedBy?: SortOrderInput | SortOrder
     approvedAt?: SortOrderInput | SortOrder
     rejectNote?: SortOrderInput | SortOrder
+    recipientId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: MessageCountOrderByAggregateInput
@@ -32896,6 +34157,7 @@ export namespace Prisma {
     approvedBy?: StringNullableWithAggregatesFilter<"Message"> | string | null
     approvedAt?: DateTimeNullableWithAggregatesFilter<"Message"> | Date | string | null
     rejectNote?: StringNullableWithAggregatesFilter<"Message"> | string | null
+    recipientId?: StringNullableWithAggregatesFilter<"Message"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Message"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Message"> | Date | string
   }
@@ -33642,6 +34904,7 @@ export namespace Prisma {
   export type OrgStaffWhereUniqueInput = Prisma.AtLeast<{
     id?: string
     memberNo?: string
+    orgType_orgId_userId?: OrgStaffOrgTypeOrgIdUserIdCompoundUniqueInput
     AND?: OrgStaffWhereInput | OrgStaffWhereInput[]
     OR?: OrgStaffWhereInput[]
     NOT?: OrgStaffWhereInput | OrgStaffWhereInput[]
@@ -33659,7 +34922,7 @@ export namespace Prisma {
     personality?: StringNullableFilter<"OrgStaff"> | string | null
     createdAt?: DateTimeFilter<"OrgStaff"> | Date | string
     updatedAt?: DateTimeFilter<"OrgStaff"> | Date | string
-  }, "id" | "memberNo">
+  }, "id" | "memberNo" | "orgType_orgId_userId">
 
   export type OrgStaffOrderByWithAggregationInput = {
     id?: SortOrder
@@ -33703,6 +34966,106 @@ export namespace Prisma {
     personality?: StringNullableWithAggregatesFilter<"OrgStaff"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"OrgStaff"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"OrgStaff"> | Date | string
+  }
+
+  export type TeamJoinApplicationWhereInput = {
+    AND?: TeamJoinApplicationWhereInput | TeamJoinApplicationWhereInput[]
+    OR?: TeamJoinApplicationWhereInput[]
+    NOT?: TeamJoinApplicationWhereInput | TeamJoinApplicationWhereInput[]
+    id?: StringFilter<"TeamJoinApplication"> | string
+    userId?: StringFilter<"TeamJoinApplication"> | string
+    orgType?: StringFilter<"TeamJoinApplication"> | string
+    orgId?: StringFilter<"TeamJoinApplication"> | string
+    regionPath?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    regionLabel?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    reason?: StringFilter<"TeamJoinApplication"> | string
+    status?: StringFilter<"TeamJoinApplication"> | string
+    reviewNote?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    reviewerId?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    reviewedAt?: DateTimeNullableFilter<"TeamJoinApplication"> | Date | string | null
+    staffId?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    createdAt?: DateTimeFilter<"TeamJoinApplication"> | Date | string
+    updatedAt?: DateTimeFilter<"TeamJoinApplication"> | Date | string
+    user?: XOR<UserRelationFilter, UserWhereInput>
+  }
+
+  export type TeamJoinApplicationOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    orgType?: SortOrder
+    orgId?: SortOrder
+    regionPath?: SortOrderInput | SortOrder
+    regionLabel?: SortOrderInput | SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    reviewNote?: SortOrderInput | SortOrder
+    reviewerId?: SortOrderInput | SortOrder
+    reviewedAt?: SortOrderInput | SortOrder
+    staffId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    user?: UserOrderByWithRelationInput
+  }
+
+  export type TeamJoinApplicationWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: TeamJoinApplicationWhereInput | TeamJoinApplicationWhereInput[]
+    OR?: TeamJoinApplicationWhereInput[]
+    NOT?: TeamJoinApplicationWhereInput | TeamJoinApplicationWhereInput[]
+    userId?: StringFilter<"TeamJoinApplication"> | string
+    orgType?: StringFilter<"TeamJoinApplication"> | string
+    orgId?: StringFilter<"TeamJoinApplication"> | string
+    regionPath?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    regionLabel?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    reason?: StringFilter<"TeamJoinApplication"> | string
+    status?: StringFilter<"TeamJoinApplication"> | string
+    reviewNote?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    reviewerId?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    reviewedAt?: DateTimeNullableFilter<"TeamJoinApplication"> | Date | string | null
+    staffId?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    createdAt?: DateTimeFilter<"TeamJoinApplication"> | Date | string
+    updatedAt?: DateTimeFilter<"TeamJoinApplication"> | Date | string
+    user?: XOR<UserRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type TeamJoinApplicationOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    orgType?: SortOrder
+    orgId?: SortOrder
+    regionPath?: SortOrderInput | SortOrder
+    regionLabel?: SortOrderInput | SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    reviewNote?: SortOrderInput | SortOrder
+    reviewerId?: SortOrderInput | SortOrder
+    reviewedAt?: SortOrderInput | SortOrder
+    staffId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: TeamJoinApplicationCountOrderByAggregateInput
+    _max?: TeamJoinApplicationMaxOrderByAggregateInput
+    _min?: TeamJoinApplicationMinOrderByAggregateInput
+  }
+
+  export type TeamJoinApplicationScalarWhereWithAggregatesInput = {
+    AND?: TeamJoinApplicationScalarWhereWithAggregatesInput | TeamJoinApplicationScalarWhereWithAggregatesInput[]
+    OR?: TeamJoinApplicationScalarWhereWithAggregatesInput[]
+    NOT?: TeamJoinApplicationScalarWhereWithAggregatesInput | TeamJoinApplicationScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"TeamJoinApplication"> | string
+    userId?: StringWithAggregatesFilter<"TeamJoinApplication"> | string
+    orgType?: StringWithAggregatesFilter<"TeamJoinApplication"> | string
+    orgId?: StringWithAggregatesFilter<"TeamJoinApplication"> | string
+    regionPath?: StringNullableWithAggregatesFilter<"TeamJoinApplication"> | string | null
+    regionLabel?: StringNullableWithAggregatesFilter<"TeamJoinApplication"> | string | null
+    reason?: StringWithAggregatesFilter<"TeamJoinApplication"> | string
+    status?: StringWithAggregatesFilter<"TeamJoinApplication"> | string
+    reviewNote?: StringNullableWithAggregatesFilter<"TeamJoinApplication"> | string | null
+    reviewerId?: StringNullableWithAggregatesFilter<"TeamJoinApplication"> | string | null
+    reviewedAt?: DateTimeNullableWithAggregatesFilter<"TeamJoinApplication"> | Date | string | null
+    staffId?: StringNullableWithAggregatesFilter<"TeamJoinApplication"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"TeamJoinApplication"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"TeamJoinApplication"> | Date | string
   }
 
   export type ProviderClientWhereInput = {
@@ -34184,12 +35547,14 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -34234,12 +35599,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
@@ -34284,12 +35651,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -34334,12 +35703,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -35403,6 +36774,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutMessagesAuthorInput
     reads?: MessageReadCreateNestedManyWithoutMessageInput
+    recipient?: UserCreateNestedOneWithoutMessagesReceivedInput
   }
 
   export type MessageUncheckedCreateInput = {
@@ -35419,6 +36791,7 @@ export namespace Prisma {
     approvedBy?: string | null
     approvedAt?: Date | string | null
     rejectNote?: string | null
+    recipientId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     reads?: MessageReadUncheckedCreateNestedManyWithoutMessageInput
@@ -35441,6 +36814,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutMessagesAuthorNestedInput
     reads?: MessageReadUpdateManyWithoutMessageNestedInput
+    recipient?: UserUpdateOneWithoutMessagesReceivedNestedInput
   }
 
   export type MessageUncheckedUpdateInput = {
@@ -35457,6 +36831,7 @@ export namespace Prisma {
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
+    recipientId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     reads?: MessageReadUncheckedUpdateManyWithoutMessageNestedInput
@@ -35476,6 +36851,7 @@ export namespace Prisma {
     approvedBy?: string | null
     approvedAt?: Date | string | null
     rejectNote?: string | null
+    recipientId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -35511,6 +36887,7 @@ export namespace Prisma {
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
+    recipientId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -36435,6 +37812,124 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type TeamJoinApplicationCreateInput = {
+    id?: string
+    orgType: string
+    orgId: string
+    regionPath?: string | null
+    regionLabel?: string | null
+    reason: string
+    status?: string
+    reviewNote?: string | null
+    reviewerId?: string | null
+    reviewedAt?: Date | string | null
+    staffId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user: UserCreateNestedOneWithoutJoinApplicationsInput
+  }
+
+  export type TeamJoinApplicationUncheckedCreateInput = {
+    id?: string
+    userId: string
+    orgType: string
+    orgId: string
+    regionPath?: string | null
+    regionLabel?: string | null
+    reason: string
+    status?: string
+    reviewNote?: string | null
+    reviewerId?: string | null
+    reviewedAt?: Date | string | null
+    staffId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type TeamJoinApplicationUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orgType?: StringFieldUpdateOperationsInput | string
+    orgId?: StringFieldUpdateOperationsInput | string
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    regionLabel?: NullableStringFieldUpdateOperationsInput | string | null
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewerId?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    staffId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutJoinApplicationsNestedInput
+  }
+
+  export type TeamJoinApplicationUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    orgType?: StringFieldUpdateOperationsInput | string
+    orgId?: StringFieldUpdateOperationsInput | string
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    regionLabel?: NullableStringFieldUpdateOperationsInput | string | null
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewerId?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    staffId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TeamJoinApplicationCreateManyInput = {
+    id?: string
+    userId: string
+    orgType: string
+    orgId: string
+    regionPath?: string | null
+    regionLabel?: string | null
+    reason: string
+    status?: string
+    reviewNote?: string | null
+    reviewerId?: string | null
+    reviewedAt?: Date | string | null
+    staffId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type TeamJoinApplicationUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orgType?: StringFieldUpdateOperationsInput | string
+    orgId?: StringFieldUpdateOperationsInput | string
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    regionLabel?: NullableStringFieldUpdateOperationsInput | string | null
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewerId?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    staffId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TeamJoinApplicationUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    orgType?: StringFieldUpdateOperationsInput | string
+    orgId?: StringFieldUpdateOperationsInput | string
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    regionLabel?: NullableStringFieldUpdateOperationsInput | string | null
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewerId?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    staffId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type ProviderClientCreateInput = {
     id?: string
     providerId: string
@@ -37180,6 +38675,12 @@ export namespace Prisma {
     none?: UserCouponWhereInput
   }
 
+  export type TeamJoinApplicationListRelationFilter = {
+    every?: TeamJoinApplicationWhereInput
+    some?: TeamJoinApplicationWhereInput
+    none?: TeamJoinApplicationWhereInput
+  }
+
   export type ProjectOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -37229,6 +38730,10 @@ export namespace Prisma {
   }
 
   export type UserCouponOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type TeamJoinApplicationOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -38153,6 +39658,7 @@ export namespace Prisma {
     approvedBy?: SortOrder
     approvedAt?: SortOrder
     rejectNote?: SortOrder
+    recipientId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -38171,6 +39677,7 @@ export namespace Prisma {
     approvedBy?: SortOrder
     approvedAt?: SortOrder
     rejectNote?: SortOrder
+    recipientId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -38189,6 +39696,7 @@ export namespace Prisma {
     approvedBy?: SortOrder
     approvedAt?: SortOrder
     rejectNote?: SortOrder
+    recipientId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -38670,6 +40178,12 @@ export namespace Prisma {
     deposit?: SortOrder
   }
 
+  export type OrgStaffOrgTypeOrgIdUserIdCompoundUniqueInput = {
+    orgType: string
+    orgId: string
+    userId: string
+  }
+
   export type OrgStaffCountOrderByAggregateInput = {
     id?: SortOrder
     orgType?: SortOrder
@@ -38719,6 +40233,57 @@ export namespace Prisma {
     staffRole?: SortOrder
     dataScope?: SortOrder
     personality?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type TeamJoinApplicationCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    orgType?: SortOrder
+    orgId?: SortOrder
+    regionPath?: SortOrder
+    regionLabel?: SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    reviewNote?: SortOrder
+    reviewerId?: SortOrder
+    reviewedAt?: SortOrder
+    staffId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type TeamJoinApplicationMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    orgType?: SortOrder
+    orgId?: SortOrder
+    regionPath?: SortOrder
+    regionLabel?: SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    reviewNote?: SortOrder
+    reviewerId?: SortOrder
+    reviewedAt?: SortOrder
+    staffId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type TeamJoinApplicationMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    orgType?: SortOrder
+    orgId?: SortOrder
+    regionPath?: SortOrder
+    regionLabel?: SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    reviewNote?: SortOrder
+    reviewerId?: SortOrder
+    reviewedAt?: SortOrder
+    staffId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -39137,6 +40702,13 @@ export namespace Prisma {
     connect?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
   }
 
+  export type MessageCreateNestedManyWithoutRecipientInput = {
+    create?: XOR<MessageCreateWithoutRecipientInput, MessageUncheckedCreateWithoutRecipientInput> | MessageCreateWithoutRecipientInput[] | MessageUncheckedCreateWithoutRecipientInput[]
+    connectOrCreate?: MessageCreateOrConnectWithoutRecipientInput | MessageCreateOrConnectWithoutRecipientInput[]
+    createMany?: MessageCreateManyRecipientInputEnvelope
+    connect?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+  }
+
   export type ReviewCreateNestedManyWithoutUserInput = {
     create?: XOR<ReviewCreateWithoutUserInput, ReviewUncheckedCreateWithoutUserInput> | ReviewCreateWithoutUserInput[] | ReviewUncheckedCreateWithoutUserInput[]
     connectOrCreate?: ReviewCreateOrConnectWithoutUserInput | ReviewCreateOrConnectWithoutUserInput[]
@@ -39177,6 +40749,13 @@ export namespace Prisma {
     connectOrCreate?: UserCouponCreateOrConnectWithoutUserInput | UserCouponCreateOrConnectWithoutUserInput[]
     createMany?: UserCouponCreateManyUserInputEnvelope
     connect?: UserCouponWhereUniqueInput | UserCouponWhereUniqueInput[]
+  }
+
+  export type TeamJoinApplicationCreateNestedManyWithoutUserInput = {
+    create?: XOR<TeamJoinApplicationCreateWithoutUserInput, TeamJoinApplicationUncheckedCreateWithoutUserInput> | TeamJoinApplicationCreateWithoutUserInput[] | TeamJoinApplicationUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: TeamJoinApplicationCreateOrConnectWithoutUserInput | TeamJoinApplicationCreateOrConnectWithoutUserInput[]
+    createMany?: TeamJoinApplicationCreateManyUserInputEnvelope
+    connect?: TeamJoinApplicationWhereUniqueInput | TeamJoinApplicationWhereUniqueInput[]
   }
 
   export type ProjectUncheckedCreateNestedManyWithoutUserInput = {
@@ -39262,6 +40841,13 @@ export namespace Prisma {
     connect?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
   }
 
+  export type MessageUncheckedCreateNestedManyWithoutRecipientInput = {
+    create?: XOR<MessageCreateWithoutRecipientInput, MessageUncheckedCreateWithoutRecipientInput> | MessageCreateWithoutRecipientInput[] | MessageUncheckedCreateWithoutRecipientInput[]
+    connectOrCreate?: MessageCreateOrConnectWithoutRecipientInput | MessageCreateOrConnectWithoutRecipientInput[]
+    createMany?: MessageCreateManyRecipientInputEnvelope
+    connect?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+  }
+
   export type ReviewUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<ReviewCreateWithoutUserInput, ReviewUncheckedCreateWithoutUserInput> | ReviewCreateWithoutUserInput[] | ReviewUncheckedCreateWithoutUserInput[]
     connectOrCreate?: ReviewCreateOrConnectWithoutUserInput | ReviewCreateOrConnectWithoutUserInput[]
@@ -39302,6 +40888,13 @@ export namespace Prisma {
     connectOrCreate?: UserCouponCreateOrConnectWithoutUserInput | UserCouponCreateOrConnectWithoutUserInput[]
     createMany?: UserCouponCreateManyUserInputEnvelope
     connect?: UserCouponWhereUniqueInput | UserCouponWhereUniqueInput[]
+  }
+
+  export type TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<TeamJoinApplicationCreateWithoutUserInput, TeamJoinApplicationUncheckedCreateWithoutUserInput> | TeamJoinApplicationCreateWithoutUserInput[] | TeamJoinApplicationUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: TeamJoinApplicationCreateOrConnectWithoutUserInput | TeamJoinApplicationCreateOrConnectWithoutUserInput[]
+    createMany?: TeamJoinApplicationCreateManyUserInputEnvelope
+    connect?: TeamJoinApplicationWhereUniqueInput | TeamJoinApplicationWhereUniqueInput[]
   }
 
   export type EnumRealNameStatusFieldUpdateOperationsInput = {
@@ -39522,6 +41115,20 @@ export namespace Prisma {
     deleteMany?: MessageScalarWhereInput | MessageScalarWhereInput[]
   }
 
+  export type MessageUpdateManyWithoutRecipientNestedInput = {
+    create?: XOR<MessageCreateWithoutRecipientInput, MessageUncheckedCreateWithoutRecipientInput> | MessageCreateWithoutRecipientInput[] | MessageUncheckedCreateWithoutRecipientInput[]
+    connectOrCreate?: MessageCreateOrConnectWithoutRecipientInput | MessageCreateOrConnectWithoutRecipientInput[]
+    upsert?: MessageUpsertWithWhereUniqueWithoutRecipientInput | MessageUpsertWithWhereUniqueWithoutRecipientInput[]
+    createMany?: MessageCreateManyRecipientInputEnvelope
+    set?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    disconnect?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    delete?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    connect?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    update?: MessageUpdateWithWhereUniqueWithoutRecipientInput | MessageUpdateWithWhereUniqueWithoutRecipientInput[]
+    updateMany?: MessageUpdateManyWithWhereWithoutRecipientInput | MessageUpdateManyWithWhereWithoutRecipientInput[]
+    deleteMany?: MessageScalarWhereInput | MessageScalarWhereInput[]
+  }
+
   export type ReviewUpdateManyWithoutUserNestedInput = {
     create?: XOR<ReviewCreateWithoutUserInput, ReviewUncheckedCreateWithoutUserInput> | ReviewCreateWithoutUserInput[] | ReviewUncheckedCreateWithoutUserInput[]
     connectOrCreate?: ReviewCreateOrConnectWithoutUserInput | ReviewCreateOrConnectWithoutUserInput[]
@@ -39604,6 +41211,20 @@ export namespace Prisma {
     update?: UserCouponUpdateWithWhereUniqueWithoutUserInput | UserCouponUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: UserCouponUpdateManyWithWhereWithoutUserInput | UserCouponUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: UserCouponScalarWhereInput | UserCouponScalarWhereInput[]
+  }
+
+  export type TeamJoinApplicationUpdateManyWithoutUserNestedInput = {
+    create?: XOR<TeamJoinApplicationCreateWithoutUserInput, TeamJoinApplicationUncheckedCreateWithoutUserInput> | TeamJoinApplicationCreateWithoutUserInput[] | TeamJoinApplicationUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: TeamJoinApplicationCreateOrConnectWithoutUserInput | TeamJoinApplicationCreateOrConnectWithoutUserInput[]
+    upsert?: TeamJoinApplicationUpsertWithWhereUniqueWithoutUserInput | TeamJoinApplicationUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: TeamJoinApplicationCreateManyUserInputEnvelope
+    set?: TeamJoinApplicationWhereUniqueInput | TeamJoinApplicationWhereUniqueInput[]
+    disconnect?: TeamJoinApplicationWhereUniqueInput | TeamJoinApplicationWhereUniqueInput[]
+    delete?: TeamJoinApplicationWhereUniqueInput | TeamJoinApplicationWhereUniqueInput[]
+    connect?: TeamJoinApplicationWhereUniqueInput | TeamJoinApplicationWhereUniqueInput[]
+    update?: TeamJoinApplicationUpdateWithWhereUniqueWithoutUserInput | TeamJoinApplicationUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: TeamJoinApplicationUpdateManyWithWhereWithoutUserInput | TeamJoinApplicationUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: TeamJoinApplicationScalarWhereInput | TeamJoinApplicationScalarWhereInput[]
   }
 
   export type ProjectUncheckedUpdateManyWithoutUserNestedInput = {
@@ -39770,6 +41391,20 @@ export namespace Prisma {
     deleteMany?: MessageScalarWhereInput | MessageScalarWhereInput[]
   }
 
+  export type MessageUncheckedUpdateManyWithoutRecipientNestedInput = {
+    create?: XOR<MessageCreateWithoutRecipientInput, MessageUncheckedCreateWithoutRecipientInput> | MessageCreateWithoutRecipientInput[] | MessageUncheckedCreateWithoutRecipientInput[]
+    connectOrCreate?: MessageCreateOrConnectWithoutRecipientInput | MessageCreateOrConnectWithoutRecipientInput[]
+    upsert?: MessageUpsertWithWhereUniqueWithoutRecipientInput | MessageUpsertWithWhereUniqueWithoutRecipientInput[]
+    createMany?: MessageCreateManyRecipientInputEnvelope
+    set?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    disconnect?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    delete?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    connect?: MessageWhereUniqueInput | MessageWhereUniqueInput[]
+    update?: MessageUpdateWithWhereUniqueWithoutRecipientInput | MessageUpdateWithWhereUniqueWithoutRecipientInput[]
+    updateMany?: MessageUpdateManyWithWhereWithoutRecipientInput | MessageUpdateManyWithWhereWithoutRecipientInput[]
+    deleteMany?: MessageScalarWhereInput | MessageScalarWhereInput[]
+  }
+
   export type ReviewUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<ReviewCreateWithoutUserInput, ReviewUncheckedCreateWithoutUserInput> | ReviewCreateWithoutUserInput[] | ReviewUncheckedCreateWithoutUserInput[]
     connectOrCreate?: ReviewCreateOrConnectWithoutUserInput | ReviewCreateOrConnectWithoutUserInput[]
@@ -39852,6 +41487,20 @@ export namespace Prisma {
     update?: UserCouponUpdateWithWhereUniqueWithoutUserInput | UserCouponUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: UserCouponUpdateManyWithWhereWithoutUserInput | UserCouponUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: UserCouponScalarWhereInput | UserCouponScalarWhereInput[]
+  }
+
+  export type TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<TeamJoinApplicationCreateWithoutUserInput, TeamJoinApplicationUncheckedCreateWithoutUserInput> | TeamJoinApplicationCreateWithoutUserInput[] | TeamJoinApplicationUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: TeamJoinApplicationCreateOrConnectWithoutUserInput | TeamJoinApplicationCreateOrConnectWithoutUserInput[]
+    upsert?: TeamJoinApplicationUpsertWithWhereUniqueWithoutUserInput | TeamJoinApplicationUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: TeamJoinApplicationCreateManyUserInputEnvelope
+    set?: TeamJoinApplicationWhereUniqueInput | TeamJoinApplicationWhereUniqueInput[]
+    disconnect?: TeamJoinApplicationWhereUniqueInput | TeamJoinApplicationWhereUniqueInput[]
+    delete?: TeamJoinApplicationWhereUniqueInput | TeamJoinApplicationWhereUniqueInput[]
+    connect?: TeamJoinApplicationWhereUniqueInput | TeamJoinApplicationWhereUniqueInput[]
+    update?: TeamJoinApplicationUpdateWithWhereUniqueWithoutUserInput | TeamJoinApplicationUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: TeamJoinApplicationUpdateManyWithWhereWithoutUserInput | TeamJoinApplicationUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: TeamJoinApplicationScalarWhereInput | TeamJoinApplicationScalarWhereInput[]
   }
 
   export type UserCreateNestedOneWithoutProjectsInput = {
@@ -40341,6 +41990,12 @@ export namespace Prisma {
     connect?: MessageReadWhereUniqueInput | MessageReadWhereUniqueInput[]
   }
 
+  export type UserCreateNestedOneWithoutMessagesReceivedInput = {
+    create?: XOR<UserCreateWithoutMessagesReceivedInput, UserUncheckedCreateWithoutMessagesReceivedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutMessagesReceivedInput
+    connect?: UserWhereUniqueInput
+  }
+
   export type MessageReadUncheckedCreateNestedManyWithoutMessageInput = {
     create?: XOR<MessageReadCreateWithoutMessageInput, MessageReadUncheckedCreateWithoutMessageInput> | MessageReadCreateWithoutMessageInput[] | MessageReadUncheckedCreateWithoutMessageInput[]
     connectOrCreate?: MessageReadCreateOrConnectWithoutMessageInput | MessageReadCreateOrConnectWithoutMessageInput[]
@@ -40380,6 +42035,16 @@ export namespace Prisma {
     update?: MessageReadUpdateWithWhereUniqueWithoutMessageInput | MessageReadUpdateWithWhereUniqueWithoutMessageInput[]
     updateMany?: MessageReadUpdateManyWithWhereWithoutMessageInput | MessageReadUpdateManyWithWhereWithoutMessageInput[]
     deleteMany?: MessageReadScalarWhereInput | MessageReadScalarWhereInput[]
+  }
+
+  export type UserUpdateOneWithoutMessagesReceivedNestedInput = {
+    create?: XOR<UserCreateWithoutMessagesReceivedInput, UserUncheckedCreateWithoutMessagesReceivedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutMessagesReceivedInput
+    upsert?: UserUpsertWithoutMessagesReceivedInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutMessagesReceivedInput, UserUpdateWithoutMessagesReceivedInput>, UserUncheckedUpdateWithoutMessagesReceivedInput>
   }
 
   export type MessageReadUncheckedUpdateManyWithoutMessageNestedInput = {
@@ -40620,6 +42285,20 @@ export namespace Prisma {
   export type OrgStaffUpdatefuncPermsInput = {
     set?: string[]
     push?: string | string[]
+  }
+
+  export type UserCreateNestedOneWithoutJoinApplicationsInput = {
+    create?: XOR<UserCreateWithoutJoinApplicationsInput, UserUncheckedCreateWithoutJoinApplicationsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutJoinApplicationsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserUpdateOneRequiredWithoutJoinApplicationsNestedInput = {
+    create?: XOR<UserCreateWithoutJoinApplicationsInput, UserUncheckedCreateWithoutJoinApplicationsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutJoinApplicationsInput
+    upsert?: UserUpsertWithoutJoinApplicationsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutJoinApplicationsInput, UserUpdateWithoutJoinApplicationsInput>, UserUncheckedUpdateWithoutJoinApplicationsInput>
   }
 
   export type ProviderClientCreatetagsInput = {
@@ -41209,12 +42888,14 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutRegionInput = {
@@ -41258,12 +42939,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutRegionInput = {
@@ -41709,12 +43392,14 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutAgentOfInput = {
@@ -41758,12 +43443,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutAgentOfInput = {
@@ -41812,12 +43499,14 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutAgentInput = {
@@ -41861,12 +43550,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutAgentInput = {
@@ -42033,6 +43724,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     reads?: MessageReadCreateNestedManyWithoutMessageInput
+    recipient?: UserCreateNestedOneWithoutMessagesReceivedInput
   }
 
   export type MessageUncheckedCreateWithoutAuthorInput = {
@@ -42048,6 +43740,7 @@ export namespace Prisma {
     approvedBy?: string | null
     approvedAt?: Date | string | null
     rejectNote?: string | null
+    recipientId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     reads?: MessageReadUncheckedCreateNestedManyWithoutMessageInput
@@ -42060,6 +43753,54 @@ export namespace Prisma {
 
   export type MessageCreateManyAuthorInputEnvelope = {
     data: MessageCreateManyAuthorInput | MessageCreateManyAuthorInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type MessageCreateWithoutRecipientInput = {
+    id?: string
+    type: $Enums.MessageType
+    scope: $Enums.MessageScope
+    title: string
+    content: string
+    status?: $Enums.MessageStatus
+    authorRole: $Enums.Role
+    regionPath?: string | null
+    targetRole?: $Enums.Role | null
+    approvedBy?: string | null
+    approvedAt?: Date | string | null
+    rejectNote?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    author: UserCreateNestedOneWithoutMessagesAuthorInput
+    reads?: MessageReadCreateNestedManyWithoutMessageInput
+  }
+
+  export type MessageUncheckedCreateWithoutRecipientInput = {
+    id?: string
+    type: $Enums.MessageType
+    scope: $Enums.MessageScope
+    title: string
+    content: string
+    status?: $Enums.MessageStatus
+    authorId: string
+    authorRole: $Enums.Role
+    regionPath?: string | null
+    targetRole?: $Enums.Role | null
+    approvedBy?: string | null
+    approvedAt?: Date | string | null
+    rejectNote?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    reads?: MessageReadUncheckedCreateNestedManyWithoutMessageInput
+  }
+
+  export type MessageCreateOrConnectWithoutRecipientInput = {
+    where: MessageWhereUniqueInput
+    create: XOR<MessageCreateWithoutRecipientInput, MessageUncheckedCreateWithoutRecipientInput>
+  }
+
+  export type MessageCreateManyRecipientInputEnvelope = {
+    data: MessageCreateManyRecipientInput | MessageCreateManyRecipientInput[]
     skipDuplicates?: boolean
   }
 
@@ -42260,6 +44001,48 @@ export namespace Prisma {
 
   export type UserCouponCreateManyUserInputEnvelope = {
     data: UserCouponCreateManyUserInput | UserCouponCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type TeamJoinApplicationCreateWithoutUserInput = {
+    id?: string
+    orgType: string
+    orgId: string
+    regionPath?: string | null
+    regionLabel?: string | null
+    reason: string
+    status?: string
+    reviewNote?: string | null
+    reviewerId?: string | null
+    reviewedAt?: Date | string | null
+    staffId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type TeamJoinApplicationUncheckedCreateWithoutUserInput = {
+    id?: string
+    orgType: string
+    orgId: string
+    regionPath?: string | null
+    regionLabel?: string | null
+    reason: string
+    status?: string
+    reviewNote?: string | null
+    reviewerId?: string | null
+    reviewedAt?: Date | string | null
+    staffId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type TeamJoinApplicationCreateOrConnectWithoutUserInput = {
+    where: TeamJoinApplicationWhereUniqueInput
+    create: XOR<TeamJoinApplicationCreateWithoutUserInput, TeamJoinApplicationUncheckedCreateWithoutUserInput>
+  }
+
+  export type TeamJoinApplicationCreateManyUserInputEnvelope = {
+    data: TeamJoinApplicationCreateManyUserInput | TeamJoinApplicationCreateManyUserInput[]
     skipDuplicates?: boolean
   }
 
@@ -42579,12 +44362,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAgentOfInput = {
@@ -42628,12 +44413,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithWhereUniqueWithoutAgentInput = {
@@ -42755,8 +44542,25 @@ export namespace Prisma {
     approvedBy?: StringNullableFilter<"Message"> | string | null
     approvedAt?: DateTimeNullableFilter<"Message"> | Date | string | null
     rejectNote?: StringNullableFilter<"Message"> | string | null
+    recipientId?: StringNullableFilter<"Message"> | string | null
     createdAt?: DateTimeFilter<"Message"> | Date | string
     updatedAt?: DateTimeFilter<"Message"> | Date | string
+  }
+
+  export type MessageUpsertWithWhereUniqueWithoutRecipientInput = {
+    where: MessageWhereUniqueInput
+    update: XOR<MessageUpdateWithoutRecipientInput, MessageUncheckedUpdateWithoutRecipientInput>
+    create: XOR<MessageCreateWithoutRecipientInput, MessageUncheckedCreateWithoutRecipientInput>
+  }
+
+  export type MessageUpdateWithWhereUniqueWithoutRecipientInput = {
+    where: MessageWhereUniqueInput
+    data: XOR<MessageUpdateWithoutRecipientInput, MessageUncheckedUpdateWithoutRecipientInput>
+  }
+
+  export type MessageUpdateManyWithWhereWithoutRecipientInput = {
+    where: MessageScalarWhereInput
+    data: XOR<MessageUpdateManyMutationInput, MessageUncheckedUpdateManyWithoutRecipientInput>
   }
 
   export type ReviewUpsertWithWhereUniqueWithoutUserInput = {
@@ -42932,6 +44736,42 @@ export namespace Prisma {
     usedAt?: DateTimeNullableFilter<"UserCoupon"> | Date | string | null
   }
 
+  export type TeamJoinApplicationUpsertWithWhereUniqueWithoutUserInput = {
+    where: TeamJoinApplicationWhereUniqueInput
+    update: XOR<TeamJoinApplicationUpdateWithoutUserInput, TeamJoinApplicationUncheckedUpdateWithoutUserInput>
+    create: XOR<TeamJoinApplicationCreateWithoutUserInput, TeamJoinApplicationUncheckedCreateWithoutUserInput>
+  }
+
+  export type TeamJoinApplicationUpdateWithWhereUniqueWithoutUserInput = {
+    where: TeamJoinApplicationWhereUniqueInput
+    data: XOR<TeamJoinApplicationUpdateWithoutUserInput, TeamJoinApplicationUncheckedUpdateWithoutUserInput>
+  }
+
+  export type TeamJoinApplicationUpdateManyWithWhereWithoutUserInput = {
+    where: TeamJoinApplicationScalarWhereInput
+    data: XOR<TeamJoinApplicationUpdateManyMutationInput, TeamJoinApplicationUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type TeamJoinApplicationScalarWhereInput = {
+    AND?: TeamJoinApplicationScalarWhereInput | TeamJoinApplicationScalarWhereInput[]
+    OR?: TeamJoinApplicationScalarWhereInput[]
+    NOT?: TeamJoinApplicationScalarWhereInput | TeamJoinApplicationScalarWhereInput[]
+    id?: StringFilter<"TeamJoinApplication"> | string
+    userId?: StringFilter<"TeamJoinApplication"> | string
+    orgType?: StringFilter<"TeamJoinApplication"> | string
+    orgId?: StringFilter<"TeamJoinApplication"> | string
+    regionPath?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    regionLabel?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    reason?: StringFilter<"TeamJoinApplication"> | string
+    status?: StringFilter<"TeamJoinApplication"> | string
+    reviewNote?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    reviewerId?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    reviewedAt?: DateTimeNullableFilter<"TeamJoinApplication"> | Date | string | null
+    staffId?: StringNullableFilter<"TeamJoinApplication"> | string | null
+    createdAt?: DateTimeFilter<"TeamJoinApplication"> | Date | string
+    updatedAt?: DateTimeFilter<"TeamJoinApplication"> | Date | string
+  }
+
   export type UserCreateWithoutProjectsInput = {
     id?: string
     phone?: string | null
@@ -42973,12 +44813,14 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutProjectsInput = {
@@ -43022,12 +44864,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutProjectsInput = {
@@ -43166,12 +45010,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutProjectsInput = {
@@ -43215,12 +45061,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type TemplateUpsertWithoutProjectsInput = {
@@ -43353,12 +45201,14 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutTemplatesInput = {
@@ -43402,12 +45252,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutTemplatesInput = {
@@ -43577,12 +45429,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutTemplatesInput = {
@@ -43626,12 +45480,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type TemplateOrderUpsertWithWhereUniqueWithoutTemplateInput = {
@@ -43803,12 +45659,14 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutAssetsInput = {
@@ -43852,12 +45710,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutAssetsInput = {
@@ -43917,12 +45777,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAssetsInput = {
@@ -43966,12 +45828,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutOrdersInput = {
@@ -44015,12 +45879,14 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutOrdersInput = {
@@ -44064,12 +45930,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutOrdersInput = {
@@ -44186,12 +46054,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutOrdersInput = {
@@ -44235,12 +46105,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type TemplateUpsertWithoutOrdersInput = {
@@ -44347,12 +46219,14 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutProviderWalletInput = {
@@ -44396,12 +46270,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutProviderWalletInput = {
@@ -44491,12 +46367,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutProviderWalletInput = {
@@ -44540,12 +46418,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type WithdrawalUpsertWithWhereUniqueWithoutWalletInput = {
@@ -44605,12 +46485,14 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutWithdrawalsInput = {
@@ -44654,12 +46536,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutWithdrawalsInput = {
@@ -44744,12 +46628,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWithdrawalsInput = {
@@ -44793,12 +46679,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type ProviderWalletUpsertWithoutWithdrawalsInput = {
@@ -44930,12 +46818,14 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutAppealsInput = {
@@ -44979,12 +46869,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutAppealsInput = {
@@ -45107,12 +46999,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAppealsInput = {
@@ -45156,12 +47050,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutTicketsReporterInput = {
@@ -45205,12 +47101,14 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutTicketsReporterInput = {
@@ -45254,12 +47152,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutTicketsReporterInput = {
@@ -45308,12 +47208,14 @@ export namespace Prisma {
     ticketsReporter?: TicketCreateNestedManyWithoutReporterInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutTicketsTargetInput = {
@@ -45357,12 +47259,14 @@ export namespace Prisma {
     ticketsReporter?: TicketUncheckedCreateNestedManyWithoutReporterInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutTicketsTargetInput = {
@@ -45411,12 +47315,14 @@ export namespace Prisma {
     ticketsReporter?: TicketCreateNestedManyWithoutReporterInput
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutTicketsAssigneeInput = {
@@ -45460,12 +47366,14 @@ export namespace Prisma {
     ticketsReporter?: TicketUncheckedCreateNestedManyWithoutReporterInput
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutTicketsAssigneeInput = {
@@ -45525,12 +47433,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutTicketsReporterInput = {
@@ -45574,12 +47484,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutTicketsTargetInput = {
@@ -45634,12 +47546,14 @@ export namespace Prisma {
     ticketsReporter?: TicketUpdateManyWithoutReporterNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutTicketsTargetInput = {
@@ -45683,12 +47597,14 @@ export namespace Prisma {
     ticketsReporter?: TicketUncheckedUpdateManyWithoutReporterNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutTicketsAssigneeInput = {
@@ -45743,12 +47659,14 @@ export namespace Prisma {
     ticketsReporter?: TicketUpdateManyWithoutReporterNestedInput
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutTicketsAssigneeInput = {
@@ -45792,12 +47710,14 @@ export namespace Prisma {
     ticketsReporter?: TicketUncheckedUpdateManyWithoutReporterNestedInput
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutMessagesAuthorInput = {
@@ -45841,12 +47761,14 @@ export namespace Prisma {
     ticketsReporter?: TicketCreateNestedManyWithoutReporterInput
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutMessagesAuthorInput = {
@@ -45890,12 +47812,14 @@ export namespace Prisma {
     ticketsReporter?: TicketUncheckedCreateNestedManyWithoutReporterInput
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutMessagesAuthorInput = {
@@ -45923,6 +47847,113 @@ export namespace Prisma {
   export type MessageReadCreateManyMessageInputEnvelope = {
     data: MessageReadCreateManyMessageInput | MessageReadCreateManyMessageInput[]
     skipDuplicates?: boolean
+  }
+
+  export type UserCreateWithoutMessagesReceivedInput = {
+    id?: string
+    phone?: string | null
+    wxOpenid?: string | null
+    password?: string | null
+    nickname?: string | null
+    avatar?: string | null
+    realName?: string | null
+    idCard?: string | null
+    realNameStatus?: $Enums.RealNameStatus
+    realNameVerifiedAt?: Date | string | null
+    bio?: string | null
+    email?: string | null
+    vipLevel?: number
+    locale?: string
+    role?: $Enums.Role
+    lastLoginAt?: Date | string | null
+    points?: number
+    totalSpent?: number
+    userBalance?: number
+    followingProviderCount?: number
+    serviceRoles?: UserCreateserviceRolesInput | $Enums.ServiceRole[]
+    pendingServiceRoles?: UserCreatependingServiceRolesInput | $Enums.ServiceRole[]
+    providerStatus?: $Enums.ProviderStatus
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    regionPath?: string | null
+    status?: $Enums.UserStatus
+    projects?: ProjectCreateNestedManyWithoutUserInput
+    assets?: AssetCreateNestedManyWithoutUserInput
+    templates?: TemplateCreateNestedManyWithoutAuthorInput
+    orders?: TemplateOrderCreateNestedManyWithoutBuyerInput
+    providerWallet?: ProviderWalletCreateNestedOneWithoutProviderInput
+    withdrawals?: WithdrawalCreateNestedManyWithoutProviderInput
+    appeals?: TemplateAppealCreateNestedManyWithoutProviderInput
+    region?: RegionCreateNestedOneWithoutUsersInput
+    agent?: UserCreateNestedOneWithoutAgentOfInput
+    agentOf?: UserCreateNestedManyWithoutAgentInput
+    ticketsReporter?: TicketCreateNestedManyWithoutReporterInput
+    ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
+    ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
+    messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    reviews?: ReviewCreateNestedManyWithoutUserInput
+    reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
+    messageReads?: MessageReadCreateNestedManyWithoutUserInput
+    qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    walletLogs?: WalletLogCreateNestedManyWithoutUserInput
+    coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutMessagesReceivedInput = {
+    id?: string
+    phone?: string | null
+    wxOpenid?: string | null
+    password?: string | null
+    nickname?: string | null
+    avatar?: string | null
+    realName?: string | null
+    idCard?: string | null
+    realNameStatus?: $Enums.RealNameStatus
+    realNameVerifiedAt?: Date | string | null
+    bio?: string | null
+    email?: string | null
+    vipLevel?: number
+    locale?: string
+    role?: $Enums.Role
+    lastLoginAt?: Date | string | null
+    points?: number
+    totalSpent?: number
+    userBalance?: number
+    followingProviderCount?: number
+    serviceRoles?: UserCreateserviceRolesInput | $Enums.ServiceRole[]
+    pendingServiceRoles?: UserCreatependingServiceRolesInput | $Enums.ServiceRole[]
+    providerStatus?: $Enums.ProviderStatus
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    regionId?: string | null
+    agentId?: string | null
+    regionPath?: string | null
+    status?: $Enums.UserStatus
+    projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
+    assets?: AssetUncheckedCreateNestedManyWithoutUserInput
+    templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
+    orders?: TemplateOrderUncheckedCreateNestedManyWithoutBuyerInput
+    providerWallet?: ProviderWalletUncheckedCreateNestedOneWithoutProviderInput
+    withdrawals?: WithdrawalUncheckedCreateNestedManyWithoutProviderInput
+    appeals?: TemplateAppealUncheckedCreateNestedManyWithoutProviderInput
+    agentOf?: UserUncheckedCreateNestedManyWithoutAgentInput
+    ticketsReporter?: TicketUncheckedCreateNestedManyWithoutReporterInput
+    ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
+    ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
+    messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
+    reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
+    messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
+    qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
+    coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutMessagesReceivedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutMessagesReceivedInput, UserUncheckedCreateWithoutMessagesReceivedInput>
   }
 
   export type UserUpsertWithoutMessagesAuthorInput = {
@@ -45977,12 +48008,14 @@ export namespace Prisma {
     ticketsReporter?: TicketUpdateManyWithoutReporterNestedInput
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutMessagesAuthorInput = {
@@ -46026,12 +48059,14 @@ export namespace Prisma {
     ticketsReporter?: TicketUncheckedUpdateManyWithoutReporterNestedInput
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type MessageReadUpsertWithWhereUniqueWithoutMessageInput = {
@@ -46048,6 +48083,119 @@ export namespace Prisma {
   export type MessageReadUpdateManyWithWhereWithoutMessageInput = {
     where: MessageReadScalarWhereInput
     data: XOR<MessageReadUpdateManyMutationInput, MessageReadUncheckedUpdateManyWithoutMessageInput>
+  }
+
+  export type UserUpsertWithoutMessagesReceivedInput = {
+    update: XOR<UserUpdateWithoutMessagesReceivedInput, UserUncheckedUpdateWithoutMessagesReceivedInput>
+    create: XOR<UserCreateWithoutMessagesReceivedInput, UserUncheckedCreateWithoutMessagesReceivedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutMessagesReceivedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutMessagesReceivedInput, UserUncheckedUpdateWithoutMessagesReceivedInput>
+  }
+
+  export type UserUpdateWithoutMessagesReceivedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    wxOpenid?: NullableStringFieldUpdateOperationsInput | string | null
+    password?: NullableStringFieldUpdateOperationsInput | string | null
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    realName?: NullableStringFieldUpdateOperationsInput | string | null
+    idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
+    realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    vipLevel?: IntFieldUpdateOperationsInput | number
+    locale?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    points?: IntFieldUpdateOperationsInput | number
+    totalSpent?: IntFieldUpdateOperationsInput | number
+    userBalance?: IntFieldUpdateOperationsInput | number
+    followingProviderCount?: IntFieldUpdateOperationsInput | number
+    serviceRoles?: UserUpdateserviceRolesInput | $Enums.ServiceRole[]
+    pendingServiceRoles?: UserUpdatependingServiceRolesInput | $Enums.ServiceRole[]
+    providerStatus?: EnumProviderStatusFieldUpdateOperationsInput | $Enums.ProviderStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    projects?: ProjectUpdateManyWithoutUserNestedInput
+    assets?: AssetUpdateManyWithoutUserNestedInput
+    templates?: TemplateUpdateManyWithoutAuthorNestedInput
+    orders?: TemplateOrderUpdateManyWithoutBuyerNestedInput
+    providerWallet?: ProviderWalletUpdateOneWithoutProviderNestedInput
+    withdrawals?: WithdrawalUpdateManyWithoutProviderNestedInput
+    appeals?: TemplateAppealUpdateManyWithoutProviderNestedInput
+    region?: RegionUpdateOneWithoutUsersNestedInput
+    agent?: UserUpdateOneWithoutAgentOfNestedInput
+    agentOf?: UserUpdateManyWithoutAgentNestedInput
+    ticketsReporter?: TicketUpdateManyWithoutReporterNestedInput
+    ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
+    ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
+    messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    reviews?: ReviewUpdateManyWithoutUserNestedInput
+    reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
+    messageReads?: MessageReadUpdateManyWithoutUserNestedInput
+    qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
+    coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutMessagesReceivedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    wxOpenid?: NullableStringFieldUpdateOperationsInput | string | null
+    password?: NullableStringFieldUpdateOperationsInput | string | null
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    realName?: NullableStringFieldUpdateOperationsInput | string | null
+    idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
+    realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    vipLevel?: IntFieldUpdateOperationsInput | number
+    locale?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    points?: IntFieldUpdateOperationsInput | number
+    totalSpent?: IntFieldUpdateOperationsInput | number
+    userBalance?: IntFieldUpdateOperationsInput | number
+    followingProviderCount?: IntFieldUpdateOperationsInput | number
+    serviceRoles?: UserUpdateserviceRolesInput | $Enums.ServiceRole[]
+    pendingServiceRoles?: UserUpdatependingServiceRolesInput | $Enums.ServiceRole[]
+    providerStatus?: EnumProviderStatusFieldUpdateOperationsInput | $Enums.ProviderStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    regionId?: NullableStringFieldUpdateOperationsInput | string | null
+    agentId?: NullableStringFieldUpdateOperationsInput | string | null
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
+    assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
+    templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
+    orders?: TemplateOrderUncheckedUpdateManyWithoutBuyerNestedInput
+    providerWallet?: ProviderWalletUncheckedUpdateOneWithoutProviderNestedInput
+    withdrawals?: WithdrawalUncheckedUpdateManyWithoutProviderNestedInput
+    appeals?: TemplateAppealUncheckedUpdateManyWithoutProviderNestedInput
+    agentOf?: UserUncheckedUpdateManyWithoutAgentNestedInput
+    ticketsReporter?: TicketUncheckedUpdateManyWithoutReporterNestedInput
+    ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
+    ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
+    messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
+    reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
+    messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
+    qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
+    coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutReviewsInput = {
@@ -46092,11 +48240,13 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutReviewsInput = {
@@ -46141,11 +48291,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutReviewsInput = {
@@ -46195,11 +48347,13 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutReviewsReceivedInput = {
@@ -46244,11 +48398,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutReviewsReceivedInput = {
@@ -46309,11 +48465,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReviewsInput = {
@@ -46358,11 +48516,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutReviewsReceivedInput = {
@@ -46418,11 +48578,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReviewsReceivedInput = {
@@ -46467,11 +48629,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type MessageCreateWithoutReadsInput = {
@@ -46490,6 +48654,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutMessagesAuthorInput
+    recipient?: UserCreateNestedOneWithoutMessagesReceivedInput
   }
 
   export type MessageUncheckedCreateWithoutReadsInput = {
@@ -46506,6 +48671,7 @@ export namespace Prisma {
     approvedBy?: string | null
     approvedAt?: Date | string | null
     rejectNote?: string | null
+    recipientId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -46557,11 +48723,13 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutMessageReadsInput = {
@@ -46606,11 +48774,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutMessageReadsInput = {
@@ -46645,6 +48815,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutMessagesAuthorNestedInput
+    recipient?: UserUpdateOneWithoutMessagesReceivedNestedInput
   }
 
   export type MessageUncheckedUpdateWithoutReadsInput = {
@@ -46661,6 +48832,7 @@ export namespace Prisma {
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
+    recipientId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -46718,11 +48890,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutMessageReadsInput = {
@@ -46767,11 +48941,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutQualificationsInput = {
@@ -46816,11 +48992,13 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutQualificationsInput = {
@@ -46865,11 +49043,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutQualificationsInput = {
@@ -46930,11 +49110,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutQualificationsInput = {
@@ -46979,11 +49161,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutWalletLogsInput = {
@@ -47028,11 +49212,13 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     coupons?: UserCouponCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutWalletLogsInput = {
@@ -47077,11 +49263,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutWalletLogsInput = {
@@ -47142,11 +49330,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWalletLogsInput = {
@@ -47191,11 +49381,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCouponCreateWithoutCouponInput = {
@@ -47282,11 +49474,13 @@ export namespace Prisma {
     ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
     reviews?: ReviewCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutCouponsInput = {
@@ -47331,11 +49525,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
     ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
     messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
     reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
     messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
     qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
     walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
+    joinApplications?: TeamJoinApplicationUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutCouponsInput = {
@@ -47429,11 +49625,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCouponsInput = {
@@ -47478,11 +49676,13 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type CouponUpsertWithoutHoldersInput = {
@@ -47522,6 +49722,226 @@ export namespace Prisma {
     validFrom?: DateTimeFieldUpdateOperationsInput | Date | string
     validUntil?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserCreateWithoutJoinApplicationsInput = {
+    id?: string
+    phone?: string | null
+    wxOpenid?: string | null
+    password?: string | null
+    nickname?: string | null
+    avatar?: string | null
+    realName?: string | null
+    idCard?: string | null
+    realNameStatus?: $Enums.RealNameStatus
+    realNameVerifiedAt?: Date | string | null
+    bio?: string | null
+    email?: string | null
+    vipLevel?: number
+    locale?: string
+    role?: $Enums.Role
+    lastLoginAt?: Date | string | null
+    points?: number
+    totalSpent?: number
+    userBalance?: number
+    followingProviderCount?: number
+    serviceRoles?: UserCreateserviceRolesInput | $Enums.ServiceRole[]
+    pendingServiceRoles?: UserCreatependingServiceRolesInput | $Enums.ServiceRole[]
+    providerStatus?: $Enums.ProviderStatus
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    regionPath?: string | null
+    status?: $Enums.UserStatus
+    projects?: ProjectCreateNestedManyWithoutUserInput
+    assets?: AssetCreateNestedManyWithoutUserInput
+    templates?: TemplateCreateNestedManyWithoutAuthorInput
+    orders?: TemplateOrderCreateNestedManyWithoutBuyerInput
+    providerWallet?: ProviderWalletCreateNestedOneWithoutProviderInput
+    withdrawals?: WithdrawalCreateNestedManyWithoutProviderInput
+    appeals?: TemplateAppealCreateNestedManyWithoutProviderInput
+    region?: RegionCreateNestedOneWithoutUsersInput
+    agent?: UserCreateNestedOneWithoutAgentOfInput
+    agentOf?: UserCreateNestedManyWithoutAgentInput
+    ticketsReporter?: TicketCreateNestedManyWithoutReporterInput
+    ticketsTarget?: TicketCreateNestedManyWithoutTargetInput
+    ticketsAssignee?: TicketCreateNestedManyWithoutAssigneeInput
+    messagesAuthor?: MessageCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageCreateNestedManyWithoutRecipientInput
+    reviews?: ReviewCreateNestedManyWithoutUserInput
+    reviewsReceived?: ReviewCreateNestedManyWithoutProviderInput
+    messageReads?: MessageReadCreateNestedManyWithoutUserInput
+    qualifications?: QualificationApplicationCreateNestedManyWithoutUserInput
+    walletLogs?: WalletLogCreateNestedManyWithoutUserInput
+    coupons?: UserCouponCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutJoinApplicationsInput = {
+    id?: string
+    phone?: string | null
+    wxOpenid?: string | null
+    password?: string | null
+    nickname?: string | null
+    avatar?: string | null
+    realName?: string | null
+    idCard?: string | null
+    realNameStatus?: $Enums.RealNameStatus
+    realNameVerifiedAt?: Date | string | null
+    bio?: string | null
+    email?: string | null
+    vipLevel?: number
+    locale?: string
+    role?: $Enums.Role
+    lastLoginAt?: Date | string | null
+    points?: number
+    totalSpent?: number
+    userBalance?: number
+    followingProviderCount?: number
+    serviceRoles?: UserCreateserviceRolesInput | $Enums.ServiceRole[]
+    pendingServiceRoles?: UserCreatependingServiceRolesInput | $Enums.ServiceRole[]
+    providerStatus?: $Enums.ProviderStatus
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    regionId?: string | null
+    agentId?: string | null
+    regionPath?: string | null
+    status?: $Enums.UserStatus
+    projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
+    assets?: AssetUncheckedCreateNestedManyWithoutUserInput
+    templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
+    orders?: TemplateOrderUncheckedCreateNestedManyWithoutBuyerInput
+    providerWallet?: ProviderWalletUncheckedCreateNestedOneWithoutProviderInput
+    withdrawals?: WithdrawalUncheckedCreateNestedManyWithoutProviderInput
+    appeals?: TemplateAppealUncheckedCreateNestedManyWithoutProviderInput
+    agentOf?: UserUncheckedCreateNestedManyWithoutAgentInput
+    ticketsReporter?: TicketUncheckedCreateNestedManyWithoutReporterInput
+    ticketsTarget?: TicketUncheckedCreateNestedManyWithoutTargetInput
+    ticketsAssignee?: TicketUncheckedCreateNestedManyWithoutAssigneeInput
+    messagesAuthor?: MessageUncheckedCreateNestedManyWithoutAuthorInput
+    messagesReceived?: MessageUncheckedCreateNestedManyWithoutRecipientInput
+    reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
+    reviewsReceived?: ReviewUncheckedCreateNestedManyWithoutProviderInput
+    messageReads?: MessageReadUncheckedCreateNestedManyWithoutUserInput
+    qualifications?: QualificationApplicationUncheckedCreateNestedManyWithoutUserInput
+    walletLogs?: WalletLogUncheckedCreateNestedManyWithoutUserInput
+    coupons?: UserCouponUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutJoinApplicationsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutJoinApplicationsInput, UserUncheckedCreateWithoutJoinApplicationsInput>
+  }
+
+  export type UserUpsertWithoutJoinApplicationsInput = {
+    update: XOR<UserUpdateWithoutJoinApplicationsInput, UserUncheckedUpdateWithoutJoinApplicationsInput>
+    create: XOR<UserCreateWithoutJoinApplicationsInput, UserUncheckedCreateWithoutJoinApplicationsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutJoinApplicationsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutJoinApplicationsInput, UserUncheckedUpdateWithoutJoinApplicationsInput>
+  }
+
+  export type UserUpdateWithoutJoinApplicationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    wxOpenid?: NullableStringFieldUpdateOperationsInput | string | null
+    password?: NullableStringFieldUpdateOperationsInput | string | null
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    realName?: NullableStringFieldUpdateOperationsInput | string | null
+    idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
+    realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    vipLevel?: IntFieldUpdateOperationsInput | number
+    locale?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    points?: IntFieldUpdateOperationsInput | number
+    totalSpent?: IntFieldUpdateOperationsInput | number
+    userBalance?: IntFieldUpdateOperationsInput | number
+    followingProviderCount?: IntFieldUpdateOperationsInput | number
+    serviceRoles?: UserUpdateserviceRolesInput | $Enums.ServiceRole[]
+    pendingServiceRoles?: UserUpdatependingServiceRolesInput | $Enums.ServiceRole[]
+    providerStatus?: EnumProviderStatusFieldUpdateOperationsInput | $Enums.ProviderStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    projects?: ProjectUpdateManyWithoutUserNestedInput
+    assets?: AssetUpdateManyWithoutUserNestedInput
+    templates?: TemplateUpdateManyWithoutAuthorNestedInput
+    orders?: TemplateOrderUpdateManyWithoutBuyerNestedInput
+    providerWallet?: ProviderWalletUpdateOneWithoutProviderNestedInput
+    withdrawals?: WithdrawalUpdateManyWithoutProviderNestedInput
+    appeals?: TemplateAppealUpdateManyWithoutProviderNestedInput
+    region?: RegionUpdateOneWithoutUsersNestedInput
+    agent?: UserUpdateOneWithoutAgentOfNestedInput
+    agentOf?: UserUpdateManyWithoutAgentNestedInput
+    ticketsReporter?: TicketUpdateManyWithoutReporterNestedInput
+    ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
+    ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
+    messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
+    reviews?: ReviewUpdateManyWithoutUserNestedInput
+    reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
+    messageReads?: MessageReadUpdateManyWithoutUserNestedInput
+    qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
+    walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
+    coupons?: UserCouponUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutJoinApplicationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    wxOpenid?: NullableStringFieldUpdateOperationsInput | string | null
+    password?: NullableStringFieldUpdateOperationsInput | string | null
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    realName?: NullableStringFieldUpdateOperationsInput | string | null
+    idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
+    realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    vipLevel?: IntFieldUpdateOperationsInput | number
+    locale?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    points?: IntFieldUpdateOperationsInput | number
+    totalSpent?: IntFieldUpdateOperationsInput | number
+    userBalance?: IntFieldUpdateOperationsInput | number
+    followingProviderCount?: IntFieldUpdateOperationsInput | number
+    serviceRoles?: UserUpdateserviceRolesInput | $Enums.ServiceRole[]
+    pendingServiceRoles?: UserUpdatependingServiceRolesInput | $Enums.ServiceRole[]
+    providerStatus?: EnumProviderStatusFieldUpdateOperationsInput | $Enums.ProviderStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    regionId?: NullableStringFieldUpdateOperationsInput | string | null
+    agentId?: NullableStringFieldUpdateOperationsInput | string | null
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
+    assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
+    templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
+    orders?: TemplateOrderUncheckedUpdateManyWithoutBuyerNestedInput
+    providerWallet?: ProviderWalletUncheckedUpdateOneWithoutProviderNestedInput
+    withdrawals?: WithdrawalUncheckedUpdateManyWithoutProviderNestedInput
+    appeals?: TemplateAppealUncheckedUpdateManyWithoutProviderNestedInput
+    agentOf?: UserUncheckedUpdateManyWithoutAgentNestedInput
+    ticketsReporter?: TicketUncheckedUpdateManyWithoutReporterNestedInput
+    ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
+    ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
+    messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
+    reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
+    reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
+    messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
+    qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
+    walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
+    coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type RegionCreateManyParentInput = {
@@ -47632,12 +50052,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRegionInput = {
@@ -47681,12 +50103,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateManyWithoutRegionInput = {
@@ -47900,6 +50324,25 @@ export namespace Prisma {
     approvedBy?: string | null
     approvedAt?: Date | string | null
     rejectNote?: string | null
+    recipientId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type MessageCreateManyRecipientInput = {
+    id?: string
+    type: $Enums.MessageType
+    scope: $Enums.MessageScope
+    title: string
+    content: string
+    status?: $Enums.MessageStatus
+    authorId: string
+    authorRole: $Enums.Role
+    regionPath?: string | null
+    targetRole?: $Enums.Role | null
+    approvedBy?: string | null
+    approvedAt?: Date | string | null
+    rejectNote?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -47972,6 +50415,22 @@ export namespace Prisma {
     status?: string
     receivedAt?: Date | string
     usedAt?: Date | string | null
+  }
+
+  export type TeamJoinApplicationCreateManyUserInput = {
+    id?: string
+    orgType: string
+    orgId: string
+    regionPath?: string | null
+    regionLabel?: string | null
+    reason: string
+    status?: string
+    reviewNote?: string | null
+    reviewerId?: string | null
+    reviewedAt?: Date | string | null
+    staffId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
   }
 
   export type ProjectUpdateWithoutUserInput = {
@@ -48269,12 +50728,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAgentInput = {
@@ -48318,12 +50779,14 @@ export namespace Prisma {
     ticketsTarget?: TicketUncheckedUpdateManyWithoutTargetNestedInput
     ticketsAssignee?: TicketUncheckedUpdateManyWithoutAssigneeNestedInput
     messagesAuthor?: MessageUncheckedUpdateManyWithoutAuthorNestedInput
+    messagesReceived?: MessageUncheckedUpdateManyWithoutRecipientNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
     reviewsReceived?: ReviewUncheckedUpdateManyWithoutProviderNestedInput
     messageReads?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
     qualifications?: QualificationApplicationUncheckedUpdateManyWithoutUserNestedInput
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
+    joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateManyWithoutAgentInput = {
@@ -48535,6 +50998,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     reads?: MessageReadUpdateManyWithoutMessageNestedInput
+    recipient?: UserUpdateOneWithoutMessagesReceivedNestedInput
   }
 
   export type MessageUncheckedUpdateWithoutAuthorInput = {
@@ -48550,6 +51014,7 @@ export namespace Prisma {
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
+    recipientId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     reads?: MessageReadUncheckedUpdateManyWithoutMessageNestedInput
@@ -48562,6 +51027,63 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     status?: EnumMessageStatusFieldUpdateOperationsInput | $Enums.MessageStatus
+    authorRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    targetRole?: NullableEnumRoleFieldUpdateOperationsInput | $Enums.Role | null
+    approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
+    recipientId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type MessageUpdateWithoutRecipientInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumMessageTypeFieldUpdateOperationsInput | $Enums.MessageType
+    scope?: EnumMessageScopeFieldUpdateOperationsInput | $Enums.MessageScope
+    title?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    status?: EnumMessageStatusFieldUpdateOperationsInput | $Enums.MessageStatus
+    authorRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    targetRole?: NullableEnumRoleFieldUpdateOperationsInput | $Enums.Role | null
+    approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    author?: UserUpdateOneRequiredWithoutMessagesAuthorNestedInput
+    reads?: MessageReadUpdateManyWithoutMessageNestedInput
+  }
+
+  export type MessageUncheckedUpdateWithoutRecipientInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumMessageTypeFieldUpdateOperationsInput | $Enums.MessageType
+    scope?: EnumMessageScopeFieldUpdateOperationsInput | $Enums.MessageScope
+    title?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    status?: EnumMessageStatusFieldUpdateOperationsInput | $Enums.MessageStatus
+    authorId?: StringFieldUpdateOperationsInput | string
+    authorRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    targetRole?: NullableEnumRoleFieldUpdateOperationsInput | $Enums.Role | null
+    approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reads?: MessageReadUncheckedUpdateManyWithoutMessageNestedInput
+  }
+
+  export type MessageUncheckedUpdateManyWithoutRecipientInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumMessageTypeFieldUpdateOperationsInput | $Enums.MessageType
+    scope?: EnumMessageScopeFieldUpdateOperationsInput | $Enums.MessageScope
+    title?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    status?: EnumMessageStatusFieldUpdateOperationsInput | $Enums.MessageStatus
+    authorId?: StringFieldUpdateOperationsInput | string
     authorRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     targetRole?: NullableEnumRoleFieldUpdateOperationsInput | $Enums.Role | null
@@ -48780,6 +51302,54 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     receivedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type TeamJoinApplicationUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orgType?: StringFieldUpdateOperationsInput | string
+    orgId?: StringFieldUpdateOperationsInput | string
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    regionLabel?: NullableStringFieldUpdateOperationsInput | string | null
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewerId?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    staffId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TeamJoinApplicationUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orgType?: StringFieldUpdateOperationsInput | string
+    orgId?: StringFieldUpdateOperationsInput | string
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    regionLabel?: NullableStringFieldUpdateOperationsInput | string | null
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewerId?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    staffId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TeamJoinApplicationUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orgType?: StringFieldUpdateOperationsInput | string
+    orgId?: StringFieldUpdateOperationsInput | string
+    regionPath?: NullableStringFieldUpdateOperationsInput | string | null
+    regionLabel?: NullableStringFieldUpdateOperationsInput | string | null
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    reviewNote?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewerId?: NullableStringFieldUpdateOperationsInput | string | null
+    reviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    staffId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ProjectVersionCreateManyProjectInput = {
@@ -49181,6 +51751,10 @@ export namespace Prisma {
      * @deprecated Use OrgStaffDefaultArgs instead
      */
     export type OrgStaffArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = OrgStaffDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use TeamJoinApplicationDefaultArgs instead
+     */
+    export type TeamJoinApplicationArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = TeamJoinApplicationDefaultArgs<ExtArgs>
     /**
      * @deprecated Use ProviderClientDefaultArgs instead
      */
