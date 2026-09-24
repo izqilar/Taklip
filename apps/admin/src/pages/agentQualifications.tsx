@@ -5,7 +5,7 @@
  * 身份变更（role 落地）仅总台 ADMIN 终审执行。终审环节由总台处理，代理商侧对 FINAL_PENDING 显示「待总台终审」。
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Modal, message as antdMessage, Descriptions, Drawer, Button } from 'antd';
+import { Modal, message as antdMessage, Descriptions, Drawer, Button, Input } from 'antd';
 import { PageHead } from '../components/ui/PageHead';
 import { Panel } from '../components/ui/Panel';
 import { DataTable } from '../components/ui/DataTable';
@@ -59,6 +59,10 @@ export const AgentQualifications = () => {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectNote, setRejectNote] = useState('');
+  const [rejectMode, setRejectMode] = useState<'single' | 'batch'>('single');
+  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,13 +80,13 @@ export const AgentQualifications = () => {
     load();
   }, [load]);
 
-  const review = async (id: string, pass: boolean) => {
+  const review = async (id: string, pass: boolean, note?: string) => {
     setBusy(true);
     try {
       await dataProvider.custom!({
         url: `agent/qualifications/${id}/review`,
         method: 'patch',
-        payload: { pass },
+        payload: { pass, note: note ?? null },
       });
       antdMessage.success(t('toast.agentReviewed', '一审已提交'));
       setOpen(false);
@@ -95,14 +99,14 @@ export const AgentQualifications = () => {
     }
   };
 
-  const batchReview = async (pass: boolean) => {
+  const batchReview = async (pass: boolean, note?: string) => {
     if (!selectedKeys.length) return;
     setBusy(true);
     try {
       const r: any = await dataProvider.custom!({
         url: 'agent/qualifications/batch-review',
         method: 'patch',
-        payload: { ids: selectedKeys, pass },
+        payload: { ids: selectedKeys, pass, note: note ?? null },
       });
       const d = r?.data ?? r ?? {};
       const ok = d.success ?? 0;
@@ -121,15 +125,48 @@ export const AgentQualifications = () => {
     }
   };
 
+  const openBatchReject = () => {
+    if (!selectedKeys.length) return;
+    setRejectMode('batch');
+    setRejectNote('');
+    setRejectOpen(true);
+  };
+
+  const confirmReject = async () => {
+    const note = rejectNote.trim();
+    if (!note) {
+      antdMessage.error(t('pages.toast.rejectReasonRequired', '请填写驳回意见'));
+      return;
+    }
+    setRejectOpen(false);
+    try {
+      if (rejectMode === 'single' && rejectTargetId) {
+        await review(rejectTargetId, false, note);
+      } else {
+        await batchReview(false, note);
+      }
+    } finally {
+      setRejectNote('');
+      setRejectTargetId(null);
+    }
+  };
+
   const ask = (row: any, pass: boolean) => {
-    Modal.confirm({
-      title: pass ? t('btn.agentFirstPass', '一审通过') : t('btn.agentFirstReject', '一审驳回'),
-      content: `${row.user?.realName || row.user?.nickname || '—'} · ${row.kind === 'agent' ? '代理商' : '服务商'} · ${row.regionLabel ?? '—'}`,
-      okText: t('common.detail', '确定'),
-      cancelText: t('button.cancel', '取消'),
-      okButtonProps: { danger: !pass, disabled: busy },
-      onOk: () => review(row.id, pass),
-    });
+    if (pass) {
+      Modal.confirm({
+        title: t('btn.agentFirstPass', '一审通过'),
+        content: `${row.user?.realName || row.user?.nickname || '—'} · ${row.kind === 'agent' ? '代理商' : '服务商'} · ${row.regionLabel ?? '—'}`,
+        okText: t('common.detail', '确定'),
+        cancelText: t('button.cancel', '取消'),
+        okButtonProps: { disabled: busy },
+        onOk: () => review(row.id, true),
+      });
+      return;
+    }
+    setRejectMode('single');
+    setRejectTargetId(row.id);
+    setRejectNote('');
+    setRejectOpen(true);
   };
 
   const columns: any[] = [
@@ -216,7 +253,7 @@ export const AgentQualifications = () => {
           <Button type="primary" size="small" loading={busy} onClick={() => batchReview(true)}>
             {t('btn.batchPass', '批量通过')}
           </Button>
-          <Button danger size="small" loading={busy} onClick={() => batchReview(false)}>
+          <Button danger size="small" loading={busy} onClick={openBatchReject}>
             {t('btn.batchReject', '批量驳回')}
           </Button>
           <Button size="small" onClick={() => setSelectedKeys([])}>
@@ -268,6 +305,26 @@ export const AgentQualifications = () => {
           </Descriptions>
         )}
       </Drawer>
+
+      <Modal
+        open={rejectOpen}
+        title={t('pages.modal.rejectReason', '填写驳回意见')}
+        okText={t('common.detail', '确定')}
+        cancelText={t('button.cancel', '取消')}
+        okButtonProps={{ danger: true, disabled: busy }}
+        onOk={confirmReject}
+        onCancel={() => setRejectOpen(false)}
+        destroyOnClose
+      >
+        <Input.TextArea
+          rows={4}
+          value={rejectNote}
+          maxLength={500}
+          showCount
+          onChange={(e) => setRejectNote(e.target.value)}
+          placeholder={t('pages.ph.rejectReason', '请说明驳回原因，将记入审计日志')}
+        />
+      </Modal>
     </>
   );
 };

@@ -681,7 +681,8 @@
       "redlineRequired": "Reject requires opinion and a redline category",
       "actionFailed": "Action failed",
       "batchReviewed": "Batch first review submitted",
-      "batchPartial": "Batch first review partially completed"
+      "batchPartial": "Batch first review partially completed",
+      "rejectReasonRequired": "Please enter a reject reason"
     },
     "note": {
       "comingSoonHint": "This module backend endpoint will land in a later iteration"
@@ -730,11 +731,15 @@
       "agentPoolSub": "Regional recruitment lead ledger · advance contact stage (no role/fund touch)",
       "loadingJurisdiction": "Loading your jurisdiction…"
     },
+    "modal": {
+      "rejectReason": "Enter reject reason"
+    },
     "ph": {
       "recruitName": "e.g. XX Culture Media Co., Ltd.",
       "recruitRegion": "Optional · e.g. High-tech Zone",
       "recruitIntro": "Optional · source / contact / needs",
-      "searchNamePhone": "Search name / phone"
+      "searchNamePhone": "Search name / phone",
+      "rejectReason": "State the reject reason; it will be logged"
     },
     "rule": {
       "nameRequired": "Lead name required",

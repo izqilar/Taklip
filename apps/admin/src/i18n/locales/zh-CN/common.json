@@ -681,7 +681,8 @@
       "redlineRequired": "驳回必须填写意见并选择红线类别",
       "actionFailed": "操作失败",
       "batchReviewed": "批量一审已提交",
-      "batchPartial": "批量一审部分完成"
+      "batchPartial": "批量一审部分完成",
+      "rejectReasonRequired": "请填写驳回意见"
     },
     "note": {
       "comingSoonHint": "该模块后端端点将在后续迭代落地"
@@ -730,11 +731,15 @@
       "agentPoolSub": "辖区内招商意向台账 · 推进接触阶段（不触碰身份 / 资金）",
       "loadingJurisdiction": "正在读取您的辖区…"
     },
+    "modal": {
+      "rejectReason": "填写驳回意见"
+    },
     "ph": {
       "recruitName": "如：某某文化传媒有限公司",
       "recruitRegion": "选填 · 例如：高新区",
       "recruitIntro": "选填 · 意向来源 / 对接人 / 诉求",
-      "searchNamePhone": "搜索名称 / 手机"
+      "searchNamePhone": "搜索名称 / 手机",
+      "rejectReason": "请说明驳回原因，将记入审计日志"
     },
     "rule": {
       "nameRequired": "请填写意向主体名称",
