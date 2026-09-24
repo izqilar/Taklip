@@ -537,6 +537,19 @@ model QualificationApplication {
   certLongTerm  Boolean @default(false) @map("cert_long_term")
   issuer        String?
   attachments   String[] @default([])
+  // —— 审核留痕与驳回原因回填（P0） ——
+  // 驳回/通过意见：一审与终审各一份，申请人可见（驳回原因必须可回填，否则用户无从整改）
+  reviewNote          String?   @map("review_note")
+  firstReviewedById   String?   @map("first_reviewed_by_id")
+  firstReviewedAt     DateTime? @map("first_reviewed_at")
+  finalReviewedById   String?   @map("final_reviewed_by_id")
+  finalReviewedAt     DateTime? @map("final_reviewed_at")
+  // 材料正式提交时间（区分「草填」与「已提交待审」）
+  materialSubmittedAt DateTime? @map("material_submitted_at")
+  // 驳回后重提溯源：指向被重提的上一份申请（旧单保留为历史，不物理删除）
+  resubmitOfId        String?   @map("resubmit_of_id")
+  // 风险旗标（提交时自动预检产出，供总台终审参考）：如 DUPLICATE_CERT_NO 重复主体
+  riskFlags           String[]  @default([]) @map("risk_flags")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -544,6 +557,8 @@ model QualificationApplication {
 
   @@index([userId])
   @@index([status])
+  @@index([kind, status])
+  @@index([certNo])
 }
 
 // 招商意向（代理商专有拓客）—— 辖区资源池，区别于服务商自驱动的「入驻申请」隧道

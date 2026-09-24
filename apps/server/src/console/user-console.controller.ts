@@ -24,6 +24,15 @@ type ReqUser = Express.Request & { user: JwtUser };
 const DEMO_USER_PHONE = '13900001001';
 
 /**
+ * 入驻资料是否强制齐全（缺件直接 400，不让空壳申请进一审）。
+ *
+ * 当前为 **false（兼容态）**：web 端 Apply.tsx 尚未收集资质材料，强制会直接打断现有提交。
+ * 待 P1「注册即入驻 / 资料页」上线后改为 true，届时代理商第一闸口审到的必是真材料。
+ * 无论开关如何，只要请求带了任一材料字段，就按「填了必须填全」校验。
+ */
+const MATERIALS_REQUIRED = false;
+
+/**
  * 用户视角业务编号生成器 —— 与 UI_Design/index.html 原型样例编号格式严格对齐。
  *  订单 QD…0316（存 QD202608270316，展示取尾 4 位）
  *  服务商 SP001 / 优惠券 CP-2001 / 钱包流水 W-1001
@@ -1128,6 +1137,63 @@ export class UserConsoleController {
     if (kind === 'agent' && !body.regionPath) {
       throw new BadRequestException('请选择完整的代理辖区（省 / 市 / 区县）');
     }
+    // —— 代理商辖区深度校验：必须选到区县（regionPath = "省/市/区"）——
+    // 仅选到省/市会产生「一个代理商罩住整个省」的超大辖区，且与既有市级代理商重叠。
+    if (kind === 'agent' && body.regionPath) {
+      const depth = String(body.regionPath).split('/').filter(Boolean).length;
+      if (depth < 3) {
+        throw new BadRequestException('请选择完整的代理辖区（省 / 市 / 区县）');
+      }
+      // —— 辖区重叠预检（前移）：原实现只在总台终审前拦截，用户要等到终审才知道填错。
+      const conflict = await this.findRegionConflict(body.regionPath, id);
+      if (conflict) {
+        throw new BadRequestException(
+          `代理辖区与既有代理商重叠（${conflict.regionPath}），同一辖区仅允许一个代理商`,
+        );
+      }
+    }
+
+    // —— 材料完整性（分级）—— MATERIALS_REQUIRED=true 时强制；否则「填了就须填全」，
+    // 现状（Apply.tsx 尚未收集材料）下保持兼容，仅打 MATERIAL_MISSING 风险旗标。
+    const attachments = (body.attachments ?? []).filter((x: any) => !!String(x ?? '').trim());
+    const certNo = (body.certNo ?? '').toString().trim();
+    const applicantName = (body.applicantName ?? '').toString().trim();
+    const certType = (body.certType ?? '').toString().trim();
+    const certExpire = (body.certExpire ?? '').toString().trim();
+    const certLongTerm = !!body.certLongTerm;
+    const hasAnyMaterial = !!applicantName || !!certNo || attachments.length > 0;
+    const missing: string[] = [];
+    if (!applicantName) missing.push('申请人姓名');
+    if (!(body.phone ?? '').toString().trim()) missing.push('联系手机');
+    if (!certType) missing.push('证件类型');
+    if (!certNo) missing.push('证件号码');
+    if (!certLongTerm && !certExpire) missing.push('证件有效期');
+    if (!attachments.length) missing.push('资质附件');
+    const materialComplete = missing.length === 0;
+    if (missing.length && (MATERIALS_REQUIRED || hasAnyMaterial)) {
+      throw new BadRequestException(`资料不完整，请补充：${missing.join('、')}`);
+    }
+
+    // —— 风险旗标（提交时自动预检，供总台终审参考）——
+    const riskFlags: string[] = [];
+    if (!materialComplete) riskFlags.push('MATERIAL_MISSING');
+    if (certNo) {
+      const dupSubject = await this.prisma.qualificationApplication.findFirst({
+        where: {
+          certNo,
+          userId: { not: id },
+          status: { in: ['FIRST_PENDING', 'FIRST_PASSED', 'FINAL_PENDING', 'APPROVED'] },
+        },
+        select: { id: true },
+      });
+      if (dupSubject) riskFlags.push('DUPLICATE_CERT_NO');
+    }
+    if (kind === 'provider') {
+      const rp = (body.regionPath ?? '').toString().trim();
+      if (!rp) riskFlags.push('NO_REGION');
+      else if (!(await this.resolveAgentId(rp))) riskFlags.push('NO_AGENT_COVERAGE');
+    }
+
     const dup = await this.prisma.qualificationApplication.findFirst({
       where: { userId: id, kind, status: { in: ['FIRST_PENDING', 'FIRST_PASSED', 'FINAL_PENDING'] } },
     });
@@ -1142,14 +1208,16 @@ export class UserConsoleController {
         regionPath: body.regionPath,
         regionLabel: body.regionLabel ?? null,
         // M3：材料随申请一并落库（可选）
-        applicantName: body.applicantName ?? null,
-        phone: body.phone ?? null,
-        certType: body.certType ?? null,
-        certNo: body.certNo ?? null,
-        certExpire: body.certExpire ?? null,
-        certLongTerm: !!body.certLongTerm,
-        issuer: body.issuer ?? null,
-        attachments: body.attachments ?? [],
+        applicantName: applicantName || null,
+        phone: (body.phone ?? '').toString().trim() || null,
+        certType: certType || null,
+        certNo: certNo || null,
+        certExpire: certExpire || null,
+        certLongTerm,
+        issuer: (body.issuer ?? '').toString().trim() || null,
+        attachments,
+        materialSubmittedAt: materialComplete ? new Date() : null,
+        riskFlags,
       },
     });
   }
@@ -1323,7 +1391,21 @@ export class UserConsoleController {
     if (!['FIRST_PENDING', 'FIRST_PASSED'].includes(cur.status)) {
       throw new BadRequestException('当前申请状态不可撤回');
     }
-    await this.prisma.qualificationApplication.delete({ where: { id } });
+    // 软删除（原为物理 delete）：保留申请历史与审计留痕，与 JOIN 隧道 WITHDRAWN 语义一致，
+    // 同时支撑「驳回后重新提交」的历史溯源（resubmitOfId）。
+    await this.prisma.qualificationApplication.update({
+      where: { id },
+      data: { status: 'WITHDRAWN' },
+    });
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: uid,
+        action: 'QUALIFICATION_WITHDRAWN',
+        targetType: 'QUALIFICATION_APPLICATION',
+        targetId: id,
+        after: { status: 'WITHDRAWN' },
+      },
+    });
     return { ok: true };
   }
 
@@ -1355,10 +1437,13 @@ export class UserConsoleController {
   async reviewQualification(
     @Req() req: ReqUser,
     @Param('id') id: string,
-    @Body() body: { pass: boolean; final?: boolean },
+    @Body() body: { pass: boolean; final?: boolean; note?: string },
   ) {
     const app = await this.prisma.qualificationApplication.findUnique({ where: { id } });
     if (!app) throw new NotFoundException('申请不存在');
+    const note = (body.note ?? '').toString().trim() || null;
+    // 驳回原因必填：无原因的驳回等于让用户无从整改，也无法在审计中追溯判定依据。
+    if (!body.pass && !note) throw new BadRequestException('请填写驳回原因');
 
     // 代理商终审前置校验（M2 / P-F）：辖区唯一性。
     // 必须在写入申请状态**之前**拦截，否则会出现「申请已 APPROVED 但身份未落地」的不一致。
@@ -1380,13 +1465,78 @@ export class UserConsoleController {
         : 'REJECTED';
     const updated = await this.prisma.qualificationApplication.update({
       where: { id },
-      data: { status },
+      data: {
+        status,
+        reviewNote: note,
+        ...(body.final
+          ? { finalReviewedById: req.user.id, finalReviewedAt: new Date() }
+          : { firstReviewedById: req.user.id, firstReviewedAt: new Date() }),
+      },
+    });
+
+    // 审计留痕：终审此前完全没有审计记录（一审有 AGENT_QUALIFICATION_FIRST_REVIEW）
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: req.user.id,
+        action: body.final
+          ? 'ADMIN_QUALIFICATION_FINAL_REVIEW'
+          : 'ADMIN_QUALIFICATION_FIRST_REVIEW',
+        targetType: 'QUALIFICATION_APPLICATION',
+        targetId: id,
+        reason: note,
+        after: { status },
+      },
     });
 
     // 终审通过 → 落地资格升级（决策：入驻走总台 ADMIN 审批，通过后用户成为服务商 / 代理商，
     // 登录落点由既有 ROLE_HOME 自动切换到对应工作台）
     await this.applyQualificationResult(app, status);
+
+    // 结果通知（此前入驻管线**没有任何审核回执**，用户只能靠刷新页面猜状态）
+    await this.notifyQualificationResult(req.user, app, status, note);
     return updated;
+  }
+
+  /**
+   * 入驻审核回执：以「指定接收人」消息投递（MessageScope=USER），
+   * 与 JOIN 隧道 notifyJoinResult 同口径，用户在 web 端「业务消息」可见。
+   */
+  private async notifyQualificationResult(
+    actor: JwtUser,
+    app: { id: string; userId: string; kind: string },
+    status: string,
+    note: string | null,
+  ) {
+    const layer = app.kind === 'agent' ? '代理商' : '服务商';
+    const code = `入驻申请 ${(app.id || '').slice(-6).toUpperCase()}`;
+    const map: Record<string, { title: string; content: string }> = {
+      FIRST_PASSED: {
+        title: `${layer}入驻资格初审通过`,
+        content: '您的入驻申请已通过辖区代理商初审，请补充完整资料后进入管理总台终审。',
+      },
+      APPROVED: {
+        title: `${layer}入驻申请已通过`,
+        content: '您的入驻申请已通过管理总台终审，资质已生效，登录后将进入对应工作台。',
+      },
+      REJECTED: {
+        title: `${layer}入驻申请未通过`,
+        content: note ? `未通过原因：${note}。请修改后重新提交。` : '您的入驻申请未通过，请修改后重新提交。',
+      },
+    };
+    const t = map[status];
+    if (!t) return;
+    await this.prisma.message.create({
+      data: {
+        type: 'NOTICE',
+        scope: 'USER',
+        title: `${t.title}（${code}）`,
+        content: t.content,
+        status: 'PUBLISHED',
+        authorId: actor.id,
+        authorRole: actor.role as any,
+        recipientId: app.userId,
+      },
+    });
   }
 
   /**

@@ -542,6 +542,7 @@ export class AgentConsoleController {
   async qualifications(
     @Req() req: ReqUser,
     @Query('status') status?: string,
+    @Query('kind') kind?: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('subject') subject?: string,
@@ -550,7 +551,11 @@ export class AgentConsoleController {
     const rp = scope.regionPath ? { startsWith: scope.regionPath } : undefined;
     if (req.user.role === 'AGENT' && !scope.regionPath) return { items: [], total: 0 };
     const where: any = rp ? { regionPath: rp } : {};
-    if (status) where.status = status;
+    // 默认隐藏已撤回申请（软删除语义）；显式传 status 时按传入值过滤
+    where.status = status ? status : { not: 'WITHDRAWN' };
+    // 入驻层次过滤（provider / agent）。不设默认值，避免 ADMIN 经此端点视察时漏看某一类，
+    // 由前端按需传 kind（代理商一审队列默认传 provider）。
+    if (kind) where.kind = kind;
     const p = page ? Number(page) : 1;
     const ps = Math.min(pageSize ? Number(pageSize) : 20, 100);
     const [items, total] = await this.prisma.$transaction([
@@ -590,19 +595,68 @@ export class AgentConsoleController {
     if (app.status !== 'FIRST_PENDING') {
       throw new BadRequestException('当前状态不可初审（仅待初审可代理一审）');
     }
+    const note = (body.note ?? '').toString().trim() || null;
+    // 驳回原因必填：与总台终审同口径，避免用户无从整改
+    if (!body.pass && !note) throw new BadRequestException('请填写驳回原因');
     const status = body.pass ? 'FIRST_PASSED' : 'REJECTED';
-    const updated = await this.prisma.qualificationApplication.update({ where: { id }, data: { status } });
+    const updated = await this.prisma.qualificationApplication.update({
+      where: { id },
+      data: {
+        status,
+        reviewNote: note,
+        firstReviewedById: req.user.id,
+        firstReviewedAt: new Date(),
+      },
+    });
     await this.prisma.auditLog.create({
       data: {
         actorId: req.user.id,
         action: 'AGENT_QUALIFICATION_FIRST_REVIEW',
         targetType: 'QUALIFICATION_APPLICATION',
         targetId: id,
-        reason: body.note ?? null,
+        reason: note,
         after: { status },
       },
     });
+    // 一审结果通知（此前 note 只进审计、申请人收不到任何回执）
+    await this.notifyQualificationResult(req.user, app, status, note);
     return updated;
+  }
+
+  /** 入驻一审回执：MessageScope=USER 定向投递，与总台终审回执同口径 */
+  private async notifyQualificationResult(
+    actor: { id: string; role: string },
+    app: { id: string; userId: string; kind: string },
+    status: string,
+    note: string | null,
+  ) {
+    const layer = app.kind === 'agent' ? '代理商' : '服务商';
+    const code = (app.id || '').slice(-6).toUpperCase();
+    const payload =
+      status === 'FIRST_PASSED'
+        ? {
+            title: `${layer}入驻资格初审通过（${code}）`,
+            content: '您的入驻申请已通过辖区代理商初审，请补充完整资料后进入管理总台终审。',
+          }
+        : status === 'REJECTED'
+          ? {
+              title: `${layer}入驻资格初审未通过（${code}）`,
+              content: note ? `未通过原因：${note}。请修改后重新提交。` : '您的入驻申请未通过初审，请修改后重新提交。',
+            }
+          : null;
+    if (!payload) return;
+    await this.prisma.message.create({
+      data: {
+        type: 'NOTICE',
+        scope: 'USER',
+        title: payload.title,
+        content: payload.content,
+        status: 'PUBLISHED',
+        authorId: actor.id,
+        authorRole: actor.role as any,
+        recipientId: app.userId,
+      },
+    });
   }
 
   /* ══════════════════ 辖区合同管理（只读） ══════════════════
