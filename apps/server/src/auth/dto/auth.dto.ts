@@ -14,6 +14,24 @@ export class RegisterDto {
   @IsString()
   @MaxLength(32, { message: '昵称过长' })
   nickname?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(32, { message: '真实姓名过长' })
+  realName?: string;
+
+  @IsOptional()
+  @IsString()
+  regionId?: string;
+
+  /**
+   * 入驻意图：user（默认，普通用户）/ provider（服务商）/ agent（代理商）。
+   * **仅作前端引导与统计用，不落库、不改变 role** ——
+   * 角色变更只能由总台终审 APPROVED 落地（入驻管线单一真源）。
+   */
+  @IsOptional()
+  @IsString()
+  intent?: string;
 }
 
 export class LoginDto {

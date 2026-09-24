@@ -486,6 +486,51 @@
     "biz_social": "商务社交",
     "marketing": "产品营销"
   },
+  "onboarding": {
+    "title": {
+      "provider": "服务商入驻资料",
+      "agent": "代理商入驻资料"
+    },
+    "subtitle": "提交后进入「辖区代理商初审 → 管理总台终审」，审核通过后身份与资质自动生效",
+    "province": "省 / 自治区",
+    "city": "市 / 地区",
+    "district": "区 / 县",
+    "pleaseSelect": "请选择",
+    "scopes": "服务类型（至少一项）",
+    "applicantName": "申请人 / 主体名称",
+    "phone": "联系手机",
+    "certType": "证件类型",
+    "certNo": "证件号码",
+    "certExpire": "有效期至",
+    "certLongTerm": "长期有效",
+    "issuer": "发证机关",
+    "attachments": "资质附件（每行一个链接）",
+    "attachmentsPh": "https://…/营业执照.png\nhttps://…/法人身份证正面.png",
+    "reason": "申请说明",
+    "submit": "提交入驻申请",
+    "viewMine": "查看我的申请进度",
+    "cert": {
+      "idCard": "身份证",
+      "license": "营业执照",
+      "other": "其他资质证件"
+    },
+    "err": {
+      "applicantName": "请填写申请人 / 主体名称",
+      "phone": "请填写联系手机",
+      "certNo": "请填写证件号码",
+      "certExpire": "请填写有效期，或勾选长期有效",
+      "attachments": "请至少提供一份资质附件链接",
+      "region": "请选择所在区域",
+      "regionDistrict": "代理商必须选择到区 / 县（代理辖区需精确到区县）",
+      "scopes": "请至少选择一项服务类型",
+      "reason": "请填写申请说明"
+    },
+    "duplicated": "你已有一份在途的同类型申请，请勿重复提交",
+    "warn": {
+      "noAgentCoverage": "所选区域暂无代理商覆盖，将由管理总台直接受理",
+      "dupCertNo": "该证件号已存在其他在途或已入驻主体，总台将重点复核"
+    }
+  },
   "userCenter": {
     "panel": {
       "quickLinks": "快捷入口",

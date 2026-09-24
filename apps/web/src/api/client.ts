@@ -409,10 +409,20 @@ async function requestBlob(path: string, body: unknown): Promise<Blob> {
 
 export const api = {
   // ── 认证 ──
-  register: (phone: string, password: string, nickname?: string) =>
+  /**
+   * 注册（可扩展入驻意图）。
+   * extra.intent 仅为引导/统计语义（user|provider|agent），**不会**改变 role；
+   * 资质材料不由此无鉴权接口承载，注册后走 /onboarding 提交入驻申请。
+   */
+  register: (
+    phone: string,
+    password: string,
+    nickname?: string,
+    extra?: { realName?: string; regionId?: string; intent?: 'user' | 'provider' | 'agent' },
+  ) =>
     request<AuthResponse>('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ phone, password, nickname }),
+      body: JSON.stringify({ phone, password, nickname, ...(extra ?? {}) }),
     }),
 
   login: (phone: string, password: string) =>

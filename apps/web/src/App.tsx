@@ -39,6 +39,7 @@ const UserMessages = lazy(() => import('./user/Messages'));
 const UserNotices = lazy(() => import('./user/Notices'));
 const UserAccount = lazy(() => import('./user/Account'));
 const UserApply = lazy(() => import('./user/Apply'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
 
 /**
  * 发布页（/p/:publishCode）需要注入 GSAP 动画播放器，会额外带上 gsap（约 166KB 未压缩）。
@@ -117,6 +118,17 @@ export default function App() {
             <Suspense fallback={<RouteFallback />}>
               <Register />
             </Suspense>
+          }
+        />
+        {/* 注册即入驻第二步：资料填写（需登录态；提交后进入既有入驻审核管线） */}
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <Onboarding />
+              </Suspense>
+            </ProtectedRoute>
           }
         />
         <Route

@@ -30,7 +30,12 @@ interface AuthState {
    */
   error: string | null;
 
-  register: (phone: string, password: string, nickname?: string) => Promise<boolean>;
+  register: (
+    phone: string,
+    password: string,
+    nickname?: string,
+    extra?: { realName?: string; regionId?: string; intent?: 'user' | 'provider' | 'agent' },
+  ) => Promise<boolean>;
   login: (phone: string, password: string) => Promise<boolean>;
   logout: () => void;
   clearError: () => void;
@@ -85,10 +90,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAgent: roleFlags(getStoredUser()).isAgent,
   error: null,
 
-  register: async (phone, password, nickname) => {
+  register: async (phone, password, nickname, extra) => {
     set({ isLoading: true, error: null });
     try {
-      const res = await api.register(phone, password, nickname);
+      const res = await api.register(phone, password, nickname, extra);
       // 服务端把落点 home 与 user 平级下发，并入 user 后落盘，刷新后仍可读
       const user = res.home ? { ...res.user, home: res.home } : res.user;
       setTokens(res.accessToken, res.refreshToken);

@@ -15,7 +15,15 @@
     "nickname": "昵称",
     "submit": "注册",
     "hasAccount": "已有账号？",
-    "login": "登录"
+    "login": "登录",
+    "accountType": "账户类型",
+    "typeUser": "普通用户",
+    "typeProvider": "入驻服务商",
+    "typeAgent": "入驻代理商",
+    "settleHint": "注册后需提交入驻资料，经辖区代理商初审与管理总台终审通过后生效",
+    "realName": "真实姓名 / 主体名称",
+    "realNamePh": "请填写与证件一致的姓名",
+    "realNameRequired": "请填写真实姓名 / 主体名称"
   },
   "dashboard": {
     "title": "我的作品",

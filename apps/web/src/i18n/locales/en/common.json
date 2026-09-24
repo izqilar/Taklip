@@ -486,6 +486,51 @@
     "biz_social": "Business Social",
     "marketing": "Product Marketing"
   },
+  "onboarding": {
+    "title": {
+      "provider": "Service Provider Onboarding",
+      "agent": "Agent Onboarding"
+    },
+    "subtitle": "After submission: regional agent first review → HQ final review. Status takes effect once approved.",
+    "province": "Province",
+    "city": "City",
+    "district": "District",
+    "pleaseSelect": "Please select",
+    "scopes": "Service types (at least one)",
+    "applicantName": "Applicant / entity name",
+    "phone": "Contact phone",
+    "certType": "Certificate type",
+    "certNo": "Certificate No.",
+    "certExpire": "Valid until",
+    "certLongTerm": "Long-term valid",
+    "issuer": "Issuing authority",
+    "attachments": "Qualification attachments (one link per line)",
+    "attachmentsPh": "https://…/business-license.png",
+    "reason": "Application note",
+    "submit": "Submit application",
+    "viewMine": "View my application status",
+    "cert": {
+      "idCard": "ID card",
+      "license": "Business license",
+      "other": "Other certificate"
+    },
+    "err": {
+      "applicantName": "Please fill in the applicant / entity name",
+      "phone": "Please fill in the contact phone",
+      "certNo": "Please fill in the certificate No.",
+      "certExpire": "Please fill in the validity date, or check long-term valid",
+      "attachments": "Please provide at least one attachment link",
+      "region": "Please select your region",
+      "regionDistrict": "Agents must select down to district / county level",
+      "scopes": "Please select at least one service type",
+      "reason": "Please fill in the application note"
+    },
+    "duplicated": "You already have an in-progress application of this type",
+    "warn": {
+      "noAgentCoverage": "No agent covers the selected region; HQ will handle it directly",
+      "dupCertNo": "This certificate No. already exists on another application or entity; HQ will review it closely"
+    }
+  },
   "userCenter": {
     "panel": {
       "quickLinks": "Quick Links",

@@ -66,11 +66,26 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, SALT_ROUNDS);
+
+    // 注册即入驻（P1）：写入实名与所选区域，**不写 role、不创建入驻申请**。
+    // role 变更与资质落地的唯一真源仍是「提交入驻申请 → 代理一审 → 总台终审 APPROVED」；
+    // 未鉴权的注册接口不承载资质材料，避免被刷。
+    let regionPath: string | null = null;
+    if (dto.regionId) {
+      const region = await this.prisma.region.findUnique({
+        where: { id: dto.regionId },
+        select: { regionPath: true },
+      });
+      regionPath = region?.regionPath ?? null;
+    }
+
     const user = await this.prisma.user.create({
       data: {
         phone: dto.phone,
         password: hashedPassword,
         nickname: dto.nickname ?? `用户${dto.phone.slice(-4)}`,
+        ...(dto.realName ? { realName: dto.realName } : {}),
+        ...(dto.regionId && regionPath ? { regionId: dto.regionId, regionPath } : {}),
       },
     });
 

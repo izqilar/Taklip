@@ -15,7 +15,15 @@
     "nickname": "Nickname",
     "submit": "Sign up",
     "hasAccount": "Already have an account?",
-    "login": "Log in"
+    "login": "Log in",
+    "accountType": "Account type",
+    "typeUser": "Regular user",
+    "typeProvider": "Service provider",
+    "typeAgent": "Agent",
+    "settleHint": "After sign-up you must submit onboarding documents; regional agent first review and HQ final review are required.",
+    "realName": "Real name / entity name",
+    "realNamePh": "Must match your certificate",
+    "realNameRequired": "Please fill in the real name / entity name"
   },
   "dashboard": {
     "title": "My Works",
