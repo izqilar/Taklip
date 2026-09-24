@@ -5,7 +5,7 @@
  * 下方同步展示辖区内最近登记的招商意向，便于即时确认落库。
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Form, Input, Button, message as antdMessage } from 'antd';
+import { Form, Input, Button, Alert, message as antdMessage } from 'antd';
 import { PageHead } from '../components/ui/PageHead';
 import { Panel } from '../components/ui/Panel';
 import { DataTable } from '../components/ui/DataTable';
@@ -13,6 +13,7 @@ import { EmptyState } from '../components/common/EmptyState';
 import { T } from '../config/theme';
 import { t } from '../i18n/t';
 import { dataProvider } from '../providers/dataProvider';
+import { API_URL, authHeaders } from '../utility';
 
 const pill = (text: string, tone: 'ok' | 'warn' | 'bad' | 'mut') => {
   const c =
@@ -45,6 +46,22 @@ export const AgentInvest = () => {
   const [submitting, setSubmitting] = useState(false);
   const [recent, setRecent] = useState<any[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(false);
+  const [jur, setJur] = useState<{ name?: string; regionPath?: string } | null>(null);
+
+  // 拉取登录者自身辖区（getMe 带 region 关联），用于「归属辖区」只读提示
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(API_URL + '/auth/me', { headers: authHeaders() });
+        if (res.ok) {
+          const me: any = await res.json();
+          setJur({ name: me?.region?.name, regionPath: me?.regionPath });
+        }
+      } catch {
+        /* 忽略：不阻塞表单 */
+      }
+    })();
+  }, []);
 
   const loadRecent = useCallback(async () => {
     setLoadingRecent(true);
@@ -104,6 +121,17 @@ export const AgentInvest = () => {
       />
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: 16, alignItems: 'start' }}>
         <Panel title={t('pages.lbl.registerRecruit', '登记招商意向')}>
+          <Alert
+            type="info"
+            showIcon
+            style={{ marginBottom: 16 }}
+            message={t('pages.lbl.lockedJurisdiction', '归属辖区（系统自动锁定）')}
+            description={
+              jur?.name
+                ? `${jur.name}${jur.regionPath ? ` · ${jur.regionPath}` : ''}`
+                : t('pages.desc.loadingJurisdiction', '正在读取您的辖区…')
+            }
+          />
           <Form form={form} layout="vertical" requiredMark="optional">
             <Form.Item
               label={t('col.name', '名称')}

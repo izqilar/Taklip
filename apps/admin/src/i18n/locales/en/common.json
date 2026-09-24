@@ -666,7 +666,8 @@
       "all": "All",
       "registerRecruit": "Register lead",
       "recentRecruit": "Recent",
-      "intentPool": "Intent pool"
+      "intentPool": "Intent pool",
+      "lockedJurisdiction": "Jurisdiction (auto-locked by system)"
     },
     "sec": {
       "templateReview": "Template Review",
@@ -720,7 +721,8 @@
       "agentContractHint": "Region-visible",
       "agentQualificationSub": "Regional onboarding tunnel · agent first-review (no role change) · final review by admin",
       "agentInvestSub": "Regional lead registration · assigned to this agent on submit, region auto-locked by system",
-      "agentPoolSub": "Regional recruitment lead ledger · advance contact stage (no role/fund touch)"
+      "agentPoolSub": "Regional recruitment lead ledger · advance contact stage (no role/fund touch)",
+      "loadingJurisdiction": "Loading your jurisdiction…"
     },
     "ph": {
       "recruitName": "e.g. XX Culture Media Co., Ltd.",

@@ -666,7 +666,8 @@
       "all": "全部",
       "registerRecruit": "登记招商意向",
       "recentRecruit": "最近登记",
-      "intentPool": "意向池"
+      "intentPool": "意向池",
+      "lockedJurisdiction": "归属辖区（系统自动锁定）"
     },
     "sec": {
       "templateReview": "模板审核",
@@ -720,7 +721,8 @@
       "agentContractHint": "辖区可见",
       "agentQualificationSub": "辖区入驻资格升级隧道 · 代理一审（不触碰身份变更）· 终审由总台裁定",
       "agentInvestSub": "辖区内拓客登记 · 提交后归属本代理商，区域由系统按辖区自动锁定",
-      "agentPoolSub": "辖区内招商意向台账 · 推进接触阶段（不触碰身份 / 资金）"
+      "agentPoolSub": "辖区内招商意向台账 · 推进接触阶段（不触碰身份 / 资金）",
+      "loadingJurisdiction": "正在读取您的辖区…"
     },
     "ph": {
       "recruitName": "如：某某文化传媒有限公司",
