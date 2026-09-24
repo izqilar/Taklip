@@ -72,6 +72,8 @@ const AgentWallet = lazy(() => import('./pages/consolePages').then((m) => ({ def
 const AgentTemplateReview = lazy(() => import('./pages/agentTemplateReview').then((m) => ({ default: m.AgentTemplateReview })));
 const AgentServiceReview = lazy(() => import('./pages/agentServiceReview').then((m) => ({ default: m.AgentServiceReview })));
 const AgentComingSoon = lazy(() => import('./pages/agentComingSoon').then((m) => ({ default: m.AgentComingSoon })));
+const AgentNotices = lazy(() => import('./pages/agentNotices').then((m) => ({ default: m.AgentNotices })));
+const AgentComplaints = lazy(() => import('./pages/agentComplaints').then((m) => ({ default: m.AgentComplaints })));
 const SPStudio = lazy(() => import('./pages/consolePages').then((m) => ({ default: m.SPStudio })));
 const SPServices = lazy(() => import('./pages/consolePages').then((m) => ({ default: m.SPServices })));
 const SPOrders = lazy(() => import('./pages/consolePages').then((m) => ({ default: m.SPOrders })));
@@ -293,9 +295,9 @@ export const App = () => (
                 <Route path="/agent/qualification" element={<ProviderReviewList />} />
                 <Route path="/agent/apply" element={<AgentComingSoon title="入驻审批" />} />
                 <Route path="/agent/contract" element={<AgentComingSoon title="合同管理" />} />
-                {/* 辖区运营：意见反馈（占位）；通知公告（占位） */}
-                <Route path="/agent/complaints" element={<AgentComingSoon title="意见反馈" />} />
-                <Route path="/agent/notices" element={<AgentComingSoon title="通知公告" />} />
+                {/* 辖区运营：意见反馈（复用辖区工单）/ 通知公告（复用收件箱） */}
+                <Route path="/agent/complaints" element={<AgentComplaints />} />
+                <Route path="/agent/notices" element={<AgentNotices />} />
                 {/* 招商拓展（代理商专有）：招商申请 / 意向池（占位，需新建后端） */}
                 <Route path="/agent/invest" element={<AgentComingSoon title="招商申请" />} />
                 <Route path="/agent/pool" element={<AgentComingSoon title="意向池" />} />
