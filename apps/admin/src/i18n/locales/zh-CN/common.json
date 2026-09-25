@@ -19,6 +19,8 @@
     "submit": "提交",
     "close": "关闭",
     "backToConsole": "返回总台",
+    "advance": "推进合同",
+    "advanceContract": "推进合同阶段",
     "readonly": "只读模式",
     "logout": "退出登录",
     "role": "角色",
@@ -31,7 +33,8 @@
     "bool": {
       "yes": "是",
       "no": "否"
-    }
+    },
+    "delete": "删除"
   },
   "view": {
     "console": "总台",
@@ -56,7 +59,9 @@
     "providersupervise": "辖区服务商",
     "contentreview": "内容审核",
     "regionops": "辖区运营",
-    "recruit": "招商拓展"
+    "recruit": "招商拓展",
+    "recycle": "回收站",
+    "contract": "合同中枢"
   },
   "status": {
     "ACTIVE": "正常",
@@ -112,7 +117,17 @@
       "settings": "系统设置",
       "fonts": "字体管理",
       "auditLogs": "操作日志",
-      "qualifications": "入驻审批"
+      "qualifications": "入驻审批",
+      "zombie-users": "僵尸用户",
+      "audit-logs": "操作日志",
+      "redline-words": "红线词库",
+      "service-review": "服务审核",
+      "work-review": "作品审核",
+      "invest": "招商申请",
+      "pool": "意向池",
+      "settle": "结算总览",
+      "fee-config": "分账费率",
+      "contracts": "平台合同管理"
     },
     "agent": {
       "team": "团队管理",
@@ -173,7 +188,8 @@
     },
     "account": {
       "profile-user": "账户详情",
-      "profile-provider": "账户详情"
+      "profile-provider": "账户详情",
+      "profile": "账户详情"
     }
   },
   "pages": {
@@ -237,12 +253,15 @@
       "region": "区域",
       "time": "时间",
       "createdAt": "创建时间",
+      "targetStage": "目标阶段",
+      "note": "备注",
       "updatedAt": "更新时间",
       "orderNo": "订单号",
       "orderCount": "订单数",
       "serviceCount": "服务数",
       "regionProviderCount": "辖区服务商数",
       "regionWithdrawable": "辖区可提现余额",
+      "platformWithdrawable": "平台可提现总额",
       "openedServices": "已开通服务",
       "templateName": "模板名称",
       "templateCategory": "模板品类",
@@ -287,7 +306,15 @@
       "reason": "申请说明",
       "certNo": "证件编号",
       "tags": "标签",
-      "email": "邮箱"
+      "email": "邮箱",
+      "voidDirection": "处理方式",
+      "platformRevenue": "平台总流水",
+      "platformFeeIncome": "平台抽成",
+      "totalWithdrawn": "累计已提现",
+      "pendingWithdrawals": "待处理提现",
+      "platformShare": "平台抽成",
+      "agentShare": "代理商分账",
+      "providerShare": "服务商实收"
     },
     "field": {
       "initPassword": "初始密码",
@@ -312,7 +339,31 @@
       "editReason": "编辑理由",
       "targetUserId": "被反馈对象用户ID（可选）",
       "providerUserIdHint": "服务商 userId，投诉/评价类建议填写",
-      "deleteReason": "删除理由"
+      "deleteReason": "删除理由",
+      "userId": "用户ID",
+      "idCard": "身份证号",
+      "realNameStatus": "实名状态",
+      "locale": "语言偏好",
+      "wxOpenid": "微信OpenID",
+      "bio": "个人简介",
+      "vipLevel": "会员等级",
+      "points": "积分",
+      "walletBalance": "钱包余额",
+      "totalSpent": "累计消费",
+      "followingProviders": "关注服务商数",
+      "lastLogin": "最近登录",
+      "realNameVerifiedAt": "实名认证时间",
+      "regionName": "所属区域",
+      "agentName": "所属代理商",
+      "zombieAt": "进入回收站时间",
+      "platformRate": "平台抽成比例",
+      "agentRate": "代理商分账比例",
+      "providerRate": "服务商分账比例",
+      "settlePeriod": "结算周期",
+      "minWithdraw": "最低提现门槛（元）",
+      "sampleAmount": "样本订单金额（元）",
+      "lastUpdated": "最近更新",
+      "operator": "操作人"
     },
     "btn": {
       "editUser": "编辑用户",
@@ -334,7 +385,15 @@
       "recruitLost": "标记已流失",
       "batchPass": "批量通过",
       "batchReject": "批量驳回",
-      "clearSelection": "清空"
+      "clearSelection": "清空",
+      "editContract": "编辑",
+      "voidContract": "作废",
+      "saveChanges": "保存修改",
+      "reinitNegotiate": "重新发起协商流程",
+      "deleteUser": "删除",
+      "activateUser": "激活恢复",
+      "purgeUser": "彻底删除",
+      "addCategoryRate": "＋ 新增类目费率"
     },
     "tag": {
       "enabled": "启用",
@@ -347,6 +406,7 @@
       "recruitRegion": "选填 · 例如：高新区",
       "recruitIntro": "选填 · 意向来源 / 对接人 / 诉求",
       "searchNamePhone": "搜索名称 / 手机",
+      "regionPath": "如：新疆/乌鲁木齐/天山区",
       "rejectReason": "请说明驳回原因，将记入审计日志",
       "searchBuyerTemplate": "搜索买家 / 模板",
       "searchNickPhone": "搜索昵称 / 手机号",
@@ -358,11 +418,17 @@
       "regionPathHint": "如 11/1101/110101，留空=全区域",
       "regionAllHint": "留空表示全部区域",
       "blankMeansRecord": "留空表示仅记录",
-      "deleteReasonPlaceholder": "请说明删除原因（如：注册后从未使用 / 测试脏数据），用于审计追溯…"
+      "deleteReasonPlaceholder": "请说明删除原因（如：注册后从未使用 / 测试脏数据），用于审计追溯…",
+      "partyA": "签约甲方",
+      "category": "服务品类"
     },
     "sec": {
       "templateReview": "模板审核",
       "serviceReview": "服务审核",
+      "serviceReviewAdmin": "服务审核 · 全平台",
+      "workReviewAdmin": "作品审核 · 全平台",
+      "investAdmin": "招商申请 · 全平台",
+      "poolAdmin": "意向池 · 全平台",
       "myWorkspace": "我的工作台",
       "myProviders": "我的服务商",
       "myOrders": "我的订单",
@@ -381,6 +447,8 @@
       "fundOverview": "资金概览",
       "walletWithdraw": "钱包与提现",
       "settleWallet": "结算与钱包",
+      "settleAdmin": "结算总览 · 全平台",
+      "settleAdminDetail": "全平台服务商钱包明细",
       "serviceManage": "服务管理",
       "qualification": "资质管理",
       "orderHandle": "订单处理",
@@ -391,6 +459,7 @@
       "builtinRoleReadonly": "内置角色与权限域（只读）",
       "authorityNoticeReview": "权威公告审核",
       "agentContract": "辖区合同",
+      "platformContract": "平台合同管理",
       "agentQualification": "入驻审批",
       "agentWithdraw": "提现初审",
       "recruit": "招商意向",
@@ -401,7 +470,20 @@
       "coupons": "优惠与权益",
       "myMessages": "我的消息",
       "publishManage": "发布管理",
-      "providerDelete": "删除服务商账号"
+      "providerDelete": "删除服务商账号",
+      "basicInfo": "基本资料",
+      "accountAsset": "账户与资产",
+      "rolePerm": "角色权限",
+      "activity": "注册及活跃记录",
+      "businessOverview": "经营概览",
+      "zombieUsers": "僵尸用户",
+      "zombieUserDetail": "僵尸用户详情",
+      "platformSettleStats": "平台资金总览",
+      "feeConfig": "分账费率",
+      "platformFeeRate": "平台抽成比",
+      "providerSplitRule": "服务商分账规则",
+      "splitTrial": "分账试算",
+      "categoryFeeRate": "类目费率"
     },
     "filter": {
       "status": "状态筛选",
@@ -429,7 +511,9 @@
       "fbAgent": "您作为代理商提交的反馈将归属本辖区，可协商或升级总台。",
       "fbAdmin": "管理总台可查看全量反馈并执行仲裁。",
       "fbUser": "您提交的反馈将按层级进入处理流程。",
-      "deleteGuard": "仅用于清理僵尸用户 / 错误账户：若该账号已有订单、合同、提现或钱包资金留痕，系统将拒绝删除，请改用「禁用」。"
+      "deleteGuard": "仅用于清理僵尸用户 / 错误账户：若该账号已有订单、合同、提现或钱包资金留痕，系统将拒绝删除，请改用「禁用」。",
+      "providerRateDerived": "= 100% − 平台抽成 − 代理商分账，不可手工编辑",
+      "minWithdrawZero": "填 0 表示不限制"
     },
     "error": {
       "404": "页面不存在（404）",
@@ -453,7 +537,21 @@
       "arbitrating": "仲裁中",
       "escalating": "升级中",
       "plsInputContent": "请输入内容",
-      "requiredReasonDel": "请填写删除理由（不少于 2 个字符）"
+      "requiredReasonDel": "请填写删除理由（不少于 2 个字符）",
+      "contractAdvanced": "合同阶段已推进",
+      "advanceFailed": "推进失败",
+      "contractUpdated": "合同已更新",
+      "contractVoided": "合同已作废",
+      "voidFailed": "作废失败",
+      "negotiationReinit": "已重新发起协商",
+      "reinitFailed": "重新发起协商失败",
+      "noChange": "没有可保存的改动",
+      "userDeleted": "用户已移入回收站",
+      "userActivated": "僵尸用户已激活恢复",
+      "userPurged": "用户已彻底删除",
+      "opFailed": "操作失败",
+      "feeRateOverflow": "平台抽成与代理商分账之和不能超过 100%",
+      "feeConfigSaved": "分账费率已保存"
     },
     "toast": {
       "redlineRequired": "驳回必须填写意见并选择红线类别",
@@ -545,6 +643,7 @@
       "recentRecruit": "最近登记",
       "intentPool": "意向池",
       "lockedJurisdiction": "归属辖区（系统自动锁定）",
+      "regionPath": "归属区域路径",
       "selectedCount": "已选",
       "fbHandle": "反馈处理",
       "inbox": "收件箱",
@@ -564,9 +663,17 @@
     "desc": {
       "agentContractSub": "辖区内服务商合同 · 只读可见（签约 / 编辑由服务商自身完成）",
       "agentContractHint": "辖区可见",
+      "platformContractSub": "全平台服务商合同 · 总台可见全部主体（签约 / 编辑由服务商自身完成）",
+      "platformContractHint": "全平台",
+      "advanceHint": "将合同从「待上级签署 / 审批中」推进至下一阶段。",
+      "advanceNotePlaceholder": "可选：本次推进的说明",
       "agentQualificationSub": "辖区入驻资格升级隧道 · 代理一审（不触碰身份变更）· 终审由总台裁定",
       "agentInvestSub": "辖区内拓客登记 · 提交后归属本代理商，区域由系统按辖区自动锁定",
       "agentPoolSub": "辖区内招商意向台账 · 推进接触阶段（不触碰身份 / 资金）",
+      "investAdminSub": "全平台招商意向登记 · 请指定归属区域路径，提交后纳入对应辖区台账",
+      "investAdminRegionHint": "总台登记需指定意向主体所属区域路径（如：新疆/乌鲁木齐/天山区），提交后纳入对应辖区台账",
+      "poolAdminSub": "全平台招商意向台账 · 推进接触阶段（不触碰身份 / 资金）",
+      "settleAdminSub": "全平台服务商可提现余额与累计收益汇总",
       "loadingJurisdiction": "正在读取您的辖区…",
       "agentFb": "您作为代理商提交的反馈将归属本辖区，可协商或升级总台。",
       "spMsg": "您作为服务商仅可发布「一般消息」给指定角色（用户 / 上级）。",
@@ -574,7 +681,14 @@
       "fbFlow": "您提交的反馈将按层级进入处理流程。",
       "consolePublish": "管理总台可发布全局或区域权威公告与一般消息。",
       "consoleFb": "管理总台可查看全量反馈并执行仲裁。",
-      "comingSoon": "该功能即将上线，敬请期待。"
+      "comingSoon": "该功能即将上线，敬请期待。",
+      "editContractHint": "编辑合同商务条款 / 签署阶段，或重新发起协商流程。",
+      "voidConfirm": "确认作废该合同？作废后合同状态变更为「已作废」，并按所选方向处置对应身份。",
+      "platformSettleStatsHint": "复用总台看板口径，与「数据看板」严格一致",
+      "feeConfigSub": "平台抽成比、服务商分账规则与类目费率的全局配置，作为新签合同的默认取价",
+      "platformFeeRateHint": "三方比例之和恒为 100%，服务商分账由系统自动推导",
+      "providerSplitRuleHint": "结算周期与提现门槛，并对当前费率做分账试算",
+      "categoryFeeRateHint": "按服务品类覆盖平台抽成；未命中的类目回落到全局平台抽成比"
     },
     "cat": {
       "houseMove": "乔迁新居",
@@ -631,6 +745,8 @@
       "contractStageTerminated": "已终止",
       "contractStageNegotiating": "协商中",
       "contractStageExpired": "已到期",
+      "contractTypeMain": "主合同",
+      "contractTypeAgency": "代理协议",
       "contractModeRegionExclusive": "区域独家",
       "contractModeOnline": "线上接单",
       "contractModeOnSite": "线下驻场",
@@ -656,7 +772,8 @@
       "tkArbitrating": "仲裁中",
       "tkClosed": "已关闭",
       "msgAnnouncement": "权威公告",
-      "msgGeneral": "一般消息"
+      "msgGeneral": "一般消息",
+      "contractStageVoided": "已作废"
     },
     "login": {
       "subtitle": "运营管理平台 · 管理员 / 代理商 / 服务商",
@@ -767,12 +884,23 @@
       "deleteConfirm": "确认删除该红线词？"
     },
     "modal": {
-      "rejectReason": "填写驳回意见"
+      "rejectReason": "填写驳回意见",
+      "voidTitle": "作废合同",
+      "voidDirectionSuspend": "挂起（停用账号，保留资质）",
+      "voidDirectionDemote": "降为普通用户（撤销经营能力）",
+      "voidNotePlaceholder": "可选：作废说明",
+      "deleteUserTitle": "删除用户",
+      "deleteUserContent": "确认将用户「{{name}}」移入回收站？删除后该用户将被停用并保留全部数据，可在「回收站 · 僵尸用户」中激活恢复。",
+      "activateUserTitle": "激活恢复僵尸用户",
+      "activateUserContent": "确认激活恢复用户「{{name}}」？恢复后其原有数据将重新生效，状态置为正常。",
+      "purgeUserTitle": "彻底删除用户",
+      "purgeUserContent": "确认彻底删除用户「{{name}}」？此操作将永久清除其全部数据，无法恢复，后续需完全重新注册新用户。"
     },
     "rule": {
       "nameRequired": "请填写意向主体名称",
       "phoneRequired": "请填写联系电话",
-      "phone11": "手机号须为 11 位数字"
+      "phone11": "手机号须为 11 位数字",
+      "regionPathRequired": "请填写归属区域路径"
     }
   }
 }

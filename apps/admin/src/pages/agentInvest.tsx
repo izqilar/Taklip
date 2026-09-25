@@ -41,7 +41,8 @@ const stagePill = (s?: string) => {
 
 const fmt = (v?: string | Date | null) => (v ? new Date(v).toLocaleString('zh-CN', { hour12: false }) : '—');
 
-export const AgentInvest = () => {
+export const AgentInvest = ({ variant = 'agent' }: { variant?: 'agent' | 'admin' }) => {
+  const isAdmin = variant === 'admin';
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [recent, setRecent] = useState<any[]>([]);
@@ -90,7 +91,10 @@ export const AgentInvest = () => {
         payload: {
           name: values.name.trim(),
           phone: values.phone.trim(),
-          regionLabel: (values.regionLabel || '').toString().trim() || null,
+          regionPath: isAdmin ? (values.regionPath || '').toString().trim() || undefined : undefined,
+          regionLabel: isAdmin
+            ? (values.regionLabel || (values.regionPath || '').toString().trim().split('/').pop() || '').toString().trim() || null
+            : (values.regionLabel || '').toString().trim() || null,
           intro: (values.intro || '').toString().trim() || null,
         },
       });
@@ -156,24 +160,43 @@ export const AgentInvest = () => {
   return (
     <>
       <PageHead
-        title={t('sec.recruit', '招商意向')}
-        sub={t('pages.desc.agentInvestSub', '辖区内拓客登记 · 提交后归属本代理商，区域由系统按辖区自动锁定')}
-        chip="代理商 · 招商申请"
+        title={isAdmin ? t('pages.sec.investAdmin', '招商申请 · 全平台') : t('sec.recruit', '招商意向')}
+        sub={isAdmin ? t('pages.desc.investAdminSub', '全平台招商意向登记 · 请指定归属区域路径，提交后纳入对应辖区台账') : t('pages.desc.agentInvestSub', '辖区内拓客登记 · 提交后归属本代理商，区域由系统按辖区自动锁定')}
+        chip={isAdmin ? '总台 · 全盘治理' : '代理商 · 招商申请'}
       />
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: 16, alignItems: 'start' }}>
         <Panel title={t('pages.lbl.registerRecruit', '登记招商意向')}>
-          <Alert
-            type="info"
-            showIcon
-            style={{ marginBottom: 16 }}
-            message={t('pages.lbl.lockedJurisdiction', '归属辖区（系统自动锁定）')}
-            description={
-              jur?.name
-                ? `${jur.name}${jur.regionPath ? ` · ${jur.regionPath}` : ''}`
-                : t('pages.desc.loadingJurisdiction', '正在读取您的辖区…')
-            }
-          />
+          {isAdmin ? (
+            <Alert
+              type="info"
+              showIcon
+              style={{ marginBottom: 16 }}
+              message={t('pages.lbl.regionPath', '归属区域路径')}
+              description={t('pages.desc.investAdminRegionHint', '总台登记需指定意向主体所属区域路径（如：新疆/乌鲁木齐/天山区），提交后纳入对应辖区台账')}
+            />
+          ) : (
+            <Alert
+              type="info"
+              showIcon
+              style={{ marginBottom: 16 }}
+              message={t('pages.lbl.lockedJurisdiction', '归属辖区（系统自动锁定）')}
+              description={
+                jur?.name
+                  ? `${jur.name}${jur.regionPath ? ` · ${jur.regionPath}` : ''}`
+                  : t('pages.desc.loadingJurisdiction', '正在读取您的辖区…')
+              }
+            />
+          )}
           <Form form={form} layout="vertical" requiredMark="optional">
+            {isAdmin && (
+              <Form.Item
+                label={t('pages.lbl.regionPath', '归属区域路径')}
+                name="regionPath"
+                rules={[{ required: true, message: t('pages.rule.regionPathRequired', '请填写归属区域路径') }]}
+              >
+                <Input placeholder={t('pages.ph.regionPath', '如：新疆/乌鲁木齐/天山区')} maxLength={120} />
+              </Form.Item>
+            )}
             <Form.Item
               label={t('col.name', '名称')}
               name="name"
@@ -205,7 +228,7 @@ export const AgentInvest = () => {
 
         <Panel
           title={t('pages.lbl.recentRecruit', '最近登记')}
-          hint={<>{t('pages.enum.all', '全部')} <b style={{ color: T.accent }}>{recent.length}</b> {t('pages.enum.unit', '条')}</>}
+          hint={<>{isAdmin ? '全平台 ' : ''}{t('pages.enum.all', '全部')} <b style={{ color: T.accent }}>{recent.length}</b> {t('pages.enum.unit', '条')}</>}
         >
           <DataTable<any>
             rowKey="id"

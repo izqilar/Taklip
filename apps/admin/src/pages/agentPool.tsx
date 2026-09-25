@@ -49,7 +49,8 @@ const STAGE_OPTIONS = [
   { label: t('enum.recruitLost', '已流失'), value: 'LOST' },
 ];
 
-export const AgentPool = () => {
+export const AgentPool = ({ variant = 'agent' }: { variant?: 'agent' | 'admin' }) => {
+  const isAdmin = variant === 'admin';
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -149,14 +150,15 @@ export const AgentPool = () => {
   return (
     <>
       <PageHead
-        title={t('pages.lbl.intentPool', '意向池')}
-        sub={t('pages.desc.agentPoolSub', '辖区内招商意向台账 · 推进接触阶段（不触碰身份 / 资金）')}
-        chip="代理商 · 意向池"
+        title={isAdmin ? t('pages.sec.poolAdmin', '意向池 · 全平台') : t('pages.lbl.intentPool', '意向池')}
+        sub={isAdmin ? t('pages.desc.poolAdminSub', '全平台招商意向台账 · 推进接触阶段（不触碰身份 / 资金）') : t('pages.desc.agentPoolSub', '辖区内招商意向台账 · 推进接触阶段（不触碰身份 / 资金）')}
+        chip={isAdmin ? '总台 · 全盘治理' : '代理商 · 意向池'}
       />
       <Panel
-        title={t('pages.lbl.intentPool', '意向池')}
+        title={isAdmin ? t('pages.sec.poolAdmin', '意向池 · 全平台') : t('pages.lbl.intentPool', '意向池')}
         hint={
           <>
+            {isAdmin && <span style={{ color: T.ink3, marginRight: 12 }}>全平台（ALL 视角）</span>}
             <Segmented
               options={STAGE_OPTIONS}
               value={stage}

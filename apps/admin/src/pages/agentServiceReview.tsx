@@ -53,8 +53,9 @@ const detailFieldsOf = (r: ProjectRow | null): KVField[] =>
       ]
     : [];
 
-export const AgentServiceReview = () => {
+export const AgentServiceReview = ({ variant = 'agent' }: { variant?: 'agent' | 'admin' }) => {
   const { readonly } = useLayer();
+  const isAdmin = variant === 'admin';
   const [status, setStatus] = useState<string>('review_pending');
   const [kw, setKw] = useState('');
   const [page, setPage] = useState(1);
@@ -103,9 +104,9 @@ export const AgentServiceReview = () => {
   return (
     <>
       <PageHead
-        title={t('menu.agent.service-review', '服务审核')}
-        sub="辖区服务商发布的服务/作品 · 红线闸口一审（机审→待审→放行）"
-        chip="内容审核"
+        title={isAdmin ? t('pages.sec.serviceReviewAdmin', '服务审核 · 全平台') : t('menu.agent.service-review', '服务审核')}
+        sub={isAdmin ? '全平台服务商发布的服务/作品 · 红线闸口复核（总台二审）' : '辖区服务商发布的服务/作品 · 红线闸口一审（机审→待审→放行）'}
+        chip={isAdmin ? '总台 · 全盘治理' : '内容审核'}
       />
 
       <FilterBar
@@ -126,10 +127,10 @@ export const AgentServiceReview = () => {
       />
 
       <Panel
-        title={<span>{t('menu.agent.service-review', '服务审核')}</span>}
+        title={<span>{isAdmin ? t('pages.sec.serviceReviewAdmin', '服务审核 · 全平台') : t('menu.agent.service-review', '服务审核')}</span>}
         hint={
           <>
-            共 <b style={{ color: T.accent }}>{total}</b> 个 · 仅本辖区服务商作品
+            共 <b style={{ color: T.accent }}>{total}</b> 个 · {isAdmin ? '全平台（ALL 视角）' : '仅本辖区服务商作品'}
           </>
         }
       >
@@ -198,7 +199,7 @@ export const AgentServiceReview = () => {
       <RedlineReviewModal
         open={modalOpen}
         title={current ? `${t('pages.sec.serviceReview')} · ${current.title}` : t('pages.sec.serviceReview')}
-        tag="辖区一审"
+        tag={isAdmin ? '总台复核' : '辖区一审'}
         readonly={readonly}
         loading={busy}
         fields={detailFieldsOf(current)}

@@ -18,9 +18,12 @@ function permFor(resource: string, action: string): string | null {
   // 自定义动作（来自资源 meta.action），用于细粒度（如角色分配）
   if (action === 'user:role') return 'user:role';
   if (resource === 'admin/users') {
+    if (action === 'delete') return 'user:delete';
     if (action === 'edit') return 'user:update';
     return 'user:read';
   }
+  // 回收站（僵尸用户）：仅具备 user:delete 权限的管理员可见（与用户管理·删除同源门控）
+  if (resource === 'admin/zombie-users') return 'user:delete';
   if (resource === 'admin/provider-review') return 'provider:review';
   if (resource === 'admin/agents') return 'agent:manage';
   if (resource === 'admin/regions') return 'region:read';
@@ -28,6 +31,8 @@ function permFor(resource: string, action: string): string | null {
   if (resource === 'admin/withdrawals') return 'wallet:manage';
   if (resource === 'admin/orders') return 'order:read';
   if (resource === 'admin/dashboard') return 'user:read';
+  // 平台合同管理：编辑 / 作废均属总台合同治理，统一由 contract:manage 门控
+  if (resource === 'admin/contracts') return 'contract:manage';
   // 评价与反馈中心
   if (resource === 'admin/feedback') return 'feedback:read';
   if (resource === 'admin/feedback-review') return 'feedback:review';

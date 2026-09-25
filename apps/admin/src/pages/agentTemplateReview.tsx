@@ -57,8 +57,9 @@ const detailFieldsOf = (r: TemplateRow | null): KVField[] =>
       ]
     : [];
 
-export const AgentTemplateReview = () => {
+export const AgentTemplateReview = ({ variant = 'agent' }: { variant?: 'agent' | 'admin' }) => {
   const { readonly } = useLayer();
+  const isAdmin = variant === 'admin';
   const [status, setStatus] = useState<string>('PENDING');
   const [kw, setKw] = useState('');
   const [page, setPage] = useState(1);
@@ -107,9 +108,9 @@ export const AgentTemplateReview = () => {
   return (
     <>
       <PageHead
-        title={t('menu.agent.template-review', '模板审核')}
-        sub="辖区服务商提交的请柬模板 · 红线闸口一审"
-        chip="内容审核"
+        title={isAdmin ? t('pages.sec.workReviewAdmin', '作品审核 · 全平台') : t('menu.agent.template-review', '模板审核')}
+        sub={isAdmin ? '全平台服务商提交的请柬模板/作品 · 红线闸口复核（总台二审）' : '辖区服务商提交的请柬模板 · 红线闸口一审'}
+        chip={isAdmin ? '总台 · 全盘治理' : '内容审核'}
       />
 
       <FilterBar
@@ -130,10 +131,10 @@ export const AgentTemplateReview = () => {
       />
 
       <Panel
-        title={<span>{t('menu.agent.template-review', '模板审核')}</span>}
+        title={<span>{isAdmin ? t('pages.sec.workReviewAdmin', '作品审核 · 全平台') : t('menu.agent.template-review', '模板审核')}</span>}
         hint={
           <>
-            共 <b style={{ color: T.accent }}>{total}</b> 个 · 仅本辖区（regionPath 前缀隔离）
+            共 <b style={{ color: T.accent }}>{total}</b> 个 · {isAdmin ? '全平台（ALL 视角）' : '仅本辖区（regionPath 前缀隔离）'}
           </>
         }
       >
@@ -216,7 +217,7 @@ export const AgentTemplateReview = () => {
       <RedlineReviewModal
         open={modalOpen}
         title={current ? `${t('pages.sec.templateReview')} · ${current.name}` : t('pages.sec.templateReview')}
-        tag="辖区一审"
+        tag={isAdmin ? '总台复核' : '辖区一审'}
         readonly={readonly}
         loading={busy}
         fields={detailFieldsOf(current)}

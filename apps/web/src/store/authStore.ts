@@ -65,6 +65,10 @@ interface AuthState {
       realName?: string;
       bio?: string;
       email?: string;
+      /** 身份证号 + 证件影像（人像面 / 国徽面）：账户详情「身份认证资料」区块 */
+      idCard?: string;
+      idCardFront?: string;
+      idCardBack?: string;
     },
   ) => Promise<boolean>;
   /** 修改密码 */

@@ -29,6 +29,7 @@ import {
   GiftOutlined,
   UserAddOutlined,
   FontSizeOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import type { LayerKey } from './permGroups';
 
@@ -100,7 +101,9 @@ export type MenuGroupKey =
   | 'providersupervise' // 辖区服务商（代理商监督簇）
   | 'contentreview' // 内容审核（红线把关核心，独立成组）
   | 'regionops' // 辖区运营
-  | 'recruit'; // 招商拓展（代理商专有拓客）
+  | 'recruit' // 招商拓展（代理商专有拓客）
+  | 'contract' // 合同中枢（总台治理专属分组）
+  | 'recycle'; // 回收站（僵尸用户，侧栏最底部）
 
 /** 侧栏自上而下的分组展示顺序（不依赖 resources 声明顺序） */
 export const GROUP_ORDER: MenuGroupKey[] = [
@@ -109,19 +112,23 @@ export const GROUP_ORDER: MenuGroupKey[] = [
   // ── 代理商视角四组（紧跟数据看板，相对顺序：辖区服务商 → 内容审核 → 辖区运营 → 招商拓展）──
   'providersupervise',
   'contentreview',
+  // ── 总台：内容审核 → 运营监管(ops) → 招商拓展（原 recruit 在 ops 前，现 ops 上提）──
+  'ops',
   'regionops',
   'recruit',
   'trade',
   'orderfulfill',
-  'ops',
   'servicecontent',
   'qualification',
   'finance',
+  // ── 总台治理专属：合同中枢（财务中心之后、评价与反馈之前）──
+  'contract',
   'feedback',
   'message',
   'teamsetting',
   'personal',
   'system',
+  'recycle',
 ];
 
 /** 分组默认标题（中文）；其余语言由 i18n `group.<key>` 覆盖，缺失时回退到此处 */
@@ -145,6 +152,10 @@ export const GROUP_LABEL: Record<MenuGroupKey, string> = {
   contentreview: '内容审核',
   regionops: '辖区运营',
   recruit: '招商拓展',
+  // ── 总台治理专属分组 ──
+  contract: '合同中枢',
+  // ── 回收站（侧栏最底部）──
+  recycle: '回收站',
 };
 
 export interface ResourceMeta {
@@ -196,9 +207,17 @@ export const resources: ResourceProps[] = [
     meta: META('用户管理', 'console', { group: 'ops', icon: <TeamOutlined /> }),
   },
   {
+    // 回收站·僵尸用户：从用户管理删除的用户先回收至此，可激活恢复或彻底删除。
+    // 仅具备 user:delete 权限的管理员可见（侧栏由 LayerSider 经 useCan 门控）。
+    name: 'admin/zombie-users',
+    list: '/admin/zombie-users',
+    show: '/admin/zombie-users/show/:id',
+    meta: META('僵尸用户', 'console', { group: 'recycle', icon: <DeleteOutlined /> }),
+  },
+  {
     name: 'admin/templates',
     list: '/admin/templates',
-    meta: META('模板审核', 'console', { group: 'ops', icon: <FileImageOutlined />, badgeKey: 'templates' }),
+    meta: META('模板审核', 'console', { group: 'contentreview', icon: <FileImageOutlined />, badgeKey: 'templates' }),
   },
   {
     name: 'admin/orders',
@@ -270,6 +289,45 @@ export const resources: ResourceProps[] = [
     name: 'admin/redline-words',
     list: '/admin/redline-words',
     meta: META('红线词库', 'console', { group: 'system', icon: <FileProtectOutlined /> }),
+  },
+  // ── 内容审核（总台全量 oversight）：服务审核 / 作品审核（占位期「该功能即将上线」）──
+  {
+    name: 'admin/service-review',
+    list: '/admin/service-review',
+    meta: META('服务审核', 'console', { group: 'contentreview', icon: <AppstoreOutlined />, badgeKey: 'serviceReview' }),
+  },
+  {
+    name: 'admin/work-review',
+    list: '/admin/work-review',
+    meta: META('作品审核', 'console', { group: 'contentreview', icon: <FileTextOutlined />, badgeKey: 'templateReview' }),
+  },
+  // ── 招商拓展（总台全量 oversight）：招商申请 / 意向池 ──
+  {
+    name: 'admin/invest',
+    list: '/admin/invest',
+    meta: META('招商申请', 'console', { group: 'recruit', icon: <UserAddOutlined />, badgeKey: 'investPending' }),
+  },
+  {
+    name: 'admin/pool',
+    list: '/admin/pool',
+    meta: META('意向池', 'console', { group: 'recruit', icon: <BankOutlined /> }),
+  },
+  // ── 财务中心：结算总览 / 分账费率 ──
+  {
+    name: 'admin/settle',
+    list: '/admin/settle',
+    meta: META('结算总览', 'console', { group: 'finance', icon: <WalletOutlined /> }),
+  },
+  {
+    name: 'admin/fee-config',
+    list: '/admin/fee-config',
+    meta: META('分账费率', 'console', { group: 'finance', icon: <DollarOutlined /> }),
+  },
+  // ── 合同中枢（总台治理专属）：平台合同管理 ──
+  {
+    name: 'admin/contracts',
+    list: '/admin/contracts',
+    meta: META('平台合同管理', 'console', { group: 'contract', icon: <FileProtectOutlined /> }),
   },
 
   // ===================== 代理商中心（AGENT · v2 标准化 · 8 组 21 项）=====================

@@ -19,6 +19,8 @@
     "submit": "Submit",
     "close": "Close",
     "backToConsole": "Back to Console",
+    "advance": "Advance contract",
+    "advanceContract": "Advance contract stage",
     "readonly": "Read-only",
     "logout": "Sign out",
     "role": "Role",
@@ -31,7 +33,8 @@
     "bool": {
       "yes": "Yes",
       "no": "No"
-    }
+    },
+    "delete": "Delete"
   },
   "view": {
     "console": "Console",
@@ -45,9 +48,9 @@
     "finance": "Finance Center",
     "feedback": "Reviews & Feedback",
     "system": "System Settings",
-    "trade": "交易中心",
-    "message": "消息中心",
-    "personal": "个人中心",
+    "trade": "Trading Center",
+    "message": "Message Center",
+    "personal": "Personal Center",
     "databoard": "Dashboard",
     "orderfulfill": "Order Fulfillment",
     "servicecontent": "Services & Content",
@@ -56,7 +59,9 @@
     "providersupervise": "Region Providers",
     "contentreview": "Content Review",
     "regionops": "Region Ops",
-    "recruit": "Recruitment"
+    "recruit": "Recruitment",
+    "recycle": "Recycle Bin",
+    "contract": "Contract Hub"
   },
   "status": {
     "ACTIVE": "Active",
@@ -112,7 +117,17 @@
       "settings": "System Settings",
       "fonts": "Font Management",
       "auditLogs": "Operation Logs",
-      "qualifications": "Settlement Review"
+      "qualifications": "Onboarding Approval",
+      "zombie-users": "Zombie Users",
+      "audit-logs": "Operation Logs",
+      "redline-words": "Redline Words",
+      "service-review": "Service Review",
+      "work-review": "Work Review",
+      "invest": "Recruitment Applications",
+      "pool": "Intent Pool",
+      "settle": "Settlement Overview",
+      "fee-config": "Revenue Share Rates",
+      "contracts": "Platform Contracts"
     },
     "agent": {
       "team": "Team Management",
@@ -173,7 +188,8 @@
     },
     "account": {
       "profile-user": "账户详情",
-      "profile-provider": "Account"
+      "profile-provider": "Account Details",
+      "profile": "Account Details"
     }
   },
   "pages": {
@@ -237,12 +253,15 @@
       "region": "Region",
       "time": "Time",
       "createdAt": "Created at",
+      "targetStage": "Target stage",
+      "note": "Note",
       "updatedAt": "Updated at",
       "orderNo": "Order No.",
       "orderCount": "Orders",
       "serviceCount": "Services",
       "regionProviderCount": "Region providers",
       "regionWithdrawable": "Region withdrawable",
+      "platformWithdrawable": "Platform withdrawable",
       "openedServices": "Enabled services",
       "templateName": "Template name",
       "templateCategory": "Template category",
@@ -287,7 +306,15 @@
       "reason": "Application note",
       "certNo": "Certificate no.",
       "tags": "Tags",
-      "email": "Email"
+      "email": "Email",
+      "voidDirection": "Handling",
+      "platformRevenue": "Platform GMV",
+      "platformFeeIncome": "Platform Commission",
+      "totalWithdrawn": "Total Withdrawn",
+      "pendingWithdrawals": "Pending Withdrawals",
+      "platformShare": "Platform Commission",
+      "agentShare": "Agent Share",
+      "providerShare": "Provider Net"
     },
     "field": {
       "initPassword": "Initial password",
@@ -312,7 +339,31 @@
       "editReason": "Edit reason",
       "targetUserId": "Target user ID (optional)",
       "providerUserIdHint": "Provider userId (for complaints/reviews)",
-      "deleteReason": "Deletion reason"
+      "deleteReason": "Deletion reason",
+      "userId": "User ID",
+      "idCard": "ID Number",
+      "realNameStatus": "Real-name status",
+      "locale": "Language",
+      "wxOpenid": "WeChat OpenID",
+      "bio": "Bio",
+      "vipLevel": "Membership level",
+      "points": "Points",
+      "walletBalance": "Wallet balance",
+      "totalSpent": "Total spent",
+      "followingProviders": "Followed providers",
+      "lastLogin": "Last login",
+      "realNameVerifiedAt": "Real-name verified at",
+      "regionName": "Region",
+      "agentName": "Belonging agent",
+      "zombieAt": "Recycled at",
+      "platformRate": "Platform Commission Rate",
+      "agentRate": "Agent Share Rate",
+      "providerRate": "Provider Share Rate",
+      "settlePeriod": "Settlement Period",
+      "minWithdraw": "Minimum Withdrawal (CNY)",
+      "sampleAmount": "Sample Order Amount (CNY)",
+      "lastUpdated": "Last Updated",
+      "operator": "Operator"
     },
     "btn": {
       "editUser": "Edit user",
@@ -334,7 +385,15 @@
       "recruitLost": "Mark lost",
       "batchPass": "Batch pass",
       "batchReject": "Batch reject",
-      "clearSelection": "Clear"
+      "clearSelection": "Clear",
+      "editContract": "Edit",
+      "voidContract": "Void",
+      "saveChanges": "Save changes",
+      "reinitNegotiate": "Reinitiate negotiation",
+      "deleteUser": "Delete",
+      "activateUser": "Activate & Restore",
+      "purgeUser": "Purge Permanently",
+      "addCategoryRate": "+ Add Category Rate"
     },
     "tag": {
       "enabled": "Enabled",
@@ -347,6 +406,7 @@
       "recruitRegion": "Optional · e.g. High-tech Zone",
       "recruitIntro": "Optional · source / contact / needs",
       "searchNamePhone": "Search name / phone",
+      "regionPath": "e.g. Xinjiang/Urumqi/Tianshan",
       "rejectReason": "State the reject reason; it will be logged",
       "searchBuyerTemplate": "Search buyer / template",
       "searchNickPhone": "Search nickname / phone",
@@ -358,11 +418,17 @@
       "regionPathHint": "e.g. 11/1101/110101, blank = all",
       "regionAllHint": "Blank = all regions",
       "blankMeansRecord": "Blank = record only",
-      "deleteReasonPlaceholder": "State the reason (e.g. never used after signup / test data) for audit tracing…"
+      "deleteReasonPlaceholder": "State the reason (e.g. never used after signup / test data) for audit tracing…",
+      "partyA": "Signing party A",
+      "category": "Service category"
     },
     "sec": {
       "templateReview": "Template Review",
       "serviceReview": "Service Review",
+      "serviceReviewAdmin": "Service Review · All Platform",
+      "workReviewAdmin": "Work Review · All Platform",
+      "investAdmin": "Recruit Application · All Platform",
+      "poolAdmin": "Intent Pool · All Platform",
       "myWorkspace": "My workspace",
       "myProviders": "My providers",
       "myOrders": "My orders",
@@ -381,6 +447,8 @@
       "fundOverview": "Fund overview",
       "walletWithdraw": "Wallet & withdrawal",
       "settleWallet": "Settlement & wallet",
+      "settleAdmin": "Settlement overview · all platform",
+      "settleAdminDetail": "All-platform provider wallet detail",
       "serviceManage": "Service management",
       "qualification": "Qualification",
       "orderHandle": "Order handling",
@@ -391,6 +459,7 @@
       "builtinRoleReadonly": "Built-in roles (read-only)",
       "authorityNoticeReview": "Authority notice review",
       "agentContract": "Region contracts",
+      "platformContract": "Platform contracts",
       "agentQualification": "Onboarding review",
       "agentWithdraw": "Withdrawal first review",
       "recruit": "Recruitment leads",
@@ -401,7 +470,20 @@
       "coupons": "Coupons & benefits",
       "myMessages": "My messages",
       "publishManage": "Publish management",
-      "providerDelete": "Delete Provider Account"
+      "providerDelete": "Delete Provider Account",
+      "basicInfo": "Basic Profile",
+      "accountAsset": "Account & Assets",
+      "rolePerm": "Role & Permissions",
+      "activity": "Registration & Activity",
+      "businessOverview": "Business Overview",
+      "zombieUsers": "Zombie Users",
+      "zombieUserDetail": "Zombie User Detail",
+      "platformSettleStats": "Platform Funds Overview",
+      "feeConfig": "Revenue Share Rates",
+      "platformFeeRate": "Platform Commission",
+      "providerSplitRule": "Provider Share Rules",
+      "splitTrial": "Share Calculation",
+      "categoryFeeRate": "Category Rates"
     },
     "filter": {
       "status": "Status filter",
@@ -429,7 +511,9 @@
       "fbAgent": "Feedback you submit as an agent belongs to your region; it can be negotiated or escalated to the console.",
       "fbAdmin": "The console can view all feedback and perform arbitration.",
       "fbUser": "Your feedback enters the processing flow by hierarchy.",
-      "deleteGuard": "For cleaning up zombie / erroneous accounts only. If the account has orders, contracts, withdrawals, or wallet funds, the system will refuse deletion — use “Disable” instead."
+      "deleteGuard": "For cleaning up zombie / erroneous accounts only. If the account has orders, contracts, withdrawals, or wallet funds, the system will refuse deletion — use “Disable” instead.",
+      "providerRateDerived": "= 100% − platform − agent, not editable",
+      "minWithdrawZero": "Enter 0 for no limit"
     },
     "cancel": "Cancel",
     "reject": "Reject",
@@ -449,7 +533,21 @@
       "arbitrating": "Arbitrating",
       "escalating": "Escalating",
       "plsInputContent": "Please enter content",
-      "requiredReasonDel": "Please provide a deletion reason (≥ 2 characters)"
+      "requiredReasonDel": "Please provide a deletion reason (≥ 2 characters)",
+      "contractAdvanced": "Contract stage advanced",
+      "advanceFailed": "Advancement failed",
+      "contractUpdated": "Contract updated",
+      "contractVoided": "Contract voided",
+      "voidFailed": "Voiding failed",
+      "negotiationReinit": "Negotiation reinitialized",
+      "reinitFailed": "Failed to reinitialize negotiation",
+      "noChange": "No changes to save",
+      "userDeleted": "User moved to recycle bin",
+      "userActivated": "Zombie user activated & restored",
+      "userPurged": "User purged permanently",
+      "opFailed": "Operation failed",
+      "feeRateOverflow": "Platform commission plus agent share must not exceed 100%",
+      "feeConfigSaved": "Revenue share rates saved"
     },
     "toast": {
       "redlineRequired": "Reject requires opinion and a redline category",
@@ -541,6 +639,7 @@
       "recentRecruit": "Recent",
       "intentPool": "Intent pool",
       "lockedJurisdiction": "Jurisdiction (auto-locked by system)",
+      "regionPath": "Region path",
       "selectedCount": "Selected",
       "fbHandle": "Feedback handling",
       "inbox": "Inbox",
@@ -563,6 +662,10 @@
       "agentQualificationSub": "Regional onboarding tunnel · agent first-review (no role change) · final review by admin",
       "agentInvestSub": "Regional lead registration · assigned to this agent on submit, region auto-locked by system",
       "agentPoolSub": "Regional recruitment lead ledger · advance contact stage (no role/fund touch)",
+      "investAdminSub": "All-platform lead registration · specify the region path; submitted leads enter the matching region ledger",
+      "investAdminRegionHint": "Platform registration requires the lead's region path (e.g. Xinjiang/Urumqi/Tianshan); submitted leads enter the matching region ledger",
+      "poolAdminSub": "All-platform recruitment lead ledger · advance contact stage (no role/fund touch)",
+      "settleAdminSub": "All-platform provider withdrawable balances & cumulative earnings summary",
       "loadingJurisdiction": "Loading your jurisdiction…",
       "agentFb": "As an agent, your feedback belongs to this region; you may negotiate or escalate to the console.",
       "spMsg": "As a provider, you may publish general messages to specified roles (user / superior).",
@@ -570,7 +673,14 @@
       "fbFlow": "Your feedback enters the handling flow by hierarchy.",
       "consolePublish": "The console can publish global or regional authority notices and general messages.",
       "consoleFb": "The console can view all feedback and perform arbitration.",
-      "comingSoon": "This feature is coming soon."
+      "comingSoon": "This feature is coming soon.",
+      "editContractHint": "Edit contract business terms / signing stage, or reinitiate the negotiation flow.",
+      "voidConfirm": "Void this contract? The status becomes “Voided” and the linked identity is handled per the chosen direction.",
+      "platformSettleStatsHint": "Reuses the console dashboard metrics for strict consistency",
+      "feeConfigSub": "Global configuration of platform commission, provider share rules and category rates; used as the default pricing for new contracts",
+      "platformFeeRateHint": "The three shares always sum to 100%; the provider share is derived automatically",
+      "providerSplitRuleHint": "Settlement period and withdrawal threshold, with a live share calculation",
+      "categoryFeeRateHint": "Overrides platform commission per service category; unmatched categories fall back to the global rate"
     },
     "cat": {
       "houseMove": "Housewarming",
@@ -627,6 +737,8 @@
       "contractStageTerminated": "Terminated",
       "contractStageNegotiating": "Negotiating",
       "contractStageExpired": "Expired",
+      "contractTypeMain": "Main contract",
+      "contractTypeAgency": "Agency agreement",
       "contractModeRegionExclusive": "Regional exclusive",
       "contractModeOnline": "Online",
       "contractModeOnSite": "On-site",
@@ -652,7 +764,8 @@
       "tkArbitrating": "Arbitrating",
       "tkClosed": "Closed",
       "msgAnnouncement": "Official Announcement",
-      "msgGeneral": "General Message"
+      "msgGeneral": "General Message",
+      "contractStageVoided": "Voided"
     },
     "login": {
       "subtitle": "Operations Platform · Admin / Agent / Provider",
@@ -767,12 +880,23 @@
       "deleteConfirm": "Confirm deleting this red-line word?"
     },
     "modal": {
-      "rejectReason": "Enter reject reason"
+      "rejectReason": "Enter reject reason",
+      "voidTitle": "Void contract",
+      "voidDirectionSuspend": "Suspend (disable account, keep qualification)",
+      "voidDirectionDemote": "Demote to regular user (revoke business capability)",
+      "voidNotePlaceholder": "Optional: voiding note",
+      "deleteUserTitle": "Delete User",
+      "deleteUserContent": "Move user \"{{name}}\" to the recycle bin? The account will be disabled and all data preserved; you can restore it later from Recycle Bin · Zombie Users.",
+      "activateUserTitle": "Activate & Restore Zombie User",
+      "activateUserContent": "Activate and restore user \"{{name}}\"? Their original data will take effect again and status will be reset to ACTIVE.",
+      "purgeUserTitle": "Purge User Permanently",
+      "purgeUserContent": "Permanently delete user \"{{name}}\"? This will erase all their data with no recovery; a brand-new registration will be required afterwards."
     },
     "rule": {
       "nameRequired": "Lead name required",
       "phoneRequired": "Contact phone required",
-      "phone11": "Phone must be 11 digits"
+      "phone11": "Phone must be 11 digits",
+      "regionPathRequired": "Region path required"
     }
   }
 }

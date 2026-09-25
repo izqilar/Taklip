@@ -47,6 +47,13 @@ export interface UserInfo {
   regionPath?: string | null;
   /** 账户启停状态（ACTIVE / DISABLED） */
   status?: 'ACTIVE' | 'DISABLED';
+  /** 微信 openid（第三方账号绑定占位：有值即视为已绑定微信） */
+  wxOpenid?: string | null;
+  /** 身份证号（实名认证；账户详情「身份认证资料」区块使用） */
+  idCard?: string | null;
+  /** 身份证人像面 / 国徽面影像 URL */
+  idCardFront?: string | null;
+  idCardBack?: string | null;
   /**
    * 登录后应落地的工作台（服务端 ROLE_HOME 单一真值，登录/注册/刷新令牌均带回）。
    * origin 为逻辑端标识：web = 用户端(:5173)；admin = 运营端(:5174)。
@@ -516,7 +523,7 @@ export const api = {
       body: JSON.stringify({ userId }),
     }),
 
-  /** 更新账户资料（昵称 / 头像 / 手机 / 真实姓名 / 简介 / 邮箱） */
+  /** 更新账户资料（昵称 / 头像 / 手机 / 真实姓名 / 简介 / 邮箱 / 证件号 / 证件影像） */
   updateProfile: (dto: {
     nickname?: string;
     avatar?: string;
@@ -524,6 +531,9 @@ export const api = {
     realName?: string;
     bio?: string;
     email?: string;
+    idCard?: string;
+    idCardFront?: string;
+    idCardBack?: string;
   }) =>
     request<UserInfo>('/api/auth/me', {
       method: 'PATCH',

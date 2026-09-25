@@ -40,6 +40,8 @@ import { getStoredUser } from './utility';
 const UserList = lazy(() => import('./pages/users').then((m) => ({ default: m.UserList })));
 const UserShow = lazy(() => import('./pages/users').then((m) => ({ default: m.UserShow })));
 const UserEdit = lazy(() => import('./pages/users').then((m) => ({ default: m.UserEdit })));
+const ZombieUsersList = lazy(() => import('./pages/zombieUsers').then((m) => ({ default: m.ZombieUsersList })));
+const ZombieUserShow = lazy(() => import('./pages/zombieUsers').then((m) => ({ default: m.ZombieUserShow })));
 const ProviderReviewList = lazy(() => import('./pages/provider-review').then((m) => ({ default: m.ProviderReviewList })));
 const AgentList = lazy(() => import('./pages/agents').then((m) => ({ default: m.AgentList })));
 const AgentCreate = lazy(() => import('./pages/agents').then((m) => ({ default: m.AgentCreate })));
@@ -72,6 +74,7 @@ const AgentUsers = lazy(() => import('./pages/consolePages').then((m) => ({ defa
 const AgentProviders = lazy(() => import('./pages/consolePages').then((m) => ({ default: m.AgentProviders })));
 const AgentOrders = lazy(() => import('./pages/consolePages').then((m) => ({ default: m.AgentOrders })));
 const AgentWallet = lazy(() => import('./pages/consolePages').then((m) => ({ default: m.AgentWallet })));
+const FeeConfigPage = lazy(() => import('./pages/consolePages').then((m) => ({ default: m.FeeConfigPage })));
 const AgentTemplateReview = lazy(() => import('./pages/agentTemplateReview').then((m) => ({ default: m.AgentTemplateReview })));
 const AgentServiceReview = lazy(() => import('./pages/agentServiceReview').then((m) => ({ default: m.AgentServiceReview })));
 const AgentComingSoon = lazy(() => import('./pages/agentComingSoon').then((m) => ({ default: m.AgentComingSoon })));
@@ -262,6 +265,8 @@ export const App = () => (
                 <Route path="/admin/dashboard" element={<Dashboard />} />
                 <Route path="/admin/users" element={<UserList />} />
                 <Route path="/admin/users/show/:id" element={<UserShow />} />                <Route path="/admin/users/edit/:id" element={<UserEdit />} />
+                <Route path="/admin/zombie-users" element={<ZombieUsersList />} />
+                <Route path="/admin/zombie-users/show/:id" element={<ZombieUserShow />} />
                 <Route path="/admin/provider-review" element={<ProviderReviewList />} />
                 <Route path="/admin/agents" element={<AgentList />} />
                 <Route path="/admin/agents/create" element={<AgentCreate />} />
@@ -284,6 +289,36 @@ export const App = () => (
                 <Route path="/admin/qualifications/:id" element={<QualificationDetailPage />} />
                 {/* 总台：红线词库管理（决策点 8 · DB 可配置 + 总台可维护） */}
                 <Route path="/admin/redline-words" element={<RedlineWordAdmin />} />
+                {/* 总台治理模块占位（Phase 0）：内容审核 / 招商拓展 / 财务中心 / 合同中枢
+                    后续 Phase 1–4 接真实后端端点，复用对应 agent/SP 组件（ALL 作用域）。 */}
+                <Route
+                  path="/admin/service-review"
+                  element={<AgentServiceReview variant="admin" />}
+                />
+                <Route
+                  path="/admin/work-review"
+                  element={<AgentTemplateReview variant="admin" />}
+                />
+                <Route
+                  path="/admin/invest"
+                  element={<AgentInvest variant="admin" />}
+                />
+                <Route
+                  path="/admin/pool"
+                  element={<AgentPool variant="admin" />}
+                />
+                <Route
+                  path="/admin/settle"
+                  element={<AgentWallet variant="admin" />}
+                />
+                <Route
+                  path="/admin/fee-config"
+                  element={<FeeConfigPage />}
+                />
+                <Route
+                  path="/admin/contracts"
+                  element={<AgentContracts variant="admin" />}
+                />
 
                 {/* ===================== 代理商中心（AGENT） ===================== */}
                 <Route path="/agent/dashboard" element={<AgentDashboard />} />

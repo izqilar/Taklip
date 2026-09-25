@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useCan } from '@refinedev/core';
 import { DownOutlined, RightOutlined } from '@ant-design/icons';
 import { T, BRAND } from '../../config/theme';
 import { useBadges } from '../../hooks/useBadges';
@@ -61,6 +62,9 @@ export const LayerSider = ({ onNavigate }: { onNavigate?: () => void }) => {
   // 侧栏角标（菜单名 + 真实待办数），按当前角色作用域统计，路由变化/轮询自动回落
   const badges = useBadges();
 
+  // 回收站（僵尸用户）菜单：仅具备 user:delete 权限的管理员可见（与用户管理·删除同源门控）
+  const { data: zombieCan } = useCan({ resource: 'admin/zombie-users', action: 'list' });
+
   const [folded, setFolded] = useState<Record<string, boolean>>(() => readFold(view));
 
   // 切换视角：按该视角重新读取折叠态
@@ -79,7 +83,13 @@ export const LayerSider = ({ onNavigate }: { onNavigate?: () => void }) => {
 
   // 按当前视角投影，并按 meta.group 分组；分组顺序固定为 GROUP_ORDER
   const { grouped, groupKeys, ungrouped } = useMemo(() => {
-    const layerItems = resources.filter((r) => metaOf(r)?.layer === view && r.list);
+    const layerItems = resources.filter((r) => {
+      const m = metaOf(r);
+      if (m?.layer !== view || !r.list) return false;
+      // 回收站菜单按 user:delete 权限门控，无权限的管理员（含普通管理员）不显示
+      if (r.name === 'admin/zombie-users' && !zombieCan?.can) return false;
+      return true;
+    });
     const map = new Map<MenuGroupKey, MenuNode[]>();
     const rest: MenuNode[] = [];
     for (const r of layerItems) {
@@ -93,7 +103,7 @@ export const LayerSider = ({ onNavigate }: { onNavigate?: () => void }) => {
     }
     const keys = [...map.keys()].sort((a, b) => GROUP_ORDER.indexOf(a) - GROUP_ORDER.indexOf(b));
     return { grouped: map, groupKeys: keys, ungrouped: rest };
-  }, [view]);
+  }, [view, zombieCan]);
 
   // 命中的分组自动展开：避免折叠后跟随路由跳转却看不到当前项
   useEffect(() => {

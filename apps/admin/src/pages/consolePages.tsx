@@ -1,4 +1,17 @@
-import { Tag, Form, Input, Select, Switch, Modal, Button, Upload, message } from 'antd';
+import {
+  Tag,
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  Switch,
+  Modal,
+  Button,
+  Upload,
+  Space,
+  Divider,
+  message,
+} from 'antd';
 import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustom } from '@refinedev/core';
@@ -355,9 +368,22 @@ interface AgentWalletProvider {
   providerStatus: string;
 }
 
+/** 总台全平台资金口径（复用 admin/stats，供「结算总览」补全区级/平台级财务指标） */
+interface AdminStats {
+  users: number;
+  providers: number;
+  agents: number;
+  orders: number;
+  pendingWithdrawals: number;
+  totalRevenueCents: number;
+  platformFeeCents: number;
+  totalWithdrawnCents: number;
+}
+
 /** 辖区结算与钱包（真实落地）：KPI 总览 + 辖区服务商钱包明细 */
-export const AgentWallet = () => {
+export const AgentWallet = ({ variant = 'agent' }: { variant?: 'agent' | 'admin' }) => {
   const navigate = useNavigate();
+  const isAdmin = variant === 'admin';
   const { data, isLoading } = useCustom<AgentWalletStats>({
     url: 'agent/wallet',
     method: 'get',
@@ -370,30 +396,41 @@ export const AgentWallet = () => {
   });
   const s = data?.data as AgentWalletStats | undefined;
   const providers = (provData?.data as any)?.items ?? [];
+  // 总台「结算总览」额外复用 admin/stats：补全区级之上的全平台资金口径
+  // （总流水 / 平台抽成 / 累计已提现 / 待处理提现）。仅总台视角拉取。
+  const { data: statsData } = useCustom<AdminStats>({
+    url: 'admin/stats',
+    method: 'get',
+    queryOptions: { retry: false, enabled: isAdmin },
+  });
+  const st = statsData?.data as AdminStats | undefined;
+
+  const title = isAdmin ? t('pages.sec.settleAdmin', '结算总览 · 全平台') : t('pages.sec.settleWallet');
+  const sub = isAdmin
+    ? t('pages.desc.settleAdminSub', '全平台服务商可提现余额与累计收益汇总')
+    : '辖区服务商可提现余额与累计收益汇总';
+  const chip = isAdmin ? '总台 · 全盘治理' : '代理商 · 辖区作用域';
+  const detailPath = isAdmin ? '/admin/provider-review' : '/agent/providers';
 
   if (isLoading || provLoading) {
     return (
       <>
-        <PageHead title={t('pages.sec.settleWallet')} sub="辖区服务商资金汇总" chip="代理商 · 辖区作用域" />
-        <HomeSkeleton title={t('pages.sec.settleWallet')} />
+        <PageHead title={title} sub={isAdmin ? sub : '辖区服务商资金汇总'} chip={chip} />
+        <HomeSkeleton title={title} />
       </>
     );
   }
 
   return (
     <>
-      <PageHead
-        title={t('pages.sec.settleWallet')}
-        sub="辖区服务商可提现余额与累计收益汇总"
-        chip="代理商 · 辖区作用域"
-      />
+      <PageHead title={title} sub={sub} chip={chip} />
 
       <div className={GRID.kpis}>
         <KpiCard
           main
-          label={t('pages.col.regionWithdrawable')}
+          label={isAdmin ? t('pages.col.platformWithdrawable') : t('pages.col.regionWithdrawable')}
           value={formatCents(s?.balanceCents ?? 0)}
-          delta="辖区服务商可提现总额"
+          delta={isAdmin ? '全平台服务商可提现总额' : '辖区服务商可提现总额'}
           deltaTrend="up"
         />
         <KpiCard
@@ -410,12 +447,45 @@ export const AgentWallet = () => {
         <KpiCard
           label={t('pages.col.regionProviderCount')}
           value={(s?.providerCount ?? 0).toLocaleString('en-US')}
-          delta="辖区在营服务商"
+          delta={isAdmin ? '全平台在营服务商' : '辖区在营服务商'}
           deltaTrend="up"
         />
       </div>
 
-      <Panel title="辖区服务商钱包明细" hint="按服务子角色与资质状态">
+      {isAdmin && st && (
+        <Panel
+          title={t('pages.sec.platformSettleStats', '平台资金总览')}
+          hint={t('pages.desc.platformSettleStatsHint', '复用总台看板口径，与「数据看板」严格一致')}
+        >
+          <div className={GRID.kpis}>
+            <KpiCard
+              main
+              label={t('pages.col.platformRevenue', '平台总流水')}
+              value={formatCents(st.totalRevenueCents ?? 0)}
+              delta="全平台累计成交金额"
+              deltaTrend="up"
+            />
+            <KpiCard
+              label={t('pages.col.platformFeeIncome', '平台抽成')}
+              value={formatCents(st.platformFeeCents ?? 0)}
+              delta="按分账费率累计抽取"
+              deltaTrend="up"
+            />
+            <KpiCard
+              label={t('pages.col.totalWithdrawn', '累计已提现')}
+              value={formatCents(st.totalWithdrawnCents ?? 0)}
+              delta="服务商已提现总额"
+            />
+            <KpiCard
+              label={t('pages.col.pendingWithdrawals', '待处理提现')}
+              value={(st.pendingWithdrawals ?? 0).toLocaleString('en-US')}
+              delta="笔待审核"
+            />
+          </div>
+        </Panel>
+      )}
+
+      <Panel title={isAdmin ? t('pages.sec.settleAdminDetail', '全平台服务商钱包明细') : '辖区服务商钱包明细'} hint="按服务子角色与资质状态">
         <DataTable<AgentWalletProvider>
           rowKey="id"
           dataSource={providers}
@@ -450,7 +520,7 @@ export const AgentWallet = () => {
               width: 56,
               render: () => (
                 <span
-                  onClick={() => navigate('/agent/providers')}
+                  onClick={() => navigate(detailPath)}
                   style={{ color: T.accent, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' }}
                 >
                   查看
@@ -961,6 +1031,295 @@ export const SPWallet = () => {
           </div>
         )}
       </Panel>
+    </>
+  );
+};
+
+/* ===================== 财务中心 · 分账费率（总台） ===================== */
+
+/** 平台分账费率配置（全局单例，id 恒为 'default'） */
+interface FeeConfig {
+  id: string;
+  platformRate: number;
+  agentRate: number;
+  providerRate: number;
+  settlePeriod: string;
+  categoryRates: Record<string, number> | null;
+  minWithdrawCents: number;
+  updatedBy?: string | null;
+  updatedAt?: string;
+}
+
+/** 结算周期选项（术语与合同页 settleMonth / settleHalfMonth / settleWeek 保持一致） */
+const SETTLE_PERIOD_OPTIONS = [
+  { value: 'MONTH', label: '月结' },
+  { value: 'HALF_MONTH', label: '半月结' },
+  { value: 'WEEK', label: '周结' },
+];
+
+const settlePeriodText = (v?: string) =>
+  SETTLE_PERIOD_OPTIONS.find((o) => o.value === v)?.label ?? '—';
+
+/**
+ * 分账费率配置页（总台 · 财务中心）。
+ * 三区块：平台抽成比 / 服务商分账规则 / 类目费率，与原占位页 sections 一一对应。
+ * 计算口径：providerRate = 100 - platformRate - agentRate（服务端同式推导并落库，
+ * 此处仅做前端即时校验与试算，避免提交非法比例）。
+ */
+export const FeeConfigPage = () => {
+  const [form] = Form.useForm();
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [config, setConfig] = useState<FeeConfig | null>(null);
+  /** 分账试算样本金额（分），默认 100.00 元 */
+  const [sampleCents, setSampleCents] = useState(10000);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res: any = await dataProvider.custom!({ url: 'admin/fee-config', method: 'get' });
+      const cfg: FeeConfig = res?.data?.data ?? res?.data;
+      setConfig(cfg);
+      form.setFieldsValue({
+        platformRate: cfg?.platformRate ?? 10,
+        agentRate: cfg?.agentRate ?? 0,
+        settlePeriod: cfg?.settlePeriod ?? 'MONTH',
+        minWithdrawYuan: (cfg?.minWithdrawCents ?? 0) / 100,
+        categoryRates: Object.entries(cfg?.categoryRates ?? {}).map(([category, rate]) => ({
+          category,
+          rate,
+        })),
+      });
+    } catch (e: any) {
+      message.error(e?.message || '费率配置加载失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const platformRate = Number(Form.useWatch('platformRate', form) ?? config?.platformRate ?? 0);
+  const agentRate = Number(Form.useWatch('agentRate', form) ?? config?.agentRate ?? 0);
+  const providerRate = 100 - platformRate - agentRate;
+  const rateValid = providerRate >= 0;
+
+  const samplePlatform = Math.round((sampleCents * platformRate) / 100);
+  const sampleAgent = Math.round((sampleCents * agentRate) / 100);
+  const sampleProvider = sampleCents - samplePlatform - sampleAgent;
+
+  const save = async () => {
+    const values = await form.validateFields().catch(() => null);
+    if (!values) return;
+    const p = Number(values.platformRate ?? 0);
+    const a = Number(values.agentRate ?? 0);
+    if (p + a > 100) {
+      message.error(t('pages.msg.feeRateOverflow', '平台抽成与代理商分账之和不能超过 100%'));
+      return;
+    }
+    const categoryRates: Record<string, number> = {};
+    (values.categoryRates ?? []).forEach((r: any) => {
+      if (r?.category) categoryRates[String(r.category)] = Number(r.rate ?? 0);
+    });
+    setSaving(true);
+    try {
+      await dataProvider.custom!({
+        url: 'admin/fee-config',
+        method: 'put',
+        payload: {
+          platformRate: p,
+          agentRate: a,
+          settlePeriod: values.settlePeriod,
+          minWithdrawCents: Math.round(Number(values.minWithdrawYuan ?? 0) * 100),
+          categoryRates,
+        },
+      });
+      message.success(t('pages.msg.feeConfigSaved', '分账费率已保存'));
+      await load();
+    } catch (e: any) {
+      message.error(e?.message || t('pages.msg.opFailed', '操作失败'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading && !config) {
+    return (
+      <>
+        <PageHead title={t('pages.sec.feeConfig', '分账费率')} chip="财务中心" />
+        <HomeSkeleton title={t('pages.sec.feeConfig', '分账费率')} />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <PageHead
+        title={t('pages.sec.feeConfig', '分账费率')}
+        sub={t('pages.desc.feeConfigSub', '平台抽成比、服务商分账规则与类目费率的全局配置，作为新签合同的默认取价')}
+        chip="财务中心 · 分账费率"
+        extra={
+          <Button type="primary" loading={saving} onClick={save}>
+            {t('common.save', '保存')}
+          </Button>
+        }
+      />
+
+      <Form form={form} layout="vertical" requiredMark={false}>
+        {/* ── 区块一：平台抽成比 ── */}
+        <Panel
+          title={t('pages.sec.platformFeeRate', '平台抽成比')}
+          hint={t('pages.desc.platformFeeRateHint', '三方比例之和恒为 100%，服务商分账由系统自动推导')}
+        >
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+            <Form.Item
+              name="platformRate"
+              label={t('pages.field.platformRate', '平台抽成比例')}
+              rules={[{ required: true, message: '请输入平台抽成比例' }]}
+            >
+              <InputNumber min={0} max={100} precision={0} suffix="%" style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item
+              name="agentRate"
+              label={t('pages.field.agentRate', '代理商分账比例')}
+              rules={[{ required: true, message: '请输入代理商分账比例' }]}
+            >
+              <InputNumber min={0} max={100} precision={0} suffix="%" style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item label={t('pages.field.providerRate', '服务商分账比例')}>
+              <div
+                style={{
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontWeight: 600,
+                  color: rateValid ? T.ink1 : T.down,
+                }}
+              >
+                {rateValid ? `${providerRate}%` : `${providerRate}%（比例非法）`}
+              </div>
+              <div style={{ fontSize: 12, color: T.ink3 }}>
+                {t('pages.note.providerRateDerived', '= 100% − 平台抽成 − 代理商分账，不可手工编辑')}
+              </div>
+            </Form.Item>
+          </div>
+        </Panel>
+
+        {/* ── 区块二：服务商分账规则 ── */}
+        <Panel
+          title={t('pages.sec.providerSplitRule', '服务商分账规则')}
+          hint={t('pages.desc.providerSplitRuleHint', '结算周期与提现门槛，并对当前费率做分账试算')}
+        >
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+            <Form.Item
+              name="settlePeriod"
+              label={t('pages.field.settlePeriod', '结算周期')}
+              rules={[{ required: true, message: '请选择结算周期' }]}
+            >
+              <Select options={SETTLE_PERIOD_OPTIONS} placeholder="请选择结算周期" />
+            </Form.Item>
+            <Form.Item
+              name="minWithdrawYuan"
+              label={t('pages.field.minWithdraw', '最低提现门槛（元）')}
+              extra={t('pages.note.minWithdrawZero', '填 0 表示不限制')}
+            >
+              <InputNumber min={0} precision={2} style={{ width: '100%' }} />
+            </Form.Item>
+          </div>
+
+          <Divider orientation="left" style={{ margin: '8px 0 12px' }}>
+            {t('pages.sec.splitTrial', '分账试算')}
+          </Divider>
+          <Space align="start" size={24} wrap>
+            <div>
+              <div style={{ fontSize: 12, color: T.ink3, marginBottom: 4 }}>
+                {t('pages.field.sampleAmount', '样本订单金额（元）')}
+              </div>
+              <InputNumber
+                min={0}
+                precision={2}
+                value={sampleCents / 100}
+                onChange={(v) => setSampleCents(Math.round(Number(v ?? 0) * 100))}
+                style={{ width: 160 }}
+              />
+            </div>
+            <div style={{ fontSize: 13, color: T.ink2, lineHeight: '22px' }}>
+              <div>
+                {t('pages.col.platformShare', '平台抽成')}
+                {'：'}
+                <b style={{ color: T.accent }}>{formatCents(samplePlatform)}</b>
+                {'（'}
+                {platformRate}%）
+              </div>
+              <div>
+                {t('pages.col.agentShare', '代理商分账')}
+                {'：'}
+                <b>{formatCents(sampleAgent)}</b>
+                {'（'}
+                {agentRate}%）
+              </div>
+              <div>
+                {t('pages.col.providerShare', '服务商实收')}
+                {'：'}
+                <b>{formatCents(sampleProvider)}</b>
+                {'（'}
+                {providerRate}%）
+              </div>
+            </div>
+          </Space>
+        </Panel>
+
+        {/* ── 区块三：类目费率 ── */}
+        <Panel
+          title={t('pages.sec.categoryFeeRate', '类目费率')}
+          hint={t('pages.desc.categoryFeeRateHint', '按服务品类覆盖平台抽成；未命中的类目回落到全局平台抽成比')}
+        >
+          <Form.List name="categoryRates">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map((field) => (
+                  <Space key={field.key} align="baseline" style={{ marginBottom: 8 }}>
+                    <Form.Item
+                      {...field}
+                      name={[field.name, 'category']}
+                      rules={[{ required: true, message: '请输入品类' }]}
+                      style={{ marginBottom: 0 }}
+                    >
+                      <Input placeholder={t('pages.ph.category', '服务品类')} style={{ width: 180 }} />
+                    </Form.Item>
+                    <Form.Item
+                      {...field}
+                      name={[field.name, 'rate']}
+                      rules={[{ required: true, message: '请输入费率' }]}
+                      style={{ marginBottom: 0 }}
+                    >
+                      <InputNumber min={0} max={100} precision={0} suffix="%" style={{ width: 140 }} />
+                    </Form.Item>
+                    <Button type="link" danger onClick={() => remove(field.name)}>
+                      {t('common.delete', '删除')}
+                    </Button>
+                  </Space>
+                ))}
+                <Button type="dashed" block onClick={() => add({ category: '', rate: 10 })}>
+                  {t('pages.btn.addCategoryRate', '＋ 新增类目费率')}
+                </Button>
+              </>
+            )}
+          </Form.List>
+        </Panel>
+      </Form>
+
+      {config?.updatedAt && (
+        <div style={{ marginTop: 8, fontSize: 12, color: T.ink3 }}>
+          {t('pages.field.lastUpdated', '最近更新')}
+          {'：'}
+          {new Date(config.updatedAt).toLocaleString('zh-CN', { hour12: false })}
+          {config?.updatedBy ? `（${t('pages.field.operator', '操作人')} ${config.updatedBy}）` : ''}
+        </div>
+      )}
     </>
   );
 };

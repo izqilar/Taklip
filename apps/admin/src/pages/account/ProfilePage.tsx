@@ -1,7 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Avatar, Button, Input, Select, Spin, Upload, message } from 'antd';
-import { EditOutlined, SaveOutlined, CloseOutlined, UploadOutlined } from '@ant-design/icons';
+import { Avatar, Button, Image, Input, Modal, Select, Spin, Tooltip, Upload, message } from 'antd';
+import {
+  EditOutlined,
+  SaveOutlined,
+  CloseOutlined,
+  UploadOutlined,
+  IdcardOutlined,
+  EyeOutlined,
+  MobileOutlined,
+  LockOutlined,
+  WechatOutlined,
+  QqOutlined,
+  AlipayOutlined,
+} from '@ant-design/icons';
 import { T, S } from '../../config/theme';
 import '../../styles/profile.css';
 import { API_URL, authHeaders, getStoredUser, USER_KEY, formatCents } from '../../utility';
@@ -9,6 +21,7 @@ import { roleText, serviceRolesText, cleanCode } from '../../config/labels';
 import { SUPPORTED_LANGS } from '../../i18n';
 import { t } from '../../i18n/t';
 import { StatusTag } from '../../components/common/StatusTag';
+import { PageHead } from '../../components/ui/PageHead';
 import { useLayer } from '../../providers/layerContext';
 
 /** 账户详情页（运营端）：四层角色通用，按角色渲染 4 个全宽 panel。仅 operator 自身可编辑。 */
@@ -23,6 +36,10 @@ export interface AccountProfile {
   bio?: string | null;
   email?: string | null;
   idCard?: string | null;
+  /** 身份证人像面影像 URL（/uploads/xxx） */
+  idCardFront?: string | null;
+  /** 身份证国徽面影像 URL */
+  idCardBack?: string | null;
   realNameStatus?: 'UNVERIFIED' | 'PENDING' | 'APPROVED' | 'REJECTED';
   realNameVerifiedAt?: string | null;
   vipLevel?: number;
@@ -78,8 +95,51 @@ const realnameStatus = (
   return { text: t(`status.realname.${key}`), tone: REALNAME_TONE[key] ?? 'mut' };
 };
 
-const EDITABLE = ['nickname', 'realName', 'email', 'bio', 'locale', 'idCard', 'avatar'] as const;
+const EDITABLE = [
+  'nickname',
+  'realName',
+  'email',
+  'bio',
+  'locale',
+  'idCard',
+  'idCardFront',
+  'idCardBack',
+  'avatar',
+] as const;
 type EditableKey = (typeof EDITABLE)[number];
+
+/* ───────── 字段校验（与服务端 AuthService 同口径，前端只做即时提示，服务端仍二次校验） ───────── */
+
+/** 手机号：大陆 11 位、1 开头、第二位 3-9 */
+export const isPhone = (v?: string | null) => !!v && /^1[3-9]\d{9}$/.test(v.trim());
+
+/** 邮箱：宽松通用格式 */
+export const isEmail = (v?: string | null) => !!v && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+/**
+ * 大陆二代身份证号：18 位 + GB 11643-1999 mod 11-2 校验位验真。
+ * 与服务端 `AuthService.isValidIdCard` 同一算法（服务端会二次校验，前端仅为即时反馈）。
+ */
+export function isValidIdCard(v?: string | null) {
+  if (!v) return false;
+  const id = v.trim().toUpperCase();
+  if (!/^\d{17}[\dX]$/.test(id)) return false;
+  const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+  const checks = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+  let sum = 0;
+  for (let i = 0; i < 17; i += 1) sum += Number(id[i]) * weights[i];
+  return checks[sum % 11] === id[17];
+}
+
+/** 上传图片到素材库：返回 URL，失败抛错 */
+async function uploadImageFile(file: File): Promise<string> {
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch(API_URL + '/assets/upload', { method: 'POST', headers: authHeaders(), body: fd });
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data?.url) throw new Error(data?.message || '上传失败');
+  return data.url as string;
+}
 
 const absUrl = (u?: string | null) =>
   !u ? '' : u.startsWith('http') ? u : API_URL.replace(/\/api$/, '') + u;
@@ -139,7 +199,7 @@ export const profileCssVars = {
  */
 export const AccountDetailSections = ({ profile }: { profile: AccountProfile }) => (
   <div className="profile-sections" style={profileCssVars}>
-    <RoleSections profile={profile} editing={false} form={{}} setForm={() => {}} />
+    <RoleSections profile={profile} editing={false} form={{}} setForm={() => {}} readOnly />
   </div>
 );
 
@@ -202,9 +262,23 @@ export const ProfilePage = () => {
       bio: profile.bio ?? '',
       locale: profile.locale ?? 'zh-CN',
       idCard: profile.idCard ?? '',
+      idCardFront: profile.idCardFront ?? '',
+      idCardBack: profile.idCardBack ?? '',
       avatar: profile.avatar ?? '',
     });
     setEditing(true);
+  };
+
+  /** 子区块（手机号 / 密码 / 证件影像）单独保存后回填最新档案，避免整页刷新丢失编辑态 */
+  const onUpdated = (updated: Profile) => {
+    setProfile(updated);
+    const SAFE = ['id', 'role', 'nickname', 'avatar', 'locale', 'regionPath', 'regionId', 'agentId'];
+    const src = updated as unknown as Record<string, unknown>;
+    const patch: Record<string, unknown> = {};
+    SAFE.forEach((k) => {
+      if (k in src) patch[k] = src[k];
+    });
+    localStorage.setItem(USER_KEY, JSON.stringify({ ...getStoredUser(), ...patch }));
   };
 
   const cancel = () => {
@@ -235,6 +309,15 @@ export const ProfilePage = () => {
     });
     if (Object.keys(payload).length === 0) {
       cancel();
+      return;
+    }
+    // 保存前校验（手机号 / 邮箱 / 身份证号）：与服务端同口径，命中即中止并提示，避免 400 后才发现填错
+    if (payload.idCard !== undefined && payload.idCard !== '' && !isValidIdCard(payload.idCard)) {
+      message.error('身份证号校验失败：应为 18 位，且校验位不正确');
+      return;
+    }
+    if (payload.email !== undefined && payload.email !== '' && !isEmail(payload.email)) {
+      message.error('邮箱格式不正确');
       return;
     }
     setSaving(true);
@@ -290,6 +373,8 @@ export const ProfilePage = () => {
 
   return (
     <div className="profile-page" style={{ padding: '20px 24px 32px', ...profileCssVars }}>
+      {/* 页面标题与侧栏菜单「账户详情」共用 menu.account.profile 同一真值，避免两处文案漂移 */}
+      <PageHead title={t('menu.account.profile', '账户详情')} chip={inspecting ? '总台 · 视察' : undefined} />
       <Hero
         profile={profile}
         editing={editing}
@@ -301,7 +386,14 @@ export const ProfilePage = () => {
       />
       {/* 原型 .profile-hero 的 margin-bottom: 14px */}
       <div className="profile-sections" style={{ marginTop: 14 }}>
-        <RoleSections profile={profile} editing={editing} form={form} setForm={setForm} />
+        <RoleSections
+          profile={profile}
+          editing={editing}
+          form={form}
+          setForm={setForm}
+          readOnly={inspecting}
+          onUpdated={onUpdated}
+        />
       </div>
     </div>
   );
@@ -385,36 +477,28 @@ const Hero = ({
 };
 
 /* ───────── 按角色渲染分区 ───────── */
-const RoleSections = ({
-  profile,
-  editing,
-  form,
-  setForm,
-}: {
+/** 四层角色分区的公共入参：身份/安全区块需要的「只读标记 + 保存回填」额外透传 */
+type SectionProps = {
   profile: Profile;
   editing: boolean;
   form: Partial<Record<EditableKey, string | null>>;
   setForm: React.Dispatch<React.SetStateAction<Partial<Record<EditableKey, string | null>>>>;
-}) => {
-  const role = profile.role;
-  if (role === 'ADMIN') return <AdminSections profile={profile} editing={editing} form={form} setForm={setForm} />;
-  if (role === 'AGENT') return <AgentSections profile={profile} editing={editing} form={form} setForm={setForm} />;
-  if (role === 'SERVICE_PROVIDER')
-    return <ProviderSections profile={profile} editing={editing} form={form} setForm={setForm} />;
-  return <UserSections profile={profile} editing={editing} form={form} setForm={setForm} />;
+  /** 只读（视察他人 / 抽屉复用）：隐藏编辑与上传入口，手机号等敏感字段脱敏 */
+  readOnly?: boolean;
+  /** 子区块单独保存成功后的档案回填 */
+  onUpdated?: (profile: Profile) => void;
 };
 
-const AdminSections = ({
-  profile,
-  editing,
-  form,
-  setForm,
-}: {
-  profile: Profile;
-  editing: boolean;
-  form: Partial<Record<EditableKey, string | null>>;
-  setForm: React.Dispatch<React.SetStateAction<Partial<Record<EditableKey, string | null>>>>;
-}) => {
+const RoleSections = ({ profile, editing, form, setForm, readOnly, onUpdated }: SectionProps) => {
+  const role = profile.role;
+  const p = { profile, editing, form, setForm, readOnly, onUpdated };
+  if (role === 'ADMIN') return <AdminSections {...p} />;
+  if (role === 'AGENT') return <AgentSections {...p} />;
+  if (role === 'SERVICE_PROVIDER') return <ProviderSections {...p} />;
+  return <UserSections {...p} />;
+};
+
+const AdminSections = ({ profile, editing, form, setForm, readOnly, onUpdated }: SectionProps) => {
   return (
     <>
       <Panel title="基础数据" hint="身份与联系信息">
@@ -448,6 +532,15 @@ const AdminSections = ({
         />
         <AvatarField profile={profile} editing={editing} form={form} setForm={setForm} />
       </Panel>
+
+      <IdentityPanel
+        profile={profile}
+        editing={editing}
+        form={form}
+        setForm={setForm}
+        readOnly={readOnly}
+      />
+      <SecurityPanel profile={profile} readOnly={readOnly} onUpdated={onUpdated} />
 
       <Panel title="归属与作用域" hint="角色层级与数据可见范围">
         <Field label="系统角色" value="管理员（ADMIN）" />
@@ -487,17 +580,7 @@ const AdminSections = ({
   );
 };
 
-const AgentSections = ({
-  profile,
-  editing,
-  form,
-  setForm,
-}: {
-  profile: Profile;
-  editing: boolean;
-  form: Partial<Record<EditableKey, string | null>>;
-  setForm: React.Dispatch<React.SetStateAction<Partial<Record<EditableKey, string | null>>>>;
-}) => {
+const AgentSections = ({ profile, editing, form, setForm, readOnly, onUpdated }: SectionProps) => {
   const regionName = profile.region?.name || profile.regionPath || '未分配';
   return (
     <>
@@ -525,6 +608,15 @@ const AgentSections = ({
         />
         <AvatarField profile={profile} editing={editing} form={form} setForm={setForm} />
       </Panel>
+
+      <IdentityPanel
+        profile={profile}
+        editing={editing}
+        form={form}
+        setForm={setForm}
+        readOnly={readOnly}
+      />
+      <SecurityPanel profile={profile} readOnly={readOnly} onUpdated={onUpdated} />
 
       <Panel title="归属与作用域" hint="角色层级与数据可见范围">
         <Field label="系统角色" value="代理商（AGENT）" />
@@ -564,17 +656,7 @@ const AgentSections = ({
   );
 };
 
-const ProviderSections = ({
-  profile,
-  editing,
-  form,
-  setForm,
-}: {
-  profile: Profile;
-  editing: boolean;
-  form: Partial<Record<EditableKey, string | null>>;
-  setForm: React.Dispatch<React.SetStateAction<Partial<Record<EditableKey, string | null>>>>;
-}) => {
+const ProviderSections = ({ profile, editing, form, setForm, readOnly, onUpdated }: SectionProps) => {
   const regionName = profile.region?.name || profile.regionPath || '未分配';
   const mainRole = profile.serviceRoles?.[0] ? serviceRolesText([profile.serviceRoles[0]]) : '—';
   const allRoles = serviceRolesText(profile.serviceRoles);
@@ -612,6 +694,15 @@ const ProviderSections = ({
         />
         <AvatarField profile={profile} editing={editing} form={form} setForm={setForm} />
       </Panel>
+
+      <IdentityPanel
+        profile={profile}
+        editing={editing}
+        form={form}
+        setForm={setForm}
+        readOnly={readOnly}
+      />
+      <SecurityPanel profile={profile} readOnly={readOnly} onUpdated={onUpdated} />
 
       <Panel title="归属与作用域" hint="角色层级与数据可见范围">
         <Field label="系统角色" value="服务商（SERVICE_PROVIDER）" />
@@ -657,17 +748,7 @@ const ProviderSections = ({
   );
 };
 
-const UserSections = ({
-  profile,
-  editing,
-  form,
-  setForm,
-}: {
-  profile: Profile;
-  editing: boolean;
-  form: Partial<Record<EditableKey, string | null>>;
-  setForm: React.Dispatch<React.SetStateAction<Partial<Record<EditableKey, string | null>>>>;
-}) => {
+const UserSections = ({ profile, editing, form, setForm, readOnly, onUpdated }: SectionProps) => {
   const cityName = profile.region?.name || profile.regionPath || '未设置';
   const vipColor = (profile.vipLevel ?? 0) >= 1 ? 'ac' : 'mut';
   return (
@@ -704,6 +785,15 @@ const UserSections = ({
         <AvatarField profile={profile} editing={editing} form={form} setForm={setForm} />
       </Panel>
 
+      <IdentityPanel
+        profile={profile}
+        editing={editing}
+        form={form}
+        setForm={setForm}
+        readOnly={readOnly}
+      />
+      <SecurityPanel profile={profile} readOnly={readOnly} onUpdated={onUpdated} />
+
       <Panel title="归属与作用域" hint="角色层级与数据可见范围">
         <Field label="系统角色" value="客户（USER）" />
         <Field label="所在城市" value={cityName} />
@@ -733,6 +823,454 @@ const UserSections = ({
         <Field label="关注服务商" value={num(profile.followingProviderCount)} />
       </Panel>
     </>
+  );
+};
+
+/* ───────── 身份认证资料（四层角色通用） ───────── */
+
+/**
+ * 证件影像单元格：缩略图（点击可预览大图）+「已上传 / 未上传」状态 + 上传入口。
+ * 上传走既有素材通道 `POST /api/assets/upload`，与头像上传同管线；
+ * 仅在编辑态提供上传按钮（只读态只保留预览），落库需随整页「保存」一起提交。
+ */
+const CertImageField = ({
+  label,
+  url,
+  editing,
+  readOnly,
+  onChange,
+}: {
+  label: string;
+  url?: string | null;
+  editing: boolean;
+  readOnly?: boolean;
+  onChange: (url: string) => void;
+}) => {
+  const [uploading, setUploading] = useState(false);
+  const src = url ? absUrl(url) : '';
+  return (
+    <div className="pfield">
+      <span className="pf-label">{label}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        {src ? (
+          <Image
+            src={src}
+            width={72}
+            height={45}
+            style={{ objectFit: 'cover', borderRadius: 4, border: `1px solid ${T.border}` }}
+            preview={{ mask: '预览' }}
+          />
+        ) : (
+          <span
+            style={{
+              width: 72,
+              height: 45,
+              borderRadius: 4,
+              border: `1px dashed ${T.border}`,
+              display: 'grid',
+              placeItems: 'center',
+              color: T.ink3,
+              fontSize: 11,
+            }}
+          >
+            未上传
+          </span>
+        )}
+        <span style={{ fontSize: 12.5, color: src ? T.ink2 : T.ink3 }}>
+          {src ? (
+            <StatusTag type="ok">已上传</StatusTag>
+          ) : (
+            <StatusTag type="mut">未上传</StatusTag>
+          )}
+        </span>
+        {editing && !readOnly && (
+          <Upload
+            showUploadList={false}
+            accept="image/*"
+            beforeUpload={(file) => {
+              setUploading(true);
+              uploadImageFile(file as File)
+                .then((u) => {
+                  onChange(u);
+                  message.success('证件影像已选择，保存后生效');
+                })
+                .catch(() => message.error('证件影像上传失败'))
+                .finally(() => setUploading(false));
+              return false;
+            }}
+          >
+            <Button size="small" icon={<UploadOutlined />} loading={uploading}>
+              {src ? '重新上传' : '上传'}
+            </Button>
+          </Upload>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const IdentityPanel = ({
+  profile,
+  editing,
+  form,
+  setForm,
+  readOnly,
+}: {
+  profile: Profile;
+  editing: boolean;
+  form: Partial<Record<EditableKey, string | null>>;
+  setForm: React.Dispatch<React.SetStateAction<Partial<Record<EditableKey, string | null>>>>;
+  readOnly?: boolean;
+}) => {
+  const st = realnameStatus(profile.realNameStatus);
+  // 待完善：证件号与两面影像全空（注册阶段未提交 → 引导在编辑态补齐）
+  const missing = !profile.idCard && !profile.idCardFront && !profile.idCardBack;
+  const idValue = (editing ? form.idCard : profile.idCard) ?? '';
+  const idInvalid = !!idValue && !isValidIdCard(idValue);
+
+  return (
+    <Panel
+      title="身份认证资料"
+      hint="实名认证与证件影像"
+      footer={
+        missing && !readOnly ? (
+          <div style={{ padding: '8px 14px', fontSize: 12.5, color: T.warn }}>
+            资料待完善：请点击右上角「编辑」补充身份证号与证件影像，提交后进入人工审核。
+          </div>
+        ) : undefined
+      }
+    >
+      <Field
+        label="认证状态"
+        value={
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <StatusTag type={st.tone}>{st.text}</StatusTag>
+            {profile.realNameStatus === 'APPROVED' && profile.realNameVerifiedAt && (
+              <span style={{ color: T.ink3, fontSize: 12 }}>
+                认证于 {formatDate(profile.realNameVerifiedAt)}
+              </span>
+            )}
+          </span>
+        }
+      />
+      {editing && !readOnly ? (
+        <div className="pfield">
+          <span className="pf-label">身份证号</span>
+          <div>
+            <Input
+              size="small"
+              value={idValue}
+              maxLength={18}
+              placeholder="18 位身份证号"
+              status={idInvalid ? 'error' : undefined}
+              onChange={(e) => setForm((f) => ({ ...f, idCard: e.target.value.trim() }))}
+            />
+            {idInvalid && (
+              <div style={{ marginTop: 4, fontSize: 12, color: T.down }}>
+                身份证号校验失败：应为 18 位，末位可为 X，校验位不正确
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <Field
+          label="身份证号"
+          value={
+            profile.idCard ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                {maskId(profile.idCard)}
+                {!readOnly && (
+                  <Tooltip title="提交后需人工审核，审核期间不可再次修改">
+                    <IdcardOutlined style={{ color: T.ink3 }} />
+                  </Tooltip>
+                )}
+              </span>
+            ) : missing ? (
+              <StatusTag type="warn">待完善</StatusTag>
+            ) : (
+              '—'
+            )
+          }
+        />
+      )}
+      <CertImageField
+        label="身份证 · 人像面"
+        url={editing ? form.idCardFront : profile.idCardFront}
+        editing={editing}
+        readOnly={readOnly}
+        onChange={(u) => setForm((f) => ({ ...f, idCardFront: u }))}
+      />
+      <CertImageField
+        label="身份证 · 国徽面"
+        url={editing ? form.idCardBack : profile.idCardBack}
+        editing={editing}
+        readOnly={readOnly}
+        onChange={(u) => setForm((f) => ({ ...f, idCardBack: u }))}
+      />
+    </Panel>
+  );
+};
+
+/* ───────── 账号安全（四层角色通用） ───────── */
+
+/** 带操作按钮的单元格（手机号 / 密码 / 第三方绑定） */
+const ActionField = ({
+  label,
+  value,
+  action,
+}: {
+  label: string;
+  value: React.ReactNode;
+  action?: React.ReactNode;
+}) => (
+  <div className="pfield">
+    <span className="pf-label">{label}</span>
+    <span className="pf-val" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      {value}
+      {action}
+    </span>
+  </div>
+);
+
+/** 修改手机号：校验格式后 PATCH /api/auth/me（服务端再校验唯一性，冲突返回 409） */
+const PhoneModal = ({
+  open,
+  current,
+  onClose,
+  onUpdated,
+}: {
+  open: boolean;
+  current?: string | null;
+  onClose: () => void;
+  onUpdated?: (profile: Profile) => void;
+}) => {
+  const [value, setValue] = useState('');
+  const [saving, setSaving] = useState(false);
+  const invalid = !!value && !isPhone(value);
+
+  const submit = async () => {
+    if (!isPhone(value)) {
+      message.error('请输入正确的 11 位手机号');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(API_URL + '/auth/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ phone: value.trim() }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        message.error(data?.message || '手机号修改失败');
+        return;
+      }
+      message.success('手机号已更新');
+      onUpdated?.(data);
+      setValue('');
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      title="修改手机号"
+      okText="确认修改"
+      cancelText="取消"
+      confirmLoading={saving}
+      onOk={submit}
+      onCancel={() => {
+        setValue('');
+        onClose();
+      }}
+    >
+      <div style={{ display: 'grid', gap: 10, padding: '8px 0' }}>
+        <div style={{ fontSize: 12.5, color: T.ink3 }}>当前号码：{current || '—'}</div>
+        <Input
+          value={value}
+          maxLength={11}
+          placeholder="请输入新的手机号"
+          status={invalid ? 'error' : undefined}
+          onChange={(e) => setValue(e.target.value.replace(/\D/g, ''))}
+        />
+        {invalid && <div style={{ fontSize: 12, color: T.down }}>手机号格式不正确（11 位，1 开头）</div>}
+      </div>
+    </Modal>
+  );
+};
+
+/** 修改密码：校验原密码通过后再设置新密码（POST /api/auth/change-password） */
+const PasswordModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+  const [oldPwd, setOldPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [saving, setSaving] = useState(false);
+  const mismatch = !!confirm && confirm !== newPwd;
+  const tooShort = !!newPwd && newPwd.length < 6;
+
+  const submit = async () => {
+    if (!oldPwd) {
+      message.error('请输入原密码');
+      return;
+    }
+    if (newPwd.length < 6) {
+      message.error('新密码至少 6 位');
+      return;
+    }
+    if (newPwd !== confirm) {
+      message.error('两次输入的新密码不一致');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(API_URL + '/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ oldPassword: oldPwd, newPassword: newPwd }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        message.error(data?.message || '原密码不正确，修改失败');
+        return;
+      }
+      message.success('密码已修改，下次登录请使用新密码');
+      setOldPwd('');
+      setNewPwd('');
+      setConfirm('');
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      title="修改登录密码"
+      okText="确认修改"
+      cancelText="取消"
+      confirmLoading={saving}
+      onOk={submit}
+      onCancel={() => {
+        setOldPwd('');
+        setNewPwd('');
+        setConfirm('');
+        onClose();
+      }}
+    >
+      <div style={{ display: 'grid', gap: 10, padding: '8px 0' }}>
+        <Input.Password
+          value={oldPwd}
+          placeholder="请输入原密码"
+          onChange={(e) => setOldPwd(e.target.value)}
+        />
+        <Input.Password
+          value={newPwd}
+          placeholder="请输入新密码（至少 6 位）"
+          status={tooShort ? 'error' : undefined}
+          onChange={(e) => setNewPwd(e.target.value)}
+        />
+        <Input.Password
+          value={confirm}
+          placeholder="请再次输入新密码"
+          status={mismatch ? 'error' : undefined}
+          onChange={(e) => setConfirm(e.target.value)}
+        />
+        {tooShort && <div style={{ fontSize: 12, color: T.down }}>新密码至少 6 位</div>}
+        {mismatch && <div style={{ fontSize: 12, color: T.down }}>两次输入的新密码不一致</div>}
+      </div>
+    </Modal>
+  );
+};
+
+const SecurityPanel = ({
+  profile,
+  readOnly,
+  onUpdated,
+}: {
+  profile: Profile;
+  readOnly?: boolean;
+  onUpdated?: (profile: Profile) => void;
+}) => {
+  const [phoneOpen, setPhoneOpen] = useState(false);
+  const [pwdOpen, setPwdOpen] = useState(false);
+  // 本人登录且账号正常 → 完整显示；非本人访问（视察）或账号停用（异常）→ 脱敏
+  const fullPhone = !readOnly && profile.status !== 'DISABLED';
+  const thirdParty = [
+    { key: 'wechat', label: '微信', icon: <WechatOutlined />, bound: !!profile.wxOpenid },
+    { key: 'qq', label: 'QQ', icon: <QqOutlined />, bound: false },
+    { key: 'alipay', label: '支付宝', icon: <AlipayOutlined />, bound: false },
+  ];
+
+  return (
+    <Panel title="账号安全" hint="手机号 / 登录密码 / 第三方账号">
+      <ActionField
+        label="手机号"
+        value={
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <MobileOutlined style={{ color: T.ink3 }} />
+            {fullPhone ? profile.phone || '—' : maskPhone(profile.phone)}
+            {!fullPhone && (
+              <Tooltip title="非本人访问或账号状态异常，手机号已脱敏">
+                <EyeOutlined style={{ color: T.ink3 }} />
+              </Tooltip>
+            )}
+          </span>
+        }
+        action={
+          !readOnly && (
+            <Button size="small" type="link" onClick={() => setPhoneOpen(true)}>
+              修改
+            </Button>
+          )
+        }
+      />
+      <ActionField
+        label="登录密码"
+        value={
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <LockOutlined style={{ color: T.ink3 }} />
+            ••••••••
+          </span>
+        }
+        action={
+          !readOnly && (
+            <Button size="small" type="link" onClick={() => setPwdOpen(true)}>
+              修改
+            </Button>
+          )
+        }
+      />
+      {thirdParty.map((p) => (
+        <ActionField
+          key={p.key}
+          label={p.label}
+          value={
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {p.icon}
+              <StatusTag type={p.bound ? 'ok' : 'mut'}>{p.bound ? '已绑定' : '未绑定'}</StatusTag>
+            </span>
+          }
+          action={
+            !readOnly && (
+              <Button size="small" type="link" onClick={() => message.info('该功能即将上线')}>
+                {p.bound ? '解绑' : '绑定'}
+              </Button>
+            )
+          }
+        />
+      ))}
+      <PhoneModal
+        open={phoneOpen}
+        current={fullPhone ? profile.phone : maskPhone(profile.phone)}
+        onClose={() => setPhoneOpen(false)}
+        onUpdated={onUpdated}
+      />
+      <PasswordModal open={pwdOpen} onClose={() => setPwdOpen(false)} />
+    </Panel>
   );
 };
 
