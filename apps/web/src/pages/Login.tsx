@@ -19,6 +19,8 @@ export default function Login() {
 
   // 登录后优先跳回触发登录的来源页（如模板库 / 一键制作）；无来源页时用服务端给的落点
   const from = (location.state as { from?: string } | null)?.from ?? null;
+  // 账号资质漂移后会被统一重定向到 `/login?reason=identity-changed`，此处据此给出友好说明
+  const identityChangedReason = new URLSearchParams(location.search).get('reason') === 'identity-changed';
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -57,6 +59,15 @@ export default function Login() {
         {error && (
           <div className="mb-4 rounded-lg bg-red-900/40 px-4 py-2 text-center text-sm text-red-300">
             {t(error)}
+          </div>
+        )}
+
+        {/* 资质漂移后落地登录页：复用同一套文案说明「为什么被请到这里」，避免用户困惑 */}
+        {identityChangedReason && !error && (
+          <div className="mb-4 rounded-lg bg-amber-900/40 px-4 py-2 text-center text-sm text-amber-200">
+            {t('auth.drift.loginHint', {
+              defaultValue: '你的账号资质已发生变化，请重新登录。',
+            })}
           </div>
         )}
 

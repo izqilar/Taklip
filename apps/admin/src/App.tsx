@@ -3,12 +3,14 @@ import type { ReactNode } from 'react';
 import { Refine, Authenticated, useInvalidate } from '@refinedev/core';
 import { ErrorComponent } from '@refinedev/antd';
 import routerProvider, { CatchAllNavigate } from '@refinedev/react-router-v6';
-import { BrowserRouter, Routes, Route, Outlet, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom';
 import { ConfigProvider, App as AntdApp } from 'antd';
 import type { ThemeConfig } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import enUS from 'antd/locale/en_US';
 import { useTranslation } from 'react-i18next';
+import { ensureIdentityFresh } from './providers/identityDrift';
+import { IdentityDriftNotice } from './components/auth/IdentityDriftNotice';
 
 import './i18n';
 import { i18nProvider } from './providers/i18nProvider';
@@ -203,6 +205,21 @@ const ObjectScopeInvalidationBridge = () => {
   return null;
 };
 
+/**
+ * 资质漂移巡检（路由守卫层，全局唯一一处）。
+ *
+ * 随路由变化触发 ensureIdentityFresh()（内部 30s 节流 + 单飞），覆盖「不会立刻报错」的
+ * 资质变更情形；会报错的那一类（403）由 dataProvider.parse() 即时发现。
+ * 二者都汇到同一个漂移守卫，业务页面无需重复实现。
+ */
+const IdentityWatch = () => {
+  const location = useLocation();
+  useEffect(() => {
+    ensureIdentityFresh();
+  }, [location.pathname]);
+  return null;
+};
+
 /** 响应式外壳：按当前语言切换 antd locale 与 RTL 方向（文档 §13） */
 const Shell = ({ children }: { children: ReactNode }) => {
   const { i18n } = useTranslation();
@@ -244,6 +261,9 @@ export const App = () => (
         <LayerProvider>
           <BrowserRouter>
             <ObjectScopeInvalidationBridge />
+            {/* 资质漂移：巡检 + 统一提示（二者只存在于 App 根，业务页不重复实现） */}
+            <IdentityWatch />
+            <IdentityDriftNotice />
             <Routes>
               <Route
                 element={

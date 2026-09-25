@@ -1,6 +1,11 @@
 import type { DataProvider } from '@refinedev/core';
 import { API_URL, getStoredUser, authHeaders } from '../utility';
 import { getSubject } from './scopeStore';
+import {
+  ROLE_MISMATCH_CODE,
+  IDENTITY_CHANGED_MESSAGE,
+  reportFromServerIdentity,
+} from './identityDrift';
 
 /**
  * 视察窗口 subject 注入：ADMIN 在服务商/代理商/用户视角下选定被视察对象后，
@@ -58,6 +63,23 @@ async function parse(res: Response, url?: string): Promise<any> {
     body = {};
   }
   if (!res.ok) {
+    // ★ 账号资质变更（403 + code=ROLE_MISMATCH）：运营端唯一的统一入口。
+    // 服务端 RolesGuard 已在响应体回带当前权威身份，零额外请求即可与本地快照比对。
+    // 命中后由漂移守卫弹友好提示并安排「清登录态 → 跳登录页」，错误文案同步替换为友好提示，
+    // 避免 Refine / 业务页把「权限不足，无法访问此资源」这类原始错误直接抛给用户。
+    if (res.status === 403 && (body as any)?.code === ROLE_MISMATCH_CODE && (body as any)?.identity) {
+      reportFromServerIdentity((body as any).identity);
+      const err = new Error(IDENTITY_CHANGED_MESSAGE) as Error & {
+        statusCode?: number;
+        url?: string;
+        code?: string;
+      };
+      err.statusCode = 403;
+      err.code = ROLE_MISMATCH_CODE;
+      if (url) err.url = url;
+      throw err;
+    }
+
     const message = Array.isArray(body?.message)
       ? body.message.join('; ')
       : body?.message || `请求失败 (${res.status})`;

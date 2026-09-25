@@ -1,9 +1,29 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppLayout from './components/AppLayout';
+import IdentityDriftNotice from './components/IdentityDriftNotice';
+import { ensureIdentityFresh } from './store/identityDrift';
 import { useLanguageDirection } from './hooks/useLanguageDirection';
+
+/**
+ * 资质漂移巡检（路由守卫层，全局唯一一处）。
+ *
+ * 挂载在 App 根节点、随路由变化触发 `ensureIdentityFresh()`（内部 30s 节流 + 单飞），
+ * 覆盖「升级为代理商等不会立刻触发 403 」的资质变更：
+ * USER → AGENT 时 /api/user/* 对 AGENT 仍然放行，页面不会报错，
+ * 只有主动与服务端比对才能发现「本地快照已过期」。
+ * 其余（403）场景由 client.ts 的响应拦截层即时发现，二者汇到同一个漂移守卫。
+ */
+function IdentityWatch() {
+  const location = useLocation();
+  useEffect(() => {
+    // 每次路由变化都尝试一次（节流在函数内部）
+    ensureIdentityFresh();
+  }, [location.pathname]);
+  return null;
+}
 
 /**
  * 编辑器（含 @h5design/editor 内核 + Konva + GSAP，约 4MB 未压缩）必须**按需加载**：
@@ -75,6 +95,9 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      {/* 资质漂移：巡检 + 统一提示（二者均应只存在于 App 根，业务页不重复实现） */}
+      <IdentityWatch />
+      <IdentityDriftNotice />
       <Routes>
         {/* 全站布局：含固定顶部导航 SiteHeader */}
         <Route element={<AppLayout />}>

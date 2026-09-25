@@ -5,6 +5,16 @@
 
 import type { BackgroundMusic } from '@h5design/core';
 
+/**
+ * 身份漂移守卫（静态引入安全：它对 client 只有「类型依赖」，运行时不反向引用，
+ * 因此不存在 ESM 循环初始化问题；它与 client 之间的运行时公共依赖都在 ./session）。
+ */
+import {
+  ROLE_MISMATCH_CODE,
+  IDENTITY_CHANGED_MESSAGE,
+  reportFromServerIdentity,
+} from '../store/identityDrift';
+
 const BASE_URL = ''; // 开发期走 vite proxy，生产期走 nginx 反代
 
 export type UserRole = 'USER' | 'SERVICE_PROVIDER' | 'AGENT' | 'ADMIN';
@@ -242,32 +252,31 @@ export interface AssetItem {
   createdAt: string;
 }
 
-/** 从 localStorage 获取 token */
-function getToken(): string | null {
-  return localStorage.getItem('access_token');
-}
+/**
+ * 令牌 / 本地用户快照的读写已迁到 ./session（单一真值源），
+ * 这里统一再导出，保持既有 import 路径不变（authStore 等大量依赖此处的导出）。
+ */
+import {
+  getToken,
+  getStoredToken,
+  getRefreshToken,
+  getStoredUser,
+  setStoredUser,
+  setTokens,
+  clearTokens,
+} from './session';
 
-/** 存储 token 到 localStorage */
-export function setTokens(accessToken: string, refreshToken: string): void {
-  localStorage.setItem('access_token', accessToken);
-  localStorage.setItem('refresh_token', refreshToken);
-}
+export {
+  getToken,
+  getStoredToken,
+  getRefreshToken,
+  getStoredUser,
+  setStoredUser,
+  setTokens,
+  clearTokens,
+};
 
-/** 清除 token */
-export function clearTokens(): void {
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
-}
-
-/** 获取当前 access token（跨端桥接时携带登录态使用） */
-export function getStoredToken(): string | null {
-  return localStorage.getItem('access_token');
-}
-
-/** 从 localStorage 获取 refresh token */
-function getRefreshToken(): string | null {
-  return localStorage.getItem('refresh_token');
-}
+/** ------ ↑ 会话存储 ↓ 业务 API ------ */
 
 /**
  * 用 refresh token 换取新的 access/refresh token。
@@ -297,20 +306,7 @@ async function refreshAccessToken(): Promise<boolean> {
   }
 }
 
-/** 获取当前用户信息（从 localStorage） */
-export function getStoredUser(): UserInfo | null {
-  const raw = localStorage.getItem('user_info');
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as UserInfo;
-  } catch {
-    return null;
-  }
-}
-
-export function setStoredUser(user: UserInfo): void {
-  localStorage.setItem('user_info', JSON.stringify(user));
-}
+// getStoredUser / setStoredUser 的实现已迁到 ./session（见文件顶部批量再导出）。
 
 /** 运营端（管理后台）基址：跨端跳转统一从这里取，避免多处硬编码漂移 */
 export const ADMIN_BASE = 'http://localhost:5174';
@@ -384,6 +380,23 @@ async function request<T>(
 
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
+
+    // ★ 账号资质变更（403 + code=ROLE_MISMATCH）：这是前端唯一的统一入口。
+    // 服务端 RolesGuard 已在响应体回带当前权威身份，零额外请求即可比对本地快照；
+    // 命中后由漂移守卫弹友好提示并安排「清登录态 → 跳登录页」，此处不再把原始错误抛给业务页。
+    if (res.status === 403) {
+      let body: any = {};
+      try {
+        body = text ? JSON.parse(text) : {};
+      } catch {
+        body = {};
+      }
+      if (body?.code === ROLE_MISMATCH_CODE && body?.identity) {
+        reportFromServerIdentity(body.identity);
+        throw new Error(IDENTITY_CHANGED_MESSAGE);
+      }
+    }
+
     throw new Error(`API ${res.status}: ${text}`);
   }
 

@@ -898,5 +898,14 @@
       "phone11": "Phone must be 11 digits",
       "regionPathRequired": "Region path required"
     }
+  },
+  "auth": {
+    "drift": {
+      "title": "Account qualification changed",
+      "body": "Your account qualification has changed and your current session is no longer valid. Please sign in again.",
+      "detail": "Change: {{from}} → {{to}}",
+      "countdown": "Redirecting to the sign-in page in {{sec}}s",
+      "confirm": "Sign in now"
+    }
   }
 }

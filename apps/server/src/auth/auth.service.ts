@@ -9,6 +9,7 @@ import { loadStaffContext } from '../console/staff-context';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import type { JwtUser } from '../common/types/jwt-user';
 import { JWT_REFRESH_SECRET } from './jwt-secrets';
+import { homeForRole } from '../common/identity/role-home';
 
 function vipTierName(level: number) {
   if (level >= 3) return '黑金会员';
@@ -44,22 +45,8 @@ export function isValidIdCard(id: string): boolean {
  *
  * 改这张表即可改变任意角色的落点，前端无需改动。
  */
-const ROLE_HOME: Record<string, { origin: 'web' | 'admin'; path: string }> = {
-  USER: { origin: 'web', path: '/user/works' },
-  SERVICE_PROVIDER: { origin: 'admin', path: '/sp/studio' },
-  AGENT: { origin: 'admin', path: '/agent/dashboard' },
-  ADMIN: { origin: 'admin', path: '/admin/dashboard' },
-};
-
-/**
- * P1（员工登录落点）：USER 身份 + 有效组织成员关系时，按主要成员关系所在层进入运营端工作台。
- * 员工沿用 USER 平台身份，不新增角色，故落点需由「组织成员关系」推导（文档 §3.2 / §10.1）。
- */
-const STAFF_HOME: Record<'PROVIDER' | 'AGENT' | 'CONSOLE', { origin: 'web' | 'admin'; path: string }> = {
-  PROVIDER: { origin: 'admin', path: '/sp/studio' },
-  AGENT: { origin: 'admin', path: '/agent/dashboard' },
-  CONSOLE: { origin: 'admin', path: '/admin/dashboard' },
-};
+// ⚠️ ROLE_HOME / STAFF_HOME 已抽到 src/common/identity/role-home.ts（单一真值源），
+// 供 RolesGuard 在 403 响应里回带「当前权威身份」复用。改落点只需改那一个文件。
 
 @Injectable()
 export class AuthService {
@@ -546,10 +533,7 @@ export class AuthService {
 
     const user = await this.validateUser(userId);
     // P1（员工登录落点）：USER + 有效成员关系 → 进入对应层运营端；否则按角色落点
-    const home =
-      user?.role === 'USER' && staff.length
-        ? STAFF_HOME[(staff[0].orgType as 'PROVIDER' | 'AGENT' | 'CONSOLE')] ?? ROLE_HOME.USER
-        : ROLE_HOME[user?.role ?? 'USER'] ?? ROLE_HOME.USER;
+    const home = homeForRole(user?.role, staff);
     return {
       accessToken,
       refreshToken,

@@ -1,6 +1,7 @@
 import type { AuthProvider } from '@refinedev/core';
 import { API_URL, WEB_BASE, setSession, clearSession, getToken, getStoredUser, issueBridgeTicket } from '../utility';
 import { onAuthChanged } from './accessControlProvider';
+import { ROLE_MISMATCH_CODE, isIdentityDrift } from './identityDrift';
 
 /**
  * 运营端准入角色（文档 §4.1 / §2.3）。
@@ -115,6 +116,12 @@ export const authProvider: AuthProvider = {
 
   onError: async (error: any) => {
     const status = error?.statusCode ?? error?.response?.status ?? error?.status;
+    // ★ 账号资质漂移：由 identityDrift 守卫统一处理（友好提示 → 清缓存 → 跳登录页）。
+    // 这里必须「让路」：不要再 logout / redirectTo，否则 Refine 会在提示出现前就把页面切走，
+    // 用户无缘无故被踢到登录页。错误文案也已在 dataProvider 里换成友好提示。
+    if (error?.code === ROLE_MISMATCH_CODE || isIdentityDrift()) {
+      return { error };
+    }
     if (status === 401) {
       // 例外的例外：权限探测请求失败不登出、不跳登录页。
       // 探测结果在 accessControlProvider.can() 内部已有降级（失败 → 无权限），
