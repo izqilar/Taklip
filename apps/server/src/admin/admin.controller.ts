@@ -170,6 +170,44 @@ export class AdminController {
     return { items: data, total: data.length };
   }
 
+  /** 入驻申请详情（总台审核整页用）：完整材料 + 审核人姓名 + 往期被拒次数 */
+  @Get('qualifications/:id')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async getQualification(@Param('id') id: string) {
+    const app = await this.prisma.qualificationApplication.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: { id: true, nickname: true, realName: true, phone: true, role: true, regionPath: true },
+        },
+      },
+    });
+    if (!app) throw new NotFoundException('申请不存在');
+
+    const reviewerIds = [
+      ...new Set([app.firstReviewedById, app.finalReviewedById].filter((x): x is string => !!x)),
+    ];
+    const reviewers = reviewerIds.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: reviewerIds } },
+          select: { id: true, nickname: true, realName: true },
+        })
+      : [];
+    const reviewerMap = new Map(reviewers.map((r) => [r.id, r.realName || r.nickname || '—']));
+
+    const hist = await this.prisma.qualificationApplication.count({
+      where: { userId: app.userId, status: { in: ['REJECTED', 'WITHDRAWN'] } },
+    });
+
+    return {
+      ...app,
+      firstReviewerName: app.firstReviewedById ? reviewerMap.get(app.firstReviewedById) ?? null : null,
+      finalReviewerName: app.finalReviewedById ? reviewerMap.get(app.finalReviewedById) ?? null : null,
+      historyCount: hist,
+    };
+  }
+
   /**
    * 入驻申请风险预检（M5 / 方案 §3.3）——**只标记、不自动放行**。
    *

@@ -18110,6 +18110,8 @@ export namespace Prisma {
     approvedAt: Date | null
     rejectNote: string | null
     recipientId: string | null
+    bizType: string | null
+    bizId: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -18129,6 +18131,8 @@ export namespace Prisma {
     approvedAt: Date | null
     rejectNote: string | null
     recipientId: string | null
+    bizType: string | null
+    bizId: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -18148,6 +18152,8 @@ export namespace Prisma {
     approvedAt: number
     rejectNote: number
     recipientId: number
+    bizType: number
+    bizId: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -18169,6 +18175,8 @@ export namespace Prisma {
     approvedAt?: true
     rejectNote?: true
     recipientId?: true
+    bizType?: true
+    bizId?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -18188,6 +18196,8 @@ export namespace Prisma {
     approvedAt?: true
     rejectNote?: true
     recipientId?: true
+    bizType?: true
+    bizId?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -18207,6 +18217,8 @@ export namespace Prisma {
     approvedAt?: true
     rejectNote?: true
     recipientId?: true
+    bizType?: true
+    bizId?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -18299,6 +18311,8 @@ export namespace Prisma {
     approvedAt: Date | null
     rejectNote: string | null
     recipientId: string | null
+    bizType: string | null
+    bizId: string | null
     createdAt: Date
     updatedAt: Date
     _count: MessageCountAggregateOutputType | null
@@ -18335,6 +18349,8 @@ export namespace Prisma {
     approvedAt?: boolean
     rejectNote?: boolean
     recipientId?: boolean
+    bizType?: boolean
+    bizId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     author?: boolean | UserDefaultArgs<ExtArgs>
@@ -18358,6 +18374,8 @@ export namespace Prisma {
     approvedAt?: boolean
     rejectNote?: boolean
     recipientId?: boolean
+    bizType?: boolean
+    bizId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     author?: boolean | UserDefaultArgs<ExtArgs>
@@ -18379,6 +18397,8 @@ export namespace Prisma {
     approvedAt?: boolean
     rejectNote?: boolean
     recipientId?: boolean
+    bizType?: boolean
+    bizId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
@@ -18416,6 +18436,8 @@ export namespace Prisma {
       approvedAt: Date | null
       rejectNote: string | null
       recipientId: string | null
+      bizType: string | null
+      bizId: string | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["message"]>
@@ -18828,6 +18850,8 @@ export namespace Prisma {
     readonly approvedAt: FieldRef<"Message", 'DateTime'>
     readonly rejectNote: FieldRef<"Message", 'String'>
     readonly recipientId: FieldRef<"Message", 'String'>
+    readonly bizType: FieldRef<"Message", 'String'>
+    readonly bizId: FieldRef<"Message", 'String'>
     readonly createdAt: FieldRef<"Message", 'DateTime'>
     readonly updatedAt: FieldRef<"Message", 'DateTime'>
   }
@@ -34662,6 +34686,8 @@ export namespace Prisma {
     approvedAt: 'approvedAt',
     rejectNote: 'rejectNote',
     recipientId: 'recipientId',
+    bizType: 'bizType',
+    bizId: 'bizId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -36533,6 +36559,8 @@ export namespace Prisma {
     approvedAt?: DateTimeNullableFilter<"Message"> | Date | string | null
     rejectNote?: StringNullableFilter<"Message"> | string | null
     recipientId?: StringNullableFilter<"Message"> | string | null
+    bizType?: StringNullableFilter<"Message"> | string | null
+    bizId?: StringNullableFilter<"Message"> | string | null
     createdAt?: DateTimeFilter<"Message"> | Date | string
     updatedAt?: DateTimeFilter<"Message"> | Date | string
     author?: XOR<UserRelationFilter, UserWhereInput>
@@ -36555,6 +36583,8 @@ export namespace Prisma {
     approvedAt?: SortOrderInput | SortOrder
     rejectNote?: SortOrderInput | SortOrder
     recipientId?: SortOrderInput | SortOrder
+    bizType?: SortOrderInput | SortOrder
+    bizId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     author?: UserOrderByWithRelationInput
@@ -36580,6 +36610,8 @@ export namespace Prisma {
     approvedAt?: DateTimeNullableFilter<"Message"> | Date | string | null
     rejectNote?: StringNullableFilter<"Message"> | string | null
     recipientId?: StringNullableFilter<"Message"> | string | null
+    bizType?: StringNullableFilter<"Message"> | string | null
+    bizId?: StringNullableFilter<"Message"> | string | null
     createdAt?: DateTimeFilter<"Message"> | Date | string
     updatedAt?: DateTimeFilter<"Message"> | Date | string
     author?: XOR<UserRelationFilter, UserWhereInput>
@@ -36602,6 +36634,8 @@ export namespace Prisma {
     approvedAt?: SortOrderInput | SortOrder
     rejectNote?: SortOrderInput | SortOrder
     recipientId?: SortOrderInput | SortOrder
+    bizType?: SortOrderInput | SortOrder
+    bizId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: MessageCountOrderByAggregateInput
@@ -36627,6 +36661,8 @@ export namespace Prisma {
     approvedAt?: DateTimeNullableWithAggregatesFilter<"Message"> | Date | string | null
     rejectNote?: StringNullableWithAggregatesFilter<"Message"> | string | null
     recipientId?: StringNullableWithAggregatesFilter<"Message"> | string | null
+    bizType?: StringNullableWithAggregatesFilter<"Message"> | string | null
+    bizId?: StringNullableWithAggregatesFilter<"Message"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Message"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Message"> | Date | string
   }
@@ -39501,6 +39537,8 @@ export namespace Prisma {
     approvedBy?: string | null
     approvedAt?: Date | string | null
     rejectNote?: string | null
+    bizType?: string | null
+    bizId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutMessagesAuthorInput
@@ -39523,6 +39561,8 @@ export namespace Prisma {
     approvedAt?: Date | string | null
     rejectNote?: string | null
     recipientId?: string | null
+    bizType?: string | null
+    bizId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     reads?: MessageReadUncheckedCreateNestedManyWithoutMessageInput
@@ -39541,6 +39581,8 @@ export namespace Prisma {
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
+    bizType?: NullableStringFieldUpdateOperationsInput | string | null
+    bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutMessagesAuthorNestedInput
@@ -39563,6 +39605,8 @@ export namespace Prisma {
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
     recipientId?: NullableStringFieldUpdateOperationsInput | string | null
+    bizType?: NullableStringFieldUpdateOperationsInput | string | null
+    bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     reads?: MessageReadUncheckedUpdateManyWithoutMessageNestedInput
@@ -39583,6 +39627,8 @@ export namespace Prisma {
     approvedAt?: Date | string | null
     rejectNote?: string | null
     recipientId?: string | null
+    bizType?: string | null
+    bizId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -39600,6 +39646,8 @@ export namespace Prisma {
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
+    bizType?: NullableStringFieldUpdateOperationsInput | string | null
+    bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -39619,6 +39667,8 @@ export namespace Prisma {
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
     recipientId?: NullableStringFieldUpdateOperationsInput | string | null
+    bizType?: NullableStringFieldUpdateOperationsInput | string | null
+    bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -42610,6 +42660,8 @@ export namespace Prisma {
     approvedAt?: SortOrder
     rejectNote?: SortOrder
     recipientId?: SortOrder
+    bizType?: SortOrder
+    bizId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -42629,6 +42681,8 @@ export namespace Prisma {
     approvedAt?: SortOrder
     rejectNote?: SortOrder
     recipientId?: SortOrder
+    bizType?: SortOrder
+    bizId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -42648,6 +42702,8 @@ export namespace Prisma {
     approvedAt?: SortOrder
     rejectNote?: SortOrder
     recipientId?: SortOrder
+    bizType?: SortOrder
+    bizId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -46829,6 +46885,8 @@ export namespace Prisma {
     approvedBy?: string | null
     approvedAt?: Date | string | null
     rejectNote?: string | null
+    bizType?: string | null
+    bizId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     reads?: MessageReadCreateNestedManyWithoutMessageInput
@@ -46849,6 +46907,8 @@ export namespace Prisma {
     approvedAt?: Date | string | null
     rejectNote?: string | null
     recipientId?: string | null
+    bizType?: string | null
+    bizId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     reads?: MessageReadUncheckedCreateNestedManyWithoutMessageInput
@@ -46877,6 +46937,8 @@ export namespace Prisma {
     approvedBy?: string | null
     approvedAt?: Date | string | null
     rejectNote?: string | null
+    bizType?: string | null
+    bizId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutMessagesAuthorInput
@@ -46897,6 +46959,8 @@ export namespace Prisma {
     approvedBy?: string | null
     approvedAt?: Date | string | null
     rejectNote?: string | null
+    bizType?: string | null
+    bizId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     reads?: MessageReadUncheckedCreateNestedManyWithoutMessageInput
@@ -47736,6 +47800,8 @@ export namespace Prisma {
     approvedAt?: DateTimeNullableFilter<"Message"> | Date | string | null
     rejectNote?: StringNullableFilter<"Message"> | string | null
     recipientId?: StringNullableFilter<"Message"> | string | null
+    bizType?: StringNullableFilter<"Message"> | string | null
+    bizId?: StringNullableFilter<"Message"> | string | null
     createdAt?: DateTimeFilter<"Message"> | Date | string
     updatedAt?: DateTimeFilter<"Message"> | Date | string
   }
@@ -52017,6 +52083,8 @@ export namespace Prisma {
     approvedBy?: string | null
     approvedAt?: Date | string | null
     rejectNote?: string | null
+    bizType?: string | null
+    bizId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutMessagesAuthorInput
@@ -52038,6 +52106,8 @@ export namespace Prisma {
     approvedAt?: Date | string | null
     rejectNote?: string | null
     recipientId?: string | null
+    bizType?: string | null
+    bizId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -52180,6 +52250,8 @@ export namespace Prisma {
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
+    bizType?: NullableStringFieldUpdateOperationsInput | string | null
+    bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutMessagesAuthorNestedInput
@@ -52201,6 +52273,8 @@ export namespace Prisma {
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
     recipientId?: NullableStringFieldUpdateOperationsInput | string | null
+    bizType?: NullableStringFieldUpdateOperationsInput | string | null
+    bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -53948,6 +54022,8 @@ export namespace Prisma {
     approvedAt?: Date | string | null
     rejectNote?: string | null
     recipientId?: string | null
+    bizType?: string | null
+    bizId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -53966,6 +54042,8 @@ export namespace Prisma {
     approvedBy?: string | null
     approvedAt?: Date | string | null
     rejectNote?: string | null
+    bizType?: string | null
+    bizId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -54684,6 +54762,8 @@ export namespace Prisma {
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
+    bizType?: NullableStringFieldUpdateOperationsInput | string | null
+    bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     reads?: MessageReadUpdateManyWithoutMessageNestedInput
@@ -54704,6 +54784,8 @@ export namespace Prisma {
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
     recipientId?: NullableStringFieldUpdateOperationsInput | string | null
+    bizType?: NullableStringFieldUpdateOperationsInput | string | null
+    bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     reads?: MessageReadUncheckedUpdateManyWithoutMessageNestedInput
@@ -54723,6 +54805,8 @@ export namespace Prisma {
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
     recipientId?: NullableStringFieldUpdateOperationsInput | string | null
+    bizType?: NullableStringFieldUpdateOperationsInput | string | null
+    bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -54740,6 +54824,8 @@ export namespace Prisma {
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
+    bizType?: NullableStringFieldUpdateOperationsInput | string | null
+    bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutMessagesAuthorNestedInput
@@ -54760,6 +54846,8 @@ export namespace Prisma {
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
+    bizType?: NullableStringFieldUpdateOperationsInput | string | null
+    bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     reads?: MessageReadUncheckedUpdateManyWithoutMessageNestedInput
@@ -54779,6 +54867,8 @@ export namespace Prisma {
     approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
     approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     rejectNote?: NullableStringFieldUpdateOperationsInput | string | null
+    bizType?: NullableStringFieldUpdateOperationsInput | string | null
+    bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

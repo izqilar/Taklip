@@ -457,6 +457,9 @@ model Message {
   rejectNote  String?       @map("reject_note")
   // scope=USER 时的唯一接收人（申请的接收 / 拒绝回执；REVIEW_FEEDBACK 语义）
   recipientId String?       @map("recipient_id")
+  // 业务单据关联：让「消息中心」可直达业务处理页（如入驻终审待办 bizType=QUALIFICATION → 资质申请详情）
+  bizType     String?       @map("biz_type")
+  bizId       String?       @map("biz_id")
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -467,6 +470,7 @@ model Message {
   @@index([status])
   @@index([regionPath])
   @@index([recipientId])
+  @@index([bizType, bizId])
 }
 
 // ————————————————————————————————————————————————

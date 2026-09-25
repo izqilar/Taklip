@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Select, Form, Input, Typography, message as antdMessage } from 'antd';
 import { dataProvider } from '../providers/dataProvider';
 import { getStoredUser } from '../utility';
@@ -46,6 +47,7 @@ const ROLE_LABEL: Record<string, string> = {
 
 export const MessageList = () => {
   const { readonly } = useLayer();
+  const navigate = useNavigate();
   const me = getStoredUser<{ role: string; regionPath?: string | null; id: string }>();
   const role = me?.role;
   const isAdmin = role === 'ADMIN';
@@ -166,6 +168,40 @@ export const MessageList = () => {
         dataIndex: 'createdAt',
         width: 160,
         render: (v: string) => new Date(v).toLocaleString('zh-CN'),
+      },
+      {
+        title: t('pages.col.action', '操作'),
+        key: 'op',
+        width: 140,
+        render: (_: any, r: any) => {
+          // 入驻终审待办：提供「查看 / 审核」直达业务处理整页
+          if (r.bizType === 'QUALIFICATION' && r.bizId) {
+            const to = (mode: string) => navigate(`/admin/qualifications/${r.bizId}?mode=${mode}`);
+            return (
+              <div style={{ display: 'flex', gap: 12 }}>
+                <span
+                  onClick={() => to('view')}
+                  style={{ fontSize: 13, color: T.ink2, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                >
+                  {t('common.view', '查看')}
+                </span>
+                <span
+                  onClick={readonly ? undefined : () => to('review')}
+                  style={{
+                    fontSize: 13,
+                    cursor: readonly ? 'not-allowed' : 'pointer',
+                    color: readonly ? T.ink3 : T.accent,
+                    opacity: readonly ? 0.55 : 1,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {t('common.review', '审核')}
+                </span>
+              </div>
+            );
+          }
+          return <span style={{ fontSize: 13, color: T.ink3 }}>—</span>;
+        },
       },
     ],
     [],

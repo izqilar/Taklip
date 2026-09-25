@@ -332,6 +332,8 @@ exports.Prisma.MessageScalarFieldEnum = {
   approvedAt: 'approvedAt',
   rejectNote: 'rejectNote',
   recipientId: 'recipientId',
+  bizType: 'bizType',
+  bizId: 'bizId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

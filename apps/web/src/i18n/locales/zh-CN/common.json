@@ -867,6 +867,9 @@
       "resubmitTip": "正在基于原申请重新提交（旧单保留为历史，材料已预填）",
       "resubmitRegion": "原区域",
       "resubmitCancel": "取消重提",
+      "prefillTip": "已从「注册即入驻」带入已提交的入驻资料，可在下方「我的申请」查看进度",
+      "prefillCode": "申请已提交",
+      "prefillClear": "清除预填",
       "material": {
         "title": "主体资质材料",
         "hint": "材料随申请一并提交，代理商据此做资质一审；请填写与证件一致的信息。",

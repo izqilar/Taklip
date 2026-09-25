@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '@/api/client';
 import { useAuthStore } from '@/store/authStore';
 import { CertUpload } from '@/user/CertUpload';
+import { writeApplyPrefill, type ApplyPrefill } from '@/user/applyPrefill';
 
 type Intent = 'provider' | 'agent';
 type RegionNode = {
@@ -137,7 +138,27 @@ export default function Onboarding() {
         const flags: string[] = res?.riskFlags ?? [];
         if (flags.includes('NO_AGENT_COVERAGE')) setNotice(t('onboarding.warn.noAgentCoverage'));
         else if (flags.includes('DUPLICATE_CERT_NO')) setNotice(t('onboarding.warn.dupCertNo'));
-        navigate('/user/apply', { replace: true });
+
+        // 注册流 → 入驻申请：把本页已填资料一并带过去预填。
+        // 原实现 `navigate('/user/apply')` 不带任何数据，用户在申请页看到空表单会误以为资料丢失。
+        const prefill: ApplyPrefill = {
+          applicationId: res?.id ?? null,
+          kind: isAgent ? 'agent' : 'provider',
+          regionPath: selectedRegion.regionPath ?? null,
+          regionLabel: selectedRegion.label,
+          reason: reason.trim(),
+          serviceScopes: isAgent ? [] : scopes,
+          applicantName: applicantName.trim(),
+          phone: phone.trim(),
+          certType,
+          certNo: certNo.trim(),
+          certExpire: certLongTerm ? '' : certExpire,
+          certLongTerm,
+          issuer: issuer.trim() || null,
+          attachments,
+        };
+        writeApplyPrefill(prefill);
+        navigate('/user/apply', { replace: true, state: { prefill } });
       } catch (err: any) {
         setError(err?.message ?? t('errors:error.requestFailed'));
       } finally {

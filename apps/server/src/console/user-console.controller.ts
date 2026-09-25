@@ -1498,7 +1498,23 @@ export class UserConsoleController {
   async reviewQualification(
     @Req() req: ReqUser,
     @Param('id') id: string,
-    @Body() body: { pass: boolean; final?: boolean; note?: string },
+    @Body()
+    body: {
+      pass: boolean;
+      final?: boolean;
+      note?: string;
+      /** 终审通过时可纠正的申请方材料（如证件号笔误），仅合并非空字段 */
+      corrections?: {
+        applicantName?: string;
+        phone?: string;
+        certType?: string;
+        certNo?: string;
+        certExpire?: string;
+        certLongTerm?: boolean;
+        issuer?: string;
+        attachments?: string[];
+      };
+    },
   ) {
     const app = await this.prisma.qualificationApplication.findUnique({ where: { id } });
     if (!app) throw new NotFoundException('申请不存在');
@@ -1524,11 +1540,25 @@ export class UserConsoleController {
       : body.pass
         ? 'FIRST_PASSED'
         : 'REJECTED';
+    // 终审通过时可纠正申请方材料（审核人在只读详情页点「审核」后编辑的字段）
+    const corr = body.final && body.pass ? body.corrections : undefined;
+    const correctedFields: Record<string, unknown> = {};
+    if (corr) {
+      if (corr.applicantName?.trim()) correctedFields.applicantName = corr.applicantName.trim();
+      if (corr.phone?.trim()) correctedFields.phone = corr.phone.trim();
+      if (corr.certType) correctedFields.certType = corr.certType;
+      if (corr.certNo?.trim()) correctedFields.certNo = corr.certNo.trim();
+      if (corr.certLongTerm !== undefined) correctedFields.certLongTerm = !!corr.certLongTerm;
+      if (corr.certExpire !== undefined) correctedFields.certExpire = corr.certExpire || null;
+      if (corr.issuer !== undefined) correctedFields.issuer = corr.issuer?.trim() || null;
+      if (Array.isArray(corr.attachments)) correctedFields.attachments = corr.attachments;
+    }
     const updated = await this.prisma.qualificationApplication.update({
       where: { id },
       data: {
         status,
         reviewNote: note,
+        ...correctedFields,
         ...(body.final
           ? { finalReviewedById: req.user.id, finalReviewedAt: new Date() }
           : { firstReviewedById: req.user.id, firstReviewedAt: new Date() }),
@@ -1730,7 +1760,8 @@ export class UserConsoleController {
     if (!/^\d{11}$/.test(String(body.phone ?? ''))) throw new BadRequestException('请填写 11 位手机号');
     if (!body.certNo?.trim()) throw new BadRequestException('请填写证件编号');
     if (!body.certLongTerm && !body.certExpire) throw new BadRequestException('请选择有效期或勾选长期有效');
-    return this.prisma.qualificationApplication.update({
+    const enteredFinal = app.status === 'FIRST_PASSED';
+    const updated = await this.prisma.qualificationApplication.update({
       where: { id },
       data: {
         applicantName: body.applicantName,
@@ -1743,9 +1774,31 @@ export class UserConsoleController {
         attachments: body.attachments ?? [],
         // 一审通过（FIRST_PASSED）后补填 → 直接进入终审待审；
         // 一审前（FIRST_PENDING）提交 → 维持待一审，待代理商审完再进终审。
-        ...(app.status === 'FIRST_PASSED' ? { status: 'FINAL_PENDING' } : {}),
+        ...(enteredFinal ? { status: 'FINAL_PENDING' } : {}),
       },
     });
+    // 进入终审待审（FINAL_PENDING）→ 向管理总台投递「入驻终审待办」消息，
+    // 使总台消息中心出现可操作的审核记录（此前 FINAL_PENDING 阶段无任何待办投递，
+    // 导致总台消息中心仅显示历史回执、无法对入驻申请做操作）。
+    if (enteredFinal) {
+      const layer = app.kind === 'agent' ? '代理商' : '服务商';
+      const code = (app.id || '').slice(-6).toUpperCase();
+      await this.prisma.message.create({
+        data: {
+          type: 'NOTICE',
+          scope: 'OWN',
+          targetRole: 'ADMIN' as any,
+          title: `入驻终审待办 · ${layer}（${app.regionLabel ?? '—'}）`,
+          content: `申请人已提交完整资质材料，等待管理总台终审。申请编号 ${code}。`,
+          status: 'PUBLISHED',
+          authorId: uid,
+          authorRole: (req.user as any)?.role ?? 'USER',
+          bizType: 'QUALIFICATION',
+          bizId: app.id,
+        },
+      });
+    }
+    return updated;
   }
 
   /* ══════════ 归属判定辅助（M2）══════════

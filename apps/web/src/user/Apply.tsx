@@ -19,6 +19,7 @@
  *  → 提交
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/api/client';
 import { useAuthStore } from '@/store/authStore';
@@ -31,6 +32,7 @@ import {
   cleanCode,
 } from './shared';
 import { CertUpload } from './CertUpload';
+import { clearApplyPrefill, readApplyPrefill, type ApplyPrefill } from './applyPrefill';
 
 type ApplyMode = 'JOIN' | 'SETTLE';
 type OrgLayer = 'PROVIDER' | 'AGENT';
@@ -106,8 +108,36 @@ const statusText = (t: any, s?: string): string => {
   return s && map[s] ? t(map[s]) : s ?? '—';
 };
 
+/** 根据 regionPath（如 "65/6501/650105"）反查三级联动的 provinceId/cityId/districtId。
+ *  区域树异步加载完成后调用；select 的 value 是节点 id，故需从树里按 regionPath 索引找出对应 id。 */
+function resolveRegionByPath(
+  tree: RegionNode[],
+  regionPath: string,
+): { provinceId: string; cityId: string; districtId: string } | null {
+  const byPath = new Map<string, RegionNode>();
+  const walk = (nodes: RegionNode[]) => {
+    for (const n of nodes) {
+      if (n.regionPath) byPath.set(n.regionPath, n);
+      if (n.children?.length) walk(n.children);
+    }
+  };
+  walk(tree);
+  const segs = regionPath.split('/').filter(Boolean);
+  if (segs.length === 0) return null;
+  const province = byPath.get(segs[0]);
+  if (!province) return null;
+  const city = segs[1] ? byPath.get(`${segs[0]}/${segs[1]}`) : undefined;
+  const district = segs[2] ? byPath.get(regionPath) : undefined;
+  return {
+    provinceId: province.id,
+    cityId: city?.id ?? '',
+    districtId: district?.id ?? '',
+  };
+}
+
 export default function Apply() {
   const { t } = useTranslation();
+  const location = useLocation();
   const user = useAuthStore((s) => s.user);
 
   /* ── 表单状态 ── */
@@ -143,6 +173,10 @@ export default function Apply() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
+  /** 注册即入驻（/onboarding）带入的预填资料；非空时展示「已带入」提示条 */
+  const [prefill, setPrefill] = useState<ApplyPrefill | null>(null);
+  /** 区域三级反查只执行一次（区域树异步加载完成后触发） */
+  const [prefillRegionDone, setPrefillRegionDone] = useState(false);
 
   const provinces = tree.filter((r) => r.level === 1);
   const cities = provinces.find((p) => p.id === provinceId)?.children ?? [];
@@ -175,6 +209,49 @@ export default function Apply() {
       .then((d: any) => setTeams(Array.isArray(d?.teams) ? d.teams.map((x: any) => x.name ?? x.orgName) : []))
       .catch(() => setTeams([]));
   }, []);
+
+  /* ── 注册即入驻（/onboarding）带入的预填资料：一次性渲染为表单字段 ──
+   * 注意：Onboarding 提交时已经落单；这里的预填只是「回显」用户在注册流里已填的内容，
+   * 让用户确认资料已带入，而非重复提交（重复提交会生成新申请，旧单保留为历史）。 */
+  useEffect(() => {
+    const incoming = (location.state as any)?.prefill ?? readApplyPrefill();
+    if (!incoming) return;
+    setPrefill(incoming);
+    setMode('SETTLE');
+    setLayer(incoming.kind === 'agent' ? 'AGENT' : 'PROVIDER');
+    if (incoming.reason != null) setReason(incoming.reason);
+    if (Array.isArray(incoming.serviceScopes)) setScopes(incoming.serviceScopes);
+    if (incoming.applicantName != null) setApplicantName(incoming.applicantName);
+    if (incoming.phone != null) setContactPhone(incoming.phone);
+    if (incoming.certType) setCertType(incoming.certType);
+    if (incoming.certNo != null) setCertNo(incoming.certNo);
+    if (incoming.certExpire != null) setCertExpire(incoming.certExpire);
+    setCertLongTerm(!!incoming.certLongTerm);
+    if (incoming.issuer != null) setIssuer(incoming.issuer ?? '');
+    if (Array.isArray(incoming.attachments)) setAttachments(incoming.attachments);
+    // 区域（依赖区域树）交给下方 effect 处理
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ── 区域树加载完成后，用预填 regionPath 反查三级联动 ──
+   * 注意：挂载首帧 prefill 仍为 null（上方消费 effect 的 setState 尚未提交），
+   * 此时绝不能置 prefillRegionDone=true —— 否则区域树/预填稍后就绪时本 effect
+   * 会被 `if (prefillRegionDone) return` 直接短路，三级联动永远填不上。
+   * 正确做法：prefill 未就绪时先返回（不标记完成），等 prefill 与区域树都到位再反查。 */
+  useEffect(() => {
+    if (prefillRegionDone) return;
+    if (!prefill) return; // 等待「消费预填资料」effect 提交
+    if (prefill.regionPath && tree.length === 0) return; // 需要区域时等待树加载
+    if (prefill.regionPath) {
+      const r = resolveRegionByPath(tree, prefill.regionPath);
+      if (r) {
+        setProvinceId(r.provinceId);
+        setCityId(r.cityId);
+        setDistrictId(r.districtId);
+      }
+    }
+    setPrefillRegionDone(true);
+  }, [tree, prefill, prefillRegionDone]);
 
   /* ── 层次 / 区域变化 → 重新检索可加入团队 ── */
   useEffect(() => {
@@ -416,6 +493,29 @@ export default function Apply() {
         sub={t('userCenter.apply.sub')}
         chip={user?.nickname || maskPhone((user as any)?.phone)}
       />
+
+      {/* ── 注册即入驻带入提示条 ── */}
+      {prefill && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[#D24830]/40 bg-[rgba(210,72,48,0.06)] px-3 py-2.5 text-[12.5px] text-[#8f1d24]">
+          <span>
+            {t('userCenter.apply.prefillTip', {
+              defaultValue: '已从「注册即入驻」带入已提交的入驻资料，可在下方「我的申请」查看进度',
+            })}
+            {prefill.regionLabel ? ` · ${prefill.regionLabel}` : ''}
+            {prefill.applicationId ? ` · ${t('userCenter.apply.prefillCode', { defaultValue: '申请已提交' })}` : ''}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              clearApplyPrefill();
+              setPrefill(null);
+            }}
+            className="shrink-0 rounded-md border border-[#D24830]/40 px-2.5 py-1 transition hover:bg-[rgba(210,72,48,0.12)]"
+          >
+            {t('userCenter.apply.prefillClear', { defaultValue: '清除预填' })}
+          </button>
+        </div>
+      )}
 
       {/* ── 身份卡 ── */}
       <Panel title={t('userCenter.apply.identityTitle')}>
