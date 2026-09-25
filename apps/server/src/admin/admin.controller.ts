@@ -385,6 +385,23 @@ export class AdminController {
     return this.adminService.updateProviderReview(req.user, id, dto);
   }
 
+  /**
+   * 删除服务商账号（总台「服务商管理·删除」）：清理僵尸用户 / 错误账户记录。
+   * 仅超级管理员（ADMIN）可用；运维管理员为前端只读门控，按钮置灰不会发出请求。
+   * 存在业务留痕（订单/合同/提现/钱包/下级）时返回 409，需改用「禁用」。
+   */
+  @Delete('provider-review/:id')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @UseInterceptors(DataScopeInterceptor)
+  removeProvider(
+    @Req() req: AdminRequest,
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.adminService.deleteProviderAccount(req.user, id, body?.reason);
+  }
+
   // —— 支付闭环（管理员侧） ——
 
   /** 提现记录列表（ADMIN 全量，支持 ?status=pending 筛选） */

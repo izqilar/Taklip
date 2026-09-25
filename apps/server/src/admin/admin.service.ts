@@ -419,6 +419,138 @@ export class AdminService {
     return { ...updated, regionNamePath };
   }
 
+  /**
+   * 删除服务商账号（总台「服务商管理·删除」，用于清理僵尸用户 / 错误账户记录）。
+   *
+   * 安全策略：
+   *  - 仅总台超级管理员可调用（控制器 @Roles('ADMIN')）；运维管理员（只读）侧
+   *    按钮为前端禁用态，不会发出请求。AGENT 调用时叠加辖区校验，越界即 403。
+   *  - 禁止删除：当前登录账号自身 / ADMIN 角色账号 / 非服务商账号。
+   *  - **业务留痕闸门**：存在订单、合同、提现记录、钱包流水/余额、名下下级账号时拒绝，
+   *    提示改用「禁用」—— 僵尸用户与错误账户本就不该有这些留痕，避免破坏资金与法律追溯链。
+   *  - 通过闸门后，在单个事务内按依赖顺序清理该账号的个人数据再删账号；
+   *    若仍触发外键约束（P2003），事务整体回滚并回 409，绝不产生「半删除」脏状态。
+   */
+  async deleteProviderAccount(operator: JwtUser, targetId: string, reason?: string) {
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetId },
+      select: {
+        id: true,
+        phone: true,
+        nickname: true,
+        realName: true,
+        role: true,
+        serviceRoles: true,
+        pendingServiceRoles: true,
+        providerStatus: true,
+        regionId: true,
+        regionPath: true,
+        status: true,
+      },
+    });
+    if (!target) throw new NotFoundException('服务商不存在');
+    if (target.id === operator.id) throw new BadRequestException('不能删除当前登录账号');
+    if (target.role === 'ADMIN') throw new ForbiddenException('管理员账号不可删除');
+    if (target.role !== 'SERVICE_PROVIDER') {
+      throw new BadRequestException('该用户不是服务商（本入口仅清理服务商账号）');
+    }
+    this.assertWithinScope(operator, target);
+
+    // —— 业务留痕闸门 ——
+    const [orders, contracts, withdrawals, walletLogs, wallet, subordinates] =
+      await this.prisma.$transaction([
+        this.prisma.templateOrder.count({
+          where: { OR: [{ buyerId: targetId }, { template: { authorId: targetId } }] },
+        }),
+        this.prisma.providerContract.count({ where: { providerId: targetId } }),
+        this.prisma.withdrawal.count({ where: { providerId: targetId } }),
+        this.prisma.walletLog.count({ where: { userId: targetId } }),
+        this.prisma.providerWallet.findUnique({ where: { providerId: targetId } }),
+        this.prisma.user.count({ where: { agentId: targetId } }),
+      ]);
+    const blockers: string[] = [];
+    if (orders) blockers.push(`成交/购买订单 ${orders} 笔`);
+    if (contracts) blockers.push(`合同 ${contracts} 份`);
+    if (withdrawals) blockers.push(`提现记录 ${withdrawals} 条`);
+    if (walletLogs) blockers.push(`钱包流水 ${walletLogs} 条`);
+    if (
+      wallet &&
+      (wallet.balance !== 0 || wallet.frozen !== 0 || wallet.totalIncome !== 0 || wallet.withdrawn !== 0)
+    ) {
+      blockers.push('钱包存在余额 / 收益');
+    }
+    if (subordinates) blockers.push(`名下 ${subordinates} 个下级账号`);
+    if (blockers.length) {
+      throw new ConflictException(
+        `该账号存在业务留痕（${blockers.join('、')}），不可物理删除；请改用「禁用」以保留追溯链`,
+      );
+    }
+
+    const before = {
+      phone: target.phone,
+      nickname: target.nickname,
+      realName: target.realName,
+      providerStatus: target.providerStatus,
+      regionId: target.regionId,
+      regionPath: target.regionPath,
+      serviceRoles: target.serviceRoles,
+      pendingServiceRoles: target.pendingServiceRoles,
+      accountStatus: target.status,
+    };
+
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        // 依赖顺序：先叶子（级联由 Project→ProjectVersion 承担）后主体
+        await tx.messageRead.deleteMany({ where: { userId: targetId } });
+        await tx.review.deleteMany({
+          where: { OR: [{ userId: targetId }, { providerId: targetId }] },
+        });
+        await tx.ticket.deleteMany({
+          where: { OR: [{ reporterId: targetId }, { targetId }, { assigneeId: targetId }] },
+        });
+        await tx.message.deleteMany({
+          where: { OR: [{ authorId: targetId }, { recipientId: targetId }] },
+        });
+        await tx.templateAppeal.deleteMany({ where: { providerId: targetId } });
+        await tx.project.deleteMany({ where: { userId: targetId } });
+        await tx.asset.deleteMany({ where: { userId: targetId } });
+        await tx.template.deleteMany({ where: { authorId: targetId } });
+        await tx.qualificationApplication.deleteMany({ where: { userId: targetId } });
+        await tx.userCoupon.deleteMany({ where: { userId: targetId } });
+        await tx.teamJoinApplication.deleteMany({ where: { userId: targetId } });
+        // 服务商自有的无外键附属数据（不留孤儿行）
+        await tx.providerSchedule.deleteMany({ where: { providerId: targetId } });
+        await tx.providerLicense.deleteMany({ where: { providerId: targetId } });
+        await tx.providerClientReach.deleteMany({ where: { providerId: targetId } });
+        await tx.providerClient.deleteMany({ where: { providerId: targetId } });
+        await tx.withdrawal.deleteMany({ where: { providerId: targetId } });
+        await tx.walletLog.deleteMany({ where: { userId: targetId } });
+        await tx.providerWallet.deleteMany({ where: { providerId: targetId } });
+        // 员工档案属「组织资产」：仅解绑 userId，不删除档案本身
+        await tx.orgStaff.updateMany({ where: { userId: targetId }, data: { userId: null } });
+        await tx.user.delete({ where: { id: targetId } });
+      });
+    } catch (e: any) {
+      // P2003 = 外键约束：仍有业务数据引用该账号。事务已整体回滚，无脏数据。
+      if (e?.code === 'P2003') {
+        throw new ConflictException('该账号仍被其他业务数据引用，无法删除；请改用「禁用」');
+      }
+      throw e;
+    }
+
+    await this.audit.log({
+      actor: operator,
+      action: 'PROVIDER_DELETE',
+      targetType: 'USER',
+      targetId,
+      reason: reason?.trim() || '总台删除服务商账号',
+      before,
+      after: null,
+    });
+
+    return { id: targetId, deleted: true, phone: target.phone, nickname: target.nickname };
+  }
+
   /** 角色管理管线：当前操作者可做的权限摘要，供 Refine accessControlProvider 使用 */
   getPermissions(role: Role): string[] {
     if (role === 'ADMIN') {

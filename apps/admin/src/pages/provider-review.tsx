@@ -50,17 +50,38 @@ const rolesCell = (v?: string[], color = 'cyan'): ReactNode =>
     <Text type="secondary">无</Text>
   );
 
-/** 行操作链接（原型 .acts .l）：查看中性 / 审核绿 / 编辑中性，仅只读态置灰不可点 */
+/**
+ * 行操作链接（原型 .acts .l）：查看中性 / 审核绿 / 编辑中性 / 删除红。
+ * 只读态（运维管理员）或无权限时统一置灰不可点（cursor:not-allowed）。
+ * 键盘可达：role=button + tabIndex + Enter/Space，与消息中心操作列同一无障碍口径。
+ */
 const actLink = (
   label: string,
-  tone: 'ok' | 'dim' | 'plain',
+  tone: 'ok' | 'dim' | 'plain' | 'danger',
   onClick: () => void,
   disabled?: boolean,
+  title?: string,
 ) => {
-  const color = tone === 'ok' ? T.upInk : tone === 'dim' ? T.ink3 : T.ink2;
+  const color =
+    tone === 'ok' ? T.upInk : tone === 'danger' ? T.down : tone === 'dim' ? T.ink3 : T.ink2;
   return (
     <span
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-label={label}
+      aria-disabled={disabled || undefined}
+      title={title}
       onClick={disabled ? undefined : onClick}
+      onKeyDown={
+        disabled
+          ? undefined
+          : (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick();
+              }
+            }
+      }
       style={{
         fontSize: 13,
         cursor: disabled ? 'not-allowed' : 'pointer',
@@ -331,11 +352,123 @@ const EditModal = ({
 };
 
 /**
- * 服务商资质审核队列（原型 总台 · 服务商管理）。
- * 行操作：
- *   查看 — 只读弹窗（中文辖区）
- *   审核 — 直接挂接原 通过/驳回 弹窗
- *   编辑 — 单独的可编辑弹窗（昵称/辖区/资质状态）
+ * 删除弹窗（总台「服务商管理·删除」）：二次确认 + 删除理由（必填，写审计留痕）。
+ * 后端在存在业务留痕（订单 / 合同 / 提现 / 钱包资金 / 下级账号）时会返回 409，此处原样透出提示。
+ */
+const DeleteModal = ({
+  open,
+  row,
+  onClose,
+  onDeleted,
+}: {
+  open: boolean;
+  row?: ProviderReviewRow;
+  onClose: () => void;
+  onDeleted: () => void;
+}) => {
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (open) setReason('');
+  }, [open]);
+  if (!row) return null;
+  const name = row.nickname || row.realName || row.phone || '—';
+
+  const doDelete = async () => {
+    if (reason.trim().length < 2) {
+      message.warning(t('pages.msg.requiredReasonDel', '请填写删除理由（不少于 2 个字符）'));
+      return;
+    }
+    setBusy(true);
+    try {
+      await dataProvider.custom!({
+        url: `admin/provider-review/${row.id}`,
+        method: 'delete',
+        payload: { reason: reason.trim() },
+      });
+      message.success(t('pages.toast.deleteOk', '已删除该账号'));
+      onDeleted();
+    } catch (e: any) {
+      message.error(e?.message || t('pages.toast.deleteFailed', '删除失败'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onCancel={onClose}
+      footer={null}
+      closable={false}
+      width={480}
+      destroyOnHidden
+      styles={{ content: { borderRadius: T.rLg, padding: 20, background: T.bg }, body: { padding: 0 } }}
+      title={
+        <ModalHead
+          tag={t('pages.tag.delete', '删除')}
+          title={t('pages.sec.providerDelete', '删除服务商账号')}
+          onClose={onClose}
+        />
+      }
+    >
+      <div style={{ marginTop: 14, fontSize: 13, color: T.ink2, lineHeight: 1.7 }}>
+        {t('pages.confirm.deleteBefore', '即将删除账号')}{' '}
+        <strong style={{ color: T.ink1 }}>{name}</strong>
+        {row.phone ? `（${row.phone}）` : ''}
+        {t('pages.confirm.deleteAfter', '，该操作不可恢复。')}
+      </div>
+      <div
+        style={{
+          marginTop: 10,
+          padding: '8px 10px',
+          borderRadius: 6,
+          background: T.downBg,
+          color: T.downInk,
+          fontSize: 12.5,
+          lineHeight: 1.6,
+        }}
+      >
+        {t(
+          'pages.note.deleteGuard',
+          '仅用于清理僵尸用户 / 错误账户：若该账号已有订单、合同、提现或钱包资金留痕，系统将拒绝删除，请改用「禁用」。',
+        )}
+      </div>
+      <Form layout="vertical" style={{ marginTop: 12 }}>
+        <Form.Item
+          label={t('pages.field.deleteReason', '删除理由')}
+          required
+          style={{ marginBottom: 8 }}
+        >
+          <Input.TextArea
+            rows={3}
+            maxLength={200}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder={t(
+              'pages.ph.deleteReasonPlaceholder',
+              '请说明删除原因（如：注册后从未使用 / 测试脏数据），用于审计追溯…',
+            )}
+          />
+        </Form.Item>
+      </Form>
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 6 }}>
+        <Button danger type="primary" loading={busy} onClick={doDelete}>
+          {t('common.delete', '删除')}
+        </Button>
+        <Button onClick={onClose} disabled={busy}>
+          {t('common.cancel')}
+        </Button>
+      </div>
+    </Modal>
+  );
+};
+
+/**
+ * 服务商资质审核队列（原型 总台 · 服务商管理 / 代理商 · 资质审核，双端复用）。
+ * 行操作按视角分流：
+ *   总台（console）：查看 — 只读弹窗；编辑 — 可编辑弹窗；删除 — 清理僵尸/错误账号（仅超级管理员可点）
+ *   代理商（agent）：查看 / 审核（通过-驳回）/ 编辑 —— 保留辖区审核能力，不提供删除
  * 通过 → 合并待审子角色进 serviceRoles；驳回 → 清空 pending（原因后端记录）。
  */
 export const ProviderReviewList = () => {
@@ -345,11 +478,11 @@ export const ProviderReviewList = () => {
   const { mutateAsync: approve } = useCustomMutation();
   const { mutateAsync: reject } = useCustomMutation();
   const [current, setCurrent] = useState<ProviderReviewRow | null>(null);
-  const [mode, setMode] = useState<'view' | 'ok' | 'no' | 'edit'>('view');
+  const [mode, setMode] = useState<'view' | 'ok' | 'no' | 'edit' | 'del'>('view');
   const [busy, setBusy] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
 
-  const open = (r: ProviderReviewRow, m: 'view' | 'ok' | 'no' | 'edit') => {
+  const open = (r: ProviderReviewRow, m: 'view' | 'ok' | 'no' | 'edit' | 'del') => {
     setCurrent(r);
     setMode(m);
   };
@@ -458,12 +591,24 @@ export const ProviderReviewList = () => {
           },
         ]}
         rowActions={(r: ProviderReviewRow) => {
-          // 「查看」「审核」「编辑」三个链接始终展示；运维管理员只读下「审核」「编辑」禁用。
+          // 总台视角（console）：查看 — 编辑 — 删除（删除仅超级管理员可点；运维管理员只读下禁用）。
+          // 代理商视角（agent）：查看 — 审核 — 编辑，保留辖区审核能力，不提供删除。
           return (
             <>
               {actLink(t('common.view'), 'plain', () => open(r, 'view'))}
-              {actLink(t('common.review'), 'ok', () => open(r, 'ok'), readonly)}
-              {actLink(t('common.edit'), 'plain', () => open(r, 'edit'), readonly)}
+              {isAgent ? (
+                actLink(t('common.review'), 'ok', () => open(r, 'ok'), readonly)
+              ) : (
+                actLink(t('common.edit'), 'plain', () => open(r, 'edit'), readonly)
+              )}
+              {!isAgent &&
+                actLink(
+                  t('common.delete', '删除'),
+                  'danger',
+                  () => open(r, 'del'),
+                  readonly,
+                  t('pages.note.deleteGuard', '仅超级管理员可删除僵尸 / 错误账号'),
+                )}
             </>
           );
         }}
@@ -508,6 +653,9 @@ export const ProviderReviewList = () => {
 
       {/* 编辑弹窗：可改姓名/辖区/资质状态 + 编辑理由 */}
       <EditModal open={mode === 'edit' && current != null} row={current ?? undefined} onClose={close} onSaved={onSaved} />
+
+      {/* 删除弹窗：清理僵尸 / 错误账号（仅总台·超级管理员可触发；运维管理员下按钮已禁用） */}
+      <DeleteModal open={mode === 'del' && current != null} row={current ?? undefined} onClose={close} onDeleted={onSaved} />
     </>
   );
 };
