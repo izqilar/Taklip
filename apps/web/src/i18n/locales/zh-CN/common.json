@@ -718,7 +718,22 @@
       "status": "状态",
       "markRead": "标记已读",
       "fill": "填写资料",
-      "empty": "暂无公告"
+      "empty": "暂无公告",
+      "detailTitle": "通知详情",
+      "back": "返回通知公告",
+      "fillHint": "初审已通过，请补充完整资料后进入管理总台终审。",
+      "fillTitle": "填写资料",
+      "fillStage": "初审通过 · 待补资料",
+      "fillDoneTitle": "资料已提交",
+      "fillDone": "完整资料已提交，已进入管理总台终审，请耐心等待结果。"
+    },
+    "upload": {
+      "maxCount": "最多上传 {{n}} 个附件",
+      "tooLarge": "{{name}} 超过 {{mb}}MB，已跳过",
+      "failed": "上传失败，请重试",
+      "uploading": "上传中…",
+      "pick": "点击或拖拽身份证 / 证件照片到此处上传",
+      "tip": "支持 JPG / PNG / PDF · 单个文件 ≤ {{mb}}MB · 最多 {{n}} 个"
     },
     "account": {
       "title": "账户详情",

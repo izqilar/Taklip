@@ -12,6 +12,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/api/client';
 import { useAuthStore } from '@/store/authStore';
+import { CertUpload } from '@/user/CertUpload';
 
 type Intent = 'provider' | 'agent';
 type RegionNode = {
@@ -58,7 +59,8 @@ export default function Onboarding() {
   const [certExpire, setCertExpire] = useState('');
   const [certLongTerm, setCertLongTerm] = useState(false);
   const [issuer, setIssuer] = useState('');
-  const [attachText, setAttachText] = useState('');
+  /** 资质附件：身份证 / 营业执照等，上传后回填 URL 数组（替代原「证件 URL 文本域」） */
+  const [attachments, setAttachments] = useState<string[]>([]);
   const [scopes, setScopes] = useState<string[]>([]);
   const [reason, setReason] = useState('');
 
@@ -104,16 +106,11 @@ export default function Onboarding() {
       if (!phone.trim()) return setError(t('onboarding.err.phone'));
       if (!certNo.trim()) return setError(t('onboarding.err.certNo'));
       if (!certLongTerm && !certExpire) return setError(t('onboarding.err.certExpire'));
-      if (!attachText.trim()) return setError(t('onboarding.err.attachments'));
+      if (attachments.length === 0) return setError(t('onboarding.err.attachments'));
       if (!selectedRegion) return setError(t('onboarding.err.region'));
       if (isAgent && !districtId) return setError(t('onboarding.err.regionDistrict'));
       if (!isAgent && scopes.length === 0) return setError(t('onboarding.err.scopes'));
       if (!reason.trim()) return setError(t('onboarding.err.reason'));
-
-      const attachments = attachText
-        .split('\n')
-        .map((x) => x.trim())
-        .filter(Boolean);
 
       setSubmitting(true);
       try {
@@ -148,7 +145,7 @@ export default function Onboarding() {
       }
     },
     [
-      applicantName, phone, certNo, certExpire, certLongTerm, attachText, selectedRegion,
+      applicantName, phone, certNo, certExpire, certLongTerm, attachments, selectedRegion,
       districtId, scopes, reason, isAgent, certType, issuer, navigate, t,
     ],
   );
@@ -294,13 +291,13 @@ export default function Onboarding() {
           </div>
 
           <div>
-            <label className={labelCls}>{t('onboarding.attachments')}</label>
-            <textarea
-              value={attachText}
-              onChange={(e) => setAttachText(e.target.value)}
-              rows={3}
-              placeholder={t('onboarding.attachmentsPh')}
-              className={inputCls}
+            <label className="mb-1 block text-sm text-gray-300">{t('onboarding.attachments')}</label>
+            <CertUpload
+              value={attachments}
+              onChange={setAttachments}
+              tone="dark"
+              accept="image/*,.pdf"
+              hint={t('onboarding.attachmentsPh')}
             />
           </div>
 

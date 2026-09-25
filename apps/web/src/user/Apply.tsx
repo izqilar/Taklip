@@ -30,6 +30,7 @@ import {
   maskPhone,
   cleanCode,
 } from './shared';
+import { CertUpload } from './CertUpload';
 
 type ApplyMode = 'JOIN' | 'SETTLE';
 type OrgLayer = 'PROVIDER' | 'AGENT';
@@ -128,7 +129,8 @@ export default function Apply() {
   const [certExpire, setCertExpire] = useState('');
   const [certLongTerm, setCertLongTerm] = useState(false);
   const [issuer, setIssuer] = useState('');
-  const [attachText, setAttachText] = useState('');
+  /** 资质附件：身份证 / 营业执照等，上传后回填 URL 数组（替代原「证件 URL 文本域」） */
+  const [attachments, setAttachments] = useState<string[]>([]);
   /** 驳回 / 撤回后重提：指向原申请（生成新申请，旧单保留为历史） */
   const [resubmitOfId, setResubmitOfId] = useState<string | null>(null);
   const [fallbackRegion, setFallbackRegion] = useState<{ regionPath: string | null; label: string | null } | null>(
@@ -276,7 +278,7 @@ export default function Apply() {
         setError(t('userCenter.apply.material.err.certExpire'));
         return;
       }
-      if (!attachText.trim()) {
+      if (attachments.length === 0) {
         setError(t('userCenter.apply.material.err.attachments'));
         return;
       }
@@ -292,10 +294,6 @@ export default function Apply() {
           reason: reason.trim(),
         });
       } else {
-        const attachments = attachText
-          .split('\n')
-          .map((x) => x.trim())
-          .filter(Boolean);
         await api.post('/api/user/qualifications', {
           kind: layer === 'AGENT' ? 'agent' : 'provider',
           reason: reason.trim(),
@@ -322,7 +320,7 @@ export default function Apply() {
       setCertExpire('');
       setCertLongTerm(false);
       setIssuer('');
-      setAttachText('');
+      setAttachments([]);
       setResubmitOfId(null);
       setFallbackRegion(null);
       await loadMine();
@@ -346,7 +344,7 @@ export default function Apply() {
     setCertExpire(q.certExpire ?? '');
     setCertLongTerm(!!q.certLongTerm);
     setIssuer(q.issuer ?? '');
-    setAttachText(Array.isArray(q.attachments) ? q.attachments.join('\n') : '');
+    setAttachments(Array.isArray(q.attachments) ? q.attachments : []);
     setFallbackRegion({ regionPath: q.regionPath ?? null, label: q.regionLabel ?? null });
     setResubmitOfId(m.id);
     setError('');
@@ -410,8 +408,6 @@ export default function Apply() {
     'h-[36px] w-full rounded-md border border-[rgba(74,60,42,0.16)] bg-[#fffefb] px-2.5 text-[13.5px] text-[#2a2118] outline-none focus:border-[#D24830]';
   const inputCls =
     'h-[36px] w-full rounded-md border border-[rgba(74,60,42,0.16)] bg-[#fffefb] px-2.5 text-[13.5px] text-[#2a2118] outline-none focus:border-[#D24830]';
-  const taCls =
-    'w-full rounded-md border border-[rgba(74,60,42,0.16)] bg-[#fffefb] p-2.5 text-[13.5px] text-[#2a2118] outline-none focus:border-[#D24830]';
 
   return (
     <div className="space-y-4">
@@ -752,12 +748,12 @@ export default function Apply() {
               </label>
               <div className="mt-2.5">
                 <div className="mb-1 text-[12px] text-[#6e5f4a]">{t('userCenter.apply.material.attachmentsLabel')}</div>
-                <textarea
-                  className={taCls}
-                  rows={3}
-                  value={attachText}
-                  onChange={(e) => setAttachText(e.target.value)}
-                  placeholder={t('userCenter.apply.material.attachmentsPh')}
+                <CertUpload
+                  value={attachments}
+                  onChange={setAttachments}
+                  tone="light"
+                  accept="image/*,.pdf"
+                  hint={t('userCenter.apply.material.attachmentsPh')}
                 />
               </div>
             </div>
