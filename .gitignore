@@ -38,3 +38,7 @@ apps/admin/e2e/_shot_*.png
 apps/admin/e2e/_out.txt
 apps/admin/e2e/_run*.txt
 _audit_tmp/
+
+# runtime artifacts (screenshot dumps / prisma query-engine temp files)
+apps/admin/shots/
+apps/server/prisma/prisma-client/*.tmp*

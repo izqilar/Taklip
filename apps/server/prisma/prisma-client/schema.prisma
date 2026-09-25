@@ -93,6 +93,9 @@ model User {
   realName               String?        @map("real_name")
   // —— 实名认证（扩充内容）：用户自助提交证件号 → PENDING，管理员裁定 APPROVED/REJECTED ——
   idCard                 String?        @map("id_card") // 证件号（加密存储，仅管理员可见明文）
+  // —— 证件影像（账户详情「身份认证资料」区块）：人像面 / 国徽面，存 /uploads/xxx URL ——
+  idCardFront            String?        @map("id_card_front")
+  idCardBack             String?        @map("id_card_back")
   realNameStatus         RealNameStatus @default(UNVERIFIED) // 实名认证状态
   realNameVerifiedAt     DateTime?      @map("real_name_verified_at") // 认证通过时间
   bio                    String?
@@ -131,6 +134,10 @@ model User {
   agentOf    User[]     @relation("UserAgent") // 该代理商管辖的用户（反向）
   regionPath String?    @map("region_path") // "省ID/市ID/区ID" 前缀匹配做辖区作用域
   status     UserStatus @default(ACTIVE) // 账户启停闸门
+  // —— 回收站（僵尸用户）：软删除标记。从用户管理删除的用户先置 isZombie=true 进入回收站，
+  // 可激活恢复原数据；从回收站再次删除则彻底物理删除。不进 UserStatus 枚举，避免迁移影响既有状态。
+  isZombie   Boolean    @default(false) @map("is_zombie")
+  zombieAt   DateTime?  @map("zombie_at") // 进入回收站的时间
 
   // —— 评价与反馈 / 消息（P3/P4）回向关系 ——
   ticketsReporter  Ticket[]                   @relation("TicketReporter")
@@ -833,4 +840,27 @@ model ProviderLicense {
   updatedAt    DateTime  @updatedAt
 
   @@index([providerId])
+}
+
+// 平台分账费率配置（全局单例，id 恒为 'default'）。
+// 承载总台「财务中心 · 分账费率」页的配置项：
+//   platformRate 平台抽成（百分比整数 0-100）
+//   agentRate    代理商分账（百分比整数 0-100）
+//   providerRate 服务商分账（百分比整数 0-100，恒 = 100 - platformRate - agentRate）
+//   settlePeriod 结算周期 MONTH 月结 | HALF_MONTH 半月结 | WEEK 周结
+//   categoryRates 类目费率覆盖 { [品类]: 平台抽成百分比 }，未命中的类目回落到 platformRate
+//   minWithdrawCents 最低提现门槛（分），0 表示不限制
+// 说明：各服务商的**实际**抽成以 ProviderContract.platformRate 为准（合同可单独议价），
+// 本表仅作为新签合同的默认取价与无合同场景的兜底口径。
+model PlatformFeeConfig {
+  id               String   @id @default("default")
+  platformRate     Int      @default(10) @map("platform_rate")
+  agentRate        Int      @default(0) @map("agent_rate")
+  providerRate     Int      @default(90) @map("provider_rate")
+  settlePeriod     String   @default("MONTH") @map("settle_period")
+  categoryRates    Json?    @map("category_rates")
+  minWithdrawCents Int      @default(0) @map("min_withdraw_cents")
+  updatedBy        String?  @map("updated_by")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 }

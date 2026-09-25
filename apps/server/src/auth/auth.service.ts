@@ -20,6 +20,20 @@ function vipTierName(level: number) {
 const SALT_ROUNDS = 10;
 
 /**
+ * 大陆二代身份证号校验：18 位，前 17 位数字，末位数字或 X，按 GB 11643-1999 mod 11-2 校验位验真。
+ * 与前端 `validateIdCard`（apps/web/src/user/idCard.ts / 运营端 ProfilePage）同口径，
+ * 服务端必须二次校验——前端校验可绕过，身份证是实名认证的唯一凭据。
+ */
+export function isValidIdCard(id: string): boolean {
+  if (!/^\d{17}[\dXx]$/.test(id)) return false;
+  const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+  const checks = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+  let sum = 0;
+  for (let i = 0; i < 17; i += 1) sum += Number(id[i]) * weights[i];
+  return checks[sum % 11] === id[17].toUpperCase();
+}
+
+/**
  * 角色 → 登录后落地的工作台（**单一真值，两端共用**）。
  *
  * 统一登录入口的落点判定全部以此表为准：
@@ -277,7 +291,7 @@ export class AuthService {
     const scope = user.role === 'ADMIN' ? 'ALL' : user.role === 'AGENT' ? 'REGION' : 'SELF';
     const baseline: string[] =
       user.role === 'ADMIN'
-        ? ['user:read', 'user:update', 'user:role', 'provider:review', 'agent:manage', 'region:read', 'wallet:read', 'wallet:manage', 'order:read', 'feedback:read', 'feedback:review', 'message:read', 'message:audit', 'message:manage']
+        ? ['user:read', 'user:update', 'user:role', 'user:delete', 'provider:review', 'agent:manage', 'region:read', 'wallet:read', 'wallet:manage', 'order:read', 'feedback:read', 'feedback:review', 'message:read', 'message:audit', 'message:manage', 'contract:manage']
         : user.role === 'AGENT'
           ? ['user:read', 'provider:review', 'region:read', 'feedback:read', 'feedback:agent', 'message:read', 'message:agent', 'message:manage']
           : user.role === 'SERVICE_PROVIDER'
@@ -317,6 +331,9 @@ export class AuthService {
     email: true,
     wxOpenid: true,
     idCard: true,
+    // 证件影像（账户详情「身份认证资料」区块：人像面 / 国徽面）
+    idCardFront: true,
+    idCardBack: true,
     realNameStatus: true,
     realNameVerifiedAt: true,
     vipLevel: true,
@@ -431,32 +448,48 @@ export class AuthService {
     return roleExtra;
   }
 
-  /** 更新账户资料（昵称 / 头像 / 真实姓名 / 个人简介 / 邮箱 / 语言 / 证件号） */
+  /** 更新账户资料（昵称 / 头像 / 手机 / 真实姓名 / 个人简介 / 邮箱 / 语言 / 证件号 / 证件影像） */
   async updateProfile(
     userId: string,
     dto: {
       nickname?: string;
       avatar?: string;
+      phone?: string;
       realName?: string;
       bio?: string;
       email?: string;
       locale?: string;
       idCard?: string;
+      idCardFront?: string;
+      idCardBack?: string;
     },
   ) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException('用户不存在');
+
+    // 手机号：唯一索引保护，先自查给出可读错误（否则 P2002 直接 500）
+    if (dto.phone !== undefined && dto.phone !== user.phone) {
+      const dup = await this.prisma.user.findUnique({ where: { phone: dto.phone } });
+      if (dup && dup.id !== userId) throw new ConflictException('手机号已被占用');
+    }
+    // 身份证号：验真（格式 + 校验位），非法直接拒绝，避免脏数据进入实名认证管线
+    if (dto.idCard !== undefined && dto.idCard !== '' && dto.idCard !== user.idCard) {
+      if (!isValidIdCard(dto.idCard)) throw new BadRequestException('身份证号校验失败，请核对后重填');
+    }
 
     // 实名认证：提交证件号即进入待审（PENDING），认证时间清空，等待管理员裁定
     const identityPending = dto.idCard !== undefined && dto.idCard !== user.idCard;
     const data: Record<string, unknown> = {
       ...(dto.nickname !== undefined ? { nickname: dto.nickname } : {}),
       ...(dto.avatar !== undefined ? { avatar: dto.avatar } : {}),
+      ...(dto.phone !== undefined ? { phone: dto.phone } : {}),
       ...(dto.realName !== undefined ? { realName: dto.realName } : {}),
       ...(dto.bio !== undefined ? { bio: dto.bio } : {}),
       ...(dto.email !== undefined ? { email: dto.email } : {}),
       ...(dto.locale !== undefined ? { locale: dto.locale } : {}),
       ...(dto.idCard !== undefined ? { idCard: dto.idCard } : {}),
+      ...(dto.idCardFront !== undefined ? { idCardFront: dto.idCardFront } : {}),
+      ...(dto.idCardBack !== undefined ? { idCardBack: dto.idCardBack } : {}),
     };
     if (identityPending) {
       data.realNameStatus = 'PENDING';

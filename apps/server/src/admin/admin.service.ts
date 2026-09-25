@@ -13,6 +13,10 @@ import { WalletService } from '../wallet/wallet.service';
 import { RegionService } from '../region/region.service';
 import { AuditService } from '../audit/audit.service';
 import type { JwtUser } from '../common/types/jwt-user';
+import { UpdateFeeConfigDto } from './dto/admin.dto';
+
+/** 平台分账费率全局单例行的固定主键 */
+const FEE_CONFIG_ID = 'default';
 
 const userListSelect = {
   id: true,
@@ -47,6 +51,9 @@ const userListSelect = {
 const userDetailSelect = {
   ...userListSelect,
   idCard: true,
+  // 证件影像（人像面 / 国徽面）：账户详情「身份认证资料」区块展示
+  idCardFront: true,
+  idCardBack: true,
   realNameStatus: true,
   realNameVerifiedAt: true,
   lastLoginAt: true,
@@ -54,8 +61,18 @@ const userDetailSelect = {
   totalSpent: true,
   userBalance: true,
   followingProviderCount: true,
+  updatedAt: true,
   providerWallet: { select: { balance: true, frozen: true, totalIncome: true, withdrawn: true } },
 } as const;
+
+/**
+ * 回收站（僵尸用户）列表选择集：在列表选择集之上补充 zombieAt（进入回收站时间），
+ * 供运营端「回收站·僵尸用户」列表渲染「回收时间」一列。
+ */
+const zombieListSelect = { ...userListSelect, zombieAt: true } as const;
+
+/** 回收站用户详情选择集：在详情选择集之上补充 zombieAt */
+const zombieDetailSelect = { ...userDetailSelect, zombieAt: true } as const;
 
 /**
  * 证件号脱敏（审查 L4）：保留前 4 位与后 4 位，中间以 * 填充，
@@ -88,7 +105,8 @@ export class AdminService {
   }) {
     const page = params.page && params.page > 0 ? params.page : 1;
     const pageSize = Math.min(params.pageSize && params.pageSize > 0 ? params.pageSize : 20, 100);
-    const where: Prisma.UserWhereInput = { ...params.scope };
+    // 回收站用户（isZombie）不出现在正常用户管理中，避免「已删除」记录与活跃用户混淆
+    const where: Prisma.UserWhereInput = { ...params.scope, isZombie: false };
 
     if (params.role) where.role = params.role;
     if (params.regionPath) {
@@ -122,7 +140,7 @@ export class AdminService {
    */
   async getUserById(id: string, scope: Prisma.UserWhereInput, viewerRole?: string) {
     const user = await this.prisma.user.findFirst({
-      where: { id, ...scope },
+      where: { id, ...scope, isZombie: false },
       select: userDetailSelect,
     });
     if (!user) throw new NotFoundException('用户不存在或不在你的管辖范围');
@@ -498,6 +516,27 @@ export class AdminService {
       accountStatus: target.status,
     };
 
+    await this.cascadeDeleteUserData(targetId);
+
+    await this.audit.log({
+      actor: operator,
+      action: 'PROVIDER_DELETE',
+      targetType: 'USER',
+      targetId,
+      reason: reason?.trim() || '总台删除服务商账号',
+      before,
+      after: null,
+    });
+
+    return { id: targetId, deleted: true, phone: target.phone, nickname: target.nickname };
+  }
+
+  /**
+   * 级联物理删除某用户及其全部从属数据（在单个事务内按依赖顺序清理，无业务留痕则不留孤儿行）。
+   * 被「服务商管理·删除」(deleteProviderAccount，经业务留痕闸门后) 与「回收站·彻底删除」(purgeZombieUser) 复用。
+   * 若仍触发外键约束（P2003），事务整体回滚并抛 409，绝不产生「半删除」脏状态。
+   */
+  private async cascadeDeleteUserData(targetId: string) {
     try {
       await this.prisma.$transaction(async (tx) => {
         // 依赖顺序：先叶子（级联由 Project→ProjectVersion 承担）后主体
@@ -537,18 +576,179 @@ export class AdminService {
       }
       throw e;
     }
+  }
+
+  /**
+   * 软删除用户至回收站（总台「用户管理·删除」）：标记 isZombie=true，记录 zombieAt，并停用账号。
+   * 不物理删除任何数据，保留完整追溯链；后续可从回收站「激活」恢复原数据，或「彻底删除」物理清除。
+   * 仅 ADMIN（含具备 user:delete 权限的运维管理员）可调，控制器 @Roles('ADMIN') 已拦截。
+   */
+  async softDeleteUser(operator: JwtUser, targetId: string, reason?: string) {
+    if (operator.id === targetId) throw new BadRequestException('不能删除当前登录账号');
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetId },
+      select: {
+        id: true,
+        phone: true,
+        nickname: true,
+        realName: true,
+        role: true,
+        status: true,
+        isZombie: true,
+        providerStatus: true,
+        regionId: true,
+        regionPath: true,
+        serviceRoles: true,
+        pendingServiceRoles: true,
+      },
+    });
+    if (!target) throw new NotFoundException('目标用户不存在');
+    if (target.isZombie) throw new BadRequestException('该用户已在回收站中');
+    if (target.role === 'ADMIN') throw new ForbiddenException('管理员账号不可删除');
+
+    const before = {
+      phone: target.phone,
+      nickname: target.nickname,
+      realName: target.realName,
+      role: target.role,
+      status: target.status,
+    };
+
+    await this.prisma.user.update({
+      where: { id: targetId },
+      data: { isZombie: true, zombieAt: new Date(), status: 'DISABLED' },
+    });
 
     await this.audit.log({
       actor: operator,
-      action: 'PROVIDER_DELETE',
+      action: 'USER_SOFT_DELETE',
       targetType: 'USER',
       targetId,
-      reason: reason?.trim() || '总台删除服务商账号',
+      reason: reason?.trim() || '用户管理删除至回收站',
+      before,
+      after: { isZombie: true, status: 'DISABLED', zombieAt: new Date().toISOString() },
+    });
+
+    return { id: targetId, zombie: true, status: 'DISABLED' };
+  }
+
+  /** 回收站：僵尸用户列表（isZombie=true），按回收时间倒序 */
+  async listZombieUsers(params: { page?: number; pageSize?: number; keyword?: string }) {
+    const page = params.page && params.page > 0 ? params.page : 1;
+    const pageSize = Math.min(params.pageSize && params.pageSize > 0 ? params.pageSize : 20, 100);
+    const where: Prisma.UserWhereInput = { isZombie: true };
+    if (params.keyword) {
+      const kw = params.keyword;
+      where.OR = [
+        { phone: { contains: kw } },
+        { nickname: { contains: kw } },
+        { realName: { contains: kw } },
+      ];
+    }
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        where,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: { zombieAt: 'desc' },
+        select: zombieListSelect,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+    return { items, total, page, pageSize };
+  }
+
+  /** 回收站：僵尸用户详情（受 isZombie 约束，正常用户管理接口不可见） */
+  async getZombieUserById(id: string, viewerRole?: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { id, isZombie: true },
+      select: zombieDetailSelect,
+    });
+    if (!user) throw new NotFoundException('回收站中不存在该用户');
+    const roleExtra = await this.authService.buildRoleExtra(user);
+    const maskedIdCard =
+      viewerRole === 'ADMIN' || !user.idCard ? user.idCard : maskIdCard(user.idCard);
+    return { ...user, idCard: maskedIdCard, ...roleExtra };
+  }
+
+  /**
+   * 回收站：激活（恢复原数据）。将 isZombie 复位、状态置 ACTIVE，用户重新回到正常用户管理列表。
+   * 对应「若该用户后续重新注册，可激活此前删除的僵尸用户记录恢复原数据」——直接恢复原记录而非新建重复账号。
+   */
+  async activateZombieUser(operator: JwtUser, targetId: string, reason?: string) {
+    const target = await this.prisma.user.findUnique({ where: { id: targetId } });
+    if (!target) throw new NotFoundException('用户不存在');
+    if (!target.isZombie) throw new BadRequestException('该用户不在回收站中，无需激活');
+    if (operator.id === targetId) throw new BadRequestException('不能激活当前登录账号');
+
+    const before = { isZombie: true, status: target.status };
+    await this.prisma.user.update({
+      where: { id: targetId },
+      data: { isZombie: false, zombieAt: null, status: 'ACTIVE' },
+    });
+
+    await this.audit.log({
+      actor: operator,
+      action: 'USER_RESTORE',
+      targetType: 'USER',
+      targetId,
+      reason: reason?.trim() || '回收站激活·恢复原数据',
+      before,
+      after: { isZombie: false, status: 'ACTIVE' },
+    });
+
+    return { id: targetId, restored: true, status: 'ACTIVE' };
+  }
+
+  /**
+   * 回收站：彻底删除（物理清除）。仅针对回收站内用户；复用 cascadeDeleteUserData 级联清理从属数据。
+   * 与「服务商管理·删除」不同，此处不设置业务留痕闸门——用户已在回收站中，运营明确选择彻底清除。
+   * 仍受外键约束保护：若有未预料到的引用，事务回滚并报 409。
+   */
+  async purgeZombieUser(operator: JwtUser, targetId: string, reason?: string) {
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetId },
+      select: {
+        id: true,
+        phone: true,
+        nickname: true,
+        realName: true,
+        role: true,
+        status: true,
+        isZombie: true,
+        providerStatus: true,
+        regionId: true,
+        regionPath: true,
+        serviceRoles: true,
+        pendingServiceRoles: true,
+      },
+    });
+    if (!target) throw new NotFoundException('用户不存在');
+    if (!target.isZombie) throw new BadRequestException('仅回收站内的用户可被彻底删除');
+    if (operator.id === targetId) throw new BadRequestException('不能删除当前登录账号');
+    if (target.role === 'ADMIN') throw new ForbiddenException('管理员账号不可删除');
+
+    const before = {
+      phone: target.phone,
+      nickname: target.nickname,
+      realName: target.realName,
+      role: target.role,
+      status: target.status,
+    };
+
+    await this.cascadeDeleteUserData(targetId);
+
+    await this.audit.log({
+      actor: operator,
+      action: 'USER_PURGE',
+      targetType: 'USER',
+      targetId,
+      reason: reason?.trim() || '回收站彻底删除',
       before,
       after: null,
     });
 
-    return { id: targetId, deleted: true, phone: target.phone, nickname: target.nickname };
+    return { id: targetId, purged: true };
   }
 
   /** 角色管理管线：当前操作者可做的权限摘要，供 Refine accessControlProvider 使用 */
@@ -558,6 +758,7 @@ export class AdminService {
         'user:read',
         'user:update',
         'user:role',
+        'user:delete',
         'provider:review',
         'agent:manage',
         'region:read',
@@ -707,5 +908,94 @@ export class AdminService {
       platformFeeCents,
       totalWithdrawnCents,
     };
+  }
+
+  /* ══════════════════ 财务中心 · 分账费率 ══════════════════
+   * 全局单例配置（id 恒为 'default'），承载运营端「分账费率」页。
+   * 三方比例恒等式：platformRate + agentRate + providerRate = 100
+   * —— providerRate 不接收前端入参，由服务端推导，避免被手工写歪。
+   */
+
+  /**
+   * 读取分账费率。首次访问时以 Prisma 默认值即时建行，
+   * 保证前端表单永远有初始值（无需手工 seed）。
+   */
+  async getFeeConfig() {
+    const existing = await this.prisma.platformFeeConfig.findUnique({
+      where: { id: FEE_CONFIG_ID },
+    });
+    if (existing) return existing;
+    return this.prisma.platformFeeConfig.create({ data: { id: FEE_CONFIG_ID } });
+  }
+
+  /**
+   * 更新分账费率（只更新传入字段）。
+   * 校验：① 平台抽成 + 代理商分账 ≤ 100（否则服务商分账为负）
+   *      ② 类目费率覆盖值必须是 0-100 的整数百分比
+   */
+  async updateFeeConfig(operator: JwtUser, dto: UpdateFeeConfigDto) {
+    const current = await this.getFeeConfig();
+
+    const platformRate = dto.platformRate ?? current.platformRate;
+    const agentRate = dto.agentRate ?? current.agentRate;
+    if (platformRate + agentRate > 100) {
+      throw new BadRequestException('平台抽成与代理商分账之和不能超过 100%');
+    }
+    if (platformRate + agentRate < 0) {
+      throw new BadRequestException('分账比例不能为负数');
+    }
+    const providerRate = 100 - platformRate - agentRate;
+
+    if (dto.categoryRates) {
+      const invalid = Object.entries(dto.categoryRates).filter(
+        ([, v]) => typeof v !== 'number' || !Number.isInteger(v) || v < 0 || v > 100,
+      );
+      if (invalid.length) {
+        throw new BadRequestException('类目费率必须为 0-100 的整数百分比');
+      }
+    }
+
+    const before = {
+      platformRate: current.platformRate,
+      agentRate: current.agentRate,
+      providerRate: current.providerRate,
+      settlePeriod: current.settlePeriod,
+      minWithdrawCents: current.minWithdrawCents,
+    };
+
+    const updated = await this.prisma.platformFeeConfig.update({
+      where: { id: FEE_CONFIG_ID },
+      data: {
+        platformRate,
+        agentRate,
+        providerRate,
+        ...(dto.settlePeriod ? { settlePeriod: dto.settlePeriod } : {}),
+        ...(dto.categoryRates
+          ? { categoryRates: dto.categoryRates as Prisma.InputJsonValue }
+          : {}),
+        ...(dto.minWithdrawCents !== undefined
+          ? { minWithdrawCents: dto.minWithdrawCents }
+          : {}),
+        updatedBy: operator.id,
+      },
+    });
+
+    await this.audit.log({
+      actor: operator,
+      action: 'FEE_CONFIG_UPDATE',
+      targetType: 'PLATFORM_FEE_CONFIG',
+      targetId: FEE_CONFIG_ID,
+      reason: '总台更新平台分账费率',
+      before,
+      after: {
+        platformRate: updated.platformRate,
+        agentRate: updated.agentRate,
+        providerRate: updated.providerRate,
+        settlePeriod: updated.settlePeriod,
+        minWithdrawCents: updated.minWithdrawCents,
+      },
+    });
+
+    return updated;
   }
 }

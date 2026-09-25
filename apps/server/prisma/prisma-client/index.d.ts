@@ -158,6 +158,11 @@ export type AuditLog = $Result.DefaultSelection<Prisma.$AuditLogPayload>
  * 
  */
 export type ProviderLicense = $Result.DefaultSelection<Prisma.$ProviderLicensePayload>
+/**
+ * Model PlatformFeeConfig
+ * 
+ */
+export type PlatformFeeConfig = $Result.DefaultSelection<Prisma.$PlatformFeeConfigPayload>
 
 /**
  * Enums
@@ -734,6 +739,16 @@ export class PrismaClient<
     * ```
     */
   get providerLicense(): Prisma.ProviderLicenseDelegate<ExtArgs>;
+
+  /**
+   * `prisma.platformFeeConfig`: Exposes CRUD operations for the **PlatformFeeConfig** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PlatformFeeConfigs
+    * const platformFeeConfigs = await prisma.platformFeeConfig.findMany()
+    * ```
+    */
+  get platformFeeConfig(): Prisma.PlatformFeeConfigDelegate<ExtArgs>;
 }
 
 export namespace Prisma {
@@ -1203,7 +1218,8 @@ export namespace Prisma {
     ProviderClient: 'ProviderClient',
     ProviderClientReach: 'ProviderClientReach',
     AuditLog: 'AuditLog',
-    ProviderLicense: 'ProviderLicense'
+    ProviderLicense: 'ProviderLicense',
+    PlatformFeeConfig: 'PlatformFeeConfig'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1219,7 +1235,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, ClientOptions = {}> = {
     meta: {
-      modelProps: "region" | "user" | "project" | "template" | "redlineWord" | "font" | "projectVersion" | "asset" | "templateOrder" | "providerWallet" | "withdrawal" | "templateAppeal" | "ticket" | "message" | "review" | "messageRead" | "qualificationApplication" | "recruitLead" | "walletLog" | "coupon" | "userCoupon" | "providerSchedule" | "providerContract" | "orgStaff" | "teamJoinApplication" | "providerClient" | "providerClientReach" | "auditLog" | "providerLicense"
+      modelProps: "region" | "user" | "project" | "template" | "redlineWord" | "font" | "projectVersion" | "asset" | "templateOrder" | "providerWallet" | "withdrawal" | "templateAppeal" | "ticket" | "message" | "review" | "messageRead" | "qualificationApplication" | "recruitLead" | "walletLog" | "coupon" | "userCoupon" | "providerSchedule" | "providerContract" | "orgStaff" | "teamJoinApplication" | "providerClient" | "providerClientReach" | "auditLog" | "providerLicense" | "platformFeeConfig"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -3253,6 +3269,76 @@ export namespace Prisma {
           }
         }
       }
+      PlatformFeeConfig: {
+        payload: Prisma.$PlatformFeeConfigPayload<ExtArgs>
+        fields: Prisma.PlatformFeeConfigFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PlatformFeeConfigFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformFeeConfigPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PlatformFeeConfigFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformFeeConfigPayload>
+          }
+          findFirst: {
+            args: Prisma.PlatformFeeConfigFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformFeeConfigPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PlatformFeeConfigFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformFeeConfigPayload>
+          }
+          findMany: {
+            args: Prisma.PlatformFeeConfigFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformFeeConfigPayload>[]
+          }
+          create: {
+            args: Prisma.PlatformFeeConfigCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformFeeConfigPayload>
+          }
+          createMany: {
+            args: Prisma.PlatformFeeConfigCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.PlatformFeeConfigCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformFeeConfigPayload>[]
+          }
+          delete: {
+            args: Prisma.PlatformFeeConfigDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformFeeConfigPayload>
+          }
+          update: {
+            args: Prisma.PlatformFeeConfigUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformFeeConfigPayload>
+          }
+          deleteMany: {
+            args: Prisma.PlatformFeeConfigDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PlatformFeeConfigUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.PlatformFeeConfigUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformFeeConfigPayload>
+          }
+          aggregate: {
+            args: Prisma.PlatformFeeConfigAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePlatformFeeConfig>
+          }
+          groupBy: {
+            args: Prisma.PlatformFeeConfigGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PlatformFeeConfigGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PlatformFeeConfigCountArgs<ExtArgs>
+            result: $Utils.Optional<PlatformFeeConfigCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -4909,6 +4995,8 @@ export namespace Prisma {
     avatar: string | null
     realName: string | null
     idCard: string | null
+    idCardFront: string | null
+    idCardBack: string | null
     realNameStatus: $Enums.RealNameStatus | null
     realNameVerifiedAt: Date | null
     bio: string | null
@@ -4928,6 +5016,8 @@ export namespace Prisma {
     agentId: string | null
     regionPath: string | null
     status: $Enums.UserStatus | null
+    isZombie: boolean | null
+    zombieAt: Date | null
   }
 
   export type UserMaxAggregateOutputType = {
@@ -4939,6 +5029,8 @@ export namespace Prisma {
     avatar: string | null
     realName: string | null
     idCard: string | null
+    idCardFront: string | null
+    idCardBack: string | null
     realNameStatus: $Enums.RealNameStatus | null
     realNameVerifiedAt: Date | null
     bio: string | null
@@ -4958,6 +5050,8 @@ export namespace Prisma {
     agentId: string | null
     regionPath: string | null
     status: $Enums.UserStatus | null
+    isZombie: boolean | null
+    zombieAt: Date | null
   }
 
   export type UserCountAggregateOutputType = {
@@ -4969,6 +5063,8 @@ export namespace Prisma {
     avatar: number
     realName: number
     idCard: number
+    idCardFront: number
+    idCardBack: number
     realNameStatus: number
     realNameVerifiedAt: number
     bio: number
@@ -4990,6 +5086,8 @@ export namespace Prisma {
     agentId: number
     regionPath: number
     status: number
+    isZombie: number
+    zombieAt: number
     _all: number
   }
 
@@ -5019,6 +5117,8 @@ export namespace Prisma {
     avatar?: true
     realName?: true
     idCard?: true
+    idCardFront?: true
+    idCardBack?: true
     realNameStatus?: true
     realNameVerifiedAt?: true
     bio?: true
@@ -5038,6 +5138,8 @@ export namespace Prisma {
     agentId?: true
     regionPath?: true
     status?: true
+    isZombie?: true
+    zombieAt?: true
   }
 
   export type UserMaxAggregateInputType = {
@@ -5049,6 +5151,8 @@ export namespace Prisma {
     avatar?: true
     realName?: true
     idCard?: true
+    idCardFront?: true
+    idCardBack?: true
     realNameStatus?: true
     realNameVerifiedAt?: true
     bio?: true
@@ -5068,6 +5172,8 @@ export namespace Prisma {
     agentId?: true
     regionPath?: true
     status?: true
+    isZombie?: true
+    zombieAt?: true
   }
 
   export type UserCountAggregateInputType = {
@@ -5079,6 +5185,8 @@ export namespace Prisma {
     avatar?: true
     realName?: true
     idCard?: true
+    idCardFront?: true
+    idCardBack?: true
     realNameStatus?: true
     realNameVerifiedAt?: true
     bio?: true
@@ -5100,6 +5208,8 @@ export namespace Prisma {
     agentId?: true
     regionPath?: true
     status?: true
+    isZombie?: true
+    zombieAt?: true
     _all?: true
   }
 
@@ -5198,6 +5308,8 @@ export namespace Prisma {
     avatar: string | null
     realName: string | null
     idCard: string | null
+    idCardFront: string | null
+    idCardBack: string | null
     realNameStatus: $Enums.RealNameStatus
     realNameVerifiedAt: Date | null
     bio: string | null
@@ -5219,6 +5331,8 @@ export namespace Prisma {
     agentId: string | null
     regionPath: string | null
     status: $Enums.UserStatus
+    isZombie: boolean
+    zombieAt: Date | null
     _count: UserCountAggregateOutputType | null
     _avg: UserAvgAggregateOutputType | null
     _sum: UserSumAggregateOutputType | null
@@ -5249,6 +5363,8 @@ export namespace Prisma {
     avatar?: boolean
     realName?: boolean
     idCard?: boolean
+    idCardFront?: boolean
+    idCardBack?: boolean
     realNameStatus?: boolean
     realNameVerifiedAt?: boolean
     bio?: boolean
@@ -5270,6 +5386,8 @@ export namespace Prisma {
     agentId?: boolean
     regionPath?: boolean
     status?: boolean
+    isZombie?: boolean
+    zombieAt?: boolean
     projects?: boolean | User$projectsArgs<ExtArgs>
     assets?: boolean | User$assetsArgs<ExtArgs>
     templates?: boolean | User$templatesArgs<ExtArgs>
@@ -5305,6 +5423,8 @@ export namespace Prisma {
     avatar?: boolean
     realName?: boolean
     idCard?: boolean
+    idCardFront?: boolean
+    idCardBack?: boolean
     realNameStatus?: boolean
     realNameVerifiedAt?: boolean
     bio?: boolean
@@ -5326,6 +5446,8 @@ export namespace Prisma {
     agentId?: boolean
     regionPath?: boolean
     status?: boolean
+    isZombie?: boolean
+    zombieAt?: boolean
     region?: boolean | User$regionArgs<ExtArgs>
     agent?: boolean | User$agentArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
@@ -5339,6 +5461,8 @@ export namespace Prisma {
     avatar?: boolean
     realName?: boolean
     idCard?: boolean
+    idCardFront?: boolean
+    idCardBack?: boolean
     realNameStatus?: boolean
     realNameVerifiedAt?: boolean
     bio?: boolean
@@ -5360,6 +5484,8 @@ export namespace Prisma {
     agentId?: boolean
     regionPath?: boolean
     status?: boolean
+    isZombie?: boolean
+    zombieAt?: boolean
   }
 
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -5429,6 +5555,8 @@ export namespace Prisma {
       avatar: string | null
       realName: string | null
       idCard: string | null
+      idCardFront: string | null
+      idCardBack: string | null
       realNameStatus: $Enums.RealNameStatus
       realNameVerifiedAt: Date | null
       bio: string | null
@@ -5450,6 +5578,8 @@ export namespace Prisma {
       agentId: string | null
       regionPath: string | null
       status: $Enums.UserStatus
+      isZombie: boolean
+      zombieAt: Date | null
     }, ExtArgs["result"]["user"]>
     composites: {}
   }
@@ -5874,6 +6004,8 @@ export namespace Prisma {
     readonly avatar: FieldRef<"User", 'String'>
     readonly realName: FieldRef<"User", 'String'>
     readonly idCard: FieldRef<"User", 'String'>
+    readonly idCardFront: FieldRef<"User", 'String'>
+    readonly idCardBack: FieldRef<"User", 'String'>
     readonly realNameStatus: FieldRef<"User", 'RealNameStatus'>
     readonly realNameVerifiedAt: FieldRef<"User", 'DateTime'>
     readonly bio: FieldRef<"User", 'String'>
@@ -5895,6 +6027,8 @@ export namespace Prisma {
     readonly agentId: FieldRef<"User", 'String'>
     readonly regionPath: FieldRef<"User", 'String'>
     readonly status: FieldRef<"User", 'UserStatus'>
+    readonly isZombie: FieldRef<"User", 'Boolean'>
+    readonly zombieAt: FieldRef<"User", 'DateTime'>
   }
     
 
@@ -34424,6 +34558,986 @@ export namespace Prisma {
 
 
   /**
+   * Model PlatformFeeConfig
+   */
+
+  export type AggregatePlatformFeeConfig = {
+    _count: PlatformFeeConfigCountAggregateOutputType | null
+    _avg: PlatformFeeConfigAvgAggregateOutputType | null
+    _sum: PlatformFeeConfigSumAggregateOutputType | null
+    _min: PlatformFeeConfigMinAggregateOutputType | null
+    _max: PlatformFeeConfigMaxAggregateOutputType | null
+  }
+
+  export type PlatformFeeConfigAvgAggregateOutputType = {
+    platformRate: number | null
+    agentRate: number | null
+    providerRate: number | null
+    minWithdrawCents: number | null
+  }
+
+  export type PlatformFeeConfigSumAggregateOutputType = {
+    platformRate: number | null
+    agentRate: number | null
+    providerRate: number | null
+    minWithdrawCents: number | null
+  }
+
+  export type PlatformFeeConfigMinAggregateOutputType = {
+    id: string | null
+    platformRate: number | null
+    agentRate: number | null
+    providerRate: number | null
+    settlePeriod: string | null
+    minWithdrawCents: number | null
+    updatedBy: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type PlatformFeeConfigMaxAggregateOutputType = {
+    id: string | null
+    platformRate: number | null
+    agentRate: number | null
+    providerRate: number | null
+    settlePeriod: string | null
+    minWithdrawCents: number | null
+    updatedBy: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type PlatformFeeConfigCountAggregateOutputType = {
+    id: number
+    platformRate: number
+    agentRate: number
+    providerRate: number
+    settlePeriod: number
+    categoryRates: number
+    minWithdrawCents: number
+    updatedBy: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type PlatformFeeConfigAvgAggregateInputType = {
+    platformRate?: true
+    agentRate?: true
+    providerRate?: true
+    minWithdrawCents?: true
+  }
+
+  export type PlatformFeeConfigSumAggregateInputType = {
+    platformRate?: true
+    agentRate?: true
+    providerRate?: true
+    minWithdrawCents?: true
+  }
+
+  export type PlatformFeeConfigMinAggregateInputType = {
+    id?: true
+    platformRate?: true
+    agentRate?: true
+    providerRate?: true
+    settlePeriod?: true
+    minWithdrawCents?: true
+    updatedBy?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type PlatformFeeConfigMaxAggregateInputType = {
+    id?: true
+    platformRate?: true
+    agentRate?: true
+    providerRate?: true
+    settlePeriod?: true
+    minWithdrawCents?: true
+    updatedBy?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type PlatformFeeConfigCountAggregateInputType = {
+    id?: true
+    platformRate?: true
+    agentRate?: true
+    providerRate?: true
+    settlePeriod?: true
+    categoryRates?: true
+    minWithdrawCents?: true
+    updatedBy?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type PlatformFeeConfigAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PlatformFeeConfig to aggregate.
+     */
+    where?: PlatformFeeConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PlatformFeeConfigs to fetch.
+     */
+    orderBy?: PlatformFeeConfigOrderByWithRelationInput | PlatformFeeConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PlatformFeeConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PlatformFeeConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PlatformFeeConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PlatformFeeConfigs
+    **/
+    _count?: true | PlatformFeeConfigCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PlatformFeeConfigAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PlatformFeeConfigSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PlatformFeeConfigMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PlatformFeeConfigMaxAggregateInputType
+  }
+
+  export type GetPlatformFeeConfigAggregateType<T extends PlatformFeeConfigAggregateArgs> = {
+        [P in keyof T & keyof AggregatePlatformFeeConfig]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePlatformFeeConfig[P]>
+      : GetScalarType<T[P], AggregatePlatformFeeConfig[P]>
+  }
+
+
+
+
+  export type PlatformFeeConfigGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PlatformFeeConfigWhereInput
+    orderBy?: PlatformFeeConfigOrderByWithAggregationInput | PlatformFeeConfigOrderByWithAggregationInput[]
+    by: PlatformFeeConfigScalarFieldEnum[] | PlatformFeeConfigScalarFieldEnum
+    having?: PlatformFeeConfigScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PlatformFeeConfigCountAggregateInputType | true
+    _avg?: PlatformFeeConfigAvgAggregateInputType
+    _sum?: PlatformFeeConfigSumAggregateInputType
+    _min?: PlatformFeeConfigMinAggregateInputType
+    _max?: PlatformFeeConfigMaxAggregateInputType
+  }
+
+  export type PlatformFeeConfigGroupByOutputType = {
+    id: string
+    platformRate: number
+    agentRate: number
+    providerRate: number
+    settlePeriod: string
+    categoryRates: JsonValue | null
+    minWithdrawCents: number
+    updatedBy: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: PlatformFeeConfigCountAggregateOutputType | null
+    _avg: PlatformFeeConfigAvgAggregateOutputType | null
+    _sum: PlatformFeeConfigSumAggregateOutputType | null
+    _min: PlatformFeeConfigMinAggregateOutputType | null
+    _max: PlatformFeeConfigMaxAggregateOutputType | null
+  }
+
+  type GetPlatformFeeConfigGroupByPayload<T extends PlatformFeeConfigGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PlatformFeeConfigGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PlatformFeeConfigGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PlatformFeeConfigGroupByOutputType[P]>
+            : GetScalarType<T[P], PlatformFeeConfigGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PlatformFeeConfigSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    platformRate?: boolean
+    agentRate?: boolean
+    providerRate?: boolean
+    settlePeriod?: boolean
+    categoryRates?: boolean
+    minWithdrawCents?: boolean
+    updatedBy?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["platformFeeConfig"]>
+
+  export type PlatformFeeConfigSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    platformRate?: boolean
+    agentRate?: boolean
+    providerRate?: boolean
+    settlePeriod?: boolean
+    categoryRates?: boolean
+    minWithdrawCents?: boolean
+    updatedBy?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["platformFeeConfig"]>
+
+  export type PlatformFeeConfigSelectScalar = {
+    id?: boolean
+    platformRate?: boolean
+    agentRate?: boolean
+    providerRate?: boolean
+    settlePeriod?: boolean
+    categoryRates?: boolean
+    minWithdrawCents?: boolean
+    updatedBy?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+
+  export type $PlatformFeeConfigPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PlatformFeeConfig"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      platformRate: number
+      agentRate: number
+      providerRate: number
+      settlePeriod: string
+      categoryRates: Prisma.JsonValue | null
+      minWithdrawCents: number
+      updatedBy: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["platformFeeConfig"]>
+    composites: {}
+  }
+
+  type PlatformFeeConfigGetPayload<S extends boolean | null | undefined | PlatformFeeConfigDefaultArgs> = $Result.GetResult<Prisma.$PlatformFeeConfigPayload, S>
+
+  type PlatformFeeConfigCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<PlatformFeeConfigFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: PlatformFeeConfigCountAggregateInputType | true
+    }
+
+  export interface PlatformFeeConfigDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PlatformFeeConfig'], meta: { name: 'PlatformFeeConfig' } }
+    /**
+     * Find zero or one PlatformFeeConfig that matches the filter.
+     * @param {PlatformFeeConfigFindUniqueArgs} args - Arguments to find a PlatformFeeConfig
+     * @example
+     * // Get one PlatformFeeConfig
+     * const platformFeeConfig = await prisma.platformFeeConfig.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PlatformFeeConfigFindUniqueArgs>(args: SelectSubset<T, PlatformFeeConfigFindUniqueArgs<ExtArgs>>): Prisma__PlatformFeeConfigClient<$Result.GetResult<Prisma.$PlatformFeeConfigPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one PlatformFeeConfig that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {PlatformFeeConfigFindUniqueOrThrowArgs} args - Arguments to find a PlatformFeeConfig
+     * @example
+     * // Get one PlatformFeeConfig
+     * const platformFeeConfig = await prisma.platformFeeConfig.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PlatformFeeConfigFindUniqueOrThrowArgs>(args: SelectSubset<T, PlatformFeeConfigFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PlatformFeeConfigClient<$Result.GetResult<Prisma.$PlatformFeeConfigPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first PlatformFeeConfig that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformFeeConfigFindFirstArgs} args - Arguments to find a PlatformFeeConfig
+     * @example
+     * // Get one PlatformFeeConfig
+     * const platformFeeConfig = await prisma.platformFeeConfig.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PlatformFeeConfigFindFirstArgs>(args?: SelectSubset<T, PlatformFeeConfigFindFirstArgs<ExtArgs>>): Prisma__PlatformFeeConfigClient<$Result.GetResult<Prisma.$PlatformFeeConfigPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first PlatformFeeConfig that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformFeeConfigFindFirstOrThrowArgs} args - Arguments to find a PlatformFeeConfig
+     * @example
+     * // Get one PlatformFeeConfig
+     * const platformFeeConfig = await prisma.platformFeeConfig.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PlatformFeeConfigFindFirstOrThrowArgs>(args?: SelectSubset<T, PlatformFeeConfigFindFirstOrThrowArgs<ExtArgs>>): Prisma__PlatformFeeConfigClient<$Result.GetResult<Prisma.$PlatformFeeConfigPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more PlatformFeeConfigs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformFeeConfigFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PlatformFeeConfigs
+     * const platformFeeConfigs = await prisma.platformFeeConfig.findMany()
+     * 
+     * // Get first 10 PlatformFeeConfigs
+     * const platformFeeConfigs = await prisma.platformFeeConfig.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const platformFeeConfigWithIdOnly = await prisma.platformFeeConfig.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PlatformFeeConfigFindManyArgs>(args?: SelectSubset<T, PlatformFeeConfigFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PlatformFeeConfigPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a PlatformFeeConfig.
+     * @param {PlatformFeeConfigCreateArgs} args - Arguments to create a PlatformFeeConfig.
+     * @example
+     * // Create one PlatformFeeConfig
+     * const PlatformFeeConfig = await prisma.platformFeeConfig.create({
+     *   data: {
+     *     // ... data to create a PlatformFeeConfig
+     *   }
+     * })
+     * 
+     */
+    create<T extends PlatformFeeConfigCreateArgs>(args: SelectSubset<T, PlatformFeeConfigCreateArgs<ExtArgs>>): Prisma__PlatformFeeConfigClient<$Result.GetResult<Prisma.$PlatformFeeConfigPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many PlatformFeeConfigs.
+     * @param {PlatformFeeConfigCreateManyArgs} args - Arguments to create many PlatformFeeConfigs.
+     * @example
+     * // Create many PlatformFeeConfigs
+     * const platformFeeConfig = await prisma.platformFeeConfig.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PlatformFeeConfigCreateManyArgs>(args?: SelectSubset<T, PlatformFeeConfigCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many PlatformFeeConfigs and returns the data saved in the database.
+     * @param {PlatformFeeConfigCreateManyAndReturnArgs} args - Arguments to create many PlatformFeeConfigs.
+     * @example
+     * // Create many PlatformFeeConfigs
+     * const platformFeeConfig = await prisma.platformFeeConfig.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many PlatformFeeConfigs and only return the `id`
+     * const platformFeeConfigWithIdOnly = await prisma.platformFeeConfig.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends PlatformFeeConfigCreateManyAndReturnArgs>(args?: SelectSubset<T, PlatformFeeConfigCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PlatformFeeConfigPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a PlatformFeeConfig.
+     * @param {PlatformFeeConfigDeleteArgs} args - Arguments to delete one PlatformFeeConfig.
+     * @example
+     * // Delete one PlatformFeeConfig
+     * const PlatformFeeConfig = await prisma.platformFeeConfig.delete({
+     *   where: {
+     *     // ... filter to delete one PlatformFeeConfig
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PlatformFeeConfigDeleteArgs>(args: SelectSubset<T, PlatformFeeConfigDeleteArgs<ExtArgs>>): Prisma__PlatformFeeConfigClient<$Result.GetResult<Prisma.$PlatformFeeConfigPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one PlatformFeeConfig.
+     * @param {PlatformFeeConfigUpdateArgs} args - Arguments to update one PlatformFeeConfig.
+     * @example
+     * // Update one PlatformFeeConfig
+     * const platformFeeConfig = await prisma.platformFeeConfig.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PlatformFeeConfigUpdateArgs>(args: SelectSubset<T, PlatformFeeConfigUpdateArgs<ExtArgs>>): Prisma__PlatformFeeConfigClient<$Result.GetResult<Prisma.$PlatformFeeConfigPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more PlatformFeeConfigs.
+     * @param {PlatformFeeConfigDeleteManyArgs} args - Arguments to filter PlatformFeeConfigs to delete.
+     * @example
+     * // Delete a few PlatformFeeConfigs
+     * const { count } = await prisma.platformFeeConfig.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PlatformFeeConfigDeleteManyArgs>(args?: SelectSubset<T, PlatformFeeConfigDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PlatformFeeConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformFeeConfigUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PlatformFeeConfigs
+     * const platformFeeConfig = await prisma.platformFeeConfig.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PlatformFeeConfigUpdateManyArgs>(args: SelectSubset<T, PlatformFeeConfigUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PlatformFeeConfig.
+     * @param {PlatformFeeConfigUpsertArgs} args - Arguments to update or create a PlatformFeeConfig.
+     * @example
+     * // Update or create a PlatformFeeConfig
+     * const platformFeeConfig = await prisma.platformFeeConfig.upsert({
+     *   create: {
+     *     // ... data to create a PlatformFeeConfig
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PlatformFeeConfig we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PlatformFeeConfigUpsertArgs>(args: SelectSubset<T, PlatformFeeConfigUpsertArgs<ExtArgs>>): Prisma__PlatformFeeConfigClient<$Result.GetResult<Prisma.$PlatformFeeConfigPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of PlatformFeeConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformFeeConfigCountArgs} args - Arguments to filter PlatformFeeConfigs to count.
+     * @example
+     * // Count the number of PlatformFeeConfigs
+     * const count = await prisma.platformFeeConfig.count({
+     *   where: {
+     *     // ... the filter for the PlatformFeeConfigs we want to count
+     *   }
+     * })
+    **/
+    count<T extends PlatformFeeConfigCountArgs>(
+      args?: Subset<T, PlatformFeeConfigCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PlatformFeeConfigCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PlatformFeeConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformFeeConfigAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PlatformFeeConfigAggregateArgs>(args: Subset<T, PlatformFeeConfigAggregateArgs>): Prisma.PrismaPromise<GetPlatformFeeConfigAggregateType<T>>
+
+    /**
+     * Group by PlatformFeeConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformFeeConfigGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PlatformFeeConfigGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PlatformFeeConfigGroupByArgs['orderBy'] }
+        : { orderBy?: PlatformFeeConfigGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PlatformFeeConfigGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPlatformFeeConfigGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PlatformFeeConfig model
+   */
+  readonly fields: PlatformFeeConfigFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PlatformFeeConfig.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PlatformFeeConfigClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PlatformFeeConfig model
+   */ 
+  interface PlatformFeeConfigFieldRefs {
+    readonly id: FieldRef<"PlatformFeeConfig", 'String'>
+    readonly platformRate: FieldRef<"PlatformFeeConfig", 'Int'>
+    readonly agentRate: FieldRef<"PlatformFeeConfig", 'Int'>
+    readonly providerRate: FieldRef<"PlatformFeeConfig", 'Int'>
+    readonly settlePeriod: FieldRef<"PlatformFeeConfig", 'String'>
+    readonly categoryRates: FieldRef<"PlatformFeeConfig", 'Json'>
+    readonly minWithdrawCents: FieldRef<"PlatformFeeConfig", 'Int'>
+    readonly updatedBy: FieldRef<"PlatformFeeConfig", 'String'>
+    readonly createdAt: FieldRef<"PlatformFeeConfig", 'DateTime'>
+    readonly updatedAt: FieldRef<"PlatformFeeConfig", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PlatformFeeConfig findUnique
+   */
+  export type PlatformFeeConfigFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformFeeConfig
+     */
+    select?: PlatformFeeConfigSelect<ExtArgs> | null
+    /**
+     * Filter, which PlatformFeeConfig to fetch.
+     */
+    where: PlatformFeeConfigWhereUniqueInput
+  }
+
+  /**
+   * PlatformFeeConfig findUniqueOrThrow
+   */
+  export type PlatformFeeConfigFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformFeeConfig
+     */
+    select?: PlatformFeeConfigSelect<ExtArgs> | null
+    /**
+     * Filter, which PlatformFeeConfig to fetch.
+     */
+    where: PlatformFeeConfigWhereUniqueInput
+  }
+
+  /**
+   * PlatformFeeConfig findFirst
+   */
+  export type PlatformFeeConfigFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformFeeConfig
+     */
+    select?: PlatformFeeConfigSelect<ExtArgs> | null
+    /**
+     * Filter, which PlatformFeeConfig to fetch.
+     */
+    where?: PlatformFeeConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PlatformFeeConfigs to fetch.
+     */
+    orderBy?: PlatformFeeConfigOrderByWithRelationInput | PlatformFeeConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PlatformFeeConfigs.
+     */
+    cursor?: PlatformFeeConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PlatformFeeConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PlatformFeeConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PlatformFeeConfigs.
+     */
+    distinct?: PlatformFeeConfigScalarFieldEnum | PlatformFeeConfigScalarFieldEnum[]
+  }
+
+  /**
+   * PlatformFeeConfig findFirstOrThrow
+   */
+  export type PlatformFeeConfigFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformFeeConfig
+     */
+    select?: PlatformFeeConfigSelect<ExtArgs> | null
+    /**
+     * Filter, which PlatformFeeConfig to fetch.
+     */
+    where?: PlatformFeeConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PlatformFeeConfigs to fetch.
+     */
+    orderBy?: PlatformFeeConfigOrderByWithRelationInput | PlatformFeeConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PlatformFeeConfigs.
+     */
+    cursor?: PlatformFeeConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PlatformFeeConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PlatformFeeConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PlatformFeeConfigs.
+     */
+    distinct?: PlatformFeeConfigScalarFieldEnum | PlatformFeeConfigScalarFieldEnum[]
+  }
+
+  /**
+   * PlatformFeeConfig findMany
+   */
+  export type PlatformFeeConfigFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformFeeConfig
+     */
+    select?: PlatformFeeConfigSelect<ExtArgs> | null
+    /**
+     * Filter, which PlatformFeeConfigs to fetch.
+     */
+    where?: PlatformFeeConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PlatformFeeConfigs to fetch.
+     */
+    orderBy?: PlatformFeeConfigOrderByWithRelationInput | PlatformFeeConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PlatformFeeConfigs.
+     */
+    cursor?: PlatformFeeConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PlatformFeeConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PlatformFeeConfigs.
+     */
+    skip?: number
+    distinct?: PlatformFeeConfigScalarFieldEnum | PlatformFeeConfigScalarFieldEnum[]
+  }
+
+  /**
+   * PlatformFeeConfig create
+   */
+  export type PlatformFeeConfigCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformFeeConfig
+     */
+    select?: PlatformFeeConfigSelect<ExtArgs> | null
+    /**
+     * The data needed to create a PlatformFeeConfig.
+     */
+    data: XOR<PlatformFeeConfigCreateInput, PlatformFeeConfigUncheckedCreateInput>
+  }
+
+  /**
+   * PlatformFeeConfig createMany
+   */
+  export type PlatformFeeConfigCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PlatformFeeConfigs.
+     */
+    data: PlatformFeeConfigCreateManyInput | PlatformFeeConfigCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PlatformFeeConfig createManyAndReturn
+   */
+  export type PlatformFeeConfigCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformFeeConfig
+     */
+    select?: PlatformFeeConfigSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many PlatformFeeConfigs.
+     */
+    data: PlatformFeeConfigCreateManyInput | PlatformFeeConfigCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PlatformFeeConfig update
+   */
+  export type PlatformFeeConfigUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformFeeConfig
+     */
+    select?: PlatformFeeConfigSelect<ExtArgs> | null
+    /**
+     * The data needed to update a PlatformFeeConfig.
+     */
+    data: XOR<PlatformFeeConfigUpdateInput, PlatformFeeConfigUncheckedUpdateInput>
+    /**
+     * Choose, which PlatformFeeConfig to update.
+     */
+    where: PlatformFeeConfigWhereUniqueInput
+  }
+
+  /**
+   * PlatformFeeConfig updateMany
+   */
+  export type PlatformFeeConfigUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PlatformFeeConfigs.
+     */
+    data: XOR<PlatformFeeConfigUpdateManyMutationInput, PlatformFeeConfigUncheckedUpdateManyInput>
+    /**
+     * Filter which PlatformFeeConfigs to update
+     */
+    where?: PlatformFeeConfigWhereInput
+  }
+
+  /**
+   * PlatformFeeConfig upsert
+   */
+  export type PlatformFeeConfigUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformFeeConfig
+     */
+    select?: PlatformFeeConfigSelect<ExtArgs> | null
+    /**
+     * The filter to search for the PlatformFeeConfig to update in case it exists.
+     */
+    where: PlatformFeeConfigWhereUniqueInput
+    /**
+     * In case the PlatformFeeConfig found by the `where` argument doesn't exist, create a new PlatformFeeConfig with this data.
+     */
+    create: XOR<PlatformFeeConfigCreateInput, PlatformFeeConfigUncheckedCreateInput>
+    /**
+     * In case the PlatformFeeConfig was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PlatformFeeConfigUpdateInput, PlatformFeeConfigUncheckedUpdateInput>
+  }
+
+  /**
+   * PlatformFeeConfig delete
+   */
+  export type PlatformFeeConfigDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformFeeConfig
+     */
+    select?: PlatformFeeConfigSelect<ExtArgs> | null
+    /**
+     * Filter which PlatformFeeConfig to delete.
+     */
+    where: PlatformFeeConfigWhereUniqueInput
+  }
+
+  /**
+   * PlatformFeeConfig deleteMany
+   */
+  export type PlatformFeeConfigDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PlatformFeeConfigs to delete
+     */
+    where?: PlatformFeeConfigWhereInput
+  }
+
+  /**
+   * PlatformFeeConfig without action
+   */
+  export type PlatformFeeConfigDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformFeeConfig
+     */
+    select?: PlatformFeeConfigSelect<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -34458,6 +35572,8 @@ export namespace Prisma {
     avatar: 'avatar',
     realName: 'realName',
     idCard: 'idCard',
+    idCardFront: 'idCardFront',
+    idCardBack: 'idCardBack',
     realNameStatus: 'realNameStatus',
     realNameVerifiedAt: 'realNameVerifiedAt',
     bio: 'bio',
@@ -34478,7 +35594,9 @@ export namespace Prisma {
     regionId: 'regionId',
     agentId: 'agentId',
     regionPath: 'regionPath',
-    status: 'status'
+    status: 'status',
+    isZombie: 'isZombie',
+    zombieAt: 'zombieAt'
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -34974,6 +36092,22 @@ export namespace Prisma {
   export type ProviderLicenseScalarFieldEnum = (typeof ProviderLicenseScalarFieldEnum)[keyof typeof ProviderLicenseScalarFieldEnum]
 
 
+  export const PlatformFeeConfigScalarFieldEnum: {
+    id: 'id',
+    platformRate: 'platformRate',
+    agentRate: 'agentRate',
+    providerRate: 'providerRate',
+    settlePeriod: 'settlePeriod',
+    categoryRates: 'categoryRates',
+    minWithdrawCents: 'minWithdrawCents',
+    updatedBy: 'updatedBy',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type PlatformFeeConfigScalarFieldEnum = (typeof PlatformFeeConfigScalarFieldEnum)[keyof typeof PlatformFeeConfigScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
@@ -35140,16 +36274,16 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Json'
+   * Reference to a field of type 'Boolean'
    */
-  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
   /**
-   * Reference to a field of type 'Boolean'
+   * Reference to a field of type 'Json'
    */
-  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
     
 
 
@@ -35334,6 +36468,8 @@ export namespace Prisma {
     avatar?: StringNullableFilter<"User"> | string | null
     realName?: StringNullableFilter<"User"> | string | null
     idCard?: StringNullableFilter<"User"> | string | null
+    idCardFront?: StringNullableFilter<"User"> | string | null
+    idCardBack?: StringNullableFilter<"User"> | string | null
     realNameStatus?: EnumRealNameStatusFilter<"User"> | $Enums.RealNameStatus
     realNameVerifiedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     bio?: StringNullableFilter<"User"> | string | null
@@ -35355,6 +36491,8 @@ export namespace Prisma {
     agentId?: StringNullableFilter<"User"> | string | null
     regionPath?: StringNullableFilter<"User"> | string | null
     status?: EnumUserStatusFilter<"User"> | $Enums.UserStatus
+    isZombie?: BoolFilter<"User"> | boolean
+    zombieAt?: DateTimeNullableFilter<"User"> | Date | string | null
     projects?: ProjectListRelationFilter
     assets?: AssetListRelationFilter
     templates?: TemplateListRelationFilter
@@ -35389,6 +36527,8 @@ export namespace Prisma {
     avatar?: SortOrderInput | SortOrder
     realName?: SortOrderInput | SortOrder
     idCard?: SortOrderInput | SortOrder
+    idCardFront?: SortOrderInput | SortOrder
+    idCardBack?: SortOrderInput | SortOrder
     realNameStatus?: SortOrder
     realNameVerifiedAt?: SortOrderInput | SortOrder
     bio?: SortOrderInput | SortOrder
@@ -35410,6 +36550,8 @@ export namespace Prisma {
     agentId?: SortOrderInput | SortOrder
     regionPath?: SortOrderInput | SortOrder
     status?: SortOrder
+    isZombie?: SortOrder
+    zombieAt?: SortOrderInput | SortOrder
     projects?: ProjectOrderByRelationAggregateInput
     assets?: AssetOrderByRelationAggregateInput
     templates?: TemplateOrderByRelationAggregateInput
@@ -35447,6 +36589,8 @@ export namespace Prisma {
     avatar?: StringNullableFilter<"User"> | string | null
     realName?: StringNullableFilter<"User"> | string | null
     idCard?: StringNullableFilter<"User"> | string | null
+    idCardFront?: StringNullableFilter<"User"> | string | null
+    idCardBack?: StringNullableFilter<"User"> | string | null
     realNameStatus?: EnumRealNameStatusFilter<"User"> | $Enums.RealNameStatus
     realNameVerifiedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     bio?: StringNullableFilter<"User"> | string | null
@@ -35468,6 +36612,8 @@ export namespace Prisma {
     agentId?: StringNullableFilter<"User"> | string | null
     regionPath?: StringNullableFilter<"User"> | string | null
     status?: EnumUserStatusFilter<"User"> | $Enums.UserStatus
+    isZombie?: BoolFilter<"User"> | boolean
+    zombieAt?: DateTimeNullableFilter<"User"> | Date | string | null
     projects?: ProjectListRelationFilter
     assets?: AssetListRelationFilter
     templates?: TemplateListRelationFilter
@@ -35502,6 +36648,8 @@ export namespace Prisma {
     avatar?: SortOrderInput | SortOrder
     realName?: SortOrderInput | SortOrder
     idCard?: SortOrderInput | SortOrder
+    idCardFront?: SortOrderInput | SortOrder
+    idCardBack?: SortOrderInput | SortOrder
     realNameStatus?: SortOrder
     realNameVerifiedAt?: SortOrderInput | SortOrder
     bio?: SortOrderInput | SortOrder
@@ -35523,6 +36671,8 @@ export namespace Prisma {
     agentId?: SortOrderInput | SortOrder
     regionPath?: SortOrderInput | SortOrder
     status?: SortOrder
+    isZombie?: SortOrder
+    zombieAt?: SortOrderInput | SortOrder
     _count?: UserCountOrderByAggregateInput
     _avg?: UserAvgOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
@@ -35542,6 +36692,8 @@ export namespace Prisma {
     avatar?: StringNullableWithAggregatesFilter<"User"> | string | null
     realName?: StringNullableWithAggregatesFilter<"User"> | string | null
     idCard?: StringNullableWithAggregatesFilter<"User"> | string | null
+    idCardFront?: StringNullableWithAggregatesFilter<"User"> | string | null
+    idCardBack?: StringNullableWithAggregatesFilter<"User"> | string | null
     realNameStatus?: EnumRealNameStatusWithAggregatesFilter<"User"> | $Enums.RealNameStatus
     realNameVerifiedAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     bio?: StringNullableWithAggregatesFilter<"User"> | string | null
@@ -35563,6 +36715,8 @@ export namespace Prisma {
     agentId?: StringNullableWithAggregatesFilter<"User"> | string | null
     regionPath?: StringNullableWithAggregatesFilter<"User"> | string | null
     status?: EnumUserStatusWithAggregatesFilter<"User"> | $Enums.UserStatus
+    isZombie?: BoolWithAggregatesFilter<"User"> | boolean
+    zombieAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   }
 
   export type ProjectWhereInput = {
@@ -38065,6 +39219,85 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"ProviderLicense"> | Date | string
   }
 
+  export type PlatformFeeConfigWhereInput = {
+    AND?: PlatformFeeConfigWhereInput | PlatformFeeConfigWhereInput[]
+    OR?: PlatformFeeConfigWhereInput[]
+    NOT?: PlatformFeeConfigWhereInput | PlatformFeeConfigWhereInput[]
+    id?: StringFilter<"PlatformFeeConfig"> | string
+    platformRate?: IntFilter<"PlatformFeeConfig"> | number
+    agentRate?: IntFilter<"PlatformFeeConfig"> | number
+    providerRate?: IntFilter<"PlatformFeeConfig"> | number
+    settlePeriod?: StringFilter<"PlatformFeeConfig"> | string
+    categoryRates?: JsonNullableFilter<"PlatformFeeConfig">
+    minWithdrawCents?: IntFilter<"PlatformFeeConfig"> | number
+    updatedBy?: StringNullableFilter<"PlatformFeeConfig"> | string | null
+    createdAt?: DateTimeFilter<"PlatformFeeConfig"> | Date | string
+    updatedAt?: DateTimeFilter<"PlatformFeeConfig"> | Date | string
+  }
+
+  export type PlatformFeeConfigOrderByWithRelationInput = {
+    id?: SortOrder
+    platformRate?: SortOrder
+    agentRate?: SortOrder
+    providerRate?: SortOrder
+    settlePeriod?: SortOrder
+    categoryRates?: SortOrderInput | SortOrder
+    minWithdrawCents?: SortOrder
+    updatedBy?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PlatformFeeConfigWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: PlatformFeeConfigWhereInput | PlatformFeeConfigWhereInput[]
+    OR?: PlatformFeeConfigWhereInput[]
+    NOT?: PlatformFeeConfigWhereInput | PlatformFeeConfigWhereInput[]
+    platformRate?: IntFilter<"PlatformFeeConfig"> | number
+    agentRate?: IntFilter<"PlatformFeeConfig"> | number
+    providerRate?: IntFilter<"PlatformFeeConfig"> | number
+    settlePeriod?: StringFilter<"PlatformFeeConfig"> | string
+    categoryRates?: JsonNullableFilter<"PlatformFeeConfig">
+    minWithdrawCents?: IntFilter<"PlatformFeeConfig"> | number
+    updatedBy?: StringNullableFilter<"PlatformFeeConfig"> | string | null
+    createdAt?: DateTimeFilter<"PlatformFeeConfig"> | Date | string
+    updatedAt?: DateTimeFilter<"PlatformFeeConfig"> | Date | string
+  }, "id">
+
+  export type PlatformFeeConfigOrderByWithAggregationInput = {
+    id?: SortOrder
+    platformRate?: SortOrder
+    agentRate?: SortOrder
+    providerRate?: SortOrder
+    settlePeriod?: SortOrder
+    categoryRates?: SortOrderInput | SortOrder
+    minWithdrawCents?: SortOrder
+    updatedBy?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: PlatformFeeConfigCountOrderByAggregateInput
+    _avg?: PlatformFeeConfigAvgOrderByAggregateInput
+    _max?: PlatformFeeConfigMaxOrderByAggregateInput
+    _min?: PlatformFeeConfigMinOrderByAggregateInput
+    _sum?: PlatformFeeConfigSumOrderByAggregateInput
+  }
+
+  export type PlatformFeeConfigScalarWhereWithAggregatesInput = {
+    AND?: PlatformFeeConfigScalarWhereWithAggregatesInput | PlatformFeeConfigScalarWhereWithAggregatesInput[]
+    OR?: PlatformFeeConfigScalarWhereWithAggregatesInput[]
+    NOT?: PlatformFeeConfigScalarWhereWithAggregatesInput | PlatformFeeConfigScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PlatformFeeConfig"> | string
+    platformRate?: IntWithAggregatesFilter<"PlatformFeeConfig"> | number
+    agentRate?: IntWithAggregatesFilter<"PlatformFeeConfig"> | number
+    providerRate?: IntWithAggregatesFilter<"PlatformFeeConfig"> | number
+    settlePeriod?: StringWithAggregatesFilter<"PlatformFeeConfig"> | string
+    categoryRates?: JsonNullableWithAggregatesFilter<"PlatformFeeConfig">
+    minWithdrawCents?: IntWithAggregatesFilter<"PlatformFeeConfig"> | number
+    updatedBy?: StringNullableWithAggregatesFilter<"PlatformFeeConfig"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"PlatformFeeConfig"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"PlatformFeeConfig"> | Date | string
+  }
+
   export type RegionCreateInput = {
     id?: string
     code: string
@@ -38144,6 +39377,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -38163,6 +39398,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -38197,6 +39434,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -38218,6 +39457,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -38250,6 +39491,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -38269,6 +39512,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -38303,6 +39548,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -38324,6 +39571,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -38356,6 +39605,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -38377,6 +39628,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
   }
 
   export type UserUpdateManyMutationInput = {
@@ -38388,6 +39641,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -38407,6 +39662,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type UserUncheckedUpdateManyInput = {
@@ -38418,6 +39675,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -38439,6 +39698,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type ProjectCreateInput = {
@@ -41305,6 +42566,97 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type PlatformFeeConfigCreateInput = {
+    id?: string
+    platformRate?: number
+    agentRate?: number
+    providerRate?: number
+    settlePeriod?: string
+    categoryRates?: NullableJsonNullValueInput | InputJsonValue
+    minWithdrawCents?: number
+    updatedBy?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PlatformFeeConfigUncheckedCreateInput = {
+    id?: string
+    platformRate?: number
+    agentRate?: number
+    providerRate?: number
+    settlePeriod?: string
+    categoryRates?: NullableJsonNullValueInput | InputJsonValue
+    minWithdrawCents?: number
+    updatedBy?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PlatformFeeConfigUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    platformRate?: IntFieldUpdateOperationsInput | number
+    agentRate?: IntFieldUpdateOperationsInput | number
+    providerRate?: IntFieldUpdateOperationsInput | number
+    settlePeriod?: StringFieldUpdateOperationsInput | string
+    categoryRates?: NullableJsonNullValueInput | InputJsonValue
+    minWithdrawCents?: IntFieldUpdateOperationsInput | number
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PlatformFeeConfigUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    platformRate?: IntFieldUpdateOperationsInput | number
+    agentRate?: IntFieldUpdateOperationsInput | number
+    providerRate?: IntFieldUpdateOperationsInput | number
+    settlePeriod?: StringFieldUpdateOperationsInput | string
+    categoryRates?: NullableJsonNullValueInput | InputJsonValue
+    minWithdrawCents?: IntFieldUpdateOperationsInput | number
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PlatformFeeConfigCreateManyInput = {
+    id?: string
+    platformRate?: number
+    agentRate?: number
+    providerRate?: number
+    settlePeriod?: string
+    categoryRates?: NullableJsonNullValueInput | InputJsonValue
+    minWithdrawCents?: number
+    updatedBy?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PlatformFeeConfigUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    platformRate?: IntFieldUpdateOperationsInput | number
+    agentRate?: IntFieldUpdateOperationsInput | number
+    providerRate?: IntFieldUpdateOperationsInput | number
+    settlePeriod?: StringFieldUpdateOperationsInput | string
+    categoryRates?: NullableJsonNullValueInput | InputJsonValue
+    minWithdrawCents?: IntFieldUpdateOperationsInput | number
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PlatformFeeConfigUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    platformRate?: IntFieldUpdateOperationsInput | number
+    agentRate?: IntFieldUpdateOperationsInput | number
+    providerRate?: IntFieldUpdateOperationsInput | number
+    settlePeriod?: StringFieldUpdateOperationsInput | string
+    categoryRates?: NullableJsonNullValueInput | InputJsonValue
+    minWithdrawCents?: IntFieldUpdateOperationsInput | number
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -41521,6 +42873,11 @@ export namespace Prisma {
     not?: NestedEnumUserStatusFilter<$PrismaModel> | $Enums.UserStatus
   }
 
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type ProjectListRelationFilter = {
     every?: ProjectWhereInput
     some?: ProjectWhereInput
@@ -41690,6 +43047,8 @@ export namespace Prisma {
     avatar?: SortOrder
     realName?: SortOrder
     idCard?: SortOrder
+    idCardFront?: SortOrder
+    idCardBack?: SortOrder
     realNameStatus?: SortOrder
     realNameVerifiedAt?: SortOrder
     bio?: SortOrder
@@ -41711,6 +43070,8 @@ export namespace Prisma {
     agentId?: SortOrder
     regionPath?: SortOrder
     status?: SortOrder
+    isZombie?: SortOrder
+    zombieAt?: SortOrder
   }
 
   export type UserAvgOrderByAggregateInput = {
@@ -41730,6 +43091,8 @@ export namespace Prisma {
     avatar?: SortOrder
     realName?: SortOrder
     idCard?: SortOrder
+    idCardFront?: SortOrder
+    idCardBack?: SortOrder
     realNameStatus?: SortOrder
     realNameVerifiedAt?: SortOrder
     bio?: SortOrder
@@ -41749,6 +43112,8 @@ export namespace Prisma {
     agentId?: SortOrder
     regionPath?: SortOrder
     status?: SortOrder
+    isZombie?: SortOrder
+    zombieAt?: SortOrder
   }
 
   export type UserMinOrderByAggregateInput = {
@@ -41760,6 +43125,8 @@ export namespace Prisma {
     avatar?: SortOrder
     realName?: SortOrder
     idCard?: SortOrder
+    idCardFront?: SortOrder
+    idCardBack?: SortOrder
     realNameStatus?: SortOrder
     realNameVerifiedAt?: SortOrder
     bio?: SortOrder
@@ -41779,6 +43146,8 @@ export namespace Prisma {
     agentId?: SortOrder
     regionPath?: SortOrder
     status?: SortOrder
+    isZombie?: SortOrder
+    zombieAt?: SortOrder
   }
 
   export type UserSumOrderByAggregateInput = {
@@ -41855,6 +43224,14 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumUserStatusFilter<$PrismaModel>
     _max?: NestedEnumUserStatusFilter<$PrismaModel>
+  }
+
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
   }
   export type JsonFilter<$PrismaModel = never> = 
     | PatchUndefined<
@@ -42051,11 +43428,6 @@ export namespace Prisma {
     isEmpty?: boolean
   }
 
-  export type BoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
   export type EnumTemplateStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.TemplateStatus | EnumTemplateStatusFieldRefInput<$PrismaModel>
     in?: $Enums.TemplateStatus[] | ListEnumTemplateStatusFieldRefInput<$PrismaModel>
@@ -42143,14 +43515,6 @@ export namespace Prisma {
     liveVersion?: SortOrder
     useCount?: SortOrder
     price?: SortOrder
-  }
-
-  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type EnumTemplateStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -43554,6 +44918,57 @@ export namespace Prisma {
     updatedAt?: SortOrder
   }
 
+  export type PlatformFeeConfigCountOrderByAggregateInput = {
+    id?: SortOrder
+    platformRate?: SortOrder
+    agentRate?: SortOrder
+    providerRate?: SortOrder
+    settlePeriod?: SortOrder
+    categoryRates?: SortOrder
+    minWithdrawCents?: SortOrder
+    updatedBy?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PlatformFeeConfigAvgOrderByAggregateInput = {
+    platformRate?: SortOrder
+    agentRate?: SortOrder
+    providerRate?: SortOrder
+    minWithdrawCents?: SortOrder
+  }
+
+  export type PlatformFeeConfigMaxOrderByAggregateInput = {
+    id?: SortOrder
+    platformRate?: SortOrder
+    agentRate?: SortOrder
+    providerRate?: SortOrder
+    settlePeriod?: SortOrder
+    minWithdrawCents?: SortOrder
+    updatedBy?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PlatformFeeConfigMinOrderByAggregateInput = {
+    id?: SortOrder
+    platformRate?: SortOrder
+    agentRate?: SortOrder
+    providerRate?: SortOrder
+    settlePeriod?: SortOrder
+    minWithdrawCents?: SortOrder
+    updatedBy?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PlatformFeeConfigSumOrderByAggregateInput = {
+    platformRate?: SortOrder
+    agentRate?: SortOrder
+    providerRate?: SortOrder
+    minWithdrawCents?: SortOrder
+  }
+
   export type RegionCreateNestedOneWithoutChildrenInput = {
     create?: XOR<RegionCreateWithoutChildrenInput, RegionUncheckedCreateWithoutChildrenInput>
     connectOrCreate?: RegionCreateOrConnectWithoutChildrenInput
@@ -44014,6 +45429,10 @@ export namespace Prisma {
 
   export type EnumUserStatusFieldUpdateOperationsInput = {
     set?: $Enums.UserStatus
+  }
+
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
   }
 
   export type ProjectUpdateManyWithoutUserNestedInput = {
@@ -44747,10 +46166,6 @@ export namespace Prisma {
   export type TemplateUpdatetagsInput = {
     set?: string[]
     push?: string | string[]
-  }
-
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
   }
 
   export type EnumTemplateStatusFieldUpdateOperationsInput = {
@@ -45625,6 +47040,11 @@ export namespace Prisma {
     not?: NestedEnumUserStatusFilter<$PrismaModel> | $Enums.UserStatus
   }
 
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type NestedEnumRealNameStatusWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.RealNameStatus | EnumRealNameStatusFieldRefInput<$PrismaModel>
     in?: $Enums.RealNameStatus[] | ListEnumRealNameStatusFieldRefInput<$PrismaModel>
@@ -45692,6 +47112,14 @@ export namespace Prisma {
     _min?: NestedEnumUserStatusFilter<$PrismaModel>
     _max?: NestedEnumUserStatusFilter<$PrismaModel>
   }
+
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
   export type NestedJsonFilter<$PrismaModel = never> = 
     | PatchUndefined<
         Either<Required<NestedJsonFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>,
@@ -45737,24 +47165,11 @@ export namespace Prisma {
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
-  export type NestedBoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
   export type NestedEnumTemplateStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.TemplateStatus | EnumTemplateStatusFieldRefInput<$PrismaModel>
     in?: $Enums.TemplateStatus[] | ListEnumTemplateStatusFieldRefInput<$PrismaModel>
     notIn?: $Enums.TemplateStatus[] | ListEnumTemplateStatusFieldRefInput<$PrismaModel>
     not?: NestedEnumTemplateStatusFilter<$PrismaModel> | $Enums.TemplateStatus
-  }
-
-  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type NestedEnumTemplateStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -45992,6 +47407,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -46011,6 +47428,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -46044,6 +47463,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -46064,6 +47485,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -46184,6 +47607,8 @@ export namespace Prisma {
     avatar?: StringNullableFilter<"User"> | string | null
     realName?: StringNullableFilter<"User"> | string | null
     idCard?: StringNullableFilter<"User"> | string | null
+    idCardFront?: StringNullableFilter<"User"> | string | null
+    idCardBack?: StringNullableFilter<"User"> | string | null
     realNameStatus?: EnumRealNameStatusFilter<"User"> | $Enums.RealNameStatus
     realNameVerifiedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     bio?: StringNullableFilter<"User"> | string | null
@@ -46205,6 +47630,8 @@ export namespace Prisma {
     agentId?: StringNullableFilter<"User"> | string | null
     regionPath?: StringNullableFilter<"User"> | string | null
     status?: EnumUserStatusFilter<"User"> | $Enums.UserStatus
+    isZombie?: BoolFilter<"User"> | boolean
+    zombieAt?: DateTimeNullableFilter<"User"> | Date | string | null
   }
 
   export type ProjectCreateWithoutUserInput = {
@@ -46520,6 +47947,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -46539,6 +47968,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -46572,6 +48003,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -46593,6 +48026,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -46629,6 +48064,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -46648,6 +48085,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -46681,6 +48120,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -46701,6 +48142,8 @@ export namespace Prisma {
     regionId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -47585,6 +49028,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -47604,6 +49049,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -47637,6 +49084,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -47658,6 +49107,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -48091,6 +49542,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -48110,6 +49563,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
     orders?: TemplateOrderCreateNestedManyWithoutBuyerInput
@@ -48143,6 +49598,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -48164,6 +49621,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
     orders?: TemplateOrderUncheckedCreateNestedManyWithoutBuyerInput
@@ -48294,6 +49753,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -48313,6 +49774,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
     orders?: TemplateOrderUpdateManyWithoutBuyerNestedInput
@@ -48346,6 +49809,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -48367,6 +49832,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
     orders?: TemplateOrderUncheckedUpdateManyWithoutBuyerNestedInput
@@ -48491,6 +49958,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -48510,6 +49979,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     orders?: TemplateOrderCreateNestedManyWithoutBuyerInput
@@ -48543,6 +50014,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -48564,6 +50037,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     orders?: TemplateOrderUncheckedCreateNestedManyWithoutBuyerInput
@@ -48733,6 +50208,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -48752,6 +50229,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     orders?: TemplateOrderUpdateManyWithoutBuyerNestedInput
@@ -48785,6 +50264,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -48806,6 +50287,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     orders?: TemplateOrderUncheckedUpdateManyWithoutBuyerNestedInput
@@ -48989,6 +50472,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -49008,6 +50493,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
     orders?: TemplateOrderCreateNestedManyWithoutBuyerInput
@@ -49041,6 +50528,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -49062,6 +50551,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
     orders?: TemplateOrderUncheckedCreateNestedManyWithoutBuyerInput
@@ -49109,6 +50600,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -49128,6 +50621,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
     orders?: TemplateOrderUpdateManyWithoutBuyerNestedInput
@@ -49161,6 +50656,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -49182,6 +50679,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
     orders?: TemplateOrderUncheckedUpdateManyWithoutBuyerNestedInput
@@ -49213,6 +50712,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -49232,6 +50733,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -49265,6 +50768,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -49286,6 +50791,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -49394,6 +50901,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -49413,6 +50922,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -49446,6 +50957,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -49467,6 +50980,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -49565,6 +51080,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -49584,6 +51101,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -49617,6 +51136,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -49638,6 +51159,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -49721,6 +51244,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -49740,6 +51265,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -49773,6 +51300,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -49794,6 +51323,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -49841,6 +51372,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -49860,6 +51393,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -49893,6 +51428,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -49914,6 +51451,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -49986,6 +51525,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -50005,6 +51546,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -50038,6 +51581,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -50059,6 +51604,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -50182,6 +51729,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -50201,6 +51750,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -50234,6 +51785,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -50255,6 +51808,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -50369,6 +51924,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -50388,6 +51945,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -50421,6 +51980,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -50442,6 +52003,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -50473,6 +52036,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -50492,6 +52057,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -50525,6 +52092,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -50546,6 +52115,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -50582,6 +52153,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -50601,6 +52174,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -50634,6 +52209,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -50655,6 +52232,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -50691,6 +52270,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -50710,6 +52291,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -50743,6 +52326,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -50764,6 +52349,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -50811,6 +52398,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -50830,6 +52419,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -50863,6 +52454,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -50884,6 +52477,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -50926,6 +52521,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -50945,6 +52542,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -50978,6 +52577,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -50999,6 +52600,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -51041,6 +52644,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -51060,6 +52665,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -51093,6 +52700,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -51114,6 +52723,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -51145,6 +52756,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -51164,6 +52777,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -51197,6 +52812,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -51218,6 +52835,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -51276,6 +52895,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -51295,6 +52916,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -51328,6 +52951,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -51349,6 +52974,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -51396,6 +53023,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -51415,6 +53044,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -51448,6 +53079,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -51469,6 +53102,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -51527,6 +53162,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -51546,6 +53183,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -51579,6 +53218,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -51600,6 +53241,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -51631,6 +53274,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -51650,6 +53295,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -51683,6 +53330,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -51704,6 +53353,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -51740,6 +53391,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -51759,6 +53412,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -51792,6 +53447,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -51813,6 +53470,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -51860,6 +53519,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -51879,6 +53540,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -51912,6 +53575,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -51933,6 +53598,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -51975,6 +53642,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -51994,6 +53663,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -52027,6 +53698,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -52048,6 +53721,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -52126,6 +53801,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -52145,6 +53822,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -52178,6 +53857,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -52199,6 +53880,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -52299,6 +53982,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -52318,6 +54003,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -52351,6 +54038,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -52372,6 +54061,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -52403,6 +54094,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -52422,6 +54115,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -52455,6 +54150,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -52476,6 +54173,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -52523,6 +54222,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -52542,6 +54243,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -52575,6 +54278,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -52596,6 +54301,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -52627,6 +54334,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -52646,6 +54355,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -52679,6 +54390,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -52700,6 +54413,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -52747,6 +54462,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -52766,6 +54483,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -52799,6 +54518,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -52820,6 +54541,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -52893,6 +54616,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -52912,6 +54637,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -52945,6 +54672,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -52966,6 +54695,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -53046,6 +54777,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -53065,6 +54798,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -53098,6 +54833,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -53119,6 +54856,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -53189,6 +54928,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -53208,6 +54949,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -53241,6 +54984,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -53262,6 +55007,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -53309,6 +55056,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -53328,6 +55077,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -53361,6 +55112,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -53382,6 +55135,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -53413,6 +55168,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -53432,6 +55189,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -53465,6 +55224,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -53486,6 +55247,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -53533,6 +55296,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -53552,6 +55317,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -53585,6 +55352,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -53606,6 +55375,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -53645,6 +55416,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -53665,6 +55438,8 @@ export namespace Prisma {
     agentId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
   }
 
   export type RegionUpdateWithoutParentInput = {
@@ -53704,6 +55479,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -53723,6 +55500,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -53756,6 +55535,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -53776,6 +55557,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -53808,6 +55591,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -53828,6 +55613,8 @@ export namespace Prisma {
     agentId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type ProjectCreateManyUserInput = {
@@ -53932,6 +55719,8 @@ export namespace Prisma {
     avatar?: string | null
     realName?: string | null
     idCard?: string | null
+    idCardFront?: string | null
+    idCardBack?: string | null
     realNameStatus?: $Enums.RealNameStatus
     realNameVerifiedAt?: Date | string | null
     bio?: string | null
@@ -53952,6 +55741,8 @@ export namespace Prisma {
     regionId?: string | null
     regionPath?: string | null
     status?: $Enums.UserStatus
+    isZombie?: boolean
+    zombieAt?: Date | string | null
   }
 
   export type TicketCreateManyReporterInput = {
@@ -54461,6 +56252,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -54480,6 +56273,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -54513,6 +56308,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -54533,6 +56330,8 @@ export namespace Prisma {
     regionId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -54565,6 +56364,8 @@ export namespace Prisma {
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
     realName?: NullableStringFieldUpdateOperationsInput | string | null
     idCard?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardFront?: NullableStringFieldUpdateOperationsInput | string | null
+    idCardBack?: NullableStringFieldUpdateOperationsInput | string | null
     realNameStatus?: EnumRealNameStatusFieldUpdateOperationsInput | $Enums.RealNameStatus
     realNameVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
@@ -54585,6 +56386,8 @@ export namespace Prisma {
     regionId?: NullableStringFieldUpdateOperationsInput | string | null
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+    isZombie?: BoolFieldUpdateOperationsInput | boolean
+    zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type TicketUpdateWithoutReporterInput = {
@@ -55687,6 +57490,10 @@ export namespace Prisma {
      * @deprecated Use ProviderLicenseDefaultArgs instead
      */
     export type ProviderLicenseArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = ProviderLicenseDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use PlatformFeeConfigDefaultArgs instead
+     */
+    export type PlatformFeeConfigArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = PlatformFeeConfigDefaultArgs<ExtArgs>
 
   /**
    * Batch Payload for updateMany & deleteMany & createMany

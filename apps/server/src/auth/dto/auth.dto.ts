@@ -72,10 +72,26 @@ export class UpdateProfileDto {
   @Matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, { message: '邮箱格式不正确' })
   email?: string;
 
+  /**
+   * 证件号（大陆二代身份证 18 位，末位可为 X）。
+   * 提交/变更即置 realNameStatus=PENDING，等待管理员裁定（见 AuthService.updateProfile）。
+   */
   @IsOptional()
   @IsString()
-  @MaxLength(18, { message: '证件号过长' })
+  @Matches(/^\d{17}[\dXx]$/, { message: '身份证号格式不正确（应为 18 位，末位可为 X）' })
   idCard?: string;
+
+  /** 身份证人像面影像 URL（POST /api/assets/upload 回传的 /uploads/xxx） */
+  @IsOptional()
+  @IsString()
+  @MaxLength(512, { message: '证件影像地址过长' })
+  idCardFront?: string;
+
+  /** 身份证国徽面影像 URL */
+  @IsOptional()
+  @IsString()
+  @MaxLength(512, { message: '证件影像地址过长' })
+  idCardBack?: string;
 
   @IsOptional()
   @IsString()

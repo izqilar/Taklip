@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Patch,
   Delete,
   Body,
@@ -29,6 +30,7 @@ import {
   AssignRoleDto,
   ListUsersQueryDto,
   UpdateProviderReviewDto,
+  UpdateFeeConfigDto,
 } from './dto/admin.dto';
 import { CreateStaffDto, UpdateStaffDto } from '../console/dto/staff.dto';
 
@@ -402,6 +404,71 @@ export class AdminController {
     return this.adminService.deleteProviderAccount(req.user, id, body?.reason);
   }
 
+  /**
+   * 删除用户至回收站（软删除）：总台「用户管理·删除」。
+   * 仅 ADMIN（含具备 user:delete 权限的运维管理员）可调用；普通管理员前端不显示删除入口。
+   * 与「服务商管理·删除」(removeProvider，物理删除) 不同，此处仅标记 isZombie，可后续激活恢复。
+   */
+  @Delete('users/:id')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  deleteUser(
+    @Req() req: AdminRequest,
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.adminService.softDeleteUser(req.user, id, body?.reason);
+  }
+
+  /** 回收站：僵尸用户列表 */
+  @Get('zombie-users')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  listZombieUsers(@Query() query: ListUsersQueryDto) {
+    return this.adminService.listZombieUsers({
+      page: query.page ? Number(query.page) : undefined,
+      pageSize: query.pageSize ? Number(query.pageSize) : undefined,
+      keyword: query.keyword,
+    });
+  }
+
+  /** 回收站：僵尸用户详情 */
+  @Get('zombie-users/:id')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  getZombieUser(@Req() req: AdminRequest, @Param('id') id: string) {
+    return this.adminService.getZombieUserById(id, req.user.role);
+  }
+
+  /**
+   * 回收站：激活（恢复原数据）。将 isZombie 复位、状态置 ACTIVE，用户重新回到正常用户管理。
+   */
+  @Post('zombie-users/:id/activate')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  activateZombie(
+    @Req() req: AdminRequest,
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.adminService.activateZombieUser(req.user, id, body?.reason);
+  }
+
+  /**
+   * 回收站：彻底删除（物理清除）。仅针对回收站内用户，级联清理从属数据。
+   * 操作后该账号不复存在，后续只能完全重新注册新用户。
+   */
+  @Delete('zombie-users/:id')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  purgeZombie(
+    @Req() req: AdminRequest,
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.adminService.purgeZombieUser(req.user, id, body?.reason);
+  }
+
   // —— 支付闭环（管理员侧） ——
 
   /** 提现记录列表（ADMIN 全量，支持 ?status=pending 筛选） */
@@ -505,6 +572,27 @@ export class AdminController {
   @UseGuards(RolesGuard)
   stats() {
     return this.adminService.getStats();
+  }
+
+  /* ══════════════════ 财务中心 · 分账费率 ══════════════════
+   * 全局单例配置（id='default'）。GET 首次访问自动建行；
+   * PUT 只更新传入字段，服务商分账比例由服务端按 100 - 平台 - 代理商 推导。
+   */
+
+  /** 读取平台分账费率 */
+  @Get('fee-config')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  getFeeConfig() {
+    return this.adminService.getFeeConfig();
+  }
+
+  /** 更新平台分账费率 */
+  @Put('fee-config')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  updateFeeConfig(@Body() dto: UpdateFeeConfigDto, @Req() req: AdminRequest) {
+    return this.adminService.updateFeeConfig(req.user, dto);
   }
 
   /* ══════════════════ 我的团队（OrgStaff · orgType=CONSOLE） ══════════════════

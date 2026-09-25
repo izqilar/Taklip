@@ -1837,9 +1837,9 @@ export class ProviderConsoleController {
     @Body() body: any,
     @Query('subject') subject?: string,
   ) {
-    const c = await this.prisma.providerContract.findFirst({
-      where: { id, providerId: subjectId(req, subject) },
-    });
+    // ADMIN 越权编辑：跳过 providerId 归属过滤，按 id 直取（与 advanceContract 同源）
+    const where = req.user.role === 'ADMIN' ? { id } : { id, providerId: subjectId(req, subject) };
+    const c = await this.prisma.providerContract.findFirst({ where });
     if (!c) throw new NotFoundException('合同不存在或无权操作');
     const data: any = {};
     if (body.name != null) {
@@ -1893,6 +1893,21 @@ export class ProviderConsoleController {
       data.settlePeriod = v;
     }
     if (body.expireDate != null) data.expireDate = new Date(body.expireDate);
+    // 总台（ADMIN）专属：可修正签署阶段（含 VOIDED 回退等），并重置 / 重新发起协商记录。
+    // 普通服务商（SELF）仅能编辑自身商务条款，不允许改签署阶段或协商记录。
+    if (req.user.role === 'ADMIN') {
+      if (body.signStage != null) {
+        const v = String(body.signStage);
+        if (!['NEGOTIATING', 'AWAIT_PROVIDER_SIGN', 'AWAIT_SENIOR_SIGN', 'APPROVING', 'EFFECTIVE', 'EXPIRED', 'TERMINATED', 'VOIDED'].includes(v)) {
+          throw new BadRequestException('签署阶段非法');
+        }
+        data.signStage = v;
+      }
+      if (body.negotiation != null) {
+        if (!Array.isArray(body.negotiation)) throw new BadRequestException('协商记录须为数组');
+        data.negotiation = body.negotiation.map((x: any) => String(x));
+      }
+    }
     if (Object.keys(data).length === 0) throw new BadRequestException('无有效更新字段');
     return this.prisma.providerContract.update({ where: { id }, data });
   }
@@ -1907,14 +1922,15 @@ export class ProviderConsoleController {
     @Body() body: { text: string },
     @Query('subject') subject?: string,
   ) {
-    const c = await this.prisma.providerContract.findFirst({
-      where: { id, providerId: subjectId(req, subject) },
-    });
+    // ADMIN 总台视角（无 subject）按 id 直取；服务商自身按 providerId 归属过滤。
+    const where = req.user.role === 'ADMIN' ? { id } : { id, providerId: subjectId(req, subject) };
+    const c = await this.prisma.providerContract.findFirst({ where });
     if (!c) throw new NotFoundException('合同不存在或无权操作');
     const text = (body.text || '').trim();
     if (!text) throw new BadRequestException('协商记录内容必填');
     const stamp = new Date().toLocaleString('zh-CN', { hour12: false });
-    const next = [...(c.negotiation || []), `[${stamp}] 服务商：${text}`];
+    const prefix = req.user.role === 'ADMIN' ? '总台' : '服务商';
+    const next = [...(c.negotiation || []), `[${stamp}] ${prefix}：${text}`];
     return this.prisma.providerContract.update({
       where: { id },
       data: { negotiation: next },
@@ -1985,6 +2001,71 @@ export class ProviderConsoleController {
       where: { id },
       data: { signStage: 'EFFECTIVE', signDate: c.signDate ?? new Date() },
     });
+  }
+
+  /**
+   * 作废合同（ADMIN 全盘治理，@Roles('ADMIN')）：将合同阶段置为 VOIDED，
+   * 并按所选方向处置对应身份，使其无法以原身份继续开展业务。
+   *
+   * - direction=SUSPEND（挂起）：user.status = DISABLED（可恢复，保留角色 / 资质 / 辖区）。
+   * - direction=DEMOTE（降为普通用户）：user.role = USER + 清空 serviceRoles / pendingServiceRoles /
+   *   providerStatus=PENDING / agentId=null / regionId=null / regionPath=null（撤销经营能力，保留账号）。
+   *
+   * 合同通过 providerId 关联服务商 / 代理商主体；无论对方是 SERVICE_PROVIDER 还是 AGENT，
+   * 均按 providerId 解析目标账号，统一处置（与「辖区合同 / 平台合同」同源）。
+   * 禁止对当前登录账号自身作废（防误操作）。全程由总台执行，SELF 作用域服务商 / 代理商无此权限。
+   */
+  @Post('contracts/:id/void')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async voidContract(
+    @Req() req: ReqUser,
+    @Param('id') id: string,
+    @Body() body: { direction: 'SUSPEND' | 'DEMOTE'; note?: string },
+  ) {
+    const c = await this.prisma.providerContract.findUnique({
+      where: { id },
+      include: { provider: { select: { id: true, role: true, status: true } } },
+    });
+    if (!c) throw new NotFoundException('合同不存在');
+    if (!['SUSPEND', 'DEMOTE'].includes(body.direction)) {
+      throw new BadRequestException('作废方向非法（SUSPEND / DEMOTE）');
+    }
+    const targetId = c.providerId;
+    if (req.user.id === targetId) {
+      throw new BadRequestException('不能对当前登录账号作废其合同');
+    }
+    const stamp = new Date().toLocaleString('zh-CN', { hour12: false });
+    const dirLabel = body.direction === 'SUSPEND' ? '挂起' : '降为普通用户';
+    const negNote = `[${stamp}] 总台：合同作废（${dirLabel}${body.note ? ' · ' + String(body.note).trim() : ''}）`;
+
+    const userData: any = {};
+    if (body.direction === 'SUSPEND') {
+      userData.status = 'DISABLED';
+    } else {
+      userData.role = 'USER';
+      userData.serviceRoles = [];
+      userData.pendingServiceRoles = [];
+      userData.providerStatus = 'PENDING';
+      userData.agentId = null;
+      userData.regionId = null;
+      userData.regionPath = null;
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.providerContract.update({
+        where: { id },
+        data: {
+          signStage: 'VOIDED',
+          negotiation: [...(c.negotiation ?? []), negNote],
+        },
+      }),
+      this.prisma.user.update({
+        where: { id: targetId },
+        data: userData,
+      }),
+    ]);
+    return { ok: true, signStage: 'VOIDED', direction: body.direction, userId: targetId, userRoleAfter: userData.role, userStatusAfter: userData.status };
   }
 
   /** 我的评价：客户对我（服务商）的评价（含服务商回评字段） */

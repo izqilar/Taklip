@@ -140,6 +140,8 @@ exports.Prisma.UserScalarFieldEnum = {
   avatar: 'avatar',
   realName: 'realName',
   idCard: 'idCard',
+  idCardFront: 'idCardFront',
+  idCardBack: 'idCardBack',
   realNameStatus: 'realNameStatus',
   realNameVerifiedAt: 'realNameVerifiedAt',
   bio: 'bio',
@@ -160,7 +162,9 @@ exports.Prisma.UserScalarFieldEnum = {
   regionId: 'regionId',
   agentId: 'agentId',
   regionPath: 'regionPath',
-  status: 'status'
+  status: 'status',
+  isZombie: 'isZombie',
+  zombieAt: 'zombieAt'
 };
 
 exports.Prisma.ProjectScalarFieldEnum = {
@@ -572,6 +576,19 @@ exports.Prisma.ProviderLicenseScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.PlatformFeeConfigScalarFieldEnum = {
+  id: 'id',
+  platformRate: 'platformRate',
+  agentRate: 'agentRate',
+  providerRate: 'providerRate',
+  settlePeriod: 'settlePeriod',
+  categoryRates: 'categoryRates',
+  minWithdrawCents: 'minWithdrawCents',
+  updatedBy: 'updatedBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -711,7 +728,8 @@ exports.Prisma.ModelName = {
   ProviderClient: 'ProviderClient',
   ProviderClientReach: 'ProviderClientReach',
   AuditLog: 'AuditLog',
-  ProviderLicense: 'ProviderLicense'
+  ProviderLicense: 'ProviderLicense',
+  PlatformFeeConfig: 'PlatformFeeConfig'
 };
 
 /**

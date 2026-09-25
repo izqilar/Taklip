@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsInt, Min, Max, IsObject } from 'class-validator';
 import type { Role, UserStatus, ProviderStatus } from '../../../prisma/prisma-client';
 
 /** 启用/禁用账号 */
@@ -48,4 +48,42 @@ export class UpdateProviderReviewDto {
 
   @IsString()
   reason!: string;
+}
+
+/**
+ * 更新平台分账费率（运营端「财务中心 · 分账费率」页）。
+ * 全部字段可选，前端只传发生变化的字段。
+ * providerRate 不接收前端入参：恒 = 100 - platformRate - agentRate，由服务端推导落库，
+ * 避免三方比例被手工写歪（三者之和必须恒为 100）。
+ */
+export class UpdateFeeConfigDto {
+  /** 平台抽成（百分比整数 0-100） */
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  platformRate?: number;
+
+  /** 代理商分账（百分比整数 0-100） */
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  agentRate?: number;
+
+  /** 结算周期 */
+  @IsOptional()
+  @IsIn(['MONTH', 'HALF_MONTH', 'WEEK'])
+  settlePeriod?: string;
+
+  /** 类目费率覆盖 { [品类]: 平台抽成百分比 }；未命中的类目回落到 platformRate */
+  @IsOptional()
+  @IsObject()
+  categoryRates?: Record<string, number>;
+
+  /** 最低提现门槛（分），0 表示不限制 */
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  minWithdrawCents?: number;
 }
