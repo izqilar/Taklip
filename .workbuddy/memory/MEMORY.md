@@ -19,6 +19,8 @@
 ## 1 环境 / 启动（★重启铁律）
 - DB postgresql://h5design:h5design_dev_2026@localhost:5432/h5design_platform；密码 Test123456。账号：ADMIN 13800000002、SP 13800000001(dev123456)、USER 13900001001~003(Test123456)。
 - startup.ps1 启动 detached；:3000 跑 `node dist/main`（watchdog 每5s探活重启）。**改 server 源码→`pnpm --filter @h5design/server run build:compiled`→kill :3000 让 watchdog 拉新代码**（只改源码不 build=线上旧行为）。改 core→重建 dist；prisma schema→regenerate。验证 `pnpm --filter @h5design/{web,admin,editor,render,ui,server} run typecheck`。
+- ★★**加表/改 schema 的可用迁移路径（2026-09-26 实测）**：`prisma migrate dev` 在本仓库**不可用**（shadow DB 重放 `20260924000000_add_team_join_application` 报 `type "MessageScope" does not exist`，既有历史问题）。改用：手写 `prisma/migrations/<ts>_<name>/migration.sql` → `./node_modules/.bin/prisma db execute --file <sql> --schema prisma/schema.prisma` → `prisma migrate resolve --applied <name>` → `prisma generate`。
+- ★★`prisma generate` 会因运行中的服务占用 `prisma/prisma-client/query_engine-windows.dll.node` 报 **EPERM rename** → 先停看门狗（`scripts/server-watchdog.js`）与 `node dist/main.js`，generate + `build:compiled` 完再重启看门狗。
 
 ## 2 draft/live 口径 ★
 加载一律 `draftSchema ?? schema`（effectiveSchema）；保存只写草稿；发布=原子替换 schema+清草稿。列表行归一后抹 draftSchema，SERVICE_SELECT 须含 draftSchema:true。
