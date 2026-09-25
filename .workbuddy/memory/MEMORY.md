@@ -9,6 +9,12 @@
 
 ## 0.5 git / 推送
 - 沙箱无 GitHub 凭据/SSH（~/.ssh 空、22 关闭），HTTPS push 需用户提供令牌。fine-grained PAT 坑：`permissions.push=true` 不代表可写；传输/API 被拒(403 "denied to izqilar")多为令牌 Contents 未设 Read and write。判定：curl 建引用 403=无写权。令牌仅用于一次性 `git -c credential.helper= push`，不写 .git/config。
+- ★★推送失败根因（2026-09-25 定位，别再误判为凭据问题）：**DNS 污染 + 国际出口受限**。
+  ① `nslookup github.com` 解析到 `66.220.148.145` / `2a03:2880:*`（Facebook 段），非 GitHub 真实 IP；
+  ② 百度 HTTPS 200 可达，但 1.1.1.1 / 8.8.8.8 / cloudflare-dns.com / dns.google 全不通，DoH 也取不到真 IP；
+  ③ WinINET 已配 `ProxyServer=127.0.0.1:7890`（Clash 默认）但 `ProxyEnable=0`、7890 无监听 → **代理软件未启动**。
+  ⇒ 修复路径：用户先启动代理 → `git -c http.proxy=http://127.0.0.1:7890 push`（禁用沙箱无效）。
+  保底备份用 `git bundle create <path> --all`（含全历史，可随时恢复/推送）。
 
 ## 1 环境 / 启动（★重启铁律）
 - DB postgresql://h5design:h5design_dev_2026@localhost:5432/h5design_platform；密码 Test123456。账号：ADMIN 13800000002、SP 13800000001(dev123456)、USER 13900001001~003(Test123456)。

@@ -4,9 +4,11 @@ import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import type { ServiceRole } from '../../prisma/prisma-client';
+import { Prisma } from '../../prisma/prisma-client';
 import { loadStaffContext } from '../console/staff-context';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import type { JwtUser } from '../common/types/jwt-user';
+import { JWT_REFRESH_SECRET } from './jwt-secrets';
 
 function vipTierName(level: number) {
   if (level >= 3) return '黑金会员';
@@ -67,27 +69,28 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, SALT_ROUNDS);
 
-    // 注册即入驻（P1）：写入实名与所选区域，**不写 role、不创建入驻申请**。
-    // role 变更与资质落地的唯一真源仍是「提交入驻申请 → 代理一审 → 总台终审 APPROVED」；
-    // 未鉴权的注册接口不承载资质材料，避免被刷。
-    let regionPath: string | null = null;
-    if (dto.regionId) {
-      const region = await this.prisma.region.findUnique({
-        where: { id: dto.regionId },
-        select: { regionPath: true },
+    // 注册即入驻（P1）：写入实名，**不写 role、不创建入驻申请、不写入任何区域维度**。
+    // 区域维度（regionId / regionPath）是访问控制（REGION 作用域）与代理商归属判定的权威输入，
+    // 必须由管理员在入驻审核链路中核验写入，绝不可由未鉴权的注册接口自断言（审查 M1/M2）。
+    // role 变更与资质落地的唯一真源仍是「提交入驻申请 → 代理一审 → 总台终审 APPROVED」。
+    let user;
+    try {
+      user = await this.prisma.user.create({
+        data: {
+          phone: dto.phone,
+          password: hashedPassword,
+          nickname: dto.nickname ?? `用户${dto.phone.slice(-4)}`,
+          ...(dto.realName ? { realName: dto.realName } : {}),
+        },
       });
-      regionPath = region?.regionPath ?? null;
+    } catch (e) {
+      // 并发同号注册（check-then-create 无事务）：DB 唯一约束兜底防重，
+      // 败者不应收到 500，转为 409  ConflictException 让前端友好提示。
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new ConflictException('该手机号已注册');
+      }
+      throw e;
     }
-
-    const user = await this.prisma.user.create({
-      data: {
-        phone: dto.phone,
-        password: hashedPassword,
-        nickname: dto.nickname ?? `用户${dto.phone.slice(-4)}`,
-        ...(dto.realName ? { realName: dto.realName } : {}),
-        ...(dto.regionId && regionPath ? { regionId: dto.regionId, regionPath } : {}),
-      },
-    });
 
     return this.generateTokens(user.id, user.phone ?? '');
   }
@@ -112,7 +115,7 @@ export class AuthService {
   async refresh(refreshToken: string) {
     try {
       const payload = this.jwtService.verify(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET ?? 'h5design_refresh_secret_dev',
+        secret: JWT_REFRESH_SECRET,
       });
       await this.prisma.user.update({ where: { id: payload.sub }, data: { lastLoginAt: new Date() } });
       return this.generateTokens(payload.sub, payload.phone);
@@ -207,8 +210,10 @@ export class AuthService {
         status: 'FIRST_PENDING',
         reason: '用户自助提交入驻服务商申请',
         serviceScopes: validRoles,
-        // 归属基线（M2）：带上申请人当前区域，供终审解析受管代理商
-        regionPath: user.regionPath ?? null,
+        // 归属基线（M2 修复）：不再沿用注册/用户自填的 regionPath（未经管理员核验、可被自断言）。
+        // 申请的 regionPath 必须由用户在「提交入驻申请」表单中显式填写并经一审/终审核验；
+        // 此处置空，确保代理商归属判定只基于受核验的申请区域，杜绝非核验值影响归属。
+        regionPath: null,
       },
     });
   }
@@ -502,7 +507,7 @@ export class AuthService {
     });
 
     const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: process.env.JWT_REFRESH_SECRET ?? 'h5design_refresh_secret_dev',
+      secret: JWT_REFRESH_SECRET,
       expiresIn: '7d',
     });
 

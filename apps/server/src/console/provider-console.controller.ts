@@ -33,6 +33,7 @@ import {
 import { PublishService } from '../publish/publish.service';
 import { StaffService } from './staff.service';
 import { CreateStaffDto, UpdateStaffDto } from './dto/staff.dto';
+import { AdvanceContractDto } from './dto/advance-contract.dto';
 
 type ReqUser = Express.Request & { user: JwtUser };
 
@@ -1957,7 +1958,7 @@ export class ProviderConsoleController {
   @UseGuards(RolesGuard)
   async advanceContract(
     @Param('id') id: string,
-    @Body() body: { stage: 'APPROVING' | 'EFFECTIVE'; note?: string },
+    @Body() body: AdvanceContractDto,
   ) {
     const c = await this.prisma.providerContract.findUnique({ where: { id } });
     if (!c) throw new NotFoundException('合同不存在');

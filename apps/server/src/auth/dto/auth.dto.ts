@@ -6,7 +6,7 @@ export class RegisterDto {
   phone!: string;
 
   @IsString()
-  @MinLength(6, { message: '密码至少 6 位' })
+  @MinLength(8, { message: '密码至少 8 位' })
   @MaxLength(64, { message: '密码过长' })
   password!: string;
 
@@ -20,14 +20,11 @@ export class RegisterDto {
   @MaxLength(32, { message: '真实姓名过长' })
   realName?: string;
 
-  @IsOptional()
-  @IsString()
-  regionId?: string;
-
   /**
    * 入驻意图：user（默认，普通用户）/ provider（服务商）/ agent（代理商）。
-   * **仅作前端引导与统计用，不落库、不改变 role** ——
-   * 角色变更只能由总台终审 APPROVED 落地（入驻管线单一真源）。
+   * **仅作前端引导与统计用，不落库、不改变 role、不携带任何区域维度** ——
+   * 角色变更与区域归属只能由总台终审 APPROVED 落地（入驻管线单一真源），
+   * 注册接口绝不接受/写入 regionId / regionPath（审查 M1）。
    */
   @IsOptional()
   @IsString()

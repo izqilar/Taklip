@@ -24,6 +24,16 @@ type ReqUser = Express.Request & { user: JwtUser };
 const DEMO_USER_PHONE = '13900001001';
 
 /**
+ * 手机号脱敏（审查 L5）：保留前 3 位与后 4 位，中间以 * 填充，
+ * 用于业务反馈/工单中向他方展示他人手机号时降低信息暴露。
+ */
+function maskPhone(phone: string): string {
+  const v = (phone ?? '').trim();
+  if (!/^1\d{10}$/.test(v)) return v;
+  return v.slice(0, 3) + '*'.repeat(7) + v.slice(-4);
+}
+
+/**
  * 入驻资料是否强制齐全（缺件直接 400，不让空壳申请进一审）。
  *
  * 当前为 **false（兼容态）**：web 端 Apply.tsx 尚未收集资质材料，强制会直接打断现有提交。
@@ -540,7 +550,13 @@ export class UserConsoleController {
       }),
       this.prisma.ticket.count({ where }),
     ]);
-    return { items, total, page: p, pageSize: ps };
+    // 审查 L5：反馈/工单中对方（target）手机号属他人敏感信息，响应前脱敏；
+    // reporter 为发起者本人，可保留其自身手机号。
+    const masked = items.map((it: any) => ({
+      ...it,
+      target: it.target ? { ...it.target, phone: it.target.phone ? maskPhone(it.target.phone) : it.target.phone } : it.target,
+    }));
+    return { items: masked, total, page: p, pageSize: ps };
   }
 
   /** 消息中心（用户可见的已发布消息） */
@@ -1209,7 +1225,12 @@ export class UserConsoleController {
         },
         select: { id: true },
       });
-      if (pendingDup) riskFlags.push('DUPLICATE_CERT_NO');
+      // 审查 L7：同一证件号已存在**他人**的在途申请 → 直接拦截，避免并发下两个不同用户
+      // 各建一份相同证件的入驻申请（TOCTOU）。同用户自身的在途单由下方 `dup` 去重复用，
+      // 不会落到此分支。已 APPROVED 主体已在上方拦截。
+      if (pendingDup) {
+        throw new BadRequestException('该证件号码已有在途入驻申请，请勿重复提交');
+      }
     }
     if (kind === 'provider') {
       const rp = (body.regionPath ?? '').toString().trim();

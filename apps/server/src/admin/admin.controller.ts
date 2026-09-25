@@ -72,7 +72,7 @@ export class AdminController {
   @UseGuards(RolesGuard)
   @UseInterceptors(DataScopeInterceptor)
   getUser(@Param('id') id: string, @Req() req: AdminRequest) {
-    return this.adminService.getUserById(id, req.dataScope ?? {});
+    return this.adminService.getUserById(id, req.dataScope ?? {}, req.user.role);
   }
 
   /** 启用/禁用账号（ADMIN 专用） */

@@ -57,6 +57,16 @@ const userDetailSelect = {
   providerWallet: { select: { balance: true, frozen: true, totalIncome: true, withdrawn: true } },
 } as const;
 
+/**
+ * 证件号脱敏（审查 L4）：保留前 4 位与后 4 位，中间以 * 填充，
+ * 既满足「核对身份」所需的可见片段，又避免完整身份证号在运营端界面/响应中明文暴露。
+ */
+export function maskIdCard(idCard: string): string {
+  const v = idCard.trim();
+  if (v.length <= 8) return v.slice(0, 2) + '*'.repeat(Math.max(v.length - 2, 1));
+  return v.slice(0, 4) + '*'.repeat(v.length - 8) + v.slice(-4);
+}
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -107,15 +117,20 @@ export class AdminService {
     return { items, total, page, pageSize };
   }
 
-  /** 用户详情：受数据作用域约束（辖区外返回 404）。附带角色衍生指标，供四分区「账户详情」渲染。 */
-  async getUserById(id: string, scope: Prisma.UserWhereInput) {
+  /** 用户详情：受数据作用域约束（辖区外返回 404）。附带角色衍生指标，供四分区「账户详情」渲染。
+   * @param viewerRole 调用者角色：仅 ADMIN 可见完整证件号；AGENT 等其他角色返回掩码后的 idCard（审查 L4）。
+   */
+  async getUserById(id: string, scope: Prisma.UserWhereInput, viewerRole?: string) {
     const user = await this.prisma.user.findFirst({
       where: { id, ...scope },
       select: userDetailSelect,
     });
     if (!user) throw new NotFoundException('用户不存在或不在你的管辖范围');
     const roleExtra = await this.authService.buildRoleExtra(user);
-    return { ...user, ...roleExtra };
+    // 最小权限：证件号属敏感信息，仅总台管理员可见明文；代理商等次级监督角色返回掩码。
+    const maskedIdCard =
+      viewerRole === 'ADMIN' || !user.idCard ? user.idCard : maskIdCard(user.idCard);
+    return { ...user, idCard: maskedIdCard, ...roleExtra };
   }
 
   /** 启用/禁用账号（ADMIN 专用）。禁止禁用自己以免锁死。 */

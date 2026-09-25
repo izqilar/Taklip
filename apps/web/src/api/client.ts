@@ -418,7 +418,7 @@ export const api = {
     phone: string,
     password: string,
     nickname?: string,
-    extra?: { realName?: string; regionId?: string; intent?: 'user' | 'provider' | 'agent' },
+    extra?: { realName?: string; intent?: 'user' | 'provider' | 'agent' },
   ) =>
     request<AuthResponse>('/api/auth/register', {
       method: 'POST',

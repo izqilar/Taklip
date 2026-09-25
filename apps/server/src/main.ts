@@ -11,7 +11,24 @@ import { resolveFontsDir, FONTS_URL_PREFIX } from './common/font-dirs';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.enableCors();
+
+  // 安全：在反向代理 / 负载均衡后部署时启用，使 req.ip 解析为真实客户端地址，
+  // 否则限流守卫（rate-limit.guard）取到的 IP 失真，按真实客户端的限流将失效（审查 M4）。
+  // 本地直连（无代理）时该设置无副作用；生产建议改为可信代理的精确 IP/网段。
+  app.set('trust proxy', 1);
+
+  // CORS：显式源白名单，禁止默认反射任意 Origin（审查 L1）。
+  // 默认包含本地三端开发源；生产通过 CORS_ORIGINS 环境变量覆盖（逗号分隔）。
+  const defaultOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+  const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
+    : defaultOrigins;
+  app.enableCors({
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  });
 
   // 调高 JSON 请求体上限（默认 100kb）。模板提交会把 html-to-image 生成的封面 base64
   // 与完整作品 Schema 一并 POST，常规 H5 页面极易超过 100kb 触发 413，导致前端误报

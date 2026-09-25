@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { loadStaffContext } from '../../console/staff-context';
+import { JWT_SECRET } from '../jwt-secrets';
 
 interface JwtPayload {
   sub: string;
@@ -36,7 +37,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET ?? 'h5design_jwt_secret_dev',
+      secretOrKey: JWT_SECRET,
     });
   }
 
