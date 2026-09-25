@@ -196,6 +196,7 @@ export const QualificationDetailPage = () => {
         title={t('qual.detailTitle', '入驻申请详情')}
         sub={t('qual.sub', '用户资格升级隧道 · 终审裁定')}
         chip="总台 · 运营监管"
+        onBack={() => navigate('/admin/messages')}
         extra={
           !editing && app && ['FINAL_PENDING'].includes(app.status) && !readonly ? (
             <button
@@ -385,7 +386,20 @@ export const QualificationDetailPage = () => {
                 onChange={(e) => setOpinion(e.target.value)}
                 placeholder={t('qual.opinionPlaceholder', '可填写对申请人的整改要求或审核备注（可选）')}
               />
-              <div style={{ display: 'flex', gap: 10, marginTop: 12, justifyContent: 'flex-end' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 10,
+                  marginTop: 12,
+                  justifyContent: 'flex-end',
+                  position: 'sticky',
+                  bottom: 0,
+                  background: T.bg,
+                  padding: '12px 0',
+                  borderTop: `1px solid ${T.border}`,
+                  zIndex: 5,
+                }}
+              >
                 <Button onClick={() => setEditing(false)} disabled={acting}>
                   {t('button.cancel', '取消')}
                 </Button>

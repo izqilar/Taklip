@@ -1585,6 +1585,11 @@ export class UserConsoleController {
 
     // 结果通知（此前入驻管线**没有任何审核回执**，用户只能靠刷新页面猜状态）
     await this.notifyQualificationResult(req.user, app, status, note);
+    // 终审已处理 → 消解总台「入驻终审待办」消息，避免收件箱遗留可操作项
+    // （该待办于 fillQualification 进入 FINAL_PENDING 时投递，scope=OWN/targetRole=ADMIN）
+    if (body.final) {
+      await this.prisma.message.deleteMany({ where: { bizType: 'QUALIFICATION', bizId: id } });
+    }
     return updated;
   }
 

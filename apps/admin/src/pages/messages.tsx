@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Select, Form, Input, Typography, message as antdMessage } from 'antd';
+import { Select, Form, Input, Typography, Tag, message as antdMessage } from 'antd';
 import { dataProvider } from '../providers/dataProvider';
 import { getStoredUser } from '../utility';
 import { StatusTag } from '../components/common/StatusTag';
@@ -156,7 +156,22 @@ export const MessageList = () => {
         width: 100,
         render: (s: string, r: any) => (s === 'REGION' ? `${t(MSG_SCOPE.REGION)}${r.regionPath ? `(${r.regionPath})` : ''}` : t(MSG_SCOPE[s] ?? s)),
       },
-      { title: t("pages.col.title"), dataIndex: 'title', ellipsis: true },
+      {
+        title: t("pages.col.title"),
+        dataIndex: 'title',
+        ellipsis: true,
+        render: (v: string, r: any) =>
+          r.bizType === 'QUALIFICATION' && r.bizId ? (
+            <span>
+              <Tag color="gold" style={{ marginRight: 6 }}>
+                {t('pages.tag.todo', '终审待办')}
+              </Tag>
+              {v}
+            </span>
+          ) : (
+            v
+          ),
+      },
       {
         title: t("pages.col.publisher"),
         dataIndex: ['author', 'nickname'],
@@ -172,28 +187,48 @@ export const MessageList = () => {
       {
         title: t('pages.col.action', '操作'),
         key: 'op',
-        width: 140,
+        width: 150,
         render: (_: any, r: any) => {
-          // 入驻终审待办：提供「查看 / 审核」直达业务处理整页
+          // 入驻终审待办：提供「查看 / 审核」直达业务处理整页（键盘可达）
           if (r.bizType === 'QUALIFICATION' && r.bizId) {
             const to = (mode: string) => navigate(`/admin/qualifications/${r.bizId}?mode=${mode}`);
+            const linkStyle = (active: boolean): CSSProperties => ({
+              fontSize: 13,
+              cursor: active ? 'pointer' : 'not-allowed',
+              color: active ? T.accent : T.ink3,
+              opacity: active ? 1 : 0.55,
+              whiteSpace: 'nowrap',
+            });
+            const onKey = (fn: () => void) => (e: KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fn();
+              }
+            };
+            const reviewActive = !readonly;
             return (
               <div style={{ display: 'flex', gap: 12 }}>
                 <span
+                  role="button"
+                  aria-label={t('common.view', '查看')}
+                  tabIndex={0}
                   onClick={() => to('view')}
-                  style={{ fontSize: 13, color: T.ink2, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  onKeyDown={onKey(() => to('view'))}
+                  onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                  onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                  style={linkStyle(true)}
                 >
                   {t('common.view', '查看')}
                 </span>
                 <span
-                  onClick={readonly ? undefined : () => to('review')}
-                  style={{
-                    fontSize: 13,
-                    cursor: readonly ? 'not-allowed' : 'pointer',
-                    color: readonly ? T.ink3 : T.accent,
-                    opacity: readonly ? 0.55 : 1,
-                    whiteSpace: 'nowrap',
-                  }}
+                  role="button"
+                  aria-label={t('common.review', '审核')}
+                  tabIndex={reviewActive ? 0 : -1}
+                  onClick={reviewActive ? () => to('review') : undefined}
+                  onKeyDown={reviewActive ? onKey(() => to('review')) : undefined}
+                  onMouseEnter={(e) => reviewActive && (e.currentTarget.style.textDecoration = 'underline')}
+                  onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                  style={linkStyle(reviewActive)}
                 >
                   {t('common.review', '审核')}
                 </span>
