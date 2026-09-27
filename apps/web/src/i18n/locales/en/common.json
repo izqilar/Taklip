@@ -115,7 +115,12 @@
     "readonlyHintWebEdit": "This is a read-only preview. Click \"Edit\" to modify it in the web editor.",
     "editInAdmin": "Edit in Admin",
     "online": "Online",
-    "visitH5": "Open H5"
+    "visitH5": "Open H5",
+    "canvas": "Canvas size",
+    "pages": "Pages",
+    "music": "Background music",
+    "musicSet": "Set",
+    "musicNone": "Not set"
   },
   "home": {
     "heroTitle": "Design H5, simplified",

@@ -115,7 +115,12 @@
     "readonlyHintWebEdit": "此页为只读预览，点击「编辑」可在 web 端编辑器内直接修改。",
     "editInAdmin": "前往运营端编辑",
     "online": "线上访问",
-    "visitH5": "访问 H5"
+    "visitH5": "访问 H5",
+    "canvas": "画布尺寸",
+    "pages": "页数",
+    "music": "背景音乐",
+    "musicSet": "已设置",
+    "musicNone": "未设置"
   },
   "home": {
     "heroTitle": "做 H5，就这么简单",
