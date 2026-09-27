@@ -7,6 +7,8 @@
  * 层级关系：Project → Page[] → Element[]
  */
 
+import type { FillType, GradientFill, PatternFill } from './fill';
+
 /** 元素类型枚举。新增元素类型只需在此扩展 + 注册渲染组件。 */
 export type ElementType =
   | 'text'
@@ -198,6 +200,18 @@ export interface BaseElement {
    * 只作用于轮廓色，不影响填充；与颜色自带的 alpha 相乘（不覆盖）。
    */
   strokeOpacity?: number;
+  /**
+   * 填充类型：单色（默认）/ 渐变 / 图案。
+   * **缺省即 'solid'** —— 历史数据与未设置该字段的元素全部按单色渲染，行为与改造前完全一致。
+   */
+  fillType?: FillType;
+  /**
+   * 渐变填充配置，仅在 fillType='gradient' 时生效。
+   * 与 `fill`（单色）、`patternFill` 是三个独立存储槽，切换类型不互相覆盖。
+   */
+  gradientFill?: GradientFill;
+  /** 图案填充配置，仅在 fillType='pattern' 时生效（同上，独立存储槽）。 */
+  patternFill?: PatternFill;
 }
 
 /** 文本元素 */

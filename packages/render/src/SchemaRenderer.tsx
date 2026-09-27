@@ -31,7 +31,7 @@ import type {
   LikeElement,
   WidgetElement,
 } from '@h5design/core';
-import { cornerRadiusToCss, normalizeCornerRadius, buildClipSvgPath, normalizeImageClip, resolveShadow, resolveShadowColor, hasRealShadow, subscribeFontLoad, resolveFillColor, resolveStrokeColor, lineStyleToDash, lineStyleToCssBorderStyle, flipCssTransform } from '@h5design/core';
+import { cornerRadiusToCss, normalizeCornerRadius, buildClipSvgPath, normalizeImageClip, resolveShadow, resolveShadowColor, hasRealShadow, subscribeFontLoad, resolveFillColor, resolveStrokeColor, lineStyleToDash, lineStyleToCssBorderStyle, flipCssTransform, getFillType, domFillStyle, svgFill, svgGradientGeometry, type SvgFillDef } from '@h5design/core';
 import { clearTextMeasureCache } from './lib/textLayout';
 import { safeLink, safeMedia, safeBackgroundImage } from './lib/sanitize';
 import {
@@ -458,6 +458,25 @@ function TextElementView({
     textDecoration: el.textDecoration,
   };
 
+  // 渐变 / 图案填充：文本没有 background 可用，改用 `background-clip: text` 把背景裁到字形上。
+  // 关键：背景尺寸恒等于**元素框**（渐变）或瓦片边长（图案），再按「该行字形盒在元素内的偏移」
+  // 负向平移 background-position —— 这样每一行的背景都精确对齐元素框，
+  // 与 Konva（渐变作用于整个文本节点、而非逐行）完全等价。
+  const fillType = getFillType(el);
+  const domFill = domFillStyle(el);
+  const textPaintStyle: CSSProperties | undefined =
+    fillType !== 'solid' && domFill.backgroundImage
+      ? {
+          color: 'transparent',
+          backgroundImage: domFill.backgroundImage,
+          backgroundSize: domFill.backgroundSize ?? `${el.width}px ${el.height}px`,
+          backgroundRepeat: domFill.backgroundRepeat ?? 'no-repeat',
+          backgroundClip: 'text',
+          WebkitBackgroundClip: 'text',
+        }
+      : undefined;
+  const solidTextColor = resolveFillColor(el) ?? el.fill;
+
   return (
     <div
       key={el.id}
@@ -511,14 +530,17 @@ function TextElementView({
                   textAlignLast: 'justify' as const,
                 }
               : glyphBase;
+            // 行盒在元素内的偏移：渐变 / 图案需要用它把背景反向平移回元素框坐标系
+            const lineLeft = stretched ? 0 : resolveLineOffset(ln.width, el.width, fallbackAlign);
+            const lineTop = blockTop + i * lineHeightPx;
             return (
               <div
                 key={i}
                 ref={i === 0 ? firstWrapperRef : undefined}
                 style={{
                   position: 'absolute',
-                  left: stretched ? 0 : resolveLineOffset(ln.width, el.width, fallbackAlign),
-                  top: blockTop + i * lineHeightPx,
+                  left: lineLeft,
+                  top: lineTop,
                   width: stretched ? el.width : ln.width,
                   height: lineHeightPx,
                   direction: dir,
@@ -538,7 +560,18 @@ function TextElementView({
                     {ln.text}
                   </span>
                 )}
-                <span ref={i === 0 ? firstFillRef : undefined} style={{ ...glyph, color: el.fill }}>
+                <span
+                  ref={i === 0 ? firstFillRef : undefined}
+                  style={
+                    textPaintStyle
+                      ? {
+                          ...glyph,
+                          ...textPaintStyle,
+                          backgroundPosition: `${-lineLeft}px ${-(lineTop + (glyphBase.top as number))}px`,
+                        }
+                      : { ...glyph, color: solidTextColor }
+                  }
+                >
                   {ln.text}
                 </span>
               </div>
@@ -546,6 +579,47 @@ function TextElementView({
           })}
         </div>
     </div>
+  );
+}
+
+/**
+ * 渐变 / 图案填充的 SVG `<defs>`（core 只产出数据，这里负责转成节点）。
+ *
+ * 用 `gradientUnits="userSpaceOnUse"` 而不是默认的 `objectBoundingBox`：
+ * 前者直接给出元素局部 px 坐标，能与 Konva 的 `fillLinearGradientStart/EndPoint`
+ * 用**同一套** `gradientLineGeometry` 换算，避免非正方形元素上渐变被拉伸变形。
+ */
+function SvgFillDefs({ def, width, height }: { def: SvgFillDef; width: number; height: number }) {
+  if (def.kind === 'pattern') {
+    return (
+      <defs>
+        <pattern id={def.id} patternUnits="userSpaceOnUse" width={def.tile} height={def.tile}>
+          <image href={def.href} x={0} y={0} width={def.tile} height={def.tile} />
+        </pattern>
+      </defs>
+    );
+  }
+  if (def.kind === 'radial') {
+    const g = svgGradientGeometry(def, width, height) as { cx: number; cy: number; r: number };
+    return (
+      <defs>
+        <radialGradient id={def.id} gradientUnits="userSpaceOnUse" cx={g.cx} cy={g.cy} r={g.r}>
+          {(def.stops ?? []).map((s, i) => (
+            <stop key={i} offset={s.offset} stopColor={s.color} />
+          ))}
+        </radialGradient>
+      </defs>
+    );
+  }
+  const g = svgGradientGeometry(def, width, height) as { x1: number; y1: number; x2: number; y2: number };
+  return (
+    <defs>
+      <linearGradient id={def.id} gradientUnits="userSpaceOnUse" x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2}>
+        {(def.stops ?? []).map((s, i) => (
+          <stop key={i} offset={s.offset} stopColor={s.color} />
+        ))}
+      </linearGradient>
+    </defs>
   );
 }
 
@@ -659,7 +733,7 @@ function renderElement(el: Element, scale = 1): ReactNode {
       const rectEl = el as RectElement;
       const hasBorder = (rectEl.borderWidth || 0) > 0;
       return renderShape({
-        backgroundColor: resolveFillColor(el) ?? el.fill,
+        ...domFillStyle(el),
         border: hasBorder
           ? `${rectEl.borderWidth}px solid ${rectEl.borderColor || '#000000'}`
           : resolveStrokeColor(el)
@@ -676,7 +750,7 @@ function renderElement(el: Element, scale = 1): ReactNode {
       const diameter = circleEl.radius ? circleEl.radius * 2 : el.width;
       return renderShape(
         {
-          backgroundColor: resolveFillColor(el) ?? el.fill,
+          ...domFillStyle(el),
           border: resolveStrokeColor(el)
             ? `${el.strokeWidth ?? 1}px ${lineStyleToCssBorderStyle(el.lineStyle)} ${resolveStrokeColor(el)}`
             : undefined,
@@ -728,7 +802,7 @@ function renderElement(el: Element, scale = 1): ReactNode {
     case 'button': {
       const style: CSSProperties = {
         ...commonStyle,
-        backgroundColor: el.fill,
+        ...domFillStyle(el),
         color: el.color,
         borderRadius: el.radius,
         display: 'flex',
@@ -824,6 +898,7 @@ function renderElement(el: Element, scale = 1): ReactNode {
 
     case 'star': {
       const pts = starPoints(el.width, el.height, el.points ?? 5);
+      const paint = svgFill(el, `fill-${el.id}`);
       return (
         <svg
           key={el.id}
@@ -832,9 +907,10 @@ function renderElement(el: Element, scale = 1): ReactNode {
           width={el.width}
           height={el.height}
         >
+          {paint.def ? <SvgFillDefs def={paint.def} width={el.width} height={el.height} /> : null}
           <polygon
             points={pts}
-            fill={resolveFillColor(el) ?? el.fill}
+            fill={paint.fillAttr}
             stroke={resolveStrokeColor(el)}
             strokeWidth={el.strokeWidth ?? 0}
             strokeDasharray={svgDashFromLineStyle(el.lineStyle)}
@@ -845,6 +921,7 @@ function renderElement(el: Element, scale = 1): ReactNode {
 
     case 'triangle': {
       const pts = `${el.width / 2},0 ${el.width},${el.height} 0,${el.height}`;
+      const paint = svgFill(el, `fill-${el.id}`);
       return (
         <svg
           key={el.id}
@@ -853,9 +930,10 @@ function renderElement(el: Element, scale = 1): ReactNode {
           width={el.width}
           height={el.height}
         >
+          {paint.def ? <SvgFillDefs def={paint.def} width={el.width} height={el.height} /> : null}
           <polygon
             points={pts}
-            fill={resolveFillColor(el) ?? el.fill}
+            fill={paint.fillAttr}
             stroke={resolveStrokeColor(el)}
             strokeWidth={el.strokeWidth ?? 0}
             strokeDasharray={svgDashFromLineStyle(el.lineStyle)}
@@ -866,7 +944,7 @@ function renderElement(el: Element, scale = 1): ReactNode {
 
     case 'ellipse':
       return renderShape({
-        backgroundColor: resolveFillColor(el) ?? el.fill,
+        ...domFillStyle(el),
         border: resolveStrokeColor(el)
           ? `${el.strokeWidth ?? 1}px ${lineStyleToCssBorderStyle(el.lineStyle)} ${resolveStrokeColor(el)}`
           : undefined,
@@ -876,6 +954,7 @@ function renderElement(el: Element, scale = 1): ReactNode {
     case 'polygon': {
       const polyEl = el as PolygonElement;
       const polyPts = regularPolygonPoints(el.width, el.height, polyEl.sides ?? 5);
+      const paint = svgFill(el, `fill-${el.id}`);
       return (
         <svg
           key={el.id}
@@ -884,9 +963,10 @@ function renderElement(el: Element, scale = 1): ReactNode {
           width={el.width}
           height={el.height}
         >
+          {paint.def ? <SvgFillDefs def={paint.def} width={el.width} height={el.height} /> : null}
           <polygon
             points={polyPts}
-            fill={resolveFillColor(el) ?? el.fill}
+            fill={paint.fillAttr}
             stroke={resolveStrokeColor(el)}
             strokeWidth={el.strokeWidth ?? 0}
             strokeDasharray={svgDashFromLineStyle(el.lineStyle)}

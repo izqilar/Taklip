@@ -76,6 +76,70 @@ export function applyAlphaToColor(css: string, alpha: number): string {
   return rgbaToCss(c);
 }
 
+/**
+ * 在颜色自带的 alpha 之上再乘一个系数（0~1），保留颜色本身的半透明设定。
+ * 用于「填充透明度 / 轮廓透明度」这类独立滑块：滑块只做整体缩放，
+ * 不会覆盖用户在取色对话框里已经调好的颜色 alpha。
+ */
+export function applyAlphaFactor(css: string, factor: number): string {
+  const f = clamp(Number.isFinite(factor) ? factor : 1, 0, 1);
+  if (f >= 1) return css; // 未调透明度时保持原始色值（hex 仍是 hex，避免无谓改写）
+  const c = parseCssColor(css);
+  c.a = clamp(c.a * f, 0, 1);
+  return rgbaToCss(c);
+}
+
+/** 具有「填充 + 轮廓」两个独立颜色通道的元素（形状、文本等） */
+export interface PaintCapable {
+  /** 填充色（形状的填充 / 文本的字色） */
+  fill?: string;
+  /** 轮廓（描边）色 */
+  stroke?: string;
+  /** 填充不透明度 0~1（默认 1） */
+  fillOpacity?: number;
+  /** 轮廓不透明度 0~1（默认 1） */
+  strokeOpacity?: number;
+}
+
+/**
+ * 元素填充色的最终渲染值（已折算 fillOpacity）。
+ * 无填充色时返回 undefined；未设置 fillOpacity 时原样返回，保证「没动过的元素」渲染完全不变。
+ */
+export function resolveFillColor(el: PaintCapable | undefined | null): string | undefined {
+  if (!el || !el.fill) return undefined;
+  if (el.fillOpacity == null || el.fillOpacity >= 1) return el.fill;
+  return applyAlphaFactor(el.fill, el.fillOpacity);
+}
+
+/** 元素轮廓（描边）色的最终渲染值（已折算 strokeOpacity）。 */
+export function resolveStrokeColor(el: PaintCapable | undefined | null): string | undefined {
+  if (!el || !el.stroke) return undefined;
+  if (el.strokeOpacity == null || el.strokeOpacity >= 1) return el.stroke;
+  return applyAlphaFactor(el.stroke, el.strokeOpacity);
+}
+
+/**
+ * 线型 → 虚线间隔数组。Konva `dash` 与 SVG `strokeDasharray` 取值一致，三端共用。
+ * 返回 undefined 表示实线（不设虚线）。
+ */
+export function lineStyleToDash(lineStyle?: string): number[] | undefined {
+  switch (lineStyle) {
+    case 'dashed':
+      return [6, 4];
+    case 'dotted':
+      return [2, 4];
+    default:
+      return undefined;
+  }
+}
+
+/** 线型 → CSS border-style（DOM 渲染端使用；非法值回落 solid）。 */
+export function lineStyleToCssBorderStyle(lineStyle?: string): 'solid' | 'dashed' | 'dotted' {
+  if (lineStyle === 'dashed') return 'dashed';
+  if (lineStyle === 'dotted') return 'dotted';
+  return 'solid';
+}
+
 /** 一个元素可能携带的阴影相关字段（Element / 文本 / 形状等共用）。 */
 export interface ShadowCapable {
   shadowColor?: string;

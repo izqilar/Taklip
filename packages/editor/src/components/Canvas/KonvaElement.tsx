@@ -32,7 +32,7 @@ import type {
   LikeElement,
   WidgetElement,
 } from '@h5design/core';
-import { toKonvaCornerRadius, normalizeImageClip, drawClipOnContext, hasRealShadow, kashidaForLetterSpacing, resolveFillColor, resolveStrokeColor, lineStyleToDash, flipScale } from '@h5design/core';
+import { toKonvaCornerRadius, normalizeImageClip, drawClipOnContext, hasRealShadow, kashidaForLetterSpacing, resolveStrokeColor, lineStyleToDash, flipScale, konvaFill, fillBoxTopLeft, fillBoxCenter, fillBoxCircle } from '@h5design/core';
 import {
   computeImageLayout,
   FilteredImage,
@@ -254,7 +254,7 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           <Text
             key={`${el.id}-fill-${fontEpoch}`}
             {...textLayerProps}
-            fill={textEl.fill}
+            {...konvaFill(textEl, fillBoxTopLeft(el))}
             listening={false}
             ref={(node) => installTextJustifySupport(node, textEl.align)}
           />
@@ -273,7 +273,7 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           offsetY={el.height / 2}
           width={el.width}
           height={el.height}
-          fill={resolveFillColor(el) ?? el.fill}
+          {...konvaFill(el, fillBoxTopLeft(el))}
           cornerRadius={toKonvaCornerRadius(rectEl.cornerRadius ?? rectEl.borderRadius)}
           stroke={hasBorder ? rectEl.borderColor : resolveStrokeColor(el)}
           strokeWidth={hasBorder ? rectEl.borderWidth : rectEl.strokeWidth}
@@ -294,7 +294,7 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           x={el.x + circleEl.radius}
           y={el.y + circleEl.radius}
           radius={circleEl.radius}
-          fill={resolveFillColor(el) ?? el.fill}
+          {...konvaFill(el, fillBoxCircle(circleEl))}
           stroke={hasBorder ? circleEl.borderColor : resolveStrokeColor(el)}
           strokeWidth={hasBorder ? circleEl.borderWidth : circleEl.strokeWidth}
           dash={lineStyleToDash(circleEl.lineStyle)}
@@ -581,7 +581,7 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           <Rect
             width={el.width}
             height={el.height}
-            fill={btnEl.fill}
+            {...konvaFill(el, fillBoxTopLeft(el))}
             cornerRadius={btnEl.radius}
             listening={false}
             perfectDrawEnabled={false}
@@ -645,7 +645,7 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           numPoints={starEl.points ?? 5}
           innerRadius={el.width / 4}
           outerRadius={el.width / 2}
-          fill={resolveFillColor(el) ?? el.fill}
+          {...konvaFill(el, fillBoxCenter(el))}
           stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
           dash={lineStyleToDash(starEl.lineStyle)}
@@ -664,7 +664,7 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           y={el.y + el.height / 2}
           sides={3}
           radius={el.width / 2}
-          fill={resolveFillColor(el) ?? el.fill}
+          {...konvaFill(el, fillBoxCenter(el))}
           stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
           dash={lineStyleToDash(el.lineStyle)}
@@ -682,7 +682,7 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           y={el.y + el.height / 2}
           radiusX={el.width / 2}
           radiusY={el.height / 2}
-          fill={resolveFillColor(el) ?? el.fill}
+          {...konvaFill(el, fillBoxCenter(el))}
           stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
           dash={lineStyleToDash(el.lineStyle)}
@@ -701,7 +701,7 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           y={el.y + el.height / 2}
           sides={polyEl.sides ?? 5}
           radius={Math.min(el.width, el.height) / 2}
-          fill={resolveFillColor(el) ?? el.fill}
+          {...konvaFill(el, fillBoxCenter(el))}
           stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
           dash={lineStyleToDash(el.lineStyle)}

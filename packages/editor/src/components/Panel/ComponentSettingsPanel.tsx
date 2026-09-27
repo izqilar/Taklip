@@ -31,12 +31,28 @@ import type {
   CornerRadius,
   AnimationCategory,
 } from '@h5design/core';
-import { normalizeCornerRadius, getFontCatalog, subscribeFontCatalog, type FontMeta } from '@h5design/core';
+import {
+  normalizeCornerRadius,
+  getFontCatalog,
+  subscribeFontCatalog,
+  type FontMeta,
+  isFillShape,
+  isStrokeOnlyShape,
+  getFillType,
+  normalizeGradient,
+  normalizePattern,
+  gradientFromSolid,
+  patternFromSolid,
+  type FillType,
+  type GradientFill,
+  type PatternFill,
+} from '@h5design/core';
 import { useEditorStore, useSelectedElement } from '../../store/editorStore';
 import { services } from '../../services';
 import { validateImageFile, readImageDimensions } from '../../utils/image';
 import ImageCropDialog from './ImageCropDialog';
 import { getElementRegistration } from '../../elements/registry';
+import { FillTypeRadio, GradientEditor, PatternEditor, ensureFillConfig } from './FillPaint';
 import ColorField, { CheckerBackground } from '../UI/ColorField';
 import CollapsibleSection from '../UI/CollapsibleSection';
 import SliderField from '../UI/SliderField';
@@ -503,13 +519,58 @@ function FillSection({ el, update, commit }: { el: Element; update: (patch: Part
   const outlineWidth = textEl.outlineWidth ?? 0;
   const outlineColor = textEl.outlineColor || '#000000';
 
+  // 填充类型：缺省即 solid（历史数据零改动）。三类配置分别存放，切换只改 fillType。
+  const fillType = getFillType(el);
+  const switchFillType = (type: FillType) => {
+    update({ fillType: type, ...ensureFillConfig(type, el) } as Partial<Element>);
+    commit();
+  };
+  const setGradient = (g: GradientFill) => update({ gradientFill: g } as Partial<Element>);
+  const setPattern = (p: PatternFill) => update({ patternFill: p } as Partial<Element>);
+
   return (
     <CollapsibleSection
       title={<SectionTitle title={isText ? t('editor:section.textOutlineFill') : t('editor:section.fill')}>{ICON_FILL}</SectionTitle>}
       defaultOpen
     >
       <SectionBody>
-        <ColorField label={label} value={(el as { fill: string }).fill} onChange={(v) => { update({ fill: v }); commit(); }} />
+        <FillTypeRadio value={fillType} onChange={switchFillType} />
+
+        {/* ① 单色：完全沿用既有取色/填充能力（ColorField 原路径，零改动） */}
+        {fillType === 'solid' && (
+          <ColorField label={label} value={(el as { fill: string }).fill} onChange={(v) => { update({ fill: v }); commit(); }} />
+        )}
+
+        {/* ② 渐变：单色区域替换为渐变编辑器 */}
+        {fillType === 'gradient' && (
+          <GradientEditor
+            value={normalizeGradient(el.gradientFill) ?? gradientFromSolid((el as { fill: string }).fill)}
+            onChange={setGradient}
+            onCommit={commit}
+          />
+        )}
+
+        {/* ③ 图案：单色区域替换为图案填充组件 */}
+        {fillType === 'pattern' && (
+          <PatternEditor
+            value={normalizePattern(el.patternFill) ?? patternFromSolid((el as { fill: string }).fill)}
+            onChange={setPattern}
+            onCommit={commit}
+          />
+        )}
+
+        {/* 填充透明度（仅填充形状：矩形/圆/椭圆/星/三角/多边形） */}
+        {isFillShape(el.type) && (
+          <SliderField
+            label={t('editor:property.fillOpacity')}
+            value={Math.round((typeof el.fillOpacity === 'number' ? el.fillOpacity : 1) * 100)}
+            min={0}
+            max={100}
+            step={1}
+            onChange={(v) => update({ fillOpacity: v / 100 })}
+            onCommit={commit}
+          />
+        )}
 
         {/* 文本轮廓（仅 text）：「文本轮廓与填充」板块内的 轮廓色 / 粗细 / 线型 */}
         {isText && (
@@ -557,9 +618,12 @@ function StrokeSection({ el, update, commit }: { el: Element; update: (patch: Pa
   const stroke = (el as { stroke?: string }).stroke;
   const strokeWidth = (el as { strokeWidth?: number }).strokeWidth ?? 0;
   const hasLineStyle = 'lineStyle' in el;
+  // 轮廓透明度只对「形状」有意义：填充形状（含轮廓）与仅描边的线/箭头
+  const showStrokeOpacity = isFillShape(el.type) || isStrokeOnlyShape(el.type);
   return (
     <CollapsibleSection
       title={<SectionTitle title={t('editor:section.stroke')}>{ICON_STROKE}</SectionTitle>}
+      defaultOpen
     >
       <SectionBody>
         <ColorField
@@ -593,6 +657,17 @@ function StrokeSection({ el, update, commit }: { el: Element; update: (patch: Pa
               <option value="dotted">{t('editor:component.lineStyleDotted')}</option>
             </select>
           </div>
+        )}
+        {showStrokeOpacity && (
+          <SliderField
+            label={t('editor:property.strokeOpacity')}
+            value={Math.round((typeof el.strokeOpacity === 'number' ? el.strokeOpacity : 1) * 100)}
+            min={0}
+            max={100}
+            step={1}
+            onChange={(v) => update({ strokeOpacity: v / 100 })}
+            onCommit={commit}
+          />
         )}
       </SectionBody>
     </CollapsibleSection>

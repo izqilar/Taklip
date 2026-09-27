@@ -23,6 +23,32 @@ export const CANVAS_DEFAULT = {
   height: 667,
 } as const;
 
+/**
+ * 「填充 + 轮廓」双通道的形状类型。
+ * 属性面板给这些元素统一提供：填充色 / 填充透明度 / 轮廓色 / 轮廓粗细 / 轮廓透明度 / 轮廓线型，
+ * 三端渲染（编辑态 Konva、离屏导出、发布态 DOM）也按这组字段取色。
+ */
+export const FILL_SHAPE_TYPES = ['rect', 'circle', 'ellipse', 'star', 'triangle', 'polygon'] as const;
+export type FillShapeType = (typeof FILL_SHAPE_TYPES)[number];
+
+/** 仅描边、没有填充的形状类型（线 / 箭头） */
+export const STROKE_ONLY_SHAPE_TYPES = ['line', 'arrow'] as const;
+
+/** 该元素类型是否属于「填充 + 轮廓」形状 */
+export function isFillShape(type: string | undefined | null): type is FillShapeType {
+  return !!type && (FILL_SHAPE_TYPES as readonly string[]).includes(type);
+}
+
+/** 该元素类型是否属于「仅描边」形状 */
+export function isStrokeOnlyShape(type: string | undefined | null): boolean {
+  return !!type && (STROKE_ONLY_SHAPE_TYPES as readonly string[]).includes(type);
+}
+
+/** 该元素类型是否属于形状对象（填充形状 + 仅描边形状） */
+export function isShapeElement(type: string | undefined | null): boolean {
+  return isFillShape(type) || isStrokeOnlyShape(type);
+}
+
 /** 画布规格预设分类（用于下拉框分组） */
 export type CanvasPresetCategory = 'mobile' | 'card' | 'greeting' | 'social' | 'print';
 
@@ -225,6 +251,9 @@ export function createElement(
         ...base,
         type: 'rect',
         fill: '#4f8cff',
+        stroke: undefined,
+        strokeWidth: 0,
+        lineStyle: 'solid',
         cornerRadius: 4,
       } satisfies RectElement;
     case 'circle':
@@ -233,6 +262,9 @@ export function createElement(
         type: 'circle',
         fill: '#ff6b6b',
         radius: 30,
+        stroke: undefined,
+        strokeWidth: 0,
+        lineStyle: 'solid',
       };
     case 'image': {
       const imgOverrides = overrides as Partial<import('./schema').ImageElement>;

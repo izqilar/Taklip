@@ -5,6 +5,7 @@ export * from './sanitize';
 export * from './publish';
 export * from './fonts';
 export * from './color';
+export * from './fill';
 export * from './text';
 export * from './code';
 export * from './money';

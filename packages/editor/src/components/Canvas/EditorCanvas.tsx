@@ -29,7 +29,7 @@ import CanvasWidget from '../../elements/widget/CanvasWidget';
 import GalleryEditorOverlay from './GalleryEditorOverlay';
 import ContextMenu from './ContextMenu';
 import type { Element, TextElement, ImageElement, RectElement, CircleElement, PolygonElement, ArrowElement, CornerRadius, ImageClip, CalendarElement, GalleryElement, PuzzleElement, CountdownElement, MapNavElement, MessageBoardElement, TimelineElement, LikeElement, WidgetElement } from '@h5design/core';
-import { CANVAS_DEFAULT, toKonvaCornerRadius, normalizeCornerRadius, drawClipOnContext, normalizeImageClip, hasRealShadow, kashidaForLetterSpacing, resolveFillColor, resolveStrokeColor, lineStyleToDash, flipScale, flipCssTransform } from '@h5design/core';
+import { CANVAS_DEFAULT, toKonvaCornerRadius, normalizeCornerRadius, drawClipOnContext, normalizeImageClip, hasRealShadow, kashidaForLetterSpacing, resolveStrokeColor, lineStyleToDash, flipScale, flipCssTransform, konvaFill, fillBoxTopLeft, fillBoxCenter, fillBoxCircle } from '@h5design/core';
 import {
   toKonvaAlign,
   installTextJustifySupport,
@@ -872,7 +872,7 @@ function renderElement({
           <Text
             key={`${el.id}-fill-${fontEpoch}`}
             {...textLayerProps}
-            fill={textEl.fill}
+            {...konvaFill(textEl, fillBoxTopLeft(el))}
             listening={!textEl.locked}
             ref={(node) => installTextJustifySupport(node, textEl.align)}
           />
@@ -891,7 +891,7 @@ function renderElement({
           offsetY={el.height / 2}
           width={el.width}
           height={el.height}
-          fill={resolveFillColor(el) ?? el.fill}
+          {...konvaFill(el, fillBoxTopLeft(el))}
           cornerRadius={toKonvaCornerRadius(rectEl.cornerRadius ?? rectEl.borderRadius)}
           stroke={hasBorder ? rectEl.borderColor : resolveStrokeColor(el)}
           strokeWidth={hasBorder ? rectEl.borderWidth : el.strokeWidth}
@@ -912,7 +912,7 @@ function renderElement({
           x={el.x + el.radius}
           y={el.y + el.radius}
           radius={el.radius}
-          fill={resolveFillColor(el) ?? el.fill}
+          {...konvaFill(el, fillBoxCircle(circleEl))}
           stroke={hasBorder ? circleEl.borderColor : resolveStrokeColor(el)}
           strokeWidth={hasBorder ? circleEl.borderWidth : el.strokeWidth}
           dash={dashFromLineStyle(circleEl.lineStyle)}
@@ -1210,7 +1210,7 @@ function renderElement({
           <Rect
             width={el.width}
             height={el.height}
-            fill={el.fill}
+            {...konvaFill(el, fillBoxTopLeft(el))}
             cornerRadius={el.radius}
             listening={false}
             perfectDrawEnabled={false}
@@ -1273,7 +1273,7 @@ function renderElement({
           numPoints={el.points ?? 5}
           innerRadius={el.width / 4}
           outerRadius={el.width / 2}
-          fill={resolveFillColor(el) ?? el.fill}
+          {...konvaFill(el, fillBoxCenter(el))}
           stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
           dash={dashFromLineStyle(el.lineStyle)}
@@ -1291,7 +1291,7 @@ function renderElement({
           y={el.y + el.height / 2}
           sides={3}
           radius={el.width / 2}
-          fill={resolveFillColor(el) ?? el.fill}
+          {...konvaFill(el, fillBoxCenter(el))}
           stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
           dash={dashFromLineStyle(el.lineStyle)}
@@ -1309,7 +1309,7 @@ function renderElement({
           y={el.y + el.height / 2}
           radiusX={el.width / 2}
           radiusY={el.height / 2}
-          fill={resolveFillColor(el) ?? el.fill}
+          {...konvaFill(el, fillBoxCenter(el))}
           stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
           dash={dashFromLineStyle(el.lineStyle)}
@@ -1328,7 +1328,7 @@ function renderElement({
           y={el.y + el.height / 2}
           sides={polyEl.sides ?? 5}
           radius={Math.min(el.width, el.height) / 2}
-          fill={resolveFillColor(el) ?? el.fill}
+          {...konvaFill(el, fillBoxCenter(el))}
           stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
           dash={dashFromLineStyle(el.lineStyle)}
