@@ -159,7 +159,9 @@
     "direction": "Writing direction",
     "directionLTR": "Left to Right (LTR)",
     "directionRTL": "Right to Left (RTL)",
-    "fillColor": "Fill Color"
+    "fillColor": "Fill Color",
+    "fillOpacity": "تولدۇرۇش سۈزۈكلۈكى",
+    "strokeOpacity": "گىرۋەك سۈزۈكلۈكى"
   },
   "puzzle": {
     "title": "Puzzle Layout",
@@ -418,5 +420,9 @@
     "paste": "چاپلاش",
     "duplicate": "نۇسخا قۇرۇش",
     "delete": "ئۆچۈرۈش"
+  },
+  "colorPicker": {
+    "eyedropper": "رەڭ ئالغۇچ",
+    "pickingHint": "رەڭ ئېلىش ئۈچۈن كانداققا چېكىڭ · Esc بىلەن ۋاز كەچىڭ"
   }
 }

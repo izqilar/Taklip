@@ -31,7 +31,7 @@ import type {
   LikeElement,
   WidgetElement,
 } from '@h5design/core';
-import { cornerRadiusToCss, normalizeCornerRadius, buildClipSvgPath, normalizeImageClip, resolveShadow, resolveShadowColor, hasRealShadow, subscribeFontLoad } from '@h5design/core';
+import { cornerRadiusToCss, normalizeCornerRadius, buildClipSvgPath, normalizeImageClip, resolveShadow, resolveShadowColor, hasRealShadow, subscribeFontLoad, resolveFillColor, resolveStrokeColor, lineStyleToDash, lineStyleToCssBorderStyle, flipCssTransform } from '@h5design/core';
 import { clearTextMeasureCache } from './lib/textLayout';
 import { safeLink, safeMedia, safeBackgroundImage } from './lib/sanitize';
 import {
@@ -499,13 +499,17 @@ function renderElement(el: Element): ReactNode {
   // 而非被误当成黑色阴影画出来。
   const hasShadow = hasRealShadow(el);
   const shadowCss = resolveShadow(el);
+  // 元素根变换：rotate 在外、镜像在内（CSS 列表自右向左作用于坐标系统），
+  // 与 Konva 节点 `R(rotation) · S(scaleX, scaleY)`（offset = 几何中心）严格一致，
+  // 因此镜像围绕元素中心发生、不改变 x/y/width/height，且不会与旋转互相错乱。
+  const transformCss = `rotate(${el.rotation}deg)${flipCssTransform(el)}`;
   const commonStyle: CSSProperties = {
     position: 'absolute',
     left: el.x,
     top: el.y,
     width: el.width,
     height: el.height,
-    transform: `rotate(${el.rotation}deg)`,
+    transform: transformCss,
     opacity: el.opacity,
     zIndex: el.zIndex,
     boxSizing: 'border-box',
@@ -528,7 +532,7 @@ function renderElement(el: Element): ReactNode {
     top: el.y,
     width: el.width,
     height: el.height,
-    transform: `rotate(${el.rotation}deg)`,
+    transform: transformCss,
     zIndex: el.zIndex,
     boxSizing: 'border-box',
   };
@@ -595,11 +599,11 @@ function renderElement(el: Element): ReactNode {
       const rectEl = el as RectElement;
       const hasBorder = (rectEl.borderWidth || 0) > 0;
       return renderShape({
-        backgroundColor: el.fill,
+        backgroundColor: resolveFillColor(el) ?? el.fill,
         border: hasBorder
           ? `${rectEl.borderWidth}px solid ${rectEl.borderColor || '#000000'}`
-          : el.stroke
-            ? `${el.strokeWidth ?? 1}px solid ${el.stroke}`
+          : resolveStrokeColor(el)
+            ? `${el.strokeWidth ?? 1}px ${lineStyleToCssBorderStyle(el.lineStyle)} ${resolveStrokeColor(el)}`
             : undefined,
         borderRadius: cornerRadiusToCss(rectEl.cornerRadius ?? rectEl.borderRadius),
       });
@@ -612,7 +616,10 @@ function renderElement(el: Element): ReactNode {
       const diameter = circleEl.radius ? circleEl.radius * 2 : el.width;
       return renderShape(
         {
-          backgroundColor: el.fill,
+          backgroundColor: resolveFillColor(el) ?? el.fill,
+          border: resolveStrokeColor(el)
+            ? `${el.strokeWidth ?? 1}px ${lineStyleToCssBorderStyle(el.lineStyle)} ${resolveStrokeColor(el)}`
+            : undefined,
           borderRadius: '50%',
         },
         { width: diameter, height: diameter },
@@ -651,7 +658,7 @@ function renderElement(el: Element): ReactNode {
             y1={0}
             x2={el.width}
             y2={0}
-            stroke={el.stroke}
+            stroke={resolveStrokeColor(el) ?? el.stroke}
             strokeWidth={el.strokeWidth}
             strokeDasharray={svgDashFromLineStyle(el.lineStyle)}
           />
@@ -767,8 +774,8 @@ function renderElement(el: Element): ReactNode {
         >
           <polygon
             points={pts}
-            fill={el.fill}
-            stroke={el.stroke}
+            fill={resolveFillColor(el) ?? el.fill}
+            stroke={resolveStrokeColor(el)}
             strokeWidth={el.strokeWidth ?? 0}
             strokeDasharray={svgDashFromLineStyle(el.lineStyle)}
           />
@@ -788,8 +795,8 @@ function renderElement(el: Element): ReactNode {
         >
           <polygon
             points={pts}
-            fill={el.fill}
-            stroke={el.stroke}
+            fill={resolveFillColor(el) ?? el.fill}
+            stroke={resolveStrokeColor(el)}
             strokeWidth={el.strokeWidth ?? 0}
             strokeDasharray={svgDashFromLineStyle(el.lineStyle)}
           />
@@ -799,9 +806,9 @@ function renderElement(el: Element): ReactNode {
 
     case 'ellipse':
       return renderShape({
-        backgroundColor: el.fill,
-        border: el.stroke
-          ? `${el.strokeWidth ?? 1}px solid ${el.stroke}`
+        backgroundColor: resolveFillColor(el) ?? el.fill,
+        border: resolveStrokeColor(el)
+          ? `${el.strokeWidth ?? 1}px ${lineStyleToCssBorderStyle(el.lineStyle)} ${resolveStrokeColor(el)}`
           : undefined,
         borderRadius: '50%',
       });
@@ -819,8 +826,8 @@ function renderElement(el: Element): ReactNode {
         >
           <polygon
             points={polyPts}
-            fill={el.fill}
-            stroke={el.stroke}
+            fill={resolveFillColor(el) ?? el.fill}
+            stroke={resolveStrokeColor(el)}
             strokeWidth={el.strokeWidth ?? 0}
             strokeDasharray={svgDashFromLineStyle(el.lineStyle)}
           />
@@ -846,12 +853,12 @@ function renderElement(el: Element): ReactNode {
           <defs>
             {showEnd && (
               <marker id={markerId} markerWidth={size} markerHeight={size} refX={size - 2} refY={size / 2} orient="auto" markerUnits="strokeWidth">
-                <path d={`M0,0 L${size},${size / 2} L0,${size} z`} fill={el.stroke} />
+                <path d={`M0,0 L${size},${size / 2} L0,${size} z`} fill={resolveStrokeColor(el) ?? el.stroke} />
               </marker>
             )}
             {showStart && (
               <marker id={markerStartId} markerWidth={size} markerHeight={size} refX={2} refY={size / 2} orient="auto" markerUnits="strokeWidth">
-                <path d={`M${size},0 L0,${size / 2} L${size},${size} z`} fill={el.stroke} />
+                <path d={`M${size},0 L0,${size / 2} L${size},${size} z`} fill={resolveStrokeColor(el) ?? el.stroke} />
               </marker>
             )}
           </defs>
@@ -860,7 +867,7 @@ function renderElement(el: Element): ReactNode {
             y1={el.height / 2}
             x2={showEnd ? el.width - size : el.width}
             y2={el.height / 2}
-            stroke={el.stroke}
+            stroke={resolveStrokeColor(el) ?? el.stroke}
             strokeWidth={el.strokeWidth}
             strokeDasharray={svgDashFromLineStyle(el.lineStyle)}
             markerEnd={showEnd ? `url(#${markerId})` : undefined}
@@ -921,14 +928,9 @@ function renderElement(el: Element): ReactNode {
 }
 
 function svgDashFromLineStyle(lineStyle?: string): string | undefined {
-  switch (lineStyle) {
-    case 'dashed':
-      return '6,4';
-    case 'dotted':
-      return '2,4';
-    default:
-      return undefined;
-  }
+  // 复用 core 的 lineStyleToDash（与 Konva dash 同一真值），转成 SVG strokeDasharray 字符串。
+  const dash = lineStyleToDash(lineStyle);
+  return dash ? dash.join(' ') : undefined;
 }
 
 function regularPolygonPoints(w: number, h: number, sides: number): string {

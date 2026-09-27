@@ -29,7 +29,7 @@ import CanvasWidget from '../../elements/widget/CanvasWidget';
 import GalleryEditorOverlay from './GalleryEditorOverlay';
 import ContextMenu from './ContextMenu';
 import type { Element, TextElement, ImageElement, RectElement, CircleElement, PolygonElement, ArrowElement, CornerRadius, ImageClip, CalendarElement, GalleryElement, PuzzleElement, CountdownElement, MapNavElement, MessageBoardElement, TimelineElement, LikeElement, WidgetElement } from '@h5design/core';
-import { CANVAS_DEFAULT, toKonvaCornerRadius, normalizeCornerRadius, drawClipOnContext, normalizeImageClip, hasRealShadow, kashidaForLetterSpacing } from '@h5design/core';
+import { CANVAS_DEFAULT, toKonvaCornerRadius, normalizeCornerRadius, drawClipOnContext, normalizeImageClip, hasRealShadow, kashidaForLetterSpacing, resolveFillColor, resolveStrokeColor, lineStyleToDash, flipScale, flipCssTransform } from '@h5design/core';
 import {
   toKonvaAlign,
   installTextJustifySupport,
@@ -572,6 +572,35 @@ function RectCornerAnchors({
   );
 }
 
+/**
+ * 把 Konva 变换后的节点旋转，还原为「真实视觉旋转」。
+ *
+ * 背景：Konva 的 `Transformer._fitNodesInto` 会把变换矩阵**分解**后写回节点属性
+ * （`Transform.decompose()`），而分解结果的 `scaleX` 恒为正 —— 翻转的符号只能折叠进
+ * `scaleY`（负号）或 `rotation`（±180°）。因此对带镜像的节点，变换结束后直接取
+ * `node.rotation()` 会拿到折叠后的角度，与 `flipX/flipY` 叠加后视觉朝向会突变
+ * （例如水平镜像对象被拖拽一次后变成垂直镜像）。
+ *
+ * 这里按已知的 flipX/flipY 反解（推导见 docs 注释表）：
+ *  - `scaleY > 0`：无折叠。flipX/flipY 同时为真时 visual = nodeRot - 180；否则就是 nodeRot。
+ *  - `scaleY < 0`：有折叠。visual = -nodeRot。
+ * 未启用镜像时（原行为）直接返回 nodeRot，不做任何归一化，保证既有旋转逻辑零改动。
+ */
+function toVisualRotation(node: Konva.Node, el: Element): number {
+  const { scaleX: fx, scaleY: fy } = flipScale(el);
+  if (fx === 1 && fy === 1) return node.rotation();
+  const rot = node.rotation();
+  let visual: number;
+  if (node.scaleY() < 0) {
+    visual = -rot;
+  } else if (fx === -1 && fy === -1) {
+    visual = rot - 180;
+  } else {
+    visual = rot;
+  }
+  return ((visual % 360) + 360) % 360;
+}
+
 function renderElement({
   el,
   onSelect,
@@ -592,6 +621,9 @@ function renderElement({
     x: cx,
     y: cy,
     rotation: el.rotation,
+    // 镜像：节点已把原点挪到几何中心（下方 offsetX/offsetY = width/2, height/2），
+    // 因此负缩放即「围绕几何中心翻转」，不改变包围盒 → 选中框/对齐/分布无需改动。
+    ...flipScale(el),
     opacity: el.opacity,
     // 图层显隐：visible=false 时整节点隐藏且不再响应点击/拖拽（对标 Figma）
     visible: el.visible !== false,
@@ -619,15 +651,19 @@ function renderElement({
     onTransformStart,
     // 拖拽调整大小时实时把 scale 折算成 width/height，并立即归零 scale，
     // 同时保持旋转中心（几何中心）固定。
+    // 镜像对象：Konva 会把翻转符号折叠进 scaleY/rotation（矩阵分解特性），所以这里
+    // 统一取**绝对缩放**折算宽高，并把节点缩放复位到镜像基准值（而非硬编码 1），
+    // 避免拖拽过程中镜像被抹掉、或宽高被算成负数。
     onTransform: (e: Konva.KonvaEventObject<Event>) => {
       const node = e.target;
-      const scaleX = node.scaleX();
-      const scaleY = node.scaleY();
-      if (scaleX === 1 && scaleY === 1) return;
-      node.scaleX(1);
-      node.scaleY(1);
-      const newWidth = Math.max(5, Math.round((el.width || 0) * scaleX));
-      const newHeight = Math.max(5, Math.round((el.height || 0) * scaleY));
+      const { scaleX: baseScaleX, scaleY: baseScaleY } = flipScale(el);
+      const kx = Math.abs(node.scaleX());
+      const ky = Math.abs(node.scaleY());
+      if (kx === 1 && ky === 1) return;
+      node.scaleX(baseScaleX);
+      node.scaleY(baseScaleY);
+      const newWidth = Math.max(5, Math.round((el.width || 0) * kx));
+      const newHeight = Math.max(5, Math.round((el.height || 0) * ky));
       onChange({
         x: node.x() - newWidth / 2,
         y: node.y() - newHeight / 2,
@@ -637,16 +673,18 @@ function renderElement({
     },
     onTransformEnd: (e: Konva.KonvaEventObject<Event>) => {
       const node = e.target;
-      const scaleX = node.scaleX();
-      const scaleY = node.scaleY();
-      node.scaleX(1);
-      node.scaleY(1);
-      const newWidth = Math.max(5, Math.round((el.width || 0) * scaleX));
-      const newHeight = Math.max(5, Math.round((el.height || 0) * scaleY));
+      const { scaleX: baseScaleX, scaleY: baseScaleY } = flipScale(el);
+      const kx = Math.abs(node.scaleX());
+      const ky = Math.abs(node.scaleY());
+      node.scaleX(baseScaleX);
+      node.scaleY(baseScaleY);
+      const newWidth = Math.max(5, Math.round((el.width || 0) * kx));
+      const newHeight = Math.max(5, Math.round((el.height || 0) * ky));
       onChange({
         x: node.x() - newWidth / 2,
         y: node.y() - newHeight / 2,
-        rotation: node.rotation(),
+        // 翻转对象的 rotation 需要反解折叠，否则朝向会突变（见 toVisualRotation）
+        rotation: toVisualRotation(node, el),
         width: newWidth,
         height: newHeight,
       });
@@ -810,10 +848,11 @@ function renderElement({
           offsetY={el.height / 2}
           width={el.width}
           height={el.height}
-          fill={el.fill}
+          fill={resolveFillColor(el) ?? el.fill}
           cornerRadius={toKonvaCornerRadius(rectEl.cornerRadius ?? rectEl.borderRadius)}
-          stroke={hasBorder ? rectEl.borderColor : rectEl.stroke}
-          strokeWidth={hasBorder ? rectEl.borderWidth : rectEl.strokeWidth}
+          stroke={hasBorder ? rectEl.borderColor : resolveStrokeColor(el)}
+          strokeWidth={hasBorder ? rectEl.borderWidth : el.strokeWidth}
+          dash={hasBorder ? undefined : dashFromLineStyle(rectEl.lineStyle)}
           perfectDrawEnabled={false}
           shadowForStrokeEnabled={false}
         />
@@ -830,9 +869,9 @@ function renderElement({
           x={el.x + el.radius}
           y={el.y + el.radius}
           radius={el.radius}
-          fill={el.fill}
-          stroke={hasBorder ? circleEl.borderColor : circleEl.stroke}
-          strokeWidth={hasBorder ? circleEl.borderWidth : circleEl.strokeWidth}
+          fill={resolveFillColor(el) ?? el.fill}
+          stroke={hasBorder ? circleEl.borderColor : resolveStrokeColor(el)}
+          strokeWidth={hasBorder ? circleEl.borderWidth : el.strokeWidth}
           dash={dashFromLineStyle(circleEl.lineStyle)}
           perfectDrawEnabled={false}
           shadowForStrokeEnabled={false}
@@ -845,7 +884,7 @@ function renderElement({
         <Group key={el.id} {...common} offsetX={el.width / 2} offsetY={el.height / 2}>
           <KonvaLine
             points={[0, 0, el.width, 0]}
-            stroke={el.stroke}
+            stroke={resolveStrokeColor(el) ?? el.stroke}
             strokeWidth={el.strokeWidth}
             dash={dashFromLineStyle(el.lineStyle)}
             hitStrokeWidth={Math.max(18, el.strokeWidth * 2)}
@@ -1129,9 +1168,10 @@ function renderElement({
           numPoints={el.points ?? 5}
           innerRadius={el.width / 4}
           outerRadius={el.width / 2}
-          fill={el.fill}
-          stroke={el.stroke}
+          fill={resolveFillColor(el) ?? el.fill}
+          stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
+          dash={dashFromLineStyle(el.lineStyle)}
           perfectDrawEnabled={false}
           shadowForStrokeEnabled={false}
         />
@@ -1146,8 +1186,8 @@ function renderElement({
           y={el.y + el.height / 2}
           sides={3}
           radius={el.width / 2}
-          fill={el.fill}
-          stroke={el.stroke}
+          fill={resolveFillColor(el) ?? el.fill}
+          stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
           dash={dashFromLineStyle(el.lineStyle)}
           perfectDrawEnabled={false}
@@ -1164,8 +1204,8 @@ function renderElement({
           y={el.y + el.height / 2}
           radiusX={el.width / 2}
           radiusY={el.height / 2}
-          fill={el.fill}
-          stroke={el.stroke}
+          fill={resolveFillColor(el) ?? el.fill}
+          stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
           dash={dashFromLineStyle(el.lineStyle)}
           perfectDrawEnabled={false}
@@ -1183,8 +1223,8 @@ function renderElement({
           y={el.y + el.height / 2}
           sides={polyEl.sides ?? 5}
           radius={Math.min(el.width, el.height) / 2}
-          fill={el.fill}
-          stroke={el.stroke}
+          fill={resolveFillColor(el) ?? el.fill}
+          stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
           dash={dashFromLineStyle(el.lineStyle)}
           perfectDrawEnabled={false}
@@ -1196,13 +1236,14 @@ function renderElement({
     case 'arrow': {
       const arrowEl = el as ArrowElement;
       const size = arrowEl.arrowSize ?? 16;
+      const arrowStroke = resolveStrokeColor(el) ?? el.stroke;
       return (
         <Group key={el.id} {...common} offsetX={el.width / 2} offsetY={el.height / 2}>
           <KonvaArrow
             points={[0, el.height / 2, el.width, el.height / 2]}
-            stroke={el.stroke}
+            stroke={arrowStroke}
             strokeWidth={el.strokeWidth}
-            fill={el.stroke}
+            fill={arrowStroke}
             dash={dashFromLineStyle(el.lineStyle)}
             pointerLength={size}
             pointerWidth={size}
@@ -1249,14 +1290,8 @@ function renderElement({
 }
 
 function dashFromLineStyle(lineStyle?: string): number[] | undefined {
-  switch (lineStyle) {
-    case 'dashed':
-      return [6, 4];
-    case 'dotted':
-      return [2, 4];
-    default:
-      return undefined;
-  }
+  // 线型 → 虚线段长的唯一真值源（与发布态 SVG strokeDasharray 一致）
+  return lineStyleToDash(lineStyle);
 }
 
 /* ───────── 页面背景图片渲染 ───────── */
@@ -1396,6 +1431,8 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
   const clearSelection = useEditorStore((s) => s.clearSelection);
   const updateElement = useEditorStore((s) => s.updateElement);
   const pushHistory = useEditorStore((s) => s.pushHistory);
+  /** 取色器模式：隐藏选择框/辅助线/变换器，并屏蔽画布交互（见 utils/eyedropper.ts） */
+  const colorPickMode = useEditorStore((s) => s.colorPickMode);
 
   const trRef = useRef<Konva.Transformer>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -1816,6 +1853,7 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
 
   /* ── 点击空白：启动框选（或清空选择） ── */
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+    if (colorPickMode) return; // 取色器模式：画布交互交给取色会话
     if (spaceDownRef.current) return; // 平移模式：交给视口拖拽处理
     if (e.target !== e.target.getStage()) return; // 只处理画布空白处
     // 点击空白 = 文本编辑失焦：先提交编辑内容（幂等，无编辑态则 no-op），
@@ -2003,7 +2041,7 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
                 )}
 
               {/* 多选时：每个选中对象单独显示边界框，便于区分 */}
-              {selectedIds.length > 1 &&
+              {!colorPickMode && selectedIds.length > 1 &&
                 selectedIds
                   .map((id) => page.elements.find((e) => e.id === id))
                   .filter((e): e is Element => !!e)
@@ -2027,7 +2065,7 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
                   ))}
 
               {/* 框选拖拽中的半透明选框 */}
-              {marquee && (
+              {!colorPickMode && marquee && (
                 <Rect
                   x={Math.min(marquee.x1, marquee.x2)}
                   y={Math.min(marquee.y1, marquee.y2)}
@@ -2044,7 +2082,7 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
               )}
 
               {/* 对齐辅助线 */}
-              {guides.map((g, i) => (
+              {!colorPickMode && guides.map((g, i) => (
                 <KonvaLine
                   key={`guide-${i}`}
                   points={g.points}
@@ -2059,7 +2097,7 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
 
               {/* 矩形/图片四角圆角拖拽锚点（Figma / Illustrator 风格）：
                   鼠标悬停到选中的矩形或图片上才出现，锚点向内偏离四角，避免与 resize 锚点重叠 */}
-              {selectedCornerEl && (hoveredId === selectedCornerEl.id || cornerDragging) && (
+              {!colorPickMode && selectedCornerEl && (hoveredId === selectedCornerEl.id || cornerDragging) && (
                 <RectCornerAnchors
                   el={selectedCornerEl}
                   onChange={(patch) => {
@@ -2076,23 +2114,40 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
                 />
               )}
 
-              {/* 变换器 */}
-              <Transformer
-                ref={trRef}
-                rotateEnabled
-                keepRatio={false}
-                anchorSize={8}
-                anchorStroke="#3b82f6"
-                anchorFill="#ffffff"
-                borderStroke="#3b82f6"
-                boundBoxFunc={(oldBox, newBox) =>
-                  newBox.width < 5 || newBox.height < 5 ? oldBox : newBox
-                }
-              />
+              {/* 变换器（取色期间隐藏：吸管不能吸到选择框的蓝色描边） */}
+              {!colorPickMode && (
+                <Transformer
+                  ref={trRef}
+                  rotateEnabled
+                  keepRatio={false}
+                  anchorSize={8}
+                  anchorStroke="#3b82f6"
+                  anchorFill="#ffffff"
+                  borderStroke="#3b82f6"
+                  boundBoxFunc={(oldBox, newBox) =>
+                    newBox.width < 5 || newBox.height < 5 ? oldBox : newBox
+                  }
+                />
+              )}
             </Layer>
           </Stage>
 
         </div>
+
+        {/* 取色器遮罩：铺满画布视口，接管指针（阻断选中/拖拽/框选），并提供十字光标 */}
+        {colorPickMode && (
+          <div
+            data-testid="eyedropper-overlay"
+            className="absolute inset-0 z-50"
+            style={{ cursor: 'crosshair' }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <div className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-gray-900/85 px-3 py-1.5 text-xs text-white shadow-lg">
+              {t('editor:colorPicker.pickingHint', { defaultValue: '点击画布取色 · Esc 取消' })}
+            </div>
+          </div>
+        )}
 
         {/* 标尺 + 角（覆盖层，SVG 矢量，随 zoom/pan 计算刻度，无损） */}
         <div className="pointer-events-none absolute left-0 top-0 right-0 z-20 overflow-hidden border-b border-gray-300 bg-gray-100" style={{ height: RULER }}>
@@ -2131,8 +2186,11 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
               }}
               className="absolute z-50 resize-none overflow-hidden border border-blue-500 bg-white/95 p-0 text-gray-800 outline-none"
               style={{
-                left: editingEl.x,
-                top: editingEl.y,
+                // 定位到元素几何中心，再由 transform 的 translate(-50%,-50%) 拉回左上角：
+                // 这样旋转/镜像都围绕元素中心发生，与 Konva 节点（offset = 中心）严格对齐。
+                // （原先用 left/top + transformOrigin:'top left'，对旋转过的文本会整体错位。）
+                left: editingEl.x + editingEl.width / 2,
+                top: editingEl.y + editingEl.height / 2,
                 width: editingEl.width,
                 height: editingEl.height,
                 fontSize: editingEl.fontSize,
@@ -2151,8 +2209,7 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
                 whiteSpace: 'pre-wrap',
                 wordBreak: editingEl.wordBreak,
                 direction: editingEl.direction === 'rtl' ? 'rtl' : 'ltr',
-                transform: `rotate(${editingEl.rotation}deg)`,
-                transformOrigin: 'top left',
+                transform: `translate(-50%, -50%) rotate(${editingEl.rotation}deg)${flipCssTransform(editingEl)}`,
                 pointerEvents: 'auto',
               }}
             />

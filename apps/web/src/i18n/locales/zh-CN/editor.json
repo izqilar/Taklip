@@ -267,7 +267,9 @@
     "direction": "书写方向",
     "directionLTR": "从左向右 (LTR)",
     "directionRTL": "从右向左 (RTL)",
-    "fillColor": "填充色"
+    "fillColor": "填充色",
+    "fillOpacity": "填充透明度",
+    "strokeOpacity": "轮廓透明度"
   },
   "puzzle": {
     "title": "拼图布局",
@@ -791,5 +793,9 @@
     "paste": "粘贴",
     "duplicate": "创建副本",
     "delete": "删除"
+  },
+  "colorPicker": {
+    "eyedropper": "取色器",
+    "pickingHint": "点击画布取色 · Esc 取消"
   }
 }

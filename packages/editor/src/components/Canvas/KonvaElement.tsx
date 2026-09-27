@@ -32,7 +32,7 @@ import type {
   LikeElement,
   WidgetElement,
 } from '@h5design/core';
-import { toKonvaCornerRadius, normalizeImageClip, drawClipOnContext, hasRealShadow, kashidaForLetterSpacing } from '@h5design/core';
+import { toKonvaCornerRadius, normalizeImageClip, drawClipOnContext, hasRealShadow, kashidaForLetterSpacing, resolveFillColor, resolveStrokeColor, lineStyleToDash, flipScale } from '@h5design/core';
 import {
   computeImageLayout,
   FilteredImage,
@@ -40,7 +40,6 @@ import {
   type KonvaFilter,
   mapWordBreakToKonvaWrap,
   borderDashFromStyle,
-  dashFromLineStyle,
   toKonvaAlign,
   installTextJustifySupport,
   toKonvaOutlineStrokeWidth,
@@ -82,6 +81,9 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
     x: cx,
     y: cy,
     rotation: el.rotation,
+    // 镜像：与编辑画布同源（节点 offset = 几何中心，负缩放即围绕中心翻转），
+    // 保证离屏导出（图片/视频）与编辑态、发布态三端一致。
+    ...flipScale(el),
     opacity: el.opacity ?? 1,
     visible: el.visible !== false,
     listening: false,
@@ -243,10 +245,11 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           offsetY={el.height / 2}
           width={el.width}
           height={el.height}
-          fill={el.fill}
+          fill={resolveFillColor(el) ?? el.fill}
           cornerRadius={toKonvaCornerRadius(rectEl.cornerRadius ?? rectEl.borderRadius)}
-          stroke={hasBorder ? rectEl.borderColor : rectEl.stroke}
+          stroke={hasBorder ? rectEl.borderColor : resolveStrokeColor(el)}
           strokeWidth={hasBorder ? rectEl.borderWidth : rectEl.strokeWidth}
+          dash={hasBorder ? undefined : lineStyleToDash(rectEl.lineStyle)}
           perfectDrawEnabled={false}
           shadowForStrokeEnabled={false}
         />
@@ -263,10 +266,10 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           x={el.x + circleEl.radius}
           y={el.y + circleEl.radius}
           radius={circleEl.radius}
-          fill={el.fill}
-          stroke={hasBorder ? circleEl.borderColor : circleEl.stroke}
+          fill={resolveFillColor(el) ?? el.fill}
+          stroke={hasBorder ? circleEl.borderColor : resolveStrokeColor(el)}
           strokeWidth={hasBorder ? circleEl.borderWidth : circleEl.strokeWidth}
-          dash={dashFromLineStyle(circleEl.lineStyle)}
+          dash={lineStyleToDash(circleEl.lineStyle)}
           perfectDrawEnabled={false}
           shadowForStrokeEnabled={false}
         />
@@ -278,9 +281,9 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
         <Group key={el.id} {...common} offsetX={el.width / 2} offsetY={el.height / 2}>
           <Line
             points={[0, 0, el.width, 0]}
-            stroke={el.stroke}
+            stroke={resolveStrokeColor(el) ?? el.stroke}
             strokeWidth={el.strokeWidth}
-            dash={dashFromLineStyle(el.lineStyle)}
+            dash={lineStyleToDash(el.lineStyle)}
             hitStrokeWidth={Math.max(18, el.strokeWidth * 2)}
             perfectDrawEnabled={false}
             shadowForStrokeEnabled={false}
@@ -553,9 +556,10 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           numPoints={starEl.points ?? 5}
           innerRadius={el.width / 4}
           outerRadius={el.width / 2}
-          fill={el.fill}
-          stroke={el.stroke}
+          fill={resolveFillColor(el) ?? el.fill}
+          stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
+          dash={lineStyleToDash(starEl.lineStyle)}
           perfectDrawEnabled={false}
           shadowForStrokeEnabled={false}
         />
@@ -571,10 +575,10 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           y={el.y + el.height / 2}
           sides={3}
           radius={el.width / 2}
-          fill={el.fill}
-          stroke={el.stroke}
+          fill={resolveFillColor(el) ?? el.fill}
+          stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
-          dash={dashFromLineStyle(el.lineStyle)}
+          dash={lineStyleToDash(el.lineStyle)}
           perfectDrawEnabled={false}
           shadowForStrokeEnabled={false}
         />
@@ -589,10 +593,10 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           y={el.y + el.height / 2}
           radiusX={el.width / 2}
           radiusY={el.height / 2}
-          fill={el.fill}
-          stroke={el.stroke}
+          fill={resolveFillColor(el) ?? el.fill}
+          stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
-          dash={dashFromLineStyle(el.lineStyle)}
+          dash={lineStyleToDash(el.lineStyle)}
           perfectDrawEnabled={false}
           shadowForStrokeEnabled={false}
         />
@@ -608,10 +612,10 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           y={el.y + el.height / 2}
           sides={polyEl.sides ?? 5}
           radius={Math.min(el.width, el.height) / 2}
-          fill={el.fill}
-          stroke={el.stroke}
+          fill={resolveFillColor(el) ?? el.fill}
+          stroke={resolveStrokeColor(el)}
           strokeWidth={el.strokeWidth ?? 0}
-          dash={dashFromLineStyle(el.lineStyle)}
+          dash={lineStyleToDash(el.lineStyle)}
           perfectDrawEnabled={false}
           shadowForStrokeEnabled={false}
         />
@@ -625,10 +629,10 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
         <Group key={el.id} {...common} offsetX={el.width / 2} offsetY={el.height / 2}>
           <KonvaArrow
             points={[0, el.height / 2, el.width, el.height / 2]}
-            stroke={el.stroke}
+            stroke={resolveStrokeColor(el) ?? el.stroke}
             strokeWidth={el.strokeWidth}
-            fill={el.stroke}
-            dash={dashFromLineStyle(el.lineStyle)}
+            fill={resolveStrokeColor(el) ?? el.stroke}
+            dash={lineStyleToDash(el.lineStyle)}
             pointerLength={size}
             pointerWidth={size}
             pointerAtBeginning={arrowEl.arrowType === 'start' || arrowEl.arrowType === 'both'}

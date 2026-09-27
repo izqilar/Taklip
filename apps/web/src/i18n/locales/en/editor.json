@@ -267,7 +267,9 @@
     "direction": "Writing direction",
     "directionLTR": "Left to Right (LTR)",
     "directionRTL": "Right to Left (RTL)",
-    "fillColor": "Fill Color"
+    "fillColor": "Fill Color",
+    "fillOpacity": "Fill opacity",
+    "strokeOpacity": "Stroke opacity"
   },
   "puzzle": {
     "title": "Puzzle Layout",
@@ -791,5 +793,9 @@
     "paste": "Paste",
     "duplicate": "Duplicate",
     "delete": "Delete"
+  },
+  "colorPicker": {
+    "eyedropper": "Eyedropper",
+    "pickingHint": "Click canvas to pick · Esc to cancel"
   }
 }

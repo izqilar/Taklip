@@ -52,6 +52,12 @@ interface EditorState {
   /** 当前编辑器 Konva Stage 实例，供动画面板等外部组件访问 */
   stageRef: Konva.Stage | null;
   setStageRef: (stage: Konva.Stage | null) => void;
+  /**
+   * 取色器模式：为 true 时画布隐藏选择框 / 辅助线 / 变换器，
+   * 并由画布上的取色遮罩接管指针（见 utils/eyedropper.ts）。
+   */
+  colorPickMode: boolean;
+  setColorPickMode: (on: boolean) => void;
 
   /* history */
   past: Project[];
@@ -113,7 +119,15 @@ interface EditorState {
   alignBottom: (toPage?: boolean) => void;
   distributeHorizontal: () => void;
   distributeVertical: () => void;
+  /**
+   * 水平镜像（左右翻转）：切换选中元素的 `flipX`。
+   *
+   * 多选时同时把各元素的位置按选区中心做一次镜像 —— 位置镜像与内容镜像叠加，
+   * 才是「整组一起照镜子」的正确结果（每次点击都可逆）。
+   * 单选时位置公式本身退化为恒等，因此效果恰好就是「对象原地左右翻转」。
+   */
   mirrorHorizontal: (toPage?: boolean) => void;
+  /** 垂直镜像（上下翻转）：切换选中元素的 `flipY`，语义同 mirrorHorizontal */
   mirrorVertical: (toPage?: boolean) => void;
 
   /* clipboard（支持多选复制/剪切/粘贴） */
@@ -158,6 +172,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   stageRef: null,
   setStageRef: (stage) => set({ stageRef: stage }),
+
+  colorPickMode: false,
+  setColorPickMode: (on) => set({ colorPickMode: on }),
 
   past: [],
   future: [],
@@ -666,7 +683,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const idsSet = new Set(ids);
       const pages = state.project.pages.map((p, i) =>
         i === state.activePage
-          ? { ...p, elements: p.elements.map((e) => (idsSet.has(e.id) ? ({ ...e, x: 2 * centerX - e.x - e.width } as Element) : e)) }
+          ? {
+              ...p,
+              elements: p.elements.map((e) =>
+                // 位置镜像（多选时把各元素摆到镜像位）+ 内容镜像（翻转自身）。
+                // 单选时 `2 * centerX - e.x - e.width === e.x`，所以只有翻转生效。
+                idsSet.has(e.id) ? ({ ...e, x: 2 * centerX - e.x - e.width, flipX: !e.flipX } as Element) : e,
+              ),
+            }
           : p,
       );
       return { project: { ...state.project, pages }, isDirty: true };
@@ -686,7 +710,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const idsSet = new Set(ids);
       const pages = state.project.pages.map((p, i) =>
         i === state.activePage
-          ? { ...p, elements: p.elements.map((e) => (idsSet.has(e.id) ? ({ ...e, y: 2 * centerY - e.y - e.height } as Element) : e)) }
+          ? {
+              ...p,
+              elements: p.elements.map((e) =>
+                // 同 mirrorHorizontal：位置镜像 + 内容镜像（flipY）。
+                idsSet.has(e.id) ? ({ ...e, y: 2 * centerY - e.y - e.height, flipY: !e.flipY } as Element) : e,
+              ),
+            }
           : p,
       );
       return { project: { ...state.project, pages }, isDirty: true };

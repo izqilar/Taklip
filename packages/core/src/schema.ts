@@ -146,6 +146,16 @@ export interface BaseElement {
   height: number;
   /** 旋转角度，单位 degree */
   rotation: number;
+  /**
+   * 水平镜像（左右翻转）：围绕元素几何中心沿**自身垂直中轴**翻转。
+   * 由「对齐方式 → 水平镜像」按钮切换；不改变 x/y/width/height 包围盒。
+   */
+  flipX?: boolean;
+  /**
+   * 垂直镜像（上下翻转）：围绕元素几何中心沿**自身水平中轴**翻转。
+   * 由「对齐方式 → 垂直镜像」按钮切换；不改变 x/y/width/height 包围盒。
+   */
+  flipY?: boolean;
   /** 透明度 0-1 */
   opacity: number;
   /** 图层顺序，越大越靠上 */
@@ -178,6 +188,16 @@ export interface BaseElement {
   shadowOffsetY?: number;
   /** 阴影不透明度（0~1，默认 1） */
   shadowOpacity?: number;
+  /**
+   * 填充不透明度（0~1，默认 1）。
+   * 只作用于填充色，不影响轮廓；与颜色自带的 alpha 相乘（不覆盖）。
+   */
+  fillOpacity?: number;
+  /**
+   * 轮廓（描边）不透明度（0~1，默认 1）。
+   * 只作用于轮廓色，不影响填充；与颜色自带的 alpha 相乘（不覆盖）。
+   */
+  strokeOpacity?: number;
 }
 
 /** 文本元素 */
@@ -279,6 +299,8 @@ export interface RectElement extends BaseElement {
   fill: string;
   stroke?: string;
   strokeWidth?: number;
+  /** 轮廓线型：solid / dashed / dotted */
+  lineStyle?: 'solid' | 'dashed' | 'dotted';
   /** 圆角：单值=四角相同；对象=四角独立（顺序 topLeft/topRight/bottomRight/bottomLeft） */
   cornerRadius?: number | CornerRadius;
 }

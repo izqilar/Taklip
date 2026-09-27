@@ -159,7 +159,9 @@
     "direction": "Writing direction",
     "directionLTR": "Left to Right (LTR)",
     "directionRTL": "Right to Left (RTL)",
-    "fillColor": "Fill Color"
+    "fillColor": "Fill Color",
+    "fillOpacity": "To'ldirish shaffofligi",
+    "strokeOpacity": "Chegara shaffofligi"
   },
   "puzzle": {
     "title": "Puzzle Layout",
@@ -418,5 +420,9 @@
     "paste": "Chapbash",
     "duplicate": "Nusxa yaratish",
     "delete": "O'chirish"
+  },
+  "colorPicker": {
+    "eyedropper": "Rang oluvchi",
+    "pickingHint": "Rang olish uchun maydonga bosing · Esc bilan bekor qilish"
   }
 }

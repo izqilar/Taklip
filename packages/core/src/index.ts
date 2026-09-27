@@ -1,5 +1,6 @@
 export * from './schema';
 export * from './constants';
+export * from './transform';
 export * from './sanitize';
 export * from './publish';
 export * from './fonts';

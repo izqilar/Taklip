@@ -159,7 +159,9 @@
     "direction": "Writing direction",
     "directionLTR": "Left to Right (LTR)",
     "directionRTL": "Right to Left (RTL)",
-    "fillColor": "Fill Color"
+    "fillColor": "Fill Color",
+    "fillOpacity": "Толтыру мөлдірлігі",
+    "strokeOpacity": "Жиек мөлдірлігі"
   },
   "puzzle": {
     "title": "Puzzle Layout",
@@ -418,5 +420,9 @@
     "paste": "Қою",
     "duplicate": "Көшірме жасау",
     "delete": "Жою"
+  },
+  "colorPicker": {
+    "eyedropper": "Түс алғыш",
+    "pickingHint": "Түс алу үшін кенепке басыңыз · Esc арқылы болдырмау"
   }
 }
