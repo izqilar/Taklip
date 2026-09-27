@@ -604,32 +604,37 @@ function RectCornerAnchors({
 }
 
 /**
- * 把 Konva 变换后的节点旋转，还原为「真实视觉旋转」。
+ * 把 Konva 变换后的节点状态，反解为「尺寸缩放 + 真实视觉旋转」，对任意镜像组合都成立。
  *
- * 背景：Konva 的 `Transformer._fitNodesInto` 会把变换矩阵**分解**后写回节点属性
- * （`Transform.decompose()`），而分解结果的 `scaleX` 恒为正 —— 翻转的符号只能折叠进
- * `scaleY`（负号）或 `rotation`（±180°）。因此对带镜像的节点，变换结束后直接取
- * `node.rotation()` 会拿到折叠后的角度，与 `flipX/flipY` 叠加后视觉朝向会突变
- * （例如水平镜像对象被拖拽一次后变成垂直镜像）。
+ * 背景：Konva 的 `Transformer._fitNodesInto` 把增量 delta 乘进节点局部变换后调用
+ * `Transform.decompose()` 写回属性。而 `decompose()` 的 `scaleX` **恒为正**
+ * （= √(a²+b²)），镜像带来的负号只能折叠进 `scaleY`（负值）和 `rotation`（±180°）。
+ * 所以镜像对象在缩放/旋转后，直接读 `node.scaleX()` / `node.rotation()` 拿到的是
+ * 「折叠态」，会导致：水平镜像变成垂直镜像、朝向突变、比例失调。
  *
- * 这里按已知的 flipX/flipY 反解（推导见 docs 注释表）：
- *  - `scaleY > 0`：无折叠。flipX/flipY 同时为真时 visual = nodeRot - 180；否则就是 nodeRot。
- *  - `scaleY < 0`：有折叠。visual = -nodeRot。
- * 未启用镜像时（原行为）直接返回 nodeRot，不做任何归一化，保证既有旋转逻辑零改动。
+ * 反解方法（严格矩阵推导，取代原先易错的符号分支）：
+ *   节点矩阵 M = delta · R(φ) · S(fx, fy)      —— φ 为设计态旋转，fx/fy 为镜像基准 ±1
+ *   右乘 S(fx, fy)（因 S² = I）：N = M · S(fx, fy) = delta · R(φ)
+ *   → N 就是「剔掉镜像后的纯几何变化」：
+ *       纯缩放时 N = S(kx, ky)       → 旋转 0、缩放 (kx, ky)
+ *       纯旋转时 N = R(θ + φ)        → 旋转即新的视觉旋转
+ *   于是 `decompose()` N 即可同时拿到正确的尺寸缩放与视觉旋转，无需任何符号特判。
+ *
+ * 注意 Konva `Transform.scale(sx, sy)` 语义是“第一列 ×sx、第二列 ×sy”，即右乘
+ * `diag(sx, sy)`，正好就是上式需要的运算。
  */
-function toVisualRotation(node: Konva.Node, el: Element): number {
+function unflipTransform(node: Konva.Node, el: Element): { kx: number; ky: number; rotation: number } {
   const { scaleX: fx, scaleY: fy } = flipScale(el);
-  if (fx === 1 && fy === 1) return node.rotation();
-  const rot = node.rotation();
-  let visual: number;
-  if (node.scaleY() < 0) {
-    visual = -rot;
-  } else if (fx === -1 && fy === -1) {
-    visual = rot - 180;
-  } else {
-    visual = rot;
-  }
-  return ((visual % 360) + 360) % 360;
+  const t = node.getTransform().copy();
+  // 剔除镜像折叠
+  t.scale(fx, fy);
+  const d = t.decompose();
+  const deg = (rad: number) => (rad * 180) / Math.PI;
+  return {
+    kx: Math.abs(d.scaleX),
+    ky: Math.abs(d.scaleY),
+    rotation: ((deg(d.rotation) % 360) + 360) % 360,
+  };
 }
 
 function renderElement({
@@ -685,37 +690,44 @@ function renderElement({
     // 镜像对象：Konva 会把翻转符号折叠进 scaleY/rotation（矩阵分解特性），所以这里
     // 统一取**绝对缩放**折算宽高，并把节点缩放复位到镜像基准值（而非硬编码 1），
     // 避免拖拽过程中镜像被抹掉、或宽高被算成负数。
-    onTransform: (e: Konva.KonvaEventObject<Event>) => {
-      const node = e.target;
-      const { scaleX: baseScaleX, scaleY: baseScaleY } = flipScale(el);
-      const kx = Math.abs(node.scaleX());
-      const ky = Math.abs(node.scaleY());
-      if (kx === 1 && ky === 1) return;
-      node.scaleX(baseScaleX);
-      node.scaleY(baseScaleY);
-      const newWidth = Math.max(5, Math.round((el.width || 0) * kx));
-      const newHeight = Math.max(5, Math.round((el.height || 0) * ky));
-      onChange({
-        x: node.x() - newWidth / 2,
-        y: node.y() - newHeight / 2,
-        width: newWidth,
-        height: newHeight,
-      });
-    },
+    // ⚠️ 拖拽过程中**不要**改动节点属性。
+    // 这里曾经「每帧把 scale/rotation 复位 + 立刻写回新的 width/height」，
+    // 但 Transformer 每一帧都基于「节点当前状态」计算增量 delta：我们一复位，
+    // 它下一帧算出的 delta 就变成反向修正 → 出现来回振荡（镜像时尤其明显，
+    // 表现为越拖越小 / 拖不动 / 比例失调）。
+    // 正确做法：拖拽中让 Konva 自行累积缩放（此时节点矩阵恒为 delta·V，视觉始终正确），
+    // 只在 transformEnd 用 unflipTransform 一次性反解并复位。
+    onTransform: () => {},
     onTransformEnd: (e: Konva.KonvaEventObject<Event>) => {
       const node = e.target;
       const { scaleX: baseScaleX, scaleY: baseScaleY } = flipScale(el);
-      const kx = Math.abs(node.scaleX());
-      const ky = Math.abs(node.scaleY());
+      // 顺序关键：必须在复位前反解，否则 scaleY 里的镜像折叠符号已被抹掉
+      const { kx, ky, rotation } = unflipTransform(node, el);
+      // 只有在拖「旋转手柄」时才接受新角度；缩放不得改变旋转。
+      // 旋转对象做非等比缩放时 Konva 会额外写入 skew（父坐标下的非等比缩放对
+      // 旋转后的局部坐标而言含剪切分量），此时 decompose 出的 rotation 不等于真实视觉旋转
+      // （实测 30° 元素被改成 278.87°），因此这里以「谁在拖」为准而非以分解值为准。
+      const tr = node.getStage()?.findOne('Transformer') as unknown as
+        | { _movingAnchorName?: string }
+        | null
+        | undefined;
+      const anchor = tr?._movingAnchorName;
+      const sizeChanged = Math.abs(kx - 1) > 0.001 || Math.abs(ky - 1) > 0.001;
+      const isRotating = anchor ? anchor === 'rotater' : !sizeChanged;
+      const finalRotation = isRotating ? rotation : el.rotation || 0;
       node.scaleX(baseScaleX);
       node.scaleY(baseScaleY);
+      node.rotation(finalRotation);
+      // 丢掉 Konva 为避免剪切而写入的 skew：数据模型不支持斜切，
+      // 保留会让resize 后残留形变。
+      if (node.skewX() !== 0) node.skewX(0);
+      if (node.skewY() !== 0) node.skewY(0);
       const newWidth = Math.max(5, Math.round((el.width || 0) * kx));
       const newHeight = Math.max(5, Math.round((el.height || 0) * ky));
       onChange({
         x: node.x() - newWidth / 2,
         y: node.y() - newHeight / 2,
-        // 翻转对象的 rotation 需要反解折叠，否则朝向会突变（见 toVisualRotation）
-        rotation: toVisualRotation(node, el),
+        rotation: finalRotation,
         width: newWidth,
         height: newHeight,
       });
@@ -1903,6 +1915,13 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
     // 隐藏元素在画布上不可见，不绑定 Transformer（避免空框）
     if (node && node.visible()) {
       tr.nodes([node]);
+      // ★ Transformer 自身的坐标系旋转必须由「真实视觉旋转」决定，不能用 Konva 默认的
+      //   `node.getAbsoluteRotation()`：后者把镜像（scaleX/scaleY = -1）折叠成 ±180°，
+      //   导致 Transformer 的本地坐标系被翻转 180° → 拖右边手柄反而变窄、拖下边反而变矮
+      //   （见 A/B 实测：镜像后右拖 +40 结果为 -40）。这里显式用数据模型里的旋转值。
+      const target = page.elements.find((e) => e.id === ids[0]);
+      tr.rotation(target?.rotation ?? 0);
+      tr.forceUpdate();
       tr.getLayer()?.batchDraw();
     } else {
       tr.nodes([]);
@@ -2212,6 +2231,10 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
                 <Transformer
                   ref={trRef}
                   rotateEnabled
+                  // 关闭 Konva 的「自动用 node.getAbsoluteRotation() 旋转 Transformer」：
+                  // 那样对镜像对象会得到被折叠的 ±180°，拖拽方向整体反向。
+                  // 改由上方绑定逻辑显式设置真实视觉旋转。
+                  useSingleNodeRotation={false}
                   keepRatio={false}
                   anchorSize={8}
                   anchorStroke="#3b82f6"
