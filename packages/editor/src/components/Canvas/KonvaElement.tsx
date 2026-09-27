@@ -71,6 +71,34 @@ export interface KonvaElementProps {
 
 const noop = () => {};
 
+/**
+ * 边框盒式（border-box）渲染辅助：与发布态 DOM（box-sizing:border-box + overflow:hidden）
+ * 完全一致——边框按设计宽度画在元素盒内侧、图片裁到边框内侧的内容盒，
+ * 消除“预览/导出后边框变粗”的偏差。详见 EditorCanvas 中的同名函数。
+ */
+function innerCornerRadius(cr: number | number[] | undefined, w: number): number | number[] {
+  if (cr == null) return Math.max(0, -w / 2);
+  if (Array.isArray(cr)) return cr.map((v) => Math.max(0, v - w / 2));
+  return Math.max(0, cr - w / 2);
+}
+
+/** 在元素局部坐标系下，把绘图裁到 [x,y,w,h] 的圆角矩形（半径 r，单位设计 px）。 */
+function clipRoundedRect(ctx: Konva.Context, x: number, y: number, w: number, h: number, r: number | number[]): void {
+  const rr = Array.isArray(r) ? r : [r, r, r, r];
+  const r0 = Math.max(0, rr[0] ?? 0);
+  const r1 = Math.max(0, rr[1] ?? r0);
+  const r2 = Math.max(0, rr[2] ?? r0);
+  const r3 = Math.max(0, rr[3] ?? r0);
+  ctx.beginPath();
+  ctx.moveTo(x + r0, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r1);
+  ctx.arcTo(x + w, y + h, x, y + h, r2);
+  ctx.arcTo(x, y + h, x, y, r3);
+  ctx.arcTo(x, y, x + w, y, r0);
+  ctx.closePath();
+  ctx.clip();
+}
+
 export default function KonvaElement({ el, images, scaleK = 1, update = noop, fontEpoch = 0 }: KonvaElementProps) {
   const cx = el.x + el.width / 2;
   const cy = el.y + el.height / 2;
@@ -405,38 +433,52 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
                 />
               )
             )}
-            {hasBorder && (
-              <>
-                <Rect
-                  width={el.width}
-                  height={el.height}
-                  fill="transparent"
-                  stroke={borderColor}
-                  strokeWidth={borderWidth}
-                  cornerRadius={cornerRadius}
-                  dash={borderDashFromStyle(imgEl.borderStyle, borderWidth)}
-                  listening={false}
-                  perfectDrawEnabled={false}
-                  shadowForStrokeEnabled={false}
-                />
-                {imgEl.borderStyle === 'double' && (
+            {hasBorder ? (
+              // 边框盒式（border-box）：图片裁到内容盒（边框内侧），边框画在最上层，
+              // 与发布态 DOM（box-sizing:border-box + overflow:hidden）完全一致。
+              <Group
+                clipFunc={(ctx: Konva.Context) =>
+                  clipRoundedRect(
+                    ctx,
+                    borderWidth,
+                    borderWidth,
+                    el.width - 2 * borderWidth,
+                    el.height - 2 * borderWidth,
+                    innerCornerRadius(cornerRadius, borderWidth),
+                  )
+                }
+              >
+                {isTiled ? (
                   <Rect
-                    x={borderWidth / 2}
-                    y={borderWidth / 2}
-                    width={Math.max(0, el.width - borderWidth)}
-                    height={Math.max(0, el.height - borderWidth)}
-                    fill="transparent"
-                    stroke={borderColor}
-                    strokeWidth={Math.max(1, borderWidth / 3)}
-                    cornerRadius={Math.max(0, (Array.isArray(cornerRadius) ? cornerRadius[0] : cornerRadius ? 0 : cornerRadius) - borderWidth / 2)}
-                    listening={false}
+                    width={el.width}
+                    height={el.height}
+                    fillPatternImage={cached}
+                    fillPatternRepeat={objectFit}
+                    fillPatternScaleX={tileScale}
+                    fillPatternScaleY={tileScale}
+                    cornerRadius={cornerRadius}
+                    filters={filters.length ? filters : undefined}
+                    brightness={brightness}
+                    contrast={contrast}
+                    blurRadius={blurRadius}
+                    perfectDrawEnabled={false}
+                    shadowForStrokeEnabled={false}
+                  />
+                ) : (
+                  <FilteredImage
+                    image={cached}
+                    {...computeImageLayout(cached, imgEl)}
+                    cornerRadius={cornerRadius}
+                    filters={filters.length ? filters : undefined}
+                    brightness={brightness}
+                    blurRadius={blurRadius}
+                    contrast={contrast}
                     perfectDrawEnabled={false}
                     shadowForStrokeEnabled={false}
                   />
                 )}
-              </>
-            )}
-            {isTiled ? (
+              </Group>
+            ) : isTiled ? (
               <Rect
                 width={el.width}
                 height={el.height}
@@ -464,6 +506,53 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
                 perfectDrawEnabled={false}
                 shadowForStrokeEnabled={false}
               />
+            )}
+            {hasBorder && (
+              imgEl.borderStyle === 'double' ? (
+                <>
+                  <Rect
+                    x={borderWidth / 6}
+                    y={borderWidth / 6}
+                    width={Math.max(0, el.width - borderWidth / 3)}
+                    height={Math.max(0, el.height - borderWidth / 3)}
+                    fill="transparent"
+                    stroke={borderColor}
+                    strokeWidth={Math.max(1, borderWidth / 3)}
+                    cornerRadius={innerCornerRadius(cornerRadius, borderWidth / 3)}
+                    listening={false}
+                    perfectDrawEnabled={false}
+                    shadowForStrokeEnabled={false}
+                  />
+                  <Rect
+                    x={borderWidth - borderWidth / 6}
+                    y={borderWidth - borderWidth / 6}
+                    width={Math.max(0, el.width - 2 * (borderWidth - borderWidth / 6))}
+                    height={Math.max(0, el.height - 2 * (borderWidth - borderWidth / 6))}
+                    fill="transparent"
+                    stroke={borderColor}
+                    strokeWidth={Math.max(1, borderWidth / 3)}
+                    cornerRadius={innerCornerRadius(cornerRadius, borderWidth - borderWidth / 6)}
+                    listening={false}
+                    perfectDrawEnabled={false}
+                    shadowForStrokeEnabled={false}
+                  />
+                </>
+              ) : (
+                <Rect
+                  x={borderWidth / 2}
+                  y={borderWidth / 2}
+                  width={Math.max(0, el.width - borderWidth)}
+                  height={Math.max(0, el.height - borderWidth)}
+                  fill="transparent"
+                  stroke={borderColor}
+                  strokeWidth={borderWidth}
+                  cornerRadius={innerCornerRadius(cornerRadius, borderWidth)}
+                  dash={borderDashFromStyle(imgEl.borderStyle, borderWidth)}
+                  listening={false}
+                  perfectDrawEnabled={false}
+                  shadowForStrokeEnabled={false}
+                />
+              )
             )}
           </Group>
         );

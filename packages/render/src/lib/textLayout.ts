@@ -167,6 +167,81 @@ export function clearTextMeasureCache(): void {
   widthCache.clear();
 }
 
+/**
+ * 取字体的「真实度量」用于把 DOM 文本的垂直位置对齐到 Konva（canvas textBaseline='middle'）。
+ *
+ * 关键差异：canvas `textBaseline='middle'` 以字体 **fontBoundingBox**（ascender+descender
+ * 的实际包围盒）的中点为基准放置字形；而 CSS `line-height:1` 以浏览器用于行内布局的度量
+ * （通常是 OS/2 sTypo 或 hhea 指标，与 fontBoundingBox 不对称）居中字形。两者在字形 ink
+ * 的最终垂直落点上会差出几个像素（随字号/字体变化），表现为「预览/导出比编辑器整体下移」。
+ *
+ * 这里给出 fontBoundingBox 指标，调用方据此算出 canvas 的字形 ink 落点，再用运行时实测的
+ * DOM ink 落点反推需要的 `translateY` 修正量，做到两端逐像素一致。
+ */
+export interface FontMetrics {
+  /** fontBoundingBoxAscender（字形上沿到基线，px） */
+  fba: number;
+  /** fontBoundingBoxDescender（基线到字形下沿，px） */
+  fbd: number;
+  /** actualBoundingBoxAscender（实际 ink 上沿到基线，px） */
+  actualAscent: number;
+  /** actualBoundingBoxDescender（基线到实际 ink 下沿，px） */
+  actualDescent: number;
+  /**
+   * `textBaseline='middle'` 锚点到字母基线的距离（px，正值=基线在锚点下方）。
+   *
+   * 推导：同一串文本分别以 'alphabetic' / 'middle' 测量，actualBoundingBoxAscent 都是
+   * 「从基线标识线到 ink 上沿」的距离，两次结果之差恰好抵消掉 ink 本身的高度，得到两条
+   * 标识线之间的间距，即 baseline - middleAnchor。
+   */
+  middleToBaseline: number;
+}
+
+export function measureFontMetrics(
+  fontSize: number,
+  fontFamily?: string,
+  bold?: boolean,
+  italic?: boolean,
+): FontMetrics {
+  const fallback: FontMetrics = {
+    fba: fontSize * 0.8,
+    fbd: fontSize * 0.2,
+    actualAscent: fontSize * 0.7,
+    actualDescent: fontSize * 0.2,
+    // 'middle' 定义为 em 方中点，落在约 0.5em 处、基线约在 0.8em 处
+    middleToBaseline: fontSize * 0.3,
+  };
+  const ctx = getMeasureCtx();
+  if (!ctx) {
+    // SSR / 无 DOM：退化为按字号估算（不影响布局，只用于修正量，运行时会被覆盖）
+    return fallback;
+  }
+  const font = buildCanvasFont({ bold, italic, fontSize, fontFamily });
+  ctx.font = font;
+  // 同时含 ascender/descender 字形，保证 fontBoundingBox 取到完整上下沿
+  const m = ctx.measureText('Hg');
+  const fba = m.fontBoundingBoxAscent || fontSize * 0.8;
+  const fbd = m.fontBoundingBoxDescent || fontSize * 0.2;
+  const actualAscent = m.actualBoundingBoxAscent || fontSize * 0.7;
+  const actualDescent = m.actualBoundingBoxDescent || fontSize * 0.2;
+
+  // 同一串文本两次测量之差 = 基线 - middle 锚点（与具体字形无关，只取决于字体度量）
+  let middleToBaseline = fallback.middleToBaseline;
+  try {
+    ctx.textBaseline = 'alphabetic';
+    const upAlpha = ctx.measureText('Hg').actualBoundingBoxAscent || 0;
+    ctx.textBaseline = 'middle';
+    const upMiddle = ctx.measureText('Hg').actualBoundingBoxAscent || 0;
+    const delta = upAlpha - upMiddle;
+    if (Number.isFinite(delta)) middleToBaseline = delta;
+    ctx.textBaseline = 'alphabetic';
+  } catch {
+    /* 个别环境不支持该 baseline 组合时退回估算值 */
+  }
+
+  return { fba, fbd, actualAscent, actualDescent, middleToBaseline };
+}
+
 // 自定义字体异步加载完成后，之前基于回退字体的测量全部失效 → 清缓存
 if (typeof document !== 'undefined') {
   const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;

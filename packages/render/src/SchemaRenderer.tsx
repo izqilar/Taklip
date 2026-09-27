@@ -8,7 +8,7 @@
  *
  * 迁移自 apps/web/src/components/Preview/DOMRenderer.tsx（DOMRenderer）。
  */
-import { useState, useRef, useEffect, type CSSProperties, type ReactNode, type SyntheticEvent } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo, type CSSProperties, type ReactNode, type SyntheticEvent } from 'react';
 import type {
   Element,
   Page,
@@ -39,6 +39,8 @@ import {
   mapWordBreakToKonvaWrap,
   resolveLineOffset,
   resolveVerticalOffset,
+  measureFontMetrics,
+  type FontMetrics,
 } from './lib/textLayout';
 import { resolveExternalVideo } from './lib/externalVideo';
 import { rgbaToCss, parseCssColor } from './lib/color';
@@ -294,11 +296,14 @@ function TextElementView({
   commonStyle,
   dataAttrs,
   shadowCss,
+  scale = 1,
 }: {
   el: TextElement;
   commonStyle: CSSProperties;
   dataAttrs: Record<string, string>;
   shadowCss?: string;
+  /** 整页缩放（来自 SchemaRenderer scale prop），用于把运行时文本修正量换算回局部坐标 */
+  scale?: number;
 }) {
   // 自定义字体异步加载完成后重新排版（加载前 measureText 用的是回退字体，宽度会有偏差）
   const [fontEpoch, setFontEpoch] = useState(0);
@@ -362,6 +367,46 @@ function TextElementView({
   const { lineHeightPx } = layout;
   const blockTop = resolveVerticalOffset(layout.contentHeight, el.height, el.verticalAlign);
 
+  // —— 文本垂直自校准：让 DOM 字形 ink 落点与 Konva（canvas textBaseline='middle'）完全一致 ——
+  // CSS `line-height` 与 canvas `textBaseline='middle'` 使用不同的字体度量居中字形，
+  // 导致预览/导出相对编辑器整体下移几个像素（随字号/字体变化）。这里运行时实测 DOM ink，
+  // 反推需要的 translateY 修正量，逐像素对齐三端。详见 lib/textLayout.ts#measureFontMetrics。
+  const metrics = useMemo(
+    () => measureFontMetrics(el.fontSize || 16, el.fontFamily, fontStyleRaw.includes('bold'), fontStyleRaw.includes('italic')),
+    [el.fontSize, el.fontFamily, fontStyleRaw],
+  );
+  const firstWrapperRef = useRef<HTMLDivElement>(null);
+  const firstFillRef = useRef<HTMLSpanElement>(null);
+  const [textShift, setTextShift] = useState(0);
+  useLayoutEffect(() => {
+    const w = firstWrapperRef.current;
+    const f = firstFillRef.current;
+    if (!w || !f) return;
+    const s = scale || 1;
+    // DOM 真实基线：插入 0×0 的 inline-block 探针，无内容时其底边即贴合所在行盒基线。
+    // 探针与 wrapper 同时受 translateY 影响，故下面测得的相对量对已应用修正「免疫」，
+    // 天然收敛，不会形成自我累加的反馈环。
+    const probe = document.createElement('span');
+    probe.style.cssText =
+      'display:inline-block;width:0;height:0;padding:0;margin:0;border:0;vertical-align:baseline;pointer-events:none;';
+    f.appendChild(probe);
+    const wrapRect = w.getBoundingClientRect();
+    const probeBottom = probe.getBoundingClientRect().bottom;
+    probe.remove();
+    // 「实测视觉缩放」优先于传入的 scale：wrapper 的局部高度恒为 lineHeightPx（显式 height），
+    // 与其实测像素高度之比就是当前真实缩放——对 CSS transform / zoom / 外层容器缩放一律免疫，
+    // 也避免了调用方传错 scale 时把修正量整体放大（曾导致预览端固定多下移约 1px）。
+    const sActual = lineHeightPx > 0 && wrapRect.height > 0 ? wrapRect.height / lineHeightPx : s;
+    // 修正量最终落在字形的 top 上（而非 wrapper 的 transform），因此当前测得的基线
+    // 已包含上一轮修正；减掉后才回到「未修正」基准 → corr 恒定，一轮收敛不自激。
+    const domBaselineLocal = (probeBottom - wrapRect.top) / sActual - textShift;
+    // Konva 行锚点：每行绘制于 translateY = i*lineHeightPx + lineHeightPx/2 且 textBaseline='middle'
+    // （_fixTextRendering 默认 false 的分支），故该行基线 = lineHeightPx/2 + middleToBaseline。
+    const canvasBaselineLocal = lineHeightPx / 2 + metrics.middleToBaseline;
+    const corr = canvasBaselineLocal - domBaselineLocal;
+    if (Math.abs(corr - textShift) > 0.02) setTextShift(corr);
+  }, [metrics, lineHeightPx, scale, fontEpoch, textShift]);
+
   // 书写方向：rtl 让阿拉伯文等从右向左排版（与编辑器 Konva 画布靠 canvas bidi 对齐）
   const dir: 'ltr' | 'rtl' = el.direction === 'rtl' ? 'rtl' : 'ltr';
   // 两端对齐 / 分散对齐（与编辑器画布、Konva 保持一致）：
@@ -396,9 +441,14 @@ function TextElementView({
   const glyphStyle: CSSProperties = {
     position: 'absolute',
     left: 0,
-    top: 0,
-    height: lineHeightPx,
-    lineHeight: `${lineHeightPx}px`,
+    // 与编辑器 Konva（textBaseline='middle'，em 盒中心定位）严格一致：
+    // 让字形的 em 盒（1em = fontSize）在行盒（高 lineHeightPx）内垂直居中，
+    // 而非 CSS 默认的“内容盒（ascent+descent）”居中——二者差
+    // (ascent+descent - unitsPerEm)/2，会在大字号下累积成数像素下偏，
+    // 表现为“预览/导出比编辑器整体下移”。修正后三端（编辑器/预览/导出）垂直对齐。
+    top: (lineHeightPx - el.fontSize) / 2,
+    height: el.fontSize,
+    lineHeight: 1,
     whiteSpace: 'pre',
     fontSize: el.fontSize,
     fontFamily: el.fontFamily,
@@ -446,18 +496,25 @@ function TextElementView({
             const stretched = isJustify && (el.align === 'justify-all' || !ln.lastInParagraph);
             // 拉伸行：行盒占满元素宽，由 text-align / text-align-last 均摊空格（等价 CSS justify，
             // 且 RTL 由浏览器原生 bidi 处理）；非拉伸行：按书写方向回退，宽度取实际行宽
+            const glyphBase = {
+              ...glyphStyle,
+              // 基线修正直接落在字形盒的 top 上：用 transform 会把行盒提升为合成层，
+              // Chrome 会把合成层的绘制偏移吸附（snap）到整设备像素，反而引入 ±1px 抖动。
+              top: (lineHeightPx - el.fontSize) / 2 + textShift,
+            };
             const glyph = stretched
               ? {
-                  ...glyphStyle,
+                  ...glyphBase,
                   display: 'block',
                   width: '100%',
                   textAlign: 'justify' as const,
                   textAlignLast: 'justify' as const,
                 }
-              : glyphStyle;
+              : glyphBase;
             return (
               <div
                 key={i}
+                ref={i === 0 ? firstWrapperRef : undefined}
                 style={{
                   position: 'absolute',
                   left: stretched ? 0 : resolveLineOffset(ln.width, el.width, fallbackAlign),
@@ -481,7 +538,9 @@ function TextElementView({
                     {ln.text}
                   </span>
                 )}
-                <span style={{ ...glyph, color: el.fill }}>{ln.text}</span>
+                <span ref={i === 0 ? firstFillRef : undefined} style={{ ...glyph, color: el.fill }}>
+                  {ln.text}
+                </span>
               </div>
             );
           })}
@@ -490,7 +549,7 @@ function TextElementView({
   );
 }
 
-function renderElement(el: Element): ReactNode {
+function renderElement(el: Element, scale = 1): ReactNode {
   // 防御：单个元素数据缺失/畸形时跳过，避免整页渲染崩溃
   if (!el || typeof el !== 'object' || !el.type || el.visible === false) return null;
   // 阴影是否存在以「真实非透明阴影」为准（与编辑器 Konva _hasShadow 一致）：
@@ -591,6 +650,7 @@ function renderElement(el: Element): ReactNode {
           commonStyle={commonStyle}
           dataAttrs={dataAttrs}
           shadowCss={shadowCss}
+          scale={scale}
         />
       );
     }
@@ -951,10 +1011,12 @@ interface AnimatedPageProps {
   height: number;
   animated?: boolean;
   animationPlayer?: AnimationPlayer;
+  /** 整页缩放（来自 SchemaRenderer 的 scale prop）——用于把运行时文本修正量换算回局部坐标 */
+  scale?: number;
 }
 
 /** 带动画的页面渲染器（animated=false 时只做静态渲染，不播放入场动画） */
-function AnimatedPage({ page, width, height, animated = true, animationPlayer = noopPlayer }: AnimatedPageProps) {
+function AnimatedPage({ page, width, height, animated = true, animationPlayer = noopPlayer, scale = 1 }: AnimatedPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1042,14 +1104,14 @@ function AnimatedPage({ page, width, height, animated = true, animationPlayer = 
       {page.elements
         .filter((e) => e && e.visible !== false)
         .sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0))
-        .map((el) => renderElement(el))}
+        .map((el) => renderElement(el, scale))}
     </div>
   );
 }
 
-function renderPage(page: Page, width: number, height: number, animated = true, animationPlayer: AnimationPlayer = noopPlayer): React.ReactNode {
+function renderPage(page: Page, width: number, height: number, animated = true, animationPlayer: AnimationPlayer = noopPlayer, scale = 1): React.ReactNode {
   return (
-    <AnimatedPage page={page} width={width} height={height} animated={animated} animationPlayer={animationPlayer} />
+    <AnimatedPage page={page} width={width} height={height} animated={animated} animationPlayer={animationPlayer} scale={scale} />
   );
 }
 
@@ -1079,7 +1141,7 @@ export default function SchemaRenderer({
         transformOrigin: 'top left',
       }}
     >
-      {page ? renderPage(page, project.width ?? 375, project.height ?? 667, animated, animationPlayer) : null}
+      {page ? renderPage(page, project.width ?? 375, project.height ?? 667, animated, animationPlayer, scale) : null}
     </div>
   );
 }
@@ -1135,7 +1197,7 @@ export function PublishedH5({
           transformOrigin: 'top left',
         }}
       >
-        {renderPage(page, width, height, true, animationPlayer)}
+        {renderPage(page, width, height, true, animationPlayer, scale)}
       </div>
     ) : null;
 
