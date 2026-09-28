@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useCallback, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Stage,
@@ -29,7 +29,7 @@ import CanvasWidget from '../../elements/widget/CanvasWidget';
 import GalleryEditorOverlay from './GalleryEditorOverlay';
 import ContextMenu from './ContextMenu';
 import type { Element, TextElement, ImageElement, RectElement, CircleElement, PolygonElement, ArrowElement, CornerRadius, ImageClip, CalendarElement, GalleryElement, PuzzleElement, CountdownElement, MapNavElement, MessageBoardElement, TimelineElement, LikeElement, WidgetElement } from '@h5design/core';
-import { CANVAS_DEFAULT, toKonvaCornerRadius, normalizeCornerRadius, drawClipOnContext, normalizeImageClip, hasRealShadow, kashidaForLetterSpacing, resolveStrokeColor, lineStyleToDash, flipScale, flipCssTransform, konvaFill, fillBoxTopLeft, fillBoxCenter, fillBoxCircle } from '@h5design/core';
+import { CANVAS_DEFAULT, toKonvaCornerRadius, normalizeCornerRadius, drawClipOnContext, normalizeImageClip, hasRealShadow, kashidaForLetterSpacing, resolveStrokeColor, lineStyleToDash, flipScale, flipCssTransform, konvaFill, fillBoxTopLeft, fillBoxCenter, fillBoxCircle, subscribeImageFill, getImageFillEpoch } from '@h5design/core';
 import {
   toKonvaAlign,
   installTextJustifySupport,
@@ -651,6 +651,12 @@ function renderElement({
 }: RenderProps) {
   const cx = el.x + el.width / 2;
   const cy = el.y + el.height / 2;
+  // 文本缩放实时反算所需的子层原始几何（transformStart 时快照，拖拽帧内按增长量平移保持居中）
+  const tfChildBase = useRef<Map<string, { x: number; y: number }>>(new Map());
+  // 文本缩放累积尺寸：onTransform 每帧 = 上一帧盒 × Konva 刚写入的增量 = 本帧目标尺寸。
+  // 因为每帧会把组 scale 复位为基准（尺寸改由子层承载），无法直接用 node.scale() 反推
+  // 累积宽高，故用 ref 维护（详见 onTransform 注释）。
+  const tfSize = useRef<{ w: number; h: number }>({ w: 1, h: 1 });
 
   const common = {
     id: el.id,
@@ -684,50 +690,123 @@ function renderElement({
         y: node.y() - el.height / 2,
       });
     },
-    onTransformStart,
-    // 拖拽调整大小时实时把 scale 折算成 width/height，并立即归零 scale，
-    // 同时保持旋转中心（几何中心）固定。
-    // 镜像对象：Konva 会把翻转符号折叠进 scaleY/rotation（矩阵分解特性），所以这里
-    // 统一取**绝对缩放**折算宽高，并把节点缩放复位到镜像基准值（而非硬编码 1），
-    // 避免拖拽过程中镜像被抹掉、或宽高被算成负数。
-    // ⚠️ 拖拽过程中**不要**改动节点属性。
-    // 这里曾经「每帧把 scale/rotation 复位 + 立刻写回新的 width/height」，
-    // 但 Transformer 每一帧都基于「节点当前状态」计算增量 delta：我们一复位，
-    // 它下一帧算出的 delta 就变成反向修正 → 出现来回振荡（镜像时尤其明显，
-    // 表现为越拖越小 / 拖不动 / 比例失调）。
-    // 正确做法：拖拽中让 Konva 自行累积缩放（此时节点矩阵恒为 delta·V，视觉始终正确），
-    // 只在 transformEnd 用 unflipTransform 一次性反解并复位。
-    onTransform: () => {},
-    onTransformEnd: (e: Konva.KonvaEventObject<Event>) => {
-      const node = e.target;
-      const { scaleX: baseScaleX, scaleY: baseScaleY } = flipScale(el);
-      // 顺序关键：必须在复位前反解，否则 scaleY 里的镜像折叠符号已被抹掉
-      const { kx, ky, rotation } = unflipTransform(node, el);
-      // 只有在拖「旋转手柄」时才接受新角度；缩放不得改变旋转。
-      // 旋转对象做非等比缩放时 Konva 会额外写入 skew（父坐标下的非等比缩放对
-      // 旋转后的局部坐标而言含剪切分量），此时 decompose 出的 rotation 不等于真实视觉旋转
-      // （实测 30° 元素被改成 278.87°），因此这里以「谁在拖」为准而非以分解值为准。
+    // transformStart：快照子层原始几何（x/y），并初始化累积尺寸 ref。
+    // 文本缩放采用「组缩放复位 + 子层承载尺寸」范式（见 onTransform 注释），
+    // 需要记录初始宽高作为累积计算的基准。
+    onTransformStart: (e: Konva.KonvaEventObject<Event>) => {
+      if (el.type === 'text') {
+        const node = e.target as Konva.Group;
+        tfChildBase.current.clear();
+        node.getChildren().forEach((c) => tfChildBase.current.set(c.id(), { x: c.x(), y: c.y() }));
+        tfSize.current = { w: el.width || 0, h: el.height || 0 };
+      }
+      if (onTransformStart) onTransformStart();
+    },
+    // 文本缩放范式（修复「整体滑动 + 橡皮筋」）：
+    // 目标：拖拽时仅边框宽高实时变化、文字字号/比例不变（文字按新框宽高重排）。
+    // 机制：
+    //  - Konva Transformer 每帧把增量 delta 累乘进「节点自身变换」——节点 scale 因此是
+    //    「相对上一帧绝对盒」的增量，且下一帧又基于「节点当前绝对包围盒」重算 delta。
+    //  - 若 onTransform 里把组 scale 复位为 1、把尺寸写进子层，下一帧 Konva 读到的绝对盒
+    //    = 子层新尺寸，算出的 delta = 鼠标目标 / 当前尺寸（仍是增量）；若直接用
+    //    node.scale()/bsx 折算宽高会逐帧丢失累积 → 框不增长、整体随鼠标平移（滑动）。
+    //  - 正确做法：用 ref 维护「累积尺寸 tfSize」。每帧读取 Konva 刚写入的增量
+    //    incX = node.scaleX()/bsx，则本帧目标 W = tfSize.w * incX（prevW × 增量 = 累积）；
+    //    再把组 scale 复位为基准、把 W/H 写进所有子层（向中心平移保持居中），最后把
+    //    tfSize 更新为 W/H。这样绝对盒每帧精确等于目标，Konva 下一帧 delta 基于正确当前盒，
+    //    尺寸单向累积、中心恒固定于几何中心 → 不滑动、不橡皮筋。
+    //  - 旋转手柄（rotater）与镜像元素跳过本处理，沿用 Konva 原生行为。
+    onTransform: (e: Konva.KonvaEventObject<Event>) => {
+      if (el.type !== 'text') return;
+      const { scaleX: bsx, scaleY: bsy } = flipScale(el);
+      if (bsx < 0 || bsy < 0) return; // 镜像元素：保持原生拉伸行为
+      const node = e.target as Konva.Group;
       const tr = node.getStage()?.findOne('Transformer') as unknown as
         | { _movingAnchorName?: string }
         | null
         | undefined;
       const anchor = tr?._movingAnchorName;
-      const sizeChanged = Math.abs(kx - 1) > 0.001 || Math.abs(ky - 1) > 0.001;
-      const isRotating = anchor ? anchor === 'rotater' : !sizeChanged;
-      const finalRotation = isRotating ? rotation : el.rotation || 0;
+      if (!anchor || anchor === 'rotater') return; // 旋转不动文本
+      // Konva 刚写入的增量（相对上一帧绝对盒）
+      const incX = node.scaleX() / bsx;
+      const incY = node.scaleY() / bsy;
+      // 累积目标尺寸 = 上一帧盒 × 本帧增量（prevW × 增量 = 绝对目标，不会逐帧丢失）
+      const W = Math.max(5, (tfSize.current.w || el.width || 0) * incX);
+      const H = Math.max(5, (tfSize.current.h || el.height || 0) * incY);
+      // 组缩放复位为基准：尺寸改由子层承载（不累积、不振荡）
+      node.scaleX(bsx);
+      node.scaleY(bsy);
+      const dx = (W - (el.width || 0)) / 2;
+      const dy = (H - (el.height || 0)) / 2;
+      node.getChildren().forEach((c) => {
+        const base = tfChildBase.current.get(c.id()) ?? { x: c.x(), y: c.y() };
+        // 子层字号不变（scale=1），盒宽高随框缩放；向中心平移保持各自内嵌偏移并居中
+        c.scaleX(1);
+        c.scaleY(1);
+        c.width(W);
+        c.height(H);
+        c.offsetX(0);
+        c.offsetY(0);
+        c.x(base.x - dx);
+        c.y(base.y - dy);
+      });
+      tfSize.current = { w: W, h: H };
+    },
+    onTransformEnd: (e: Konva.KonvaEventObject<Event>) => {
+      const node = e.target as Konva.Group;
+      const { scaleX: baseScaleX, scaleY: baseScaleY } = flipScale(el);
+      const tr = node.getStage()?.findOne('Transformer') as unknown as
+        | { _movingAnchorName?: string }
+        | null
+        | undefined;
+      const anchor = tr?._movingAnchorName;
+      const isRotating = anchor === 'rotater';
+      // 文本缩放：累积尺寸 tfSize 即目标宽高，直接折算（中心恒固定，无需 unflip）。
+      // 旋转 / 镜像：用 unflipTransform 反解（拆分镜像折叠 + 旋转，得到正确 k 与角度）。
+      let kx = 1;
+      let ky = 1;
+      let rotation = el.rotation || 0;
+      if (el.type === 'text' && !isRotating && baseScaleX >= 0 && baseScaleY >= 0) {
+        const W = tfSize.current.w || el.width || 0;
+        const H = tfSize.current.h || el.height || 0;
+        kx = (el.width || 0) > 0 ? W / (el.width as number) : 1;
+        ky = (el.height || 0) > 0 ? H / (el.height as number) : 1;
+      } else {
+        const r = unflipTransform(node, el);
+        kx = r.kx;
+        ky = r.ky;
+        // 旋转手柄拖动 / 镜像：用反解角度；普通缩放拖动不得改变旋转，且非等比缩放会
+        // 让 decompose 的 rotation 失真（实测 30°→278.87°），故以模型原旋转为准。
+        if (isRotating) rotation = r.rotation;
+        // 否则 rotation 保持 el.rotation（已在初始化时赋值），避免失真
+      }
       node.scaleX(baseScaleX);
       node.scaleY(baseScaleY);
-      node.rotation(finalRotation);
-      // 丢掉 Konva 为避免剪切而写入的 skew：数据模型不支持斜切，
-      // 保留会让resize 后残留形变。
+      node.rotation(rotation);
+      // 丢掉 Konva 为避免剪切而写入的 skew：数据模型不支持斜切，保留会让 resize 后残留形变。
       if (node.skewX() !== 0) node.skewX(0);
       if (node.skewY() !== 0) node.skewY(0);
+      // 文本缩放：把拖拽中改动的子层几何复位到「模型基准内嵌偏移」，
+      // 否则 React 重渲染后 fill/outline 子层会残留拖拽期位移而错位。
+      if (el.type === 'text') {
+        node.getChildren().forEach((c) => {
+          const b = tfChildBase.current.get(c.id());
+          if (b) {
+            c.x(b.x);
+            c.y(b.y);
+          }
+          c.scaleX(1);
+          c.scaleY(1);
+          c.offsetX(0);
+          c.offsetY(0);
+        });
+      }
       const newWidth = Math.max(5, Math.round((el.width || 0) * kx));
       const newHeight = Math.max(5, Math.round((el.height || 0) * ky));
       onChange({
         x: node.x() - newWidth / 2,
         y: node.y() - newHeight / 2,
-        rotation: finalRotation,
+        rotation,
         width: newWidth,
         height: newHeight,
       });
@@ -1550,6 +1629,8 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
   // 图片资源异步加载完成后需要触发组件重渲染，否则仅 batchDraw 不会把
   // 已加载的 HTMLImageElement 反映到 React/Konva 树（图片会一直停留在灰色占位框）。
   const [, forceImgRedraw] = useState(0);
+  // 图片填充异步加载完成后触发画布重绘（fill.ts 模块级缓存，与 imageCache 解耦）
+  useSyncExternalStore(subscribeImageFill, getImageFillEpoch);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   // 编辑态 id 的 ref 镜像：供 mousedown 抢先卸载前读取（此时 state 尚未更新）。

@@ -567,7 +567,25 @@ function TextElementView({
                       ? {
                           ...glyph,
                           ...textPaintStyle,
-                          backgroundPosition: `${-lineLeft}px ${-(lineTop + (glyphBase.top as number))}px`,
+                          // ★ 镂空修复：background-clip:text 的背景绘制区 = span 盒（含 padding）。
+                          // CJK/粗体字形 ink（ascent+descent > 1em）会溢出 1em 高的 em 盒；
+                          // 溢出部分「有字形遮罩、无背景可画」→ 笔画整块透明镂空。
+                          // 上一版只向下加高（覆盖底部溢出），但部分字体 ink 从 em 盒顶部溢出
+                          // （用户截图红框标在字形顶部），故改为「上下对称扩展 1em」：
+                          // 用 padding 把背景绘制区向外推 1em，同时把 span 的 top 上移同量、
+                          // 盒高设为 fontSize+2em（border-box），使字形内容位置不变
+                          // （padding 上移与 top 位移相互抵消），仅放大背景绘制区 →
+                          // 顶部 / 底部溢出 ink 均被覆盖。基线探针测量基于字形内容位置
+                          // （不受 padding 影响），故三端垂直对齐不变；背景仍按元素框原点
+                          // 补偿（padding 盒顶 = em 盒顶 − 1em），保证跨行渐变连续。
+                          boxSizing: 'border-box',
+                          top: (glyphBase.top as number) - el.fontSize,
+                          height: el.fontSize * 3,
+                          paddingTop: el.fontSize,
+                          paddingBottom: el.fontSize,
+                          // ⚠️ Chromium 在 background-clip:text + 小数 background-position 下
+                          // 栅格化字形遮罩会出现 1 设备像素的发丝裂缝。取整对齐整数像素消除。
+                          backgroundPosition: `${-Math.round(lineLeft)}px ${-Math.round(lineTop + (glyphBase.top as number) - el.fontSize)}px`,
                         }
                       : { ...glyph, color: solidTextColor }
                   }
@@ -590,6 +608,26 @@ function TextElementView({
  * 用**同一套** `gradientLineGeometry` 换算，避免非正方形元素上渐变被拉伸变形。
  */
 function SvgFillDefs({ def, width, height }: { def: SvgFillDef; width: number; height: number }) {
+  if (def.kind === 'image') {
+    const tileW = def.fit === 'repeat' ? def.imgW || width : width;
+    const tileH = def.fit === 'repeat' ? def.imgH || height : height;
+    const par = def.fit === 'contain' ? 'xMidYMid meet' : 'xMidYMid slice';
+    return (
+      <defs>
+        <pattern id={def.id} patternUnits="userSpaceOnUse" width={tileW} height={tileH}>
+          <image
+            href={def.href}
+            x={0}
+            y={0}
+            width={tileW}
+            height={tileH}
+            preserveAspectRatio={par}
+            opacity={def.opacity ?? 1}
+          />
+        </pattern>
+      </defs>
+    );
+  }
   if (def.kind === 'pattern') {
     return (
       <defs>
