@@ -274,6 +274,44 @@ function RedoIcon({ className }: { className?: string }) {
   );
 }
 
+// ── 顶栏 lucide 图标（与 lucide 官方 path 一致，stroke 继承 currentColor）──
+const ExitIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10 12h11" />
+    <path d="m17 16 4-4-4-4" />
+    <path d="M21 6.344V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1.344" />
+  </svg>
+);
+
+const ExportIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21" />
+    <path d="m14 19.5 3-3 3 3" />
+    <path d="M17 22v-5.5" />
+    <circle cx="9" cy="9" r="2" />
+  </svg>
+);
+
+const SunIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2" />
+    <path d="M12 20v2" />
+    <path d="m4.93 4.93 1.41 1.41" />
+    <path d="m17.66 17.66 1.41 1.41" />
+    <path d="M2 12h2" />
+    <path d="M20 12h2" />
+    <path d="m6.34 17.66-1.41 1.41" />
+    <path d="m19.07 4.93-1.41 1.41" />
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />
+  </svg>
+);
+
 export interface EditorAppProps {
   /**
    * 仅导出模式：编辑器顶栏「发布」按钮变为「导出」，并打开不含「立即发布」页签的
@@ -294,6 +332,23 @@ export default function EditorApp({ exportOnly = false, exitPath = '/dashboard' 
   useKeyboard();
   const { t } = useTranslation(['common', 'editor', 'errors']);
   const navigate = useNavigate();
+
+  // ── 编辑器主题：浅色/深色，持久化到 localStorage，同步到根节点 class="dark" ──
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('editor.theme') === 'dark';
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem('editor.theme', isDark ? 'dark' : 'light');
+    } catch {
+      /* 忽略持久化失败 */
+    }
+    document.documentElement.classList.toggle('dark', isDark);
+  }, [isDark]);
 
   const title = useEditorStore((s) => s.project.title);
   const setProjectTitle = useEditorStore((s) => s.setProjectTitle);
@@ -1082,17 +1137,30 @@ export default function EditorApp({ exportOnly = false, exitPath = '/dashboard' 
           {isSaving && (
             <span className="text-xs text-blue-500">{t('common:status.saving')}</span>
           )}
+          {/* 主题切换：浅色显示 sun、深色显示 moon，实时跟随当前主题 */}
+          <button
+            onClick={() => setIsDark((v) => !v)}
+            title={isDark ? t('editor:toolbar.lightMode', { defaultValue: '切换为浅色主题' }) : t('editor:toolbar.darkMode', { defaultValue: '切换为深色主题' })}
+            aria-label={isDark ? t('editor:toolbar.lightMode', { defaultValue: '切换为浅色主题' }) : t('editor:toolbar.darkMode', { defaultValue: '切换为深色主题' })}
+            className="flex items-center justify-center rounded p-2 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
+          >
+            {isDark ? <SunIcon /> : <MoonIcon />}
+          </button>
           <button
             onClick={() => setPublishOpen(true)}
-            className="rounded bg-red-500 px-3 py-1.5 text-sm text-white transition hover:bg-red-600"
+            title={exportOnly ? t('editor:toolbar.exportWork') : t('editor:toolbar.publish')}
+            aria-label={exportOnly ? t('editor:toolbar.exportWork') : t('editor:toolbar.publish')}
+            className="flex items-center justify-center rounded bg-red-500 p-2 text-white transition hover:bg-red-600"
           >
-            {exportOnly ? t('editor:toolbar.exportWork') : t('editor:toolbar.publish')}
+            <ExportIcon />
           </button>
           <button
             onClick={handleBack}
-            className="rounded bg-gray-500 px-3 py-1.5 text-sm text-white transition hover:bg-gray-600"
+            title={t('editor:toolbar.exitEdit')}
+            aria-label={t('editor:toolbar.exitEdit')}
+            className="flex items-center justify-center rounded bg-gray-500 p-2 text-white transition hover:bg-gray-600"
           >
-            {t('editor:toolbar.exitEdit')}
+            <ExitIcon />
           </button>
         </div>
       </header>

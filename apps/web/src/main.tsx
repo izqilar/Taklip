@@ -5,6 +5,7 @@ import './fontBootstrap'; // 注入字体目录 fetcher，供缩略图等列表�
 import App from './App';
 import { useAuthStore } from '@/store/authStore';
 import './index.css';
+import './editor-dark-theme.css'; // 编辑器 Figma 风格暗色主题（与内核 editor.css 同款覆盖层）
 import './i18n';
 
 // 注意：编辑器内核服务（editorServices）**不在此处导入**。

@@ -1,124 +1,11 @@
 /* ============================================================================
- * 编辑器内核自包含基础重置（作用域限 .editor-canvas-wrap 子树）
+ * 编辑器暗色主题（Figma 风格）—— web 端入口
  * ----------------------------------------------------------------------------
- * 内核纯 Tailwind，依赖以下基础重置（box-sizing:border-box / border 默认 solid /
- * 按钮·图片·标题去默认样式 / 统一字体与文字色）。本段仅作用于画布子树：
- *   1) 不污染宿主全局（web 自身 preflight、admin 的 antd 全局样式）；
- *   2) web 与 admin import 同一份本文件 → 两端画布视觉像素级一致。
- *
- * 顺序关键：本段必须放在 `@tailwind utilities` 之前。两者选择器特异性同为 (0,1,0)，
- * 靠后声明的工具类胜出 → .border 的 1px 宽、.border-gray-200 的颜色都应由工具类决定，
- * 本段只提供「默认 solid + 默认灰边框色」兜底。若把 utilities 放前面，preflight 的
- * border-width:0 会反过来覆盖 .border，导致边框不可见。
- * ==========================================================================*/
-.editor-canvas-wrap,
-.editor-canvas-wrap *,
-.editor-canvas-wrap *::before,
-.editor-canvas-wrap *::after {
-  box-sizing: border-box;
-  border-width: 0;
-  border-style: solid;
-  border-color: #e5e7eb;
-}
-
-.editor-canvas-wrap {
-  line-height: 1.5;
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-  /* 统一字体栈，覆盖宿主 body 字体（web system-ui / admin antd），保证两端一致 */
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  color: #1f2937; /* gray-800，覆盖 antd 默认文字色 */
-}
-
-.editor-canvas-wrap button,
-.editor-canvas-wrap [type='button'],
-.editor-canvas-wrap [type='reset'],
-.editor-canvas-wrap [type='submit'] {
-  -webkit-appearance: button;
-  appearance: button;
-  background-color: transparent;
-  background-image: none;
-}
-
-.editor-canvas-wrap button {
-  font-family: inherit;
-  font-size: 100%;
-  font-weight: inherit;
-  line-height: inherit;
-  color: inherit;
-  margin: 0;
-  padding: 0;
-  cursor: pointer;
-  text-transform: none;
-}
-
-.editor-canvas-wrap img,
-.editor-canvas-wrap video,
-.editor-canvas-wrap canvas,
-.editor-canvas-wrap svg {
-  display: block;
-  vertical-align: middle;
-}
-
-.editor-canvas-wrap img,
-.editor-canvas-wrap video {
-  max-width: 100%;
-  height: auto;
-}
-
-.editor-canvas-wrap input,
-.editor-canvas-wrap select,
-.editor-canvas-wrap textarea {
-  font-family: inherit;
-  font-size: 100%;
-  font-weight: inherit;
-  line-height: inherit;
-  color: inherit;
-  margin: 0;
-}
-
-.editor-canvas-wrap p,
-.editor-canvas-wrap h1,
-.editor-canvas-wrap h2,
-.editor-canvas-wrap h3,
-.editor-canvas-wrap h4,
-.editor-canvas-wrap h5,
-.editor-canvas-wrap h6,
-.editor-canvas-wrap figure,
-.editor-canvas-wrap blockquote,
-.editor-canvas-wrap dl,
-.editor-canvas-wrap dd {
-  margin: 0;
-}
-
-.editor-canvas-wrap ul,
-.editor-canvas-wrap ol {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.editor-canvas-wrap [hidden] {
-  display: none !important;
-}
-
-@tailwind utilities;
-
-/* ============================================================================
- * 编辑器暗色主题（Figma 风格）
- * ----------------------------------------------------------------------------
- * 开关：EditorApp 在 document.documentElement 上 toggle `dark` class（持久化于
- * localStorage `editor.theme`）。
- * 作用域：仅 .editor-canvas-wrap 子树。用户作品内容由 @h5design/render 的
- * SchemaRenderer 以 **inline style**（backgroundColor: page.background || '#fff'）渲染，
- * 不使用本处覆盖的 Tailwind 工具类，故预览/导出态与设计器完全一致，不会被错误改暗。
- * 机制：用高于 Tailwind 工具类 (0,1,0) 的特异性 (0,3,0) 选择性覆盖编辑器标准调色板，
- *       避免逐个组件手写 dark: 变体，保证两端（web/admin）视觉统一。
- * 调色板（Figma 暗色近似）：
- *   面板表层 #2C2C2C / 画布桌面 #1E1E1E / 抬升面 #383838
- *   文字 #EDEDED·#B3B3B3·#8C8C8C / 边框 rgba(255,255,255,.08)
- *   品牌蓝强调 #60A5FA
+ * 与 packages/editor/src/styles/editor.css 末尾的 .dark 覆盖块保持同款。
+ * web 端编辑器类由 web 自身 Tailwind JIT 扫描 packages/editor/src 编译生成，
+ * 本文件在 apps/web/src/index.css 之后加载，用 (0,3,0) 高特异性覆盖编辑器标准
+ * 调色板，使 EditorApp 顶栏的主题切换按钮（toggle documentElement.dark）生效。
+ * 用户作品内容（SchemaRenderer inline style）不受影响，预览/导出与设计一致。
  * ==========================================================================*/
 html.dark .editor-canvas-wrap {
   color: #EDEDED;
@@ -128,13 +15,11 @@ html.dark .editor-canvas-wrap {
   color-scheme: dark;
 }
 
-/* 根元素自身同时携带 .editor-canvas-wrap 与工具类时的精确命中 */
 html.dark .editor-canvas-wrap.bg-white,
 html.dark .editor-canvas-wrap.bg-\[\#f7f8fa\] { background-color: #2C2C2C; }
 html.dark .editor-canvas-wrap.text-gray-800,
 html.dark .editor-canvas-wrap.text-gray-700 { color: #EDEDED; }
 
-/* ── 表层：白底面板 / 浅灰底 → 暗灰面板 ── */
 html.dark .editor-canvas-wrap .bg-white,
 html.dark .editor-canvas-wrap .bg-gray-100 { background-color: #2C2C2C; }
 html.dark .editor-canvas-wrap .bg-gray-50 { background-color: #242424; }
@@ -142,14 +27,12 @@ html.dark .editor-canvas-wrap .bg-gray-200 { background-color: #333333; }
 html.dark .editor-canvas-wrap .bg-\[\#f0f2f5\] { background-color: #1E1E1E; }
 html.dark .editor-canvas-wrap .bg-\[\#f7f8fa\] { background-color: #262626; }
 
-/* ── 透明度变体（白底半透明浮层：画布内文本编辑框 / 缩放条 / 画廊·拼图角标）──
- * 这些类 .bg-white 命中不到（带 /NN 透明度后缀），须精确覆盖，否则暗色下仍是浅底。 */
+/* ── 透明度变体（白底半透明浮层：画布内文本编辑框 / 缩放条 / 画廊·拼图角标）── */
 html.dark .editor-canvas-wrap .bg-white\/95 { background-color: #2C2C2C; }
 html.dark .editor-canvas-wrap .bg-white\/90 { background-color: #2C2C2C; }
 html.dark .editor-canvas-wrap .bg-white\/95.text-gray-800,
 html.dark .editor-canvas-wrap .bg-white\/90.text-gray-600 { color: #EDEDED; }
 
-/* ── 文字 ── */
 html.dark .editor-canvas-wrap .text-gray-800,
 html.dark .editor-canvas-wrap .text-gray-700 { color: #EDEDED; }
 html.dark .editor-canvas-wrap .text-gray-600 { color: #B3B3B3; }
@@ -166,12 +49,10 @@ html.dark .editor-canvas-wrap .text-red-500 { color: #F87171; }
 html.dark .editor-canvas-wrap .text-emerald-600,
 html.dark .editor-canvas-wrap .text-green-600 { color: #34D399; }
 
-/* ── 禁用态文字（比浅色主题更暗，体现不可点）── */
 html.dark .editor-canvas-wrap .disabled\:text-gray-300:disabled,
 html.dark .editor-canvas-wrap .disabled\:text-gray-400:disabled { color: #5C5C5C; }
 html.dark .editor-canvas-wrap .disabled\:text-gray-500:disabled { color: #525252; }
 
-/* ── 边框 ── */
 html.dark .editor-canvas-wrap .border-gray-200,
 html.dark .editor-canvas-wrap.border-gray-200 { border-color: rgba(255, 255, 255, 0.08); }
 html.dark .editor-canvas-wrap .border-gray-100 { border-color: rgba(255, 255, 255, 0.05); }
@@ -181,20 +62,17 @@ html.dark .editor-canvas-wrap .border-r,
 html.dark .editor-canvas-wrap .border-t,
 html.dark .editor-canvas-wrap .border-b { border-color: rgba(255, 255, 255, 0.08); }
 
-/* ── 分隔线（divide-* 设置子元素 border-color）── */
 html.dark .editor-canvas-wrap .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
 html.dark .editor-canvas-wrap .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
 html.dark .editor-canvas-wrap .divide-x > :not([hidden]) ~ :not([hidden]),
 html.dark .editor-canvas-wrap .divide-y > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.08); }
 
-/* ── 品牌 / 强调色底（保留语义色，仅在暗底上提质感）── */
 html.dark .editor-canvas-wrap .bg-blue-50 { background-color: rgba(59, 130, 246, 0.16); }
 html.dark .editor-canvas-wrap .bg-amber-50 { background-color: rgba(245, 158, 11, 0.16); }
 html.dark .editor-canvas-wrap .bg-red-50 { background-color: rgba(239, 68, 68, 0.16); }
 html.dark .editor-canvas-wrap .bg-emerald-50,
 html.dark .editor-canvas-wrap .bg-green-50 { background-color: rgba(16, 185, 129, 0.16); }
 
-/* ── 悬停态 ── */
 html.dark .editor-canvas-wrap .hover\:bg-blue-50:hover { background-color: rgba(255, 255, 255, 0.06); }
 html.dark .editor-canvas-wrap .hover\:bg-gray-50:hover { background-color: rgba(255, 255, 255, 0.06); }
 html.dark .editor-canvas-wrap .hover\:bg-gray-100:hover { background-color: rgba(255, 255, 255, 0.09); }
@@ -204,16 +82,13 @@ html.dark .editor-canvas-wrap .hover\:text-gray-900:hover { color: #F5F5F5; }
 html.dark .editor-canvas-wrap .hover\:text-gray-700:hover { color: #EDEDED; }
 html.dark .editor-canvas-wrap .hover\:text-gray-600:hover { color: #D4D4D4; }
 
-/* ── 聚焦环（保持蓝色可见）── */
 html.dark .editor-canvas-wrap .ring-blue-500,
 html.dark .editor-canvas-wrap .focus\:ring-blue-500:focus { --tw-ring-color: rgba(96, 165, 250, 0.6); }
 
-/* ── 阴影（暗底用深色投影增强层次）── */
 html.dark .editor-canvas-wrap .shadow-sm { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); }
 html.dark .editor-canvas-wrap .shadow-lg { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55); }
 html.dark .editor-canvas-wrap .shadow-xl { box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6); }
 
-/* ── 滚动条 ── */
 html.dark .editor-canvas-wrap ::-webkit-scrollbar { width: 10px; height: 10px; }
 html.dark .editor-canvas-wrap ::-webkit-scrollbar-track { background: transparent; }
 html.dark .editor-canvas-wrap ::-webkit-scrollbar-thumb {
