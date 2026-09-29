@@ -42,3 +42,32 @@ _audit_tmp/
 # runtime artifacts (screenshot dumps / prisma query-engine temp files)
 apps/admin/shots/
 apps/server/prisma/prisma-client/*.tmp*
+
+# runtime error logs (committed by accident before; stop tracking)
+*.err
+
+# local E2E screenshots / scratch outputs
+.wb_e2e_fill/
+shots/
+
+# runtime user uploads (server) — never commit
+apps/server/uploads/
+
+# diagnostic scratch scripts (keep real tooling: migrate-apply.sh, backup-postgres.sh, backup-datastores.ps1, fill_panel_e2e.cjs, verify_hooks_fix.cjs)
+scripts/_diag_*
+scripts/diag_*
+scripts/debug_*
+scripts/scan_*
+scripts/exp_*.html
+scripts/shot_*.mjs
+scripts/e2e_*.mjs
+scripts/parity_*.mjs
+scripts/inspect_*.mjs
+scripts/_blank_full.png
+scripts/out_*.png
+apps/server/e2e/_diag_*.cjs
+apps/web/parity-text.html
+apps/web/parity-text.tsx
+
+# project working memory (contains dev credentials; keep local only)
+.workbuddy/memory/
