@@ -31,7 +31,7 @@ import type {
   LikeElement,
   WidgetElement,
 } from '@h5design/core';
-import { cornerRadiusToCss, normalizeCornerRadius, buildClipSvgPath, normalizeImageClip, resolveShadow, resolveShadowColor, hasRealShadow, subscribeFontLoad, resolveFillColor, resolveStrokeColor, lineStyleToDash, lineStyleToCssBorderStyle, flipCssTransform, getFillType, domFillStyle, svgFill, svgGradientGeometry, type SvgFillDef } from '@h5design/core';
+import { cornerRadiusToCss, normalizeCornerRadius, buildClipSvgPath, normalizeImageClip, resolveShadow, resolveShadowColor, hasRealShadow, subscribeFontLoad, resolveFillColor, resolveStrokeColor, lineStyleToDash, lineStyleToCssBorderStyle, flipCssTransform, getFillType, domFillStyle, svgFill, svgGradientGeometry, getFontMeta, buildFontFamilyStack, type SvgFillDef } from '@h5design/core';
 import { clearTextMeasureCache } from './lib/textLayout';
 import { safeLink, safeMedia, safeBackgroundImage } from './lib/sanitize';
 import {
@@ -347,13 +347,15 @@ function TextElementView({
   const hasBg = !!el.backgroundColor && el.backgroundColor !== 'transparent';
 
   const fontStyleRaw = el.fontStyle ?? '';
+  // 有效字体栈：含维吾尔文且所选字体不覆盖时整段回退到统一补字字体（跨浏览器一致连字）
+  const effFamily = buildFontFamilyStack(el.fontFamily, el.text, getFontMeta(el.fontFamily)?.coverage);
   const layout = (() => {
     // fontEpoch 仅用于在字体加载后触发重算（依赖显式列出以满足 exhaustive-deps 语义）
     void fontEpoch;
     return layoutText({
       text: el.text ?? '',
       fontSize: el.fontSize || 16,
-      fontFamily: el.fontFamily,
+      fontFamily: effFamily,
       bold: fontStyleRaw.includes('bold'),
       italic: fontStyleRaw.includes('italic'),
       letterSpacing: el.letterSpacing ?? 0,
@@ -372,7 +374,7 @@ function TextElementView({
   // 导致预览/导出相对编辑器整体下移几个像素（随字号/字体变化）。这里运行时实测 DOM ink，
   // 反推需要的 translateY 修正量，逐像素对齐三端。详见 lib/textLayout.ts#measureFontMetrics。
   const metrics = useMemo(
-    () => measureFontMetrics(el.fontSize || 16, el.fontFamily, fontStyleRaw.includes('bold'), fontStyleRaw.includes('italic')),
+    () => measureFontMetrics(el.fontSize || 16, effFamily, fontStyleRaw.includes('bold'), fontStyleRaw.includes('italic')),
     [el.fontSize, el.fontFamily, fontStyleRaw],
   );
   const firstWrapperRef = useRef<HTMLDivElement>(null);
@@ -451,7 +453,7 @@ function TextElementView({
     lineHeight: 1,
     whiteSpace: 'pre',
     fontSize: el.fontSize,
-    fontFamily: el.fontFamily,
+    fontFamily: effFamily,
     fontStyle: fontStyleRaw.includes('italic') ? 'italic' : 'normal',
     fontWeight: fontStyleRaw.includes('bold') ? 'bold' : 'normal',
     letterSpacing: layout.letterSpacing ? `${layout.letterSpacing}px` : undefined,
@@ -495,6 +497,11 @@ function TextElementView({
         // 必须可见：Konva 不裁剪溢出文本，加了 hidden 会把首/末字符切掉
         overflow: 'visible',
         direction: dir,
+        // 阿拉伯文 / 维吾尔文连字：显式开启标准连写特性，避免个别浏览器默认关闭
+        // 「上下文替代连字（calt）」导致字母不相连；与 Konva 画布行为对齐。
+        fontFeatureSettings: '"liga" 1, "clig" 1, "calt" 1, "rclt" 1, "ccmp" 1',
+        textRendering: 'optimizeLegibility',
+        unicodeBidi: 'isolate',
       }}
     >
         {/* 阴影：对整个「轮廓层 + 填充层」的合成剪影做 drop-shadow

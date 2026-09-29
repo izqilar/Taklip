@@ -1,6 +1,7 @@
 import { resolveFontsDir, FONTS_URL_PREFIX } from '../common/font-dirs';
 import { join, relative, parse, sep } from 'path';
-import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'fs';
+import { parseFontCoverage, type FontCoverage } from './cmap';
 
 /**
  * 字体目录「目录即真相」扫描逻辑 —— 服务端唯一真源。
@@ -30,6 +31,61 @@ export interface FontSeed {
   isPaid: boolean;
   category?: string;
   files: Record<string, string>;
+  /** 字体对维吾尔文正字法的覆盖（目录即真相扫描时算出，供前端做确定性回退与警示） */
+  coverage?: FontCoverage;
+}
+
+/**
+ * 覆盖信息 sidecar 缓存：key = 字体文件相对 fonts 根的路径，
+ * value = { mtime, size, coverage }。避免每次 /api/fonts 扫描都重解析 186 个字体文件。
+ */
+const COVERAGE_CACHE_FILE = '.coverage-cache.json';
+interface CoverageCacheEntry {
+  mtime: number;
+  size: number;
+  coverage: FontCoverage;
+}
+const coverageCache = new Map<string, CoverageCacheEntry>();
+let coverageCacheDirty = false;
+
+function loadCoverageCache(fontsDir: string): void {
+  const p = join(fontsDir, COVERAGE_CACHE_FILE);
+  if (!existsSync(p)) return;
+  try {
+    const json = JSON.parse(readFileSync(p, 'utf-8')) as Record<string, CoverageCacheEntry>;
+    for (const [k, v] of Object.entries(json)) coverageCache.set(k, v);
+  } catch {
+    /* 缓存损坏则忽略，重新解析 */
+  }
+}
+
+function saveCoverageCache(fontsDir: string): void {
+  if (!coverageCacheDirty) return;
+  const p = join(fontsDir, COVERAGE_CACHE_FILE);
+  try {
+    const obj: Record<string, CoverageCacheEntry> = {};
+    for (const [k, v] of coverageCache) obj[k] = v;
+    writeFileSync(p, JSON.stringify(obj), 'utf-8');
+    coverageCacheDirty = false;
+  } catch {
+    /* 写缓存失败不影响主流程 */
+  }
+}
+
+/** 取单个字体文件的覆盖信息（带 mtime/size 校验的缓存） */
+function getCoverage(fontsDir: string, fullPath: string, relPath: string): FontCoverage {
+  let st;
+  try {
+    st = statSync(fullPath);
+  } catch {
+    return parseFontCoverage(fullPath);
+  }
+  const hit = coverageCache.get(relPath);
+  if (hit && hit.mtime === st.mtimeMs && hit.size === st.size) return hit.coverage;
+  const cov = parseFontCoverage(fullPath);
+  coverageCache.set(relPath, { mtime: st.mtimeMs, size: st.size, coverage: cov });
+  coverageCacheDirty = true;
+  return cov;
 }
 
 /** 受支持的字体文件扩展名（与 @h5design/core 的 FORMAT_TOKENS 对应） */
@@ -65,6 +121,7 @@ export function normalizeFiles(files: Record<string, string | undefined>): Recor
 export function scanFontDir(root: string): { list: FontSeed[]; conflicts: string[] } {
   const groups = new Map<string, FontSeed>();
   const conflicts: string[] = [];
+  loadCoverageCache(root);
 
   const walk = (dir: string): void => {
     let entries: string[] = [];
@@ -103,17 +160,22 @@ export function scanFontDir(root: string): { list: FontSeed[]; conflicts: string
         exist.files[ext] = url;
         continue;
       }
+      // 覆盖信息只算一次（取首个文件即可，同族各格式 cmap 通常一致）
+      const relForCache = relSegs.map(encodeURIComponent).join('/');
+      const coverage = getCoverage(root, full, relForCache);
       groups.set(stem, {
         family: stem,
         displayName: stem.replace(/[-_]+/g, ' ').trim(),
         isPaid,
         category: relSegs.length > 1 ? relSegs[0] : undefined,
         files: { [ext]: url },
+        coverage,
       });
     }
   };
 
   walk(root);
+  saveCoverageCache(root);
   return { list: [...groups.values()], conflicts };
 }
 
@@ -137,6 +199,7 @@ export function applyManifest(list: FontSeed[], fontsDir: string): FontSeed[] {
         isPaid: e.isPaid ?? s?.isPaid ?? false,
         category: e.category ?? s?.category,
         files: Object.keys(files).length ? files : s?.files ?? {},
+        coverage: s?.coverage,
       });
     }
     return [...byFamily.values()];

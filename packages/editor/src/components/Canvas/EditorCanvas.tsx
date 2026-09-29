@@ -29,7 +29,7 @@ import CanvasWidget from '../../elements/widget/CanvasWidget';
 import GalleryEditorOverlay from './GalleryEditorOverlay';
 import ContextMenu from './ContextMenu';
 import type { Element, TextElement, ImageElement, RectElement, CircleElement, PolygonElement, ArrowElement, CornerRadius, ImageClip, CalendarElement, GalleryElement, PuzzleElement, CountdownElement, MapNavElement, MessageBoardElement, TimelineElement, LikeElement, WidgetElement } from '@h5design/core';
-import { CANVAS_DEFAULT, toKonvaCornerRadius, normalizeCornerRadius, drawClipOnContext, normalizeImageClip, hasRealShadow, kashidaForLetterSpacing, resolveStrokeColor, lineStyleToDash, flipScale, flipCssTransform, konvaFill, fillBoxTopLeft, fillBoxCenter, fillBoxCircle, subscribeImageFill, getImageFillEpoch } from '@h5design/core';
+import { CANVAS_DEFAULT, toKonvaCornerRadius, normalizeCornerRadius, drawClipOnContext, normalizeImageClip, hasRealShadow, kashidaForLetterSpacing, resolveStrokeColor, lineStyleToDash, flipScale, flipCssTransform, konvaFill, fillBoxTopLeft, fillBoxCenter, fillBoxCircle, subscribeImageFill, getImageFillEpoch, getFontMeta, buildFontFamilyStack } from '@h5design/core';
 import {
   toKonvaAlign,
   installTextJustifySupport,
@@ -842,11 +842,13 @@ function ElementNode({
           }
         : {};
       const outlineStrokeWidth = toKonvaOutlineStrokeWidth(textEl.outlineWidth);
+      // 有效字体栈：含维吾尔文且所选字体不覆盖时整段回退到统一补字字体（跨浏览器一致连字）
+      const effFamily = buildFontFamilyStack(textEl.fontFamily, textEl.text, getFontMeta(textEl.fontFamily)?.coverage);
       // 三层（阴影剪影 / 轮廓 / 填充）共用的排版参数，必须逐层一致否则会错位
       const textLayerProps = {
         text: kashida.text,
         fontSize: textEl.fontSize,
-        fontFamily: textEl.fontFamily,
+        fontFamily: effFamily,
         align: toKonvaAlign(textEl.align, textEl.direction === 'rtl' ? 'rtl' : 'ltr'),
         width: el.width,
         height: el.height,

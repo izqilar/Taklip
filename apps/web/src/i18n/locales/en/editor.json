@@ -394,7 +394,8 @@
     "monospace": "Monospace",
     "heiTi": "Heiti",
     "songTi": "Songti",
-    "kaiTi": "Kaiti"
+    "kaiTi": "Kaiti",
+    "uyghurWarn": "The current font is missing Uyghur glyphs (missing: {{missing}}). It falls back to the built-in supplement font to ensure correct cross-browser joining, which may differ from the designed look. Use a fully-covering font (e.g. Noto Naskh Arabic / Amiri / UKIJ / Adobe Arabic Uyghur)."
   },
   "fontWeight": {
     "normal": "Normal",

@@ -62,6 +62,90 @@ export interface FontMeta {
   isPaid: boolean;
   files: FontFiles;
   category?: string;
+  /** 字体对维吾尔文正字法的覆盖（服务端「目录即真相」扫描产出，随 /api/fonts 下发） */
+  coverage?: FontCoverage;
+}
+
+/**
+ * 字体覆盖信息（与服务端 apps/server/src/console/cmap.ts 的 FontCoverage 字段对齐）。
+ * - uyghur: 是否覆盖全部维吾尔文特定码位（缺任一即无法正确拼写维吾尔文）
+ * - missingUyghur: 缺失的维吾尔文特定码位（十进制），供编辑器提示具体缺哪些字母
+ * - ranges: 该字体真实覆盖的 unicode-range 字符串，用于 @font-face 的 unicode-range
+ */
+export interface FontCoverage {
+  uyghur: boolean;
+  missingUyghur: number[];
+  ranges: string[];
+  count: number;
+}
+
+/**
+ * 统一的维吾尔文「补字字体」首选名（目录里真实存在、且完整覆盖维吾尔文正字法的字体）。
+ * 实际回退字体会在运行时从字体目录动态解析（见 getUyghurFallbackFamily），此处仅作首选/兜底。
+ */
+export const UYGHUR_FALLBACK_FAMILY = 'NotoNaskhArabic-Regular';
+
+let resolvedUyghurFallback: string | null = null;
+
+/**
+ * 从已加载的字体目录里解析「补字字体」：
+ * 优先取首选名（UYGHUR_FALLBACK_FAMILY）；否则取目录中第一个 coverage.uyghur=true 的字体；
+ * 再否则退回首选名字符串（即便未注册，浏览器也会用 system-ui 兜底，不会崩）。
+ * 结果缓存，避免每次渲染重复遍历目录。
+ */
+export function getUyghurFallbackFamily(): string {
+  if (resolvedUyghurFallback) return resolvedUyghurFallback;
+  const cat = getFontCatalog();
+  const pref = cat.find((f) => f.family === UYGHUR_FALLBACK_FAMILY);
+  if (pref && pref.coverage?.uyghur) {
+    resolvedUyghurFallback = pref.family;
+    return resolvedUyghurFallback;
+  }
+  const covering = cat.find((f) => f.coverage?.uyghur);
+  resolvedUyghurFallback = covering?.family ?? UYGHUR_FALLBACK_FAMILY;
+  return resolvedUyghurFallback;
+}
+
+/** 维吾尔文特定码位 + 连写控制符（用于判断一段文本是否含维吾尔文） */
+const UYGHUR_CODEPOINTS: number[] = [
+  0x0626, 0x067e, 0x0686, 0x0698, 0x06ad, 0x06af, 0x06be, 0x06c6, 0x06c7, 0x06c8, 0x06cb,
+  0x06d0, 0x06d5, 0x0649, 0x0640, 0x200c, 0x200d,
+];
+
+/** 判断文本是否包含维吾尔文字符（驱动是否启用补字回退） */
+export function isUyghurText(text?: string | null): boolean {
+  if (!text) return false;
+  for (const ch of text) {
+    const cp = ch.codePointAt(0);
+    if (cp !== undefined && UYGHUR_CODEPOINTS.includes(cp)) return true;
+  }
+  return false;
+}
+
+/**
+ * 计算一段文本应使用的 CSS `font-family` 栈（DOM 与 Canvas 共用，保证两端一致）。
+ *
+ * 规则：
+ *  - 文本不含维吾尔文 → `"原字体", 补字字体, system-ui, …`（补字字体对拉丁/中文无害，仅兜底）。
+ *  - 含维吾尔文且所选字体【覆盖】uyghur → `"原字体", 补字字体, …`（原字体自身连字正确，优先用）。
+ *  - 含维吾尔文且所选字体【不覆盖】uyghur → 整段交给补字字体（单一字体整形整词，
+ *    保证跨浏览器一致的【正确连字】；否则各浏览器用各自系统字体补 ە，
+ *    会出现 Firefox 断开 / Chrome 字形异常的差异）。
+ *  - 含维吾尔文但覆盖信息暂未加载（coverage 为 undefined）→ 不贸然丢弃原字体，
+ *    退回 `"原字体", 补字字体, …`，待目录就绪后再做整段回退。
+ */
+export function buildFontFamilyStack(
+  family?: string | null,
+  text?: string | null,
+  coverage?: FontCoverage | null,
+): string {
+  const fb = `"${getUyghurFallbackFamily()}", system-ui, "Microsoft YaHei", "PingFang SC", sans-serif`;
+  if (!family) return fb;
+  const hasUyghur = isUyghurText(text);
+  if (hasUyghur && coverage && !coverage.uyghur) {
+    return fb; // 整段回退到覆盖字体，避免跨字体连字断裂
+  }
+  return `"${family}", ${fb}`;
 }
 
 // —— 运行时字体目录（宿主拉取后注入）——
@@ -173,7 +257,12 @@ export async function ensureFont(font: FontMeta): Promise<FontFace | null> {
   if (fontFaceLoading.has(font.family)) return fontFaceLoading.get(font.family)!;
   const sources = buildFontSources(font.files);
   if (!sources) return null;
-  const ff = new FontFace(font.family, sources);
+  // 给主字体面加 unicode-range：只在本字体确有字形的码位上使用它，
+  // 缺失码位确定性地交给回退栈里的补字字体（消除各浏览器系统回退差异）。
+  const range = font.coverage?.ranges?.length ? font.coverage.ranges.join(', ') : undefined;
+  const ff = range
+    ? new FontFace(font.family, sources, { unicodeRange: range })
+    : new FontFace(font.family, sources);
   // 先 add 再 load：face 进入 FontFaceSet 后，原生 loadingdone 才会派发，
   // 依赖该事件的既有重排版逻辑（textLayout 清缓存 / TextElementView bump）才能工作。
   const fontSet = (document as Document & { fonts: FontFaceSet }).fonts;
@@ -200,8 +289,13 @@ export async function ensureFont(font: FontMeta): Promise<FontFace | null> {
 }
 
 export async function ensureFontsByFamilies(families: string[]): Promise<void> {
+  const set = new Set<string>(families);
+  // 始终确保补字字体已注册（哪怕 schema 里没显式引用），否则含维吾尔文却缺覆盖的
+  // 文本无法回退到统一字体，又退化成各浏览器系统字体 → 连字不一致复发。
+  const fb = getUyghurFallbackFamily();
+  if (getFontMeta(fb)) set.add(fb);
   await Promise.all(
-    families.map((fam) => {
+    [...set].map((fam) => {
       const m = getFontMeta(fam);
       return m ? ensureFont(m) : null;
     }),
@@ -244,8 +338,13 @@ const embedRuleCache = new Map<string, string>();
  * 单个字体失败只跳过它（不抛错），不影响其余字体与整次导出。
  */
 export async function buildFontEmbedCSS(families: string[]): Promise<string> {
+  const set = new Set<string>(families);
+  // 导出内嵌同样必须带上补字字体，否则导出图里含维吾尔文缺覆盖文本会回退系统字体、
+  // 与编辑器/发布页不一致。
+  const fb = getUyghurFallbackFamily();
+  if (getFontMeta(fb)) set.add(fb);
   const rules = await Promise.all(
-    families.map(async (family) => {
+    [...set].map(async (family) => {
       const cached = embedRuleCache.get(family);
       if (cached !== undefined) return cached;
       const meta = getFontMeta(family);
@@ -261,10 +360,15 @@ export async function buildFontEmbedCSS(families: string[]): Promise<string> {
         const bytes = new Uint8Array(await res.arrayBuffer());
         const format = FORMAT_TOKENS[ext.toLowerCase()] ?? ext;
         const mime = FONT_MIME[ext.toLowerCase()] ?? 'application/octet-stream';
+        // 主字体面带 unicode-range（与服务端 coverage 对齐），补字字体不带（覆盖全部）。
+        const range =
+          meta.coverage?.ranges?.length && family !== fb
+            ? `unicode-range:${meta.coverage.ranges.join(',')};`
+            : '';
         const rule =
           `@font-face{font-family:'${family}';` +
           `src:url('data:${mime};base64,${bytesToBase64(bytes)}') format('${format}');` +
-          `font-display:block;}`;
+          `${range}font-display:block;}`;
         embedRuleCache.set(family, rule);
         return rule;
       } catch {

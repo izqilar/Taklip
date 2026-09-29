@@ -67,6 +67,8 @@ scripts/_blank_full.png
 scripts/out_*.png
 apps/server/e2e/_diag_*.cjs
 apps/web/parity-text.html
+# 字体目录扫描产生的 cmap 覆盖缓存（由服务端运行时生成，非源码）
+uploads/fonts/.coverage-cache.json
 apps/web/parity-text.tsx
 
 # project working memory (contains dev credentials; keep local only)

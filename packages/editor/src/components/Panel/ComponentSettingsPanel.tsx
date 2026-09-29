@@ -35,6 +35,8 @@ import {
   normalizeCornerRadius,
   getFontCatalog,
   subscribeFontCatalog,
+  getFontMeta,
+  isUyghurText,
   type FontMeta,
   isFillShape,
   isStrokeOnlyShape,
@@ -793,6 +795,29 @@ function TextSection({ el, update, commit }: { el: Element; update: (patch: Part
                 ))}
                 {!known.has(curFam) && <option value={curFam}>{curFam}</option>}
               </select>
+            </div>
+          );
+        })()}
+
+        {/* 维吾尔文覆盖警示：所选字体缺维吾尔字母时，文本会被确定性回退到内置补字字体；
+            此处主动提示，引导用户改选完整覆盖字体，避免与设计稿字体不符 */}
+        {(() => {
+          const txt = textEl.text;
+          if (!isUyghurText(txt)) return null;
+          const curFam = textEl.fontFamily || 'sans-serif';
+          const meta = getFontMeta(curFam);
+          // 目录字体有明确覆盖信息且不覆盖 → 警示；系统字体/未知字体无 coverage 不提示
+          if (!meta || !meta.coverage || meta.coverage.uyghur) return null;
+          const missing = meta.coverage.missingUyghur
+            .map((cp) => String.fromCodePoint(cp))
+            .join(' ');
+          return (
+            <div className="mt-1 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-700">
+              {t('editor:font.uyghurWarn', {
+                defaultValue:
+                  '当前字体缺少维吾尔文字形（缺：{{missing}}），将自动回退到内置补字字体以保证跨浏览器正确连字，可能与设计字体外观不一致。建议改用覆盖完整的字体（如 Noto Naskh Arabic / Amiri / UKIJ / Adobe Arabic Uyghur）。',
+                missing,
+              })}
             </div>
           );
         })()}

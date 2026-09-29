@@ -32,7 +32,7 @@ import type {
   LikeElement,
   WidgetElement,
 } from '@h5design/core';
-import { toKonvaCornerRadius, normalizeImageClip, drawClipOnContext, hasRealShadow, kashidaForLetterSpacing, resolveStrokeColor, lineStyleToDash, flipScale, konvaFill, fillBoxTopLeft, fillBoxCenter, fillBoxCircle } from '@h5design/core';
+import { toKonvaCornerRadius, normalizeImageClip, drawClipOnContext, hasRealShadow, kashidaForLetterSpacing, resolveStrokeColor, lineStyleToDash, flipScale, konvaFill, fillBoxTopLeft, fillBoxCenter, fillBoxCircle, getFontMeta, buildFontFamilyStack } from '@h5design/core';
 import {
   computeImageLayout,
   FilteredImage,
@@ -143,11 +143,13 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
           }
         : {};
       const outlineStrokeWidth = toKonvaOutlineStrokeWidth(textEl.outlineWidth);
+      // 有效字体栈：含维吾尔文且所选字体不覆盖时整段回退到统一补字字体（跨浏览器一致连字）
+      const effFamily = buildFontFamilyStack(textEl.fontFamily, textEl.text, getFontMeta(textEl.fontFamily)?.coverage);
       // 三层（阴影剪影 / 轮廓 / 填充）共用的排版参数，必须逐层一致否则会错位
       const textLayerProps = {
         text: kashida.text,
         fontSize: textEl.fontSize,
-        fontFamily: textEl.fontFamily,
+        fontFamily: effFamily,
         align: toKonvaAlign(textEl.align, textEl.direction === 'rtl' ? 'rtl' : 'ltr'),
         width: el.width,
         height: el.height,

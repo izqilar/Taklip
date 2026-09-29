@@ -394,7 +394,8 @@
     "monospace": "等宽",
     "heiTi": "黑体",
     "songTi": "宋体",
-    "kaiTi": "楷体"
+    "kaiTi": "楷体",
+    "uyghurWarn": "当前字体缺少维吾尔文字形（缺：{{missing}}），将自动回退到内置补字字体以保证跨浏览器正确连字，可能与设计字体外观不一致。建议改用覆盖完整的字体（如 Noto Naskh Arabic / Amiri / UKIJ / Adobe Arabic Uyghur）。"
   },
   "fontWeight": {
     "normal": "常规",
