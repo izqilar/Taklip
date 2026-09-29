@@ -377,7 +377,7 @@ export function GradientEditor({
         stops: next
           .slice()
           .sort((a, b) => a.position - b.position)
-          .map(({ color, position }) => ({ color, position })),
+          .map(({ color, position, id }) => (id ? { color, position, id } : { color, position })),
       });
     },
     [onChange, value.type, value.angle],
@@ -603,6 +603,7 @@ export function GradientEditor({
                 role="slider"
                 tabIndex={0}
                 data-testid="gradient-stop-handle"
+                data-stop-id={s.id}
                 aria-label={`${t('editor:fill.stop', { defaultValue: '停靠点' })} ${pctOf(s.position)}${PERCENT}`}
                 aria-valuemin={0}
                 aria-valuemax={100}

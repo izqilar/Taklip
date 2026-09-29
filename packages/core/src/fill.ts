@@ -36,6 +36,8 @@ export interface GradientStop {
   color: string;
   /** 位置 0~1 */
   position: number;
+  /** 稳定标识：用于编辑器选中态与拖拽目标识别，避免重排后下标 id 错配到邻居 */
+  id?: string;
 }
 
 /**
@@ -326,9 +328,11 @@ export function normalizeGradient(raw?: GradientFill | null): GradientFill | und
   if (!raw || !Array.isArray(raw.stops)) return undefined;
   const stops = raw.stops
     .filter((s) => s && typeof s.color === 'string')
-    .map((s) => ({
+    .map((s, i) => ({
       color: s.color || '#000000',
       position: clamp01(Number.isFinite(s.position) ? s.position : 0),
+      /** 稳定 id：保留已有 id，缺失则按下标（排序前）赋值，随排序一并迁移，避免重排后错配 */
+      id: typeof s.id === 'string' ? s.id : `gs-${i}`,
     }))
     .sort((a, b) => a.position - b.position);
   if (stops.length < 2) return undefined;
