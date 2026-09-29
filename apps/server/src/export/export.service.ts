@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { getBrowser, buildRenderUrls } from './browser';
 import { checkWorkFontLicense } from '../common/font-license';
 import { collectFontFamilies } from '@h5design/core';
+import { resolveRenderFonts } from '../console/font-catalog';
 import type { Project } from '@h5design/core';
 import { randomBytes } from 'crypto';
 import { mkdtemp, rm, writeFile, readFile } from 'fs/promises';
@@ -85,13 +86,14 @@ export class ExportService {
     );
 
     // 收集本次用到的自定义字体（付费/免费都注册，保证 Renderer 排版宽度正确）
+    //
+    // ⚠️ 字体文件必须以「目录即真相」实时取，不能读 DB 的 `font` 表：
+    // 旧实现用 `prisma.font.findMany({ family: { in: families } })`，但 `font` 表只在
+    // 手动 `refresh` 时才更新；从 uploads/fonts 增删字体后 DB 不会自动变 → 新字体进不了
+    // 渲染 payload → 渲染页收不到 @font-face → 文字静默回退系统字体。
+    // 改用 font-catalog.resolveRenderFonts：直接扫描目录，与编辑器端点同源。
     const families = collectFontFamilies(raw);
-    const fontRows = families.length
-      ? await this.prisma.font.findMany({
-          where: { family: { in: families } },
-          select: { family: true, files: true },
-        })
-      : [];
+    const renderFonts = resolveRenderFonts(families);
 
     const width = (raw as Project).width ?? 375;
     const height = (raw as Project).height ?? 667;
@@ -102,10 +104,7 @@ export class ExportService {
         project: raw,
         // 未授权 → 渲染页叠加水印（服务端决定，客户端无法关闭）
         watermark: !licensed,
-        fonts: fontRows.map((f) => ({
-          family: f.family,
-          files: (f.files && typeof f.files === 'object' ? f.files : {}) as Record<string, string>,
-        })),
+        fonts: renderFonts,
       },
       userId,
       scale: licensed ? 2 : 1,

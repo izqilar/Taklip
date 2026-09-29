@@ -41,18 +41,21 @@ import {
   getFillType,
   normalizeGradient,
   normalizePattern,
+  normalizeBlendMode,
   gradientFromSolid,
   patternFromSolid,
   type FillType,
   type GradientFill,
   type PatternFill,
+  type VideoFill,
+  type BlendMode,
 } from '@h5design/core';
 import { useEditorStore, useSelectedElement } from '../../store/editorStore';
 import { services } from '../../services';
 import { validateImageFile, readImageDimensions } from '../../utils/image';
 import ImageCropDialog from './ImageCropDialog';
 import { getElementRegistration } from '../../elements/registry';
-import { FillTypeRadio, GradientEditor, PatternEditor, ensureFillConfig } from './FillPaint';
+import { FillTypeBar, GradientEditor, PatternEditor, ImageFillEditor, VideoFillEditor, BlendFillEditor, ensureFillConfig } from './FillPaint';
 import ColorField, { CheckerBackground } from '../UI/ColorField';
 import CollapsibleSection from '../UI/CollapsibleSection';
 import SliderField from '../UI/SliderField';
@@ -527,6 +530,8 @@ function FillSection({ el, update, commit }: { el: Element; update: (patch: Part
   };
   const setGradient = (g: GradientFill) => update({ gradientFill: g } as Partial<Element>);
   const setPattern = (p: PatternFill) => update({ patternFill: p } as Partial<Element>);
+  const setVideo = (p: VideoFill) => update({ videoFill: p } as Partial<Element>);
+  const setBlendMode = (m: BlendMode) => update({ blendMode: m } as Partial<Element>);
 
   return (
     <CollapsibleSection
@@ -534,7 +539,7 @@ function FillSection({ el, update, commit }: { el: Element; update: (patch: Part
       defaultOpen
     >
       <SectionBody>
-        <FillTypeRadio value={fillType} onChange={switchFillType} />
+        <FillTypeBar value={fillType} onChange={switchFillType} />
 
         {/* ① 单色：完全沿用既有取色/填充能力（ColorField 原路径，零改动） */}
         {fillType === 'solid' && (
@@ -555,6 +560,35 @@ function FillSection({ el, update, commit }: { el: Element; update: (patch: Part
           <PatternEditor
             value={normalizePattern(el.patternFill) ?? patternFromSolid((el as { fill: string }).fill)}
             onChange={setPattern}
+            onCommit={commit}
+          />
+        )}
+
+        {/* ④ 图片：单色区域替换为图片填充组件 */}
+        {fillType === 'image' && (
+          <ImageFillEditor
+            value={el.imageFill}
+            onChange={(p) => update({ imageFill: p } as Partial<Element>)}
+            onCommit={commit}
+          />
+        )}
+
+        {/* ⑤ 视频：上传取首帧作为填充；渲染侧共用抓帧像素 */}
+        {fillType === 'video' && (
+          <VideoFillEditor
+            value={el.videoFill}
+            onChange={setVideo}
+            onCommit={commit}
+          />
+        )}
+
+        {/* ⑥ 混合模式：基底色（el.fill）+ 模式（el.blendMode）三元接入三端渲染 */}
+        {fillType === 'blend' && (
+          <BlendFillEditor
+            color={(el as { fill: string }).fill}
+            mode={normalizeBlendMode(el.blendMode)}
+            onChangeColor={(v) => { update({ fill: v }); commit(); }}
+            onChangeMode={setBlendMode}
             onCommit={commit}
           />
         )}

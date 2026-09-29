@@ -897,6 +897,18 @@
       "phoneRequired": "Contact phone required",
       "phone11": "Phone must be 11 digits",
       "regionPathRequired": "Region path required"
+    },
+    "purge": {
+      "blocked": "This account still has active business records and cannot be permanently deleted: {{items}}. Please void the active contract / process the refund first, or keep it in the recycle bin.",
+      "block.contract": "Active contract {{ref}}",
+      "block.order": "Paid order {{ref}} (¥{{amount}})",
+      "block.wallet": "Wallet balance ¥{{balance}}",
+      "block.withdrawal": "In-progress withdrawal {{ref}}",
+      "block.subordinate": "Subordinate account {{ref}}",
+      "footprintsTitle": "Business Records",
+      "footprintsHint": "Permanent deletion is blocked while active records exist; invalid records will be purged together.",
+      "cleanableTitle": "Will be purged together (invalid records)",
+      "safe": "No business records; safe to permanently delete"
     }
   },
   "auth": {

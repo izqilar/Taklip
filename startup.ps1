@@ -347,11 +347,38 @@ if ($SKIP_EDITOR_CSS -ne '1') {
     Log 'build @h5design/editor CSS (tailwind -> dist/editor.css)'
     Run 'pnpm --filter @h5design/editor build:css'
     Ok 'editor CSS built'
-} else {
-    Log 'skip editor CSS build (SKIP_EDITOR_CSS=1)'
-}
+    } else {
+        Log 'skip editor CSS build (SKIP_EDITOR_CSS=1)'
+    }
 
-# ---------- 5. start dev services (DETACHED, survive terminal close) ----------
+    # ---------- 4.7 pre-flight: lint all locale / i18n JSON the frontends import ----------
+    # A single invalid JSON file (e.g. a stray unescaped quote injected by an i18n
+    # script or manual edit) makes vite crash on the FIRST browser request with a
+    # cryptic "Failed to parse JSON file" error, and the failure tail then shows a
+    # stale/confusing log that hides the real cause. Validate up front so any bad
+    # file is reported precisely (file + node's parse message) and startup aborts
+    # cleanly instead of letting vite die mid-boot. Set SKIP_JSON_LINT=1 to bypass.
+    if ($SKIP_JSON_LINT -ne '1') {
+        Log 'pre-flight: lint locale JSON (admin + web)'
+        $lintJs = Join-Path $PSScriptRoot 'scripts/lint-i18n-json.js'
+        if (-not (Test-Path $lintJs)) {
+            Warn "lint script not found at $lintJs; skipping JSON pre-flight"
+        } else {
+            $lintCmd = "node `"$lintJs`" `"$root\apps\admin\src`" `"$root\apps\web\src`""
+            try {
+                Run $lintCmd
+                Ok 'locale JSON valid'
+            } catch {
+                Err 'locale JSON lint FAILED (see file:error above).'
+                Err 'Fix the reported JSON file, then re-run startup.ps1.'
+                exit 1
+            }
+        }
+    } else {
+        Log 'skip locale JSON lint (SKIP_JSON_LINT=1)'
+    }
+
+    # ---------- 5. start dev services (DETACHED, survive terminal close) ----------
 # Both services are launched as independent DETACHED processes via Start-Process,
 # OUTSIDE this script's process tree. This fixes the "runs a while then both die
 # with Exit status 4294967295" problem: previously `pnpm dev:safe` used

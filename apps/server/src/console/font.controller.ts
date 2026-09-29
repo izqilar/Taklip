@@ -3,111 +3,16 @@ import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { PrismaService } from '../prisma/prisma.service';
-import { resolveFontsDir, FONTS_URL_PREFIX } from '../common/font-dirs';
-import { join, relative, parse, sep } from 'path';
-import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
-
-interface FontManifestEntry {
-  family: string;
-  displayName?: string;
-  isPaid?: boolean;
-  category?: string;
-  sortOrder?: number;
-  files?: { woff2?: string; woff?: string; ttf?: string; otf?: string };
-}
-
-interface FontSeed {
-  family: string;
-  displayName: string;
-  isPaid: boolean;
-  category?: string;
-  files: Record<string, string>;
-}
-
-/** 受支持的字体文件扩展名（与 @h5design/core 的 FORMAT_TOKENS 对应） */
-const FONT_EXT = ['woff2', 'woff', 'ttf', 'otf', 'eot', 'svg'];
-/** 目录名命中即视为「付费字体目录」 */
-const PAID_DIR_RE = /(licen|paid|收费|商用|vip)/i;
-
-/** 把清单里写的文件名/相对路径规范成可访问的 URL（路径逐段编码，兼容空格与中文） */
-function normalizeFiles(files: Record<string, string | undefined>): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(files)) {
-    if (!v) continue;
-    if (v.startsWith('http') || v.startsWith('/')) {
-      out[k.toLowerCase()] = v;
-    } else {
-      // 清单里可写子目录相对路径（如 "LicensedFonts/x.ttf"）
-      out[k.toLowerCase()] =
-        `${FONTS_URL_PREFIX}${v.split(/[\\/]/).map(encodeURIComponent).join('/')}`;
-    }
-  }
-  return out;
-}
-
-/**
- * 递归扫描字体目录。
- *
- * 约定（目录即真相，无需手写清单）：
- *  - `uploads/fonts/FreeFonts/**`      → isPaid = false
- *  - `uploads/fonts/LicensedFonts/**`  → isPaid = true（目录名含 licen/paid/收费/商用/vip 即付费）
- *  - 根目录 `uploads/fonts/*` 直接放的文件 → isPaid = false
- *  - family 取「文件名去扩展名」；同名不同格式（x.woff2 + x.ttf）自动合并为同一个字体的多源。
- */
-function scanFontDir(root: string): { list: FontSeed[]; conflicts: string[] } {
-  const groups = new Map<string, FontSeed>();
-  const conflicts: string[] = [];
-
-  const walk = (dir: string): void => {
-    let entries: string[] = [];
-    try {
-      entries = readdirSync(dir).sort();
-    } catch {
-      return;
-    }
-    for (const name of entries) {
-      const full = join(dir, name);
-      let st;
-      try {
-        st = statSync(full);
-      } catch {
-        continue;
-      }
-      if (st.isDirectory()) {
-        walk(full);
-        continue;
-      }
-      const ext = (parse(name).ext || '').replace(/^\./, '').toLowerCase();
-      if (!FONT_EXT.includes(ext)) continue;
-
-      const relSegs = relative(root, full).split(sep);
-      const stem = parse(name).name;
-      const isPaid = relSegs.some((s) => PAID_DIR_RE.test(s));
-      const url = `${FONTS_URL_PREFIX}${relSegs.map(encodeURIComponent).join('/')}`;
-
-      const exist = groups.get(stem);
-      if (exist) {
-        // 同名不同格式 → 合并多源；若落在付费/免费不同目录下则记为冲突，保留先扫到的
-        if (exist.isPaid !== isPaid) {
-          conflicts.push(stem);
-          continue;
-        }
-        exist.files[ext] = url;
-        continue;
-      }
-      groups.set(stem, {
-        family: stem,
-        displayName: stem.replace(/[-_]+/g, ' ').trim(),
-        isPaid,
-        category: relSegs.length > 1 ? relSegs[0] : undefined,
-        files: { [ext]: url },
-      });
-    }
-  };
-
-  walk(root);
-  return { list: [...groups.values()], conflicts };
-}
+import { resolveFontsDir } from '../common/font-dirs';
+import { join } from 'path';
+import { existsSync, readFileSync } from 'fs';
+import {
+  FontSeed,
+  FontManifestEntry,
+  buildFontCatalog,
+  scanFontDir,
+  applyManifest,
+} from './font-catalog';
 
 /**
  * 字体目录接口。
@@ -152,22 +57,54 @@ export class FontController {
     @Query('family') family?: string,
     @Query('isPaid') isPaid?: string,
   ) {
-    const where: Record<string, unknown> = {};
-    if (family) {
-      const contains = { contains: family, mode: 'insensitive' };
-      where.OR = [{ family: contains }, { displayName: contains }];
-    }
-    if (isPaid === 'true' || isPaid === 'false') where.isPaid = isPaid === 'true';
-
-    const all = await this.prisma.font.findMany({ where, orderBy: { sortOrder: 'asc' } });
-
     const p = Number(page) || 1;
     const ps = Number(pageSize) || 0;
+
+    // 运营端后台（带分页）→ 保留 DB 主源，兼容其 isPaid / 上下架等 CRUD
     if (ps > 0) {
+      const where: Record<string, unknown> = {};
+      if (family) {
+        const contains = { contains: family, mode: 'insensitive' };
+        where.OR = [{ family: contains }, { displayName: contains }];
+      }
+      if (isPaid === 'true' || isPaid === 'false') where.isPaid = isPaid === 'true';
+      const all = await this.prisma.font.findMany({ where, orderBy: { sortOrder: 'asc' } });
       const start = (p - 1) * ps;
       return { items: all.slice(start, start + ps), total: all.length, page: p, pageSize: ps };
     }
-    return all;
+
+    // 编辑器字体选择器（裸数组）→ 「目录即真相」：实时扫描目录，增删字体文件立即生效。
+    // 叠加 fonts.json 元数据 + DB 里人工覆盖的 isPaid/displayName/category/sortOrder。
+    const fontsDir = resolveFontsDir();
+    let result = buildFontCatalog();
+    const dbMap = new Map((await this.prisma.font.findMany()).map((r) => [r.family, r]));
+    result = result.map((f) => {
+      const o = dbMap.get(f.family);
+      return o
+        ? {
+            ...f,
+            isPaid: o.isPaid ?? f.isPaid,
+            displayName: o.displayName || f.displayName,
+            category: o.category ?? f.category,
+          }
+        : f;
+    });
+
+    if (family) {
+      const q = family.toLowerCase();
+      result = result.filter(
+        (f) => f.family.toLowerCase().includes(q) || f.displayName.toLowerCase().includes(q),
+      );
+    }
+    if (isPaid === 'true' || isPaid === 'false') {
+      result = result.filter((f) => String(f.isPaid) === isPaid);
+    }
+    result.sort(
+      (a, b) =>
+        (dbMap.get(a.family)?.sortOrder ?? 999) - (dbMap.get(b.family)?.sortOrder ?? 999) ||
+        a.family.localeCompare(b.family),
+    );
+    return result;
   }
 
   /**
@@ -182,33 +119,22 @@ export class FontController {
   @Roles('ADMIN')
   async refresh(@Query('prune') prune?: string) {
     const fontsDir = resolveFontsDir();
-    const manifestPath = join(fontsDir, 'fonts.json');
 
-    // 1) 目录扫描（主数据源）
-    const { list: scanned, conflicts } = scanFontDir(fontsDir);
+    // 1) 目录扫描（主数据源）+ 合并 fonts.json 元数据（统一走 font-catalog.buildFontCatalog）
+    const conflicts = scanFontDir(fontsDir).conflicts;
+    const scanned = buildFontCatalog();
     const byFamily = new Map<string, FontSeed>();
     for (const f of scanned) byFamily.set(f.family, f);
 
-    // 2) fonts.json 清单（可选，用于补充/覆盖元数据）
+    // 统计 fonts.json 覆盖条数（仅用于返回，合并逻辑已由 applyManifest 完成）
     let fromManifest = 0;
+    const manifestPath = join(fontsDir, 'fonts.json');
     if (existsSync(manifestPath)) {
       try {
         const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as FontManifestEntry[];
-        for (const entry of manifest ?? []) {
-          if (!entry?.family) continue;
-          const scannedSame = byFamily.get(entry.family);
-          const files = normalizeFiles((entry.files ?? {}) as Record<string, string>);
-          byFamily.set(entry.family, {
-            family: entry.family,
-            displayName: entry.displayName || entry.family,
-            isPaid: entry.isPaid ?? scannedSame?.isPaid ?? false,
-            category: entry.category ?? scannedSame?.category,
-            files: Object.keys(files).length ? files : scannedSame?.files ?? {},
-          });
-          fromManifest += 1;
-        }
+        for (const e of manifest ?? []) if (e?.family && byFamily.has(e.family)) fromManifest += 1;
       } catch {
-        /* 清单解析失败时静默降级为纯目录扫描 */
+        /* 清单解析失败时忽略统计 */
       }
     }
 

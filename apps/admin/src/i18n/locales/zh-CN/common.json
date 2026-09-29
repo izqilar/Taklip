@@ -901,6 +901,18 @@
       "phoneRequired": "请填写联系电话",
       "phone11": "手机号须为 11 位数字",
       "regionPathRequired": "请填写归属区域路径"
+    },
+    "purge": {
+      "blocked": "该账号仍有生效业务留痕，不可彻底删除：{{items}}。请先作废生效合同 / 完成退款后再试，或保留在回收站。",
+      "block.contract": "已生效合同 {{ref}}",
+      "block.order": "已支付订单 {{ref}}（¥{{amount}}）",
+      "block.wallet": "钱包余额 ¥{{balance}}",
+      "block.withdrawal": "进行中提现 {{ref}}",
+      "block.subordinate": "名下下级账号 {{ref}}",
+      "footprintsTitle": "业务留痕清单",
+      "footprintsHint": "存在生效业务留痕时不可彻底删除；失效留痕将随彻底删除一并清理。",
+      "cleanableTitle": "将随彻底删除一并清理（失效留痕）",
+      "safe": "无业务留痕，可安全彻底删除"
     }
   },
   "auth": {

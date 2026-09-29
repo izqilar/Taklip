@@ -80,11 +80,38 @@ async function parse(res: Response, url?: string): Promise<any> {
       throw err;
     }
 
-    const message = Array.isArray(body?.message)
-      ? body.message.join('; ')
-      : body?.message || `请求失败 (${res.status})`;
-    const err = new Error(message) as Error & { statusCode?: number; url?: string };
+    let message = `请求失败 (${res.status})`;
+    let i18nKey: string | undefined;
+    let blockers: any[] | undefined;
+    // 结构化业务错误（如「回收站·彻底删除」命中生效留痕闸门）：
+    // 异常过滤器把 HttpException 的响应对象直接作为 body 透传（{ code, messageKey, blockers }），
+    // 也可能包裹为 { message }。两态都兼容，把明细数组透传给前端按当前语言组合提示。
+    if (body && typeof body === 'object') {
+      if (typeof body.messageKey === 'string') {
+        i18nKey = body.messageKey;
+        if (Array.isArray(body.blockers)) blockers = body.blockers;
+      } else if (typeof body.message === 'string') {
+        message = body.message;
+      } else if (body.message && typeof body.message === 'object') {
+        if (typeof body.message.messageKey === 'string') {
+          i18nKey = body.message.messageKey;
+          if (Array.isArray(body.message.blockers)) blockers = body.message.blockers;
+        } else {
+          message = Array.isArray(body.message) ? body.message.join('; ') : '请求失败';
+        }
+      }
+    } else if (typeof body === 'string') {
+      message = body;
+    }
+    const err = new Error(message) as Error & {
+      statusCode?: number;
+      url?: string;
+      blockers?: any[];
+      i18nKey?: string;
+    };
     err.statusCode = res.status;
+    if (i18nKey) err.i18nKey = i18nKey;
+    if (blockers) err.blockers = blockers;
     if (url) err.url = url;
     throw err;
   }

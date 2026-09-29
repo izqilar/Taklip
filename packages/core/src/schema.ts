@@ -7,7 +7,7 @@
  * 层级关系：Project → Page[] → Element[]
  */
 
-import type { FillType, GradientFill, PatternFill } from './fill';
+import type { FillType, GradientFill, PatternFill, ImageFill, VideoFill, BlendMode } from './fill';
 
 /** 元素类型枚举。新增元素类型只需在此扩展 + 注册渲染组件。 */
 export type ElementType =
@@ -212,6 +212,15 @@ export interface BaseElement {
   gradientFill?: GradientFill;
   /** 图案填充配置，仅在 fillType='pattern' 时生效（同上，独立存储槽）。 */
   patternFill?: PatternFill;
+  /** 图片填充配置，仅在 fillType='image' 时生效（同上，独立存储槽；null 表示清空）。 */
+  imageFill?: ImageFill | null;
+  /** 视频填充配置，仅在 fillType='video' 时生效（同上，独立存储槽；null 表示清空）。 */
+  videoFill?: VideoFill | null;
+  /**
+   * 混合模式，仅在 fillType='blend' 时生效：以 `fill` 为基底色与下层内容混合。
+   * 三端分别映射为 Konva `globalCompositeOperation` / CSS `mix-blend-mode` / SVG 内联样式。
+   */
+  blendMode?: BlendMode;
 }
 
 /** 文本元素 */

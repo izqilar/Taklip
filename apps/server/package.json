@@ -13,7 +13,9 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "db:backup": "bash ../scripts/backup-postgres.sh",
+    "db:migrate:apply": "bash ../scripts/migrate-apply.sh"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

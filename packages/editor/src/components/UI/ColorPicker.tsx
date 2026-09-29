@@ -57,6 +57,20 @@ export function rgbaToCss(c: RgbaColor): string {
   return `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a.toFixed(2)})`;
 }
 
+/**
+ * 序列化为 CSS 颜色，且**保留 RGB 分量**：alpha=0 时输出 `rgba(r, g, b, 0)` 而非 `transparent`。
+ *
+ * 为什么需要它：`transparent` 在 `parseCssColor` 里被解析为白色（255,255,255,0），
+ * 于是「把透明度拉到 0 再拉回来」会得到白色 —— 色相被抹掉。
+ * 渐变停靠点的透明度输入框必须用本函数，保证往返编辑不丢颜色。
+ */
+export function rgbaToCssKeepRgb(c: RgbaColor): string {
+  if (c.a >= 1) {
+    return `#${c.r.toString(16).padStart(2, '0')}${c.g.toString(16).padStart(2, '0')}${c.b.toString(16).padStart(2, '0')}`;
+  }
+  return `rgba(${c.r}, ${c.g}, ${c.b}, ${Math.round(c.a * 1000) / 1000})`;
+}
+
 export function rgbaToHex(c: RgbaColor): string {
   return `#${c.r.toString(16).padStart(2, '0')}${c.g.toString(16).padStart(2, '0')}${c.b.toString(16).padStart(2, '0')}`;
 }
@@ -107,18 +121,28 @@ function hsvToRgb(h: number, s: number, v: number): { r: number; g: number; b: n
 
 const PRESET_COLORS = [
   '#ff4d4f', '#eb2f96', '#722ed1', '#5b3cc4', '#2f54eb', '#1890ff', '#13c2c2', '#52c41a',
-  '#a0d911', '#bfbf00', '#fadb14', '#faad14', '#fa8c16', '#fa541c', '#fa541c', '#8c6d5a',
+  '#a0d911', '#bfbf00', '#fadb14', '#faad14', '#fa8c16', '#fa541c', '#ff7a45', '#8c6d5a',
   '#c49c94', '#ffacc5', '#a68f7e', '#8c8c8c', '#5f6f7a', '#ffffff', '#f5f5f5', '#f6ffed',
-  '#000000', '#262626', '#595959', '#8c8c8c',
+  '#000000', '#262626', '#595959', '#7f7f7f',
 ];
+
+/** 半透明色块底纹（棋盘格），用于「当前活动颜色标本」 */
+const CHECKER =
+  'linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)';
 
 interface ColorPickerProps {
   value: string;
   onChange: (css: string) => void;
   onClear?: () => void;
   onConfirm?: () => void;
+  /**
+   * 点击「取色器」图标：由外层（ColorField）负责关闭对话框、开启画布取色会话，
+   * 取到颜色后再把颜色回传进来（显示在本对话框的活动颜色标本里）。
+   */
+  onEyedropper?: () => void;
   clearLabel?: string;
   confirmLabel?: string;
+  eyedropperLabel?: string;
 }
 
 export default function ColorPicker({
@@ -126,8 +150,10 @@ export default function ColorPicker({
   onChange,
   onClear,
   onConfirm,
+  onEyedropper,
   clearLabel = 'Clear',
   confirmLabel = 'OK',
+  eyedropperLabel = 'Eyedropper',
 }: ColorPickerProps) {
   const initial = parseCssColor(value);
   const [hsv, setHsv] = useState<{ h: number; s: number; v: number }>(() => rgbToHsv(initial));
@@ -249,12 +275,12 @@ export default function ColorPicker({
       <div
         ref={alphaRef}
         className="relative mb-3 h-5 cursor-pointer rounded"
-        style={{
-          background: `linear-gradient(to right, rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, 0), rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, 1)),
-            linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)`,
-          backgroundSize: '100% 100%, 10px 10px, 10px 10px',
-          backgroundPosition: '0 0, 0 0, 5px 5px',
-        }}
+          style={{
+            backgroundImage: `linear-gradient(to right, rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, 0), rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, 1)),
+              linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)`,
+            backgroundSize: '100% 100%, 10px 10px, 10px 10px',
+            backgroundPosition: '0 0, 0 0, 5px 5px',
+          }}
         onMouseDown={(e) => startDrag(handleAlphaDrag, e)}
         onTouchStart={(e) => startDrag(handleAlphaDrag, e)}
       >
@@ -281,8 +307,23 @@ export default function ColorPicker({
         ))}
       </div>
 
-      {/* Input + actions */}
-      <div className="flex items-center gap-2">
+      {/* 当前活动颜色标本 + 色值输入 + 取色器 */}
+      <div className="mb-3 flex items-center gap-2">
+        <span
+          className="relative block h-7 w-7 shrink-0 overflow-hidden rounded border border-gray-300"
+          title={css}
+          data-testid="colorpicker-current-swatch"
+        >
+          <span
+            className="absolute inset-0"
+            style={{
+              backgroundImage: CHECKER,
+              backgroundSize: '8px 8px, 8px 8px',
+              backgroundPosition: '0 0, 4px 4px',
+            }}
+          />
+          <span className="absolute inset-0" style={{ backgroundColor: css }} />
+        </span>
         <input
           type="text"
           value={inputText}
@@ -303,6 +344,35 @@ export default function ColorPicker({
           }}
           className="min-w-0 flex-1 rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 outline-none focus:border-blue-400"
         />
+        {onEyedropper && (
+          <button
+            type="button"
+            onClick={onEyedropper}
+            title={eyedropperLabel}
+            aria-label={eyedropperLabel}
+            data-testid="colorpicker-eyedropper"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-gray-300 text-gray-600 transition hover:border-blue-400 hover:text-blue-500"
+          >
+            {/* 取色器（lucide pipette） */}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
+              <path d="m2 22 1-1h3l9-9" />
+              <path d="M3 21v-3l9-9" />
+              <path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.9.9a1 1 0 0 1 0 1.4l-1.6 1.6a1 1 0 0 1-1.4 0l-5.6-5.6a1 1 0 0 1 0-1.4l1.6-1.6a1 1 0 0 1 1.4 0z" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* 操作 */}
+      <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={() => {

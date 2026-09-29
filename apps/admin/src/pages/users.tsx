@@ -134,6 +134,17 @@ export { UserDetailDescriptions };
  * 软删除：移入回收站（防误删二次确认）；激活：恢复僵尸用户；彻底删除：级联硬删。
  * 每个操作均带二次确认弹窗，失败时保留弹窗并提示错误信息。
  */
+/** 把结构化留痕项（服务端回带）按当前语言渲染为可读文本 */
+function footprintText(b: { kind: string; ref?: string; amount?: number }): string {
+  if (b.kind === 'wallet') {
+    return t('pages.purge.block.wallet', { balance: ((b.amount || 0) / 100).toFixed(2) });
+  }
+  if (b.kind === 'order') {
+    return t('pages.purge.block.order', { ref: b.ref ?? '', amount: ((b.amount || 0) / 100).toFixed(2) });
+  }
+  return t(`pages.purge.block.${b.kind}`, { ref: b.ref ?? '' });
+}
+
 export function useUserActions() {
   const invalidate = useInvalidate();
 
@@ -197,7 +208,15 @@ export function useUserActions() {
           await invalidate({ resource: 'admin/zombie-users', invalidates: ['list', 'detail'] });
           onDone?.();
         } catch (e: any) {
-          message.error(e?.message || t('pages.msg.opFailed'));
+          // 命中「生效业务留痕」闸门：服务端回带结构化 blockers，按当前语言组合明细提示
+          if (e?.blockers && Array.isArray(e.blockers) && e.blockers.length) {
+            const items = e.blockers
+              .map((b: any) => footprintText(b))
+              .join('、');
+            message.error(t('pages.purge.blocked', { items }));
+          } else {
+            message.error(e?.message || t('pages.msg.opFailed'));
+          }
           throw e;
         }
       },

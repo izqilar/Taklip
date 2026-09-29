@@ -345,6 +345,18 @@
       "edu": "Education & training",
       "recruit": "Recruitment",
       "birthCelebration": "Birth celebration"
+    },
+    "purge": {
+      "blocked": "Bu hisobda hali ham amaldagi biznes yozuvlari mavjud, butunlay o‘chirib bo‘lmaydi: {{items}}. Avval amaldagi shartnomani bekor qiling / qaytarishni yakunlang yoki uni axlat qutisida saqlang.",
+      "block.contract": "Amaldagi shartnoma {{ref}}",
+      "block.order": "To‘langan buyurtma {{ref}} (¥{{amount}})",
+      "block.wallet": "Hamyon qoldig‘i ¥{{balance}}",
+      "block.withdrawal": "Davom etayotgan pul chiqarish {{ref}}",
+      "block.subordinate": "Bo‘ysunuvchi hisob {{ref}}",
+      "footprintsTitle": "Biznes yozuvlari",
+      "footprintsHint": "Amaldagi yozuvlar mavjud bo‘lsa butunlay o‘chirish taqiqlanadi; yaroqsiz yozuvlar birga tozalanadi.",
+      "cleanableTitle": "Birga tozalanadigan (yaroqsiz yozuvlar)",
+      "safe": "Biznes yozuvi yo‘q; butunlay o‘chirish mumkin"
     }
   },
   "group": {

@@ -403,6 +403,77 @@ registerElement({
 });
 
 registerElement({
+  type: 'ellipse',
+  labelKey: 'editor:element.ellipse',
+  icon: '⬭',
+  baseFields: COMMON_FIELDS,
+  typeFields: [
+    { key: 'fill', labelKey: 'editor:property.fillShape', type: 'color' },
+    { key: 'stroke', labelKey: 'editor:property.stroke', type: 'color' },
+    { key: 'strokeWidth', labelKey: 'editor:property.strokeWidth', type: 'number', min: 0, max: 20, step: 0.5 },
+    { key: 'fillOpacity', labelKey: 'editor:property.fillOpacity', type: 'slider', min: 0, max: 1, step: 0.01, continuous: true },
+    { key: 'strokeOpacity', labelKey: 'editor:property.strokeOpacity', type: 'slider', min: 0, max: 1, step: 0.01, continuous: true },
+    {
+      key: 'lineStyle',
+      labelKey: 'editor:property.lineStyle',
+      type: 'select',
+      options: [
+        { labelKey: 'editor:component.lineStyleSolid', value: 'solid' },
+        { labelKey: 'editor:component.lineStyleDashed', value: 'dashed' },
+        { labelKey: 'editor:component.lineStyleDotted', value: 'dotted' },
+      ],
+    },
+  ],
+});
+
+registerElement({
+  type: 'polygon',
+  labelKey: 'editor:element.polygon',
+  icon: '⬠',
+  baseFields: COMMON_FIELDS,
+  typeFields: [
+    { key: 'fill', labelKey: 'editor:property.fillShape', type: 'color' },
+    { key: 'stroke', labelKey: 'editor:property.stroke', type: 'color' },
+    { key: 'strokeWidth', labelKey: 'editor:property.strokeWidth', type: 'number', min: 0, max: 20, step: 0.5 },
+    { key: 'sides', labelKey: 'editor:property.sides', type: 'number', min: 3, max: 12, step: 1 },
+    { key: 'fillOpacity', labelKey: 'editor:property.fillOpacity', type: 'slider', min: 0, max: 1, step: 0.01, continuous: true },
+    { key: 'strokeOpacity', labelKey: 'editor:property.strokeOpacity', type: 'slider', min: 0, max: 1, step: 0.01, continuous: true },
+    {
+      key: 'lineStyle',
+      labelKey: 'editor:property.lineStyle',
+      type: 'select',
+      options: [
+        { labelKey: 'editor:component.lineStyleSolid', value: 'solid' },
+        { labelKey: 'editor:component.lineStyleDashed', value: 'dashed' },
+        { labelKey: 'editor:component.lineStyleDotted', value: 'dotted' },
+      ],
+    },
+  ],
+});
+
+registerElement({
+  type: 'arrow',
+  labelKey: 'editor:element.arrow',
+  icon: '➤',
+  baseFields: COMMON_FIELDS,
+  typeFields: [
+    { key: 'stroke', labelKey: 'editor:property.fill', type: 'color' },
+    { key: 'strokeWidth', labelKey: 'editor:property.lineWidth', type: 'number', min: 1, max: 50, step: 0.5 },
+    { key: 'strokeOpacity', labelKey: 'editor:property.strokeOpacity', type: 'slider', min: 0, max: 1, step: 0.01, continuous: true },
+    {
+      key: 'lineStyle',
+      labelKey: 'editor:property.lineStyle',
+      type: 'select',
+      options: [
+        { labelKey: 'editor:component.lineStyleSolid', value: 'solid' },
+        { labelKey: 'editor:component.lineStyleDashed', value: 'dashed' },
+        { labelKey: 'editor:component.lineStyleDotted', value: 'dotted' },
+      ],
+    },
+  ],
+});
+
+registerElement({
   type: 'calendar',
   labelKey: 'editor:element.calendar',
   icon: '📅',

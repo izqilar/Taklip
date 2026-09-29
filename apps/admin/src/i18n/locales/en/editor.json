@@ -294,6 +294,15 @@
       "grid3x3": "3×3 Grid"
     }
   },
+  "fill": {
+    "type": "Fill type",
+    "typeSolid": "Solid",
+    "typeGradient": "Gradient",
+    "typePattern": "Pattern",
+    "typeImage": "Image",
+    "typeVideo": "Video",
+    "typeBlend": "Blend"
+  },
   "section": {
     "transform": "Transform",
     "fill": "Fill",

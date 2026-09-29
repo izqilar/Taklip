@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import type { PrismaService } from '../prisma/prisma.service';
 import { collectFontFamilies } from '@h5design/core';
+import { buildFontCatalog } from '../console/font-catalog';
 
 /**
  * 字体授权判定（服务端权威）—— 纯函数工具，不参与 DI。
@@ -44,18 +45,30 @@ export function effectiveSchema(row: {
     : row.schema;
 }
 
-/** 解析 schema 中用到的「付费字体」family 列表（按 Font.isPaid 判定） */
+/**
+ * 解析 schema 中用到的「付费字体」family 列表。
+ *
+ * isPaid 判定改走**目录扫描**（`buildFontCatalog`，与 font.controller 编辑器端点、
+ * export.service 导出同源），不再依赖 DB 的 `font` 表。
+ *
+ * 原因：DB 的 isPaid 只在手动 `POST /fonts/refresh` 时才更新，而从目录新增的付费字体在
+ * refresh 前不会被写进 DB → 若此处仍查 DB，发布/导出闸口会对「目录里明明是付费字体」漏判
+ * 为免费，导致免费模板夹带付费字体却放行、或作品授权误判。目录即真相可消除该时间窗口。
+ *
+ * 注：`_prisma` 保留仅为兼容既有调用签名（其余授权逻辑仍依赖它），本函数不再查 DB。
+ */
 export async function paidFontsInSchema(
-  prisma: PrismaLike,
+  _prisma: PrismaLike,
   row: { schema?: unknown; draftSchema?: unknown },
 ): Promise<string[]> {
   const families = collectFontFamilies(effectiveSchema(row));
   if (families.length === 0) return [];
-  const fonts = await prisma.font.findMany({
-    where: { family: { in: families }, isPaid: true },
-    select: { family: true },
-  });
-  return fonts.map((f) => f.family);
+  const paidSet = new Set(
+    buildFontCatalog()
+      .filter((f) => f.isPaid)
+      .map((f) => f.family),
+  );
+  return families.filter((f) => paidSet.has(f));
 }
 
 /** 用户是否已购买该模板（TemplateOrder 支付态 paid） */

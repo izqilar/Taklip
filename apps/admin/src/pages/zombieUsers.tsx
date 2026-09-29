@@ -111,6 +111,10 @@ export const ZombieUserShow = () => {
   }
 
   const name = user.nickname || user.realName || user.phone || '—';
+  const fps = user.footprints as
+    | { blockers?: any[]; cleanable?: any[] }
+    | undefined;
+  const blocked = !!fps?.blockers?.length;
 
   return (
     <>
@@ -129,7 +133,9 @@ export const ZombieUserShow = () => {
             <button
               type="button"
               onClick={() => purge(user.id, name, () => navigate('/admin/zombie-users'))}
-              style={btnStyle(T.down)}
+              style={{ ...btnStyle(T.down), opacity: blocked ? 0.45 : 1 }}
+              disabled={blocked}
+              title={blocked ? t('pages.purge.footprintsHint') : undefined}
             >
               {t('pages.btn.purgeUser')}
             </button>
@@ -137,6 +143,36 @@ export const ZombieUserShow = () => {
         }
       />
       <UserDetailDescriptions user={user} />
+      {fps && (
+        <Panel>
+          <div style={{ marginBottom: 8, fontWeight: 600 }}>{t('pages.purge.footprintsTitle')}</div>
+          {blocked ? (
+            <>
+              <ul style={{ margin: 0, paddingLeft: 18, color: T.down }}>
+                {fps.blockers!.map((b: any, i: number) => (
+                  <li key={i}>{fpText(b)}</li>
+                ))}
+              </ul>
+              <div style={{ marginTop: 8, fontSize: 12, color: T.ink3 }}>
+                {t('pages.purge.footprintsHint')}
+              </div>
+            </>
+          ) : fps.cleanable?.length ? (
+            <>
+              <div style={{ fontSize: 12, color: T.ink3, marginBottom: 4 }}>
+                {t('pages.purge.cleanableTitle')}
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                {fps.cleanable.map((c: any, i: number) => (
+                  <li key={i}>{c.ref}</li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <div style={{ fontSize: 12, color: T.ink3 }}>{t('pages.purge.safe')}</div>
+          )}
+        </Panel>
+      )}
       <div>
         <button type="button" onClick={() => navigate('/admin/zombie-users')} style={btnStyle(T.ink2)}>
           返回列表
@@ -145,6 +181,17 @@ export const ZombieUserShow = () => {
     </>
   );
 };
+
+/** 把结构化留痕项按当前语言渲染为可读文本 */
+function fpText(b: any): string {
+  if (b.kind === 'wallet') {
+    return t('pages.purge.block.wallet', { balance: ((b.amount || 0) / 100).toFixed(2) });
+  }
+  if (b.kind === 'order') {
+    return t('pages.purge.block.order', { ref: b.ref ?? '', amount: ((b.amount || 0) / 100).toFixed(2) });
+  }
+  return t(`pages.purge.block.${b.kind}`, { ref: b.ref ?? '' });
+}
 
 /** 轻量按钮（与运营端其它页保持一致的原生 button 风格） */
 function btnStyle(color: string): CSSProperties {

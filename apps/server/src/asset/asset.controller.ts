@@ -46,11 +46,12 @@ export class AssetController {
         const ALLOWED = [
           /^image\/(jpg|jpeg|png|gif|webp|bmp|svg(\+xml)?|ico|tiff?|avif)$/,
           /^audio\/(mpeg|mp3|wav|x-wav|wave|x-ms-wav|ogg|vorbis|m4a|x-m4a|aac|webm|flac|x-flac)$/i,
+          /^video\/(mp4|webm|ogg|quicktime|x-msvideo|x-matroska|m4v|x-m4v|avi|3gpp|3gpp2)$/i,
         ];
         if (!ALLOWED.some((re) => re.test(file.mimetype))) {
           return cb(
             new BadRequestException(
-              '仅支持 jpg、jpeg、png、gif、webp、bmp、svg、ico、tiff、avif 等图片格式，以及 mp3、wav、ogg、m4a、aac、webm、flac 等音频格式',
+              '仅支持 jpg、jpeg、png、gif、webp、bmp、svg、ico、tiff、avif 等图片格式，mp3、wav、ogg、m4a、aac、webm、flac 等音频格式，以及 mp4、webm、mov、avi、mkv、m4v 等视频格式',
             ),
             false,
           );

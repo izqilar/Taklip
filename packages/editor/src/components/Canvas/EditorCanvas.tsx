@@ -637,7 +637,11 @@ function unflipTransform(node: Konva.Node, el: Element): { kx: number; ky: numbe
   };
 }
 
-function renderElement({
+// 必须为正规组件（而非普通函数直接调用）：内部 useRef 需计入组件自身的 hooks 实例。
+// 若在 EditorCanvas 的 .map() 中以普通函数形式调用，这些 useRef 会被挂在父组件 hooks 链表上，
+// 导致 EditorCanvas 的 hooks 数量随元素数变化，触发
+// "Rendered more hooks than during the previous render"。改为组件后每个元素独立持有自己的 ref。
+function ElementNode({
   el,
   onSelect,
   onChange,
@@ -2202,11 +2206,12 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
               {/* 元素列表（按 zIndex 排序） */}
               {[...page.elements]
                 .sort((a, b) => a.zIndex - b.zIndex)
-                .map((el) =>
-                  renderElement({
-                    el,
-                    isSelected: selectedIds.includes(el.id),
-                    onSelect: (e) => {
+                .map((el) => (
+                  <ElementNode
+                    key={el.id}
+                    el={el}
+                    isSelected={selectedIds.includes(el.id)}
+                    onSelect={(e) => {
                       const isMulti = !!(
                         e?.evt && (e.evt.ctrlKey || e.evt.metaKey || e.evt.shiftKey)
                       );
@@ -2218,20 +2223,20 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
                         // 点击其他元素 = 当前编辑失焦：先提交（幂等），避免编辑内容丢失
                         commitTextEdit();
                       }
-                    },
-                    onChange: (patch) => {
+                    }}
+                    onChange={(patch) => {
                       updateElement(el.id, patch);
                       setGuides([]);
-                    },
-                    onDragStart: () => pushHistory(),
-                    onTransformStart: () => pushHistory(),
-                    onDoubleClick: el.type === 'text' && !el.locked && selectedIds.length <= 1 ? () => startTextEdit(el.id) : undefined,
-                    onMouseEnter: handleElementMouseEnter,
-                    onMouseLeave: handleElementMouseLeave,
-                    imageCache: imageCache.current,
-                    fontEpoch,
-                  }),
-                )}
+                    }}
+                    onDragStart={() => pushHistory()}
+                    onTransformStart={() => pushHistory()}
+                    onDoubleClick={el.type === 'text' && !el.locked && selectedIds.length <= 1 ? () => startTextEdit(el.id) : undefined}
+                    onMouseEnter={handleElementMouseEnter}
+                    onMouseLeave={handleElementMouseLeave}
+                    imageCache={imageCache.current}
+                    fontEpoch={fontEpoch}
+                  />
+                ))}
 
               {/* 多选时：每个选中对象单独显示边界框，便于区分 */}
               {!colorPickMode && selectedIds.length > 1 &&

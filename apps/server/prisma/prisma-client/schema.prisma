@@ -692,7 +692,7 @@ model ProviderContract {
   platformRate Int       @default(10) // 平台抽成（百分比）
   deposit      Int       @default(0) // 服务保证金（分）
   settlePeriod String    @default("MONTH") // MONTH 月结 | HALF_MONTH 半月结 | WEEK 周结
-  signStage    String    @default("NEGOTIATING") // NEGOTIATING 协商中 | AWAIT_PROVIDER_SIGN 待服务商签署 | AWAIT_SENIOR_SIGN 待上级签署 | APPROVING 审批中 | EFFECTIVE 已生效 | EXPIRED 已到期 | TERMINATED 已终止
+  signStage    String    @default("NEGOTIATING") // NEGOTIATING 协商中 | AWAIT_PROVIDER_SIGN 待服务商签署 | AWAIT_SENIOR_SIGN 待上级签署 | APPROVING 审批中 | EFFECTIVE 已生效 | EXPIRED 已到期 | TERMINATED 已终止 | VOIDED 已作废（终态，无资金/法律追溯价值，随级联清理）
   signDate     DateTime? @map("sign_date")
   expireDate   DateTime? @map("expire_date")
   negotiation  String[]  @default([]) // 按轮次留痕的协商记录

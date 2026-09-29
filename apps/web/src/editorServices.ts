@@ -15,22 +15,28 @@ import { setFontCatalog, ensureFontsByFamilies, getFontCatalog } from '@h5design
 import { api } from '@/api/client';
 
 let registered = false;
-let fontsBootstrapped = false;
 
 /**
- * 编辑器挂载时拉取字体目录并注册（幂等、失败静默降级为系统字体）。
+ * 字体目录拉取（并发去重，每次调用都重新拉取 → 保证「目录即真相」）。
+ * 旧实现用模块级 `fontsBootstrapped` 只拉一次，导致增删字体文件后下拉列表不刷新；
+ * 这里改为每次都重新请求后端（后端 list 已改为实时扫描目录），in-flight 去重避免并发重复拉。
  * 字体文件由服务端托管在 /uploads/fonts/，前端只认 URL。
  */
+let fontsInflight: Promise<void> | null = null;
 async function bootstrapFonts(): Promise<void> {
-  if (fontsBootstrapped) return;
-  fontsBootstrapped = true;
-  try {
-    const list = (await api.fonts()) as FontMeta[];
-    setFontCatalog(list);
-    await ensureFontsByFamilies(list.map((f) => f.family));
-  } catch {
-    /* 字体目录不可用时静默降级为系统字体 */
-  }
+  if (fontsInflight) return fontsInflight;
+  fontsInflight = (async () => {
+    try {
+      const list = (await api.fonts()) as FontMeta[];
+      setFontCatalog(list);
+      await ensureFontsByFamilies(list.map((f) => f.family));
+    } catch {
+      /* 字体目录不可用时静默降级为系统字体 */
+    }
+  })().finally(() => {
+    fontsInflight = null;
+  });
+  return fontsInflight;
 }
 
 /** 注入 web 端编辑器服务实现（幂等；须在 <EditorApp/> 挂载前调用） */

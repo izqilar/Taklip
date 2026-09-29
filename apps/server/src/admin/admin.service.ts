@@ -567,6 +567,14 @@ export class AdminService {
         await tx.providerWallet.deleteMany({ where: { providerId: targetId } });
         // 员工档案属「组织资产」：仅解绑 userId，不删除档案本身
         await tx.orgStaff.updateMany({ where: { userId: targetId }, data: { userId: null } });
+        // 合同：已生效态已在 purge 闸门硬阻塞；此处清理其余失效态（VOIDED/EXPIRED/TERMINATED/未生效）
+        await tx.providerContract.deleteMany({ where: { providerId: targetId } });
+        // 订单：已支付态已在闸门硬阻塞；此处清理退款 / 其他失效态
+        await tx.templateOrder.deleteMany({
+          where: { OR: [{ buyerId: targetId }, { template: { authorId: targetId } }] },
+        });
+        // 显式解绑下级账号归属（原 SET NULL 无审计，此处先记录再解绑）
+        await tx.user.updateMany({ where: { agentId: targetId }, data: { agentId: null } });
         await tx.user.delete({ where: { id: targetId } });
       });
     } catch (e: any) {
@@ -668,7 +676,9 @@ export class AdminService {
     const roleExtra = await this.authService.buildRoleExtra(user);
     const maskedIdCard =
       viewerRole === 'ADMIN' || !user.idCard ? user.idCard : maskIdCard(user.idCard);
-    return { ...user, idCard: maskedIdCard, ...roleExtra };
+    // 业务留痕盘点（供详情页「留痕清单」面板与按钮禁用态使用）
+    const footprints = await this.collectUserFootprints(user.id);
+    return { ...user, idCard: maskedIdCard, ...roleExtra, footprints };
   }
 
   /**
@@ -701,9 +711,72 @@ export class AdminService {
   }
 
   /**
-   * 回收站：彻底删除（物理清除）。仅针对回收站内用户；复用 cascadeDeleteUserData 级联清理从属数据。
-   * 与「服务商管理·删除」不同，此处不设置业务留痕闸门——用户已在回收站中，运营明确选择彻底清除。
-   * 仍受外键约束保护：若有未预料到的引用，事务回滚并报 409。
+   * 统一盘点用户业务留痕（单一真值），供「回收站·彻底删除」与僵尸详情复用。
+   * - blockers：有资金 / 法律追溯价值的硬阻塞项（已生效合同、已支付订单、非零钱包、进行中提现），Purge 一律拒绝并提示明细。
+   * - cleanable：已失效留痕（作废/到期/终止/未生效合同、已退款订单、名下下级账号），随级联清理；
+   *   其中合同/订单在删除前序列化进审计快照，保留追溯链。
+   */
+  private async collectUserFootprints(targetId: string) {
+    const [contracts, orders, wallet, withdrawals, subordinates] = await this.prisma.$transaction([
+      this.prisma.providerContract.findMany({ where: { providerId: targetId } }),
+      this.prisma.templateOrder.findMany({
+        where: { OR: [{ buyerId: targetId }, { template: { authorId: targetId } }] },
+      }),
+      this.prisma.providerWallet.findUnique({ where: { providerId: targetId } }),
+      this.prisma.withdrawal.findMany({ where: { providerId: targetId } }),
+      this.prisma.user.findMany({
+        where: { agentId: targetId },
+        select: { id: true, phone: true, nickname: true },
+      }),
+    ]);
+
+    const blockers: Array<{
+      kind: 'contract' | 'order' | 'wallet' | 'withdrawal' | 'subordinate';
+      ref: string;
+      stage?: string;
+      status?: string;
+      amount?: number;
+    }> = [];
+    const cleanable: Array<{ kind: string; ref: string; snapshot: any }> = [];
+
+    for (const c of contracts) {
+      if (c.signStage === 'EFFECTIVE') {
+        blockers.push({ kind: 'contract', ref: c.contractNo, stage: c.signStage });
+      } else {
+        cleanable.push({ kind: 'contract', ref: c.contractNo, snapshot: c });
+      }
+    }
+    for (const o of orders) {
+      if (o.status === 'paid') {
+        blockers.push({ kind: 'order', ref: o.orderNo ?? o.id, status: o.status, amount: o.amount });
+      } else {
+        cleanable.push({ kind: 'order', ref: o.orderNo ?? o.id, snapshot: o });
+      }
+    }
+    if (
+      wallet &&
+      (wallet.balance !== 0 || wallet.frozen !== 0 || wallet.totalIncome !== 0 || wallet.withdrawn !== 0)
+    ) {
+      blockers.push({ kind: 'wallet', ref: 'wallet', amount: wallet.balance });
+    }
+    for (const w of withdrawals) {
+      // 进行中（pending）或已打款（paid）提现 → 硬阻塞；failed 视为失效留痕可清理
+      if (w.status === 'pending' || w.status === 'paid') {
+        blockers.push({ kind: 'withdrawal', ref: w.id, status: w.status });
+      }
+    }
+    for (const s of subordinates) {
+      cleanable.push({ kind: 'subordinate', ref: s.phone ?? s.nickname ?? s.id, snapshot: s });
+    }
+    return { blockers, cleanable };
+  }
+
+  /**
+   * 回收站：彻底删除（物理清除）。仅针对回收站内用户。
+   * 采用「状态分级闸门 + 归档式级联清理」：
+   *  - 已生效合同 / 已支付订单 / 非零钱包 / 进行中提现 属有资金或法律价值的留痕，一律硬阻塞并附明细（409），避免破坏追溯链；
+   *  - 失效态留痕（VOIDED/EXPIRED/TERMINATED/未生效合同、已退款订单、名下下级归属）随级联清理，合同/订单删除前先归档快照；
+   *  - 仍受外键兜底保护：若 cascade 后仍有未预料引用，事务回滚并报 409，绝不产生「半删除」脏状态。
    */
   async purgeZombieUser(operator: JwtUser, targetId: string, reason?: string) {
     const target = await this.prisma.user.findUnique({
@@ -728,12 +801,24 @@ export class AdminService {
     if (operator.id === targetId) throw new BadRequestException('不能删除当前登录账号');
     if (target.role === 'ADMIN') throw new ForbiddenException('管理员账号不可删除');
 
+    // 状态分级闸门：有资金 / 法律价值的留痕硬阻塞并附明细
+    const { blockers, cleanable } = await this.collectUserFootprints(targetId);
+    if (blockers.length) {
+      throw new ConflictException({
+        code: 'PURGE_BLOCKED',
+        messageKey: 'pages.purge.blocked',
+        blockers,
+      });
+    }
+
     const before = {
       phone: target.phone,
       nickname: target.nickname,
       realName: target.realName,
       role: target.role,
       status: target.status,
+      // 失效留痕随级联清理前先归档快照（合同/订单含完整凭证，便于追溯）
+      cleanableFootprints: cleanable.map((c) => ({ kind: c.kind, ref: c.ref, snapshot: c.snapshot })),
     };
 
     await this.cascadeDeleteUserData(targetId);
