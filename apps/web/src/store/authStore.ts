@@ -123,7 +123,16 @@ export const useAuthStore = create<AuthState>((set) => ({
       return true;
     } catch (err) {
       if (import.meta.env.DEV) console.error('[auth] login failed:', err);
-      set({ error: 'errors:error.loginFailed', isLoading: false });
+      // 按状态码给出精确文案，避免把「限流 / 服务端异常 / 网络错误」误报成「账号密码错误」：
+      //  - 429：登录接口限流（RateLimitGuard 10 次/分钟/IP），提示稍后再试；
+      //  - 401/400/422：账号或密码错误（含服务端「手机号或密码错误」等）；
+      //  - 其它（5xx / 网络断开）：统一服务端异常文案。
+      const status = (err as { statusCode?: number })?.statusCode;
+      let key: string;
+      if (status === 429) key = 'errors:error.tooManyRequests';
+      else if (status === 401 || status === 400 || status === 422) key = 'errors:error.loginFailed';
+      else key = 'errors:error.loginServerError';
+      set({ error: key, isLoading: false });
       return false;
     }
   },

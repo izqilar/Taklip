@@ -17,6 +17,21 @@ import {
 
 const BASE_URL = ''; // 开发期走 vite proxy，生产期走 nginx 反代
 
+/**
+ * 结构化 API 错误：携带 HTTP 状态码与服务端消息，供上层按状态码给出精确文案
+ *（例如 401=账号密码错误、429=限流、5xx=服务端异常），避免把所有失败都误报成「账号密码错误」。
+ */
+export class ApiError extends Error {
+  statusCode: number;
+  serverMessage?: string;
+  constructor(statusCode: number, message: string, serverMessage?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.statusCode = statusCode;
+    this.serverMessage = serverMessage;
+  }
+}
+
 export type UserRole = 'USER' | 'SERVICE_PROVIDER' | 'AGENT' | 'ADMIN';
 
 /** 服务商复合服务子角色（User.serviceRoles 为 1..n 列表，仅 role=SERVICE_PROVIDER 时有意义） */
@@ -375,29 +390,37 @@ async function request<T>(
     // 刷新也失败：清理整个会话（含 user_info），使 UI 登录态与存储一致
     clearTokens();
     localStorage.removeItem('user_info');
-    throw new Error('API 401: 登录已失效，请重新登录');
+    throw new ApiError(401, 'API 401: 登录已失效，请重新登录', '登录已失效，请重新登录');
   }
 
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
 
+    // 解析服务端业务消息（Nest 统一错误体形如 { statusCode, message }）
+    let body: any = {};
+    try {
+      body = text ? JSON.parse(text) : {};
+    } catch {
+      body = {};
+    }
+    const serverMessage =
+      typeof body?.message === 'string'
+        ? body.message
+        : typeof body?.error === 'string'
+          ? body.error
+          : undefined;
+
     // ★ 账号资质变更（403 + code=ROLE_MISMATCH）：这是前端唯一的统一入口。
     // 服务端 RolesGuard 已在响应体回带当前权威身份，零额外请求即可比对本地快照；
     // 命中后由漂移守卫弹友好提示并安排「清登录态 → 跳登录页」，此处不再把原始错误抛给业务页。
-    if (res.status === 403) {
-      let body: any = {};
-      try {
-        body = text ? JSON.parse(text) : {};
-      } catch {
-        body = {};
-      }
-      if (body?.code === ROLE_MISMATCH_CODE && body?.identity) {
-        reportFromServerIdentity(body.identity);
-        throw new Error(IDENTITY_CHANGED_MESSAGE);
-      }
+    if (res.status === 403 && body?.code === ROLE_MISMATCH_CODE && body?.identity) {
+      reportFromServerIdentity(body.identity);
+      throw new Error(IDENTITY_CHANGED_MESSAGE);
     }
 
-    throw new Error(`API ${res.status}: ${text}`);
+    // 结构化抛出：携带状态码与服务端消息，让上层（如登录页）按状态码给出精确文案，
+    // 而不是把所有失败都误报成「账号或密码错误」。
+    throw new ApiError(res.status, `API ${res.status}: ${text}`, serverMessage);
   }
 
   if (res.status === 204) return undefined as T;

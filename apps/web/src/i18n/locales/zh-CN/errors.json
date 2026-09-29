@@ -109,6 +109,8 @@
     "phoneInvalid": "手机号格式不正确",
     "expandServicesFailed": "增加业务失败",
     "approveServiceRolesFailed": "审批业务失败",
-    "loadFailed": "加载失败，请重试"
+    "loadFailed": "加载失败，请重试",
+    "tooManyRequests": "操作过于频繁，请稍后再试",
+    "loginServerError": "登录失败，请稍后重试"
   }
 }

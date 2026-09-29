@@ -79,7 +79,9 @@
     "changePasswordFailed": "Сыр сөздү өзгөртүү мүмкүн болбоду, эски сыр сөздү текшериңиз",
     "phoneInvalid": "Invalid phone number",
     "expandServicesFailed": "курус кошуу ийгиликсиз болду",
-    "approveServiceRolesFailed": "курус текшерүү ийгиликсиз болду"
+    "approveServiceRolesFailed": "курус текшерүү ийгиликсиз болду",
+    "tooManyRequests": "操作过于频繁，请稍后再试",
+    "loginServerError": "登录失败，请稍后重试"
   },
   "submitReviewFailed": "Failed to submit qualification review, please retry",
   "applyProviderFailed": "Failed to join as provider, please try again",

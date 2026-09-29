@@ -109,7 +109,9 @@
     "expandServicesFailed": "Failed to add service",
     "approveServiceRolesFailed": "Failed to approve services",
     "loadFailed": "Failed to load, please try again",
-    "submitReviewFailed": "Failed to submit qualification review, please retry"
+    "submitReviewFailed": "Failed to submit qualification review, please retry",
+    "tooManyRequests": "Too many attempts, please try again later",
+    "loginServerError": "Login failed, please try again later"
   },
   "submitReviewFailed": "Failed to submit qualification review, please retry"
 }
