@@ -117,6 +117,12 @@ export default function ColorField({
 
   const alphaPct = Math.round(parsed.a * 100);
 
+  /** 关闭弹层：未确认就关闭 = 放弃取色暂存结果 */
+  const closePicker = useCallback(() => {
+    setStaged(null);
+    setOpen(false);
+  }, []);
+
   /** 打开画布取色器 */
   const handleEyedropper = useCallback(() => {
     setOpen(false); // 先让出画布，对话框收起后画布完全可见
@@ -140,7 +146,8 @@ export default function ColorField({
           type="button"
           onClick={() => setOpen(!open)}
           title={css}
-          className="relative h-8 w-8 shrink-0 overflow-hidden rounded border border-gray-300"
+          data-testid="colorfield-swatch"
+          className="relative h-8 w-8 shrink-0 overflow-hidden rounded-md border border-gray-300"
         >
           <CheckerBackground className="absolute inset-0" />
           <span className="absolute inset-0" style={{ backgroundColor: css }} />
@@ -175,10 +182,7 @@ export default function ColorField({
       <Popover
         anchor={anchorRef.current}
         open={open}
-        onClose={() => {
-          setStaged(null); // 未确认就关闭对话框 = 放弃取色结果
-          setOpen(false);
-        }}
+        onClose={closePicker}
       >
         <ColorPicker
           value={effective}
@@ -204,9 +208,8 @@ export default function ColorField({
             }
             setOpen(false);
           }}
+          onClose={closePicker}
           onEyedropper={handleEyedropper}
-          clearLabel={t('common:button.clear')}
-          confirmLabel={t('common:button.confirm')}
           eyedropperLabel={t('editor:colorPicker.eyedropper', { defaultValue: '取色器' })}
         />
       </Popover>

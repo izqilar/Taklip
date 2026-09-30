@@ -445,8 +445,7 @@ export default function PageSettingsPanel() {
             onChange={(v) => setPageBackground(v)}
             onClear={() => setPageBackground('transparent')}
             onConfirm={() => setColorOpen(false)}
-            clearLabel={t('common:button.clear')}
-            confirmLabel={t('common:button.confirm')}
+            onClose={() => setColorOpen(false)}
           />
         </Popover>
       </div>

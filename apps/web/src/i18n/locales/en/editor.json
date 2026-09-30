@@ -878,6 +878,10 @@
   },
   "colorPicker": {
     "eyedropper": "Eyedropper",
-    "pickingHint": "Click canvas to pick · Esc to cancel"
+    "pickingHint": "Click canvas to pick · Esc to cancel",
+    "clear": "Clear",
+    "confirm": "OK",
+    "custom": "Custom",
+    "palette": "Palette"
   }
 }

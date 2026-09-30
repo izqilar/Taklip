@@ -1039,3 +1039,12 @@ export function useCanUndo() {
 export function useCanRedo() {
   return useEditorStore((s) => s.future.length > 0);
 }
+
+/**
+ * 调试 / E2E 钩子：在 DEV 环境下把 store 暴露到 `window.__editorStore`，
+ * 便于 Playwright 等端到端脚本确定性地选中元素（避免依赖画布坐标或图层行 DOM 结构）。
+ * 生产构建中 `import.meta.env.DEV` 为 false，整段被 tree-shaking 抹除，不影响线上。
+ */
+if (typeof window !== 'undefined' && (import.meta as { env?: { DEV?: boolean } }).env?.DEV) {
+  (window as unknown as { __editorStore?: typeof useEditorStore }).__editorStore = useEditorStore;
+}

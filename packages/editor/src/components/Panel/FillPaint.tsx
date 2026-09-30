@@ -264,14 +264,13 @@ function SwatchButton({
   value,
   onChange,
   onCommit,
-  className = 'h-7 w-9',
+  className = 'h-7 w-8',
 }: {
   value: string;
   onChange: (v: string) => void;
   onCommit: () => void;
   className?: string;
 }) {
-  const { t } = useTranslation(['editor', 'common']);
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLButtonElement>(null);
   return (
@@ -284,7 +283,7 @@ function SwatchButton({
           e.stopPropagation();
           setOpen((s) => !s);
         }}
-        className={`relative shrink-0 overflow-hidden rounded border border-gray-300 ${className}`}
+        className={`relative shrink-0 overflow-hidden rounded-md border border-gray-300 ${className}`}
       >
         <CheckerBackground className="absolute inset-0" />
         <span className="absolute inset-0" style={{ backgroundColor: value }} />
@@ -301,8 +300,7 @@ function SwatchButton({
             onCommit();
             setOpen(false);
           }}
-          clearLabel={t('common:button.clear')}
-          confirmLabel={t('common:button.confirm')}
+          onClose={() => setOpen(false)}
         />
       </Popover>
     </>

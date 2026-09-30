@@ -878,6 +878,10 @@
   },
   "colorPicker": {
     "eyedropper": "取色器",
-    "pickingHint": "点击画布取色 · Esc 取消"
+    "pickingHint": "点击画布取色 · Esc 取消",
+    "clear": "清除",
+    "confirm": "确定",
+    "custom": "自定义",
+    "palette": "调色板"
   }
 }
