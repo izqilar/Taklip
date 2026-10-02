@@ -12,6 +12,7 @@
 #   $env:SKIP_GENERATE=1; .\startup.ps1 skip prisma generate (regenerate only on schema change by default)
 #   $env:SKIP_CORE_BUILD=1; .\startup.ps1 skip building @h5design/core (it is dist-built; rebuild after core edits)
 #   $env:SKIP_WATCHDOG=1;  .\startup.ps1 launch bare node (no auto-restart) instead of the :3000 watchdog
+#   $env:NO_WAIT=1;        .\startup.ps1 launch services and return immediately (no readiness poll / Enter pause)
 #
 # The web (vite / 5173), admin (vite / 5174) and server (node dist/main) are launched
 # as DETACHED processes, so closing this window / reaping the task will NOT stop them.
@@ -34,8 +35,8 @@ trap {
     Err "UNCAUGHT ERROR: $_"
     if ($_.ScriptStackTrace) { Write-Host $_.ScriptStackTrace -ForegroundColor DarkGray }
     Write-Host ''
-    Write-Host 'Script stopped due to an error. See startup.log for details. Press Enter to close...'
-    $null = Read-Host
+    Write-Host 'Script stopped due to an error. See startup.log for details.'
+    if (Test-Interactive) { Write-Host 'Press Enter to close...'; $null = Read-Host }
     break
 }
 
@@ -47,6 +48,7 @@ $SKIP_MIGRATE = if ($env:SKIP_MIGRATE) { $env:SKIP_MIGRATE } else { '0' }
 $SKIP_GENERATE  = if ($env:SKIP_GENERATE)  { $env:SKIP_GENERATE }  else { '0' }
 $SKIP_CORE_BUILD = if ($env:SKIP_CORE_BUILD) { $env:SKIP_CORE_BUILD } else { '0' }
 $SKIP_WATCHDOG   = if ($env:SKIP_WATCHDOG)   { $env:SKIP_WATCHDOG }   else { '0' }
+$NO_WAIT         = if ($env:NO_WAIT)         { $env:NO_WAIT }         else { '0' }
 
 # ---------- output helpers ----------
 function Log($msg){ Write-Host '==> ' -ForegroundColor Blue -NoNewline; Write-Host $msg }
@@ -56,33 +58,49 @@ function Warn($msg){ Write-Host '[WARN] ' -ForegroundColor Yellow -NoNewline; Wr
 
 # run-capture: like Run() but also returns combined output so callers can inspect
 # it (e.g. to detect a Prisma P3005 and self-heal). Never throws on its own.
-function Run-Capture($Command){
+# A hung command is bounded by $TimeoutSec.
+function Run-Capture($Command, $TimeoutSec=300){
     if ($DRY_RUN -eq '1') {
         Write-Host "    [dry-run] $Command" -ForegroundColor DarkGray
         return @{ ExitCode = 0; Output = '' }
     }
     $tmp = Join-Path $env:TEMP ("migrate_$(Get-Date -Format yyyyMMddHHmmssffff).log")
-    try {
-        cmd /c "$Command > `"$tmp`" 2>&1"
-        $code = $LASTEXITCODE
-        $text = ''
-        if (Test-Path $tmp) { $text = (Get-Content $tmp -Raw -ErrorAction SilentlyContinue) }
-        return @{ ExitCode = $code; Output = $text }
-    } finally {
-        Remove-Item $tmp -Force -ErrorAction SilentlyContinue
-    }
+    $p = Start-Process -FilePath 'cmd.exe' -ArgumentList "/c $Command > `"$tmp`" 2>&1" -NoNewWindow -PassThru
+    $exited = $p.WaitForExit($TimeoutSec * 1000)
+    if (-not $exited) { try { $p.Kill() } catch {}; throw "command timed out after ${TimeoutSec}s: $Command" }
+    $code = $p.ExitCode
+    $text = ''
+    if (Test-Path $tmp) { $text = (Get-Content $tmp -Raw -ErrorAction SilentlyContinue) }
+    Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+    return @{ ExitCode = $code; Output = $text }
 }
 
-# run: print when DRY_RUN, else execute; non-zero exit throws
-function Run($Command){
+# Test-Interactive: true only when there is a real console we can pause on.
+# When run non-interactively (redirected stdin / CI / NO_WAIT=1) we must NOT call
+# Read-Host, otherwise the launcher appears to "hang" forever awaiting an Enter.
+function Test-Interactive {
+    if ($env:NO_WAIT -eq '1') { return $false }
+    try { if ([Console]::IsInputRedirected) { return $false } } catch { }
+    try { if (-not [Environment]::UserInteractive) { return $false } } catch { }
+    return $true
+}
+
+# run: print when DRY_RUN, else execute in a child PowerShell (so both native
+# commands and PowerShell cmdlets work) with output streamed to this console.
+# Bounded by $TimeoutSec so a hung step (e.g. pnpm install / docker / build) cannot
+# freeze the whole launcher. Runs in the repo root for correct relative paths.
+function Run($Command, $TimeoutSec=600){
     if ($DRY_RUN -eq '1') {
         Write-Host "    [dry-run] $Command" -ForegroundColor DarkGray
-    } else {
-        Invoke-Expression $Command
-        if ($LASTEXITCODE -ne 0) {
-            throw "command failed (exit $LASTEXITCODE): $Command"
-        }
+        return
     }
+    $p = Start-Process -FilePath 'powershell.exe' -ArgumentList "-NoProfile -NonInteractive -Command $Command" -NoNewWindow -PassThru -WorkingDirectory $PSScriptRoot
+    $exited = $p.WaitForExit($TimeoutSec * 1000)
+    if (-not $exited) {
+        try { $p.Kill() } catch {}
+        throw "command timed out after ${TimeoutSec}s (possible hang): $Command"
+    }
+    if ($p.ExitCode -ne 0) { throw "command failed (exit $($p.ExitCode)): $Command" }
 }
 
 # Test-EndpointAlive: returns $true if the server answers the HTTP request at all
@@ -364,7 +382,7 @@ if ($SKIP_EDITOR_CSS -ne '1') {
         if (-not (Test-Path $lintJs)) {
             Warn "lint script not found at $lintJs; skipping JSON pre-flight"
         } else {
-            $lintCmd = "node `"$lintJs`" `"$root\apps\admin\src`" `"$root\apps\web\src`""
+            $lintCmd = "node `"$lintJs`" `"$PSScriptRoot\apps\admin\src`" `"$PSScriptRoot\apps\web\src`""
             try {
                 Run $lintCmd
                 Ok 'locale JSON valid'
@@ -464,56 +482,78 @@ $adminArgs = "/c start `"`" /min cmd /c `"$adminInner`""
 Start-Process -FilePath 'cmd.exe' -ArgumentList $adminArgs -WindowStyle Hidden
 
 Ok 'launched. waiting for readiness...'
-# Poll all three services (web 5173, admin 5174, server 3000). vite binds in <1s,
-# but the NestJS server (3000) can take 20s+ to cold-start (Prisma init + route
-# mapping + Docker PG connect). A short window caused a *false* "[ERR] one or more
-# services did not come up" even though they would come up moments later.
-$maxWait = 120; $interval = 2; $waited = 0
-$webUp = $false; $adminUp = $false; $srvUp = $false; $srvAlive = $false
-while ($waited -lt $maxWait) {
-    $webUp   = (Get-ListenerPid 5173) -ne $null
-    $adminUp = (Get-ListenerPid 5174) -ne $null
-    $srvUp   = (Get-ListenerPid 3000) -ne $null
-    if ($webUp -and $adminUp -and $srvUp) {
-        # All ports bound. Do a best-effort HTTP liveness probe for the backend so we
-        # don't report success while the app is still crashing during bootstrap.
-        $srvAlive = Test-EndpointAlive 'http://127.0.0.1:3000/health'
-        if (-not $srvAlive) { $srvAlive = Test-EndpointAlive 'http://localhost:3000/health' }
-        if ($srvAlive) { Ok 'backend :3000 answered health probe' }
-        else { Warn 'backend :3000 listening but not responding yet (still initializing?)' }
-        break
+
+if ($env:NO_WAIT -ne '1') {
+    # Poll all three services (web 5173, admin 5174, server 3000). vite binds in <1s,
+    # but the NestJS server (3000) can take 20s+ to cold-start (Prisma init + route
+    # mapping + Docker PG connect). A short window caused a *false* "[ERR] one or more
+    # services did not come up" even though they would come up moments later.
+    $maxWait = 120; $interval = 2; $waited = 0
+    $webUp = $false; $adminUp = $false; $srvUp = $false; $srvAlive = $false
+    while ($waited -lt $maxWait) {
+        $webUp   = (Get-ListenerPid 5173) -ne $null
+        $adminUp = (Get-ListenerPid 5174) -ne $null
+        $srvUp   = (Get-ListenerPid 3000) -ne $null
+        if ($webUp -and $adminUp -and $srvUp) {
+            # All ports bound. Do a best-effort HTTP liveness probe for the backend so we
+            # don't report success while the app is still crashing during bootstrap.
+            $srvAlive = Test-EndpointAlive 'http://127.0.0.1:3000/health'
+            if (-not $srvAlive) { $srvAlive = Test-EndpointAlive 'http://localhost:3000/health' }
+            if ($srvAlive) { Ok 'backend :3000 answered health probe' }
+            else { Warn 'backend :3000 listening but not responding yet (still initializing?)' }
+            break
+        }
+        Start-Sleep -Seconds $interval
+        $waited += $interval
     }
-    Start-Sleep -Seconds $interval
-    $waited += $interval
-}
-if (-not $webUp)   { Warn "frontend (vite / 5173) not listening after ${waited}s" }
-if (-not $adminUp) { Warn "admin    (vite / 5174) not listening after ${waited}s" }
-if (-not $srvUp)   { Warn "backend  (nest / 3000) not listening after ${waited}s" }
-if ($webUp -and $adminUp -and $srvUp) {
-    Ok 'all three services up and reachable'
+    if (-not $webUp)   { Warn "frontend (vite / 5173) not listening after ${waited}s" }
+    if (-not $adminUp) { Warn "admin    (vite / 5174) not listening after ${waited}s" }
+    if (-not $srvUp)   { Warn "backend  (nest / 3000) not listening after ${waited}s" }
+    if ($webUp -and $adminUp -and $srvUp) {
+        Ok 'all three services up and reachable'
+        Write-Host ''
+        Write-Host '=============================================' -ForegroundColor Green
+        Write-Host '  Dev environment is up (services running in background)' -ForegroundColor Green
+        Write-Host '  Frontend: http://localhost:5173' -ForegroundColor Cyan
+        Write-Host '  Admin   : http://localhost:5174' -ForegroundColor Cyan
+        Write-Host '  Backend : http://localhost:3000' -ForegroundColor Cyan
+        if ($SKIP_WATCHDOG -ne '1') {
+            Write-Host '  Backend is auto-restarted by scripts/server-watchdog.js if it crashes' -ForegroundColor DarkGray
+        }
+        Write-Host '  Logs: server.log / web.log / admin.log / startup.log' -ForegroundColor DarkGray
+        Write-Host '=============================================' -ForegroundColor Green
+        # Open the frontend and admin pages as a visible confirmation that they are up (non-blocking)
+        try { Start-Process -FilePath 'http://localhost:5173' -ErrorAction SilentlyContinue } catch { }
+        try { Start-Process -FilePath 'http://localhost:5174' -ErrorAction SilentlyContinue } catch { }
+        Write-Host ''
+        if (Test-Interactive) {
+            Write-Host 'Press Enter to close this window (services keep running in background)...'
+            $null = Read-Host
+        } else {
+            Write-Host '(non-interactive host: not waiting for Enter; services keep running in background)'
+        }
+        try { Stop-Transcript -ErrorAction SilentlyContinue } catch { }
+    } else {
+        Err 'one or more services did not come up; tail of logs:'
+        if (-not $srvUp)   { Get-Content "$root\server.err" -Tail 20 -ErrorAction SilentlyContinue | Write-Host }
+        if (-not $webUp)   { Get-Content "$root\web.err"   -Tail 20 -ErrorAction SilentlyContinue | Write-Host }
+        if (-not $adminUp) { Get-Content "$root\admin.err" -Tail 20 -ErrorAction SilentlyContinue | Write-Host }
+        Write-Host ''
+        if (Test-Interactive) {
+            Write-Host 'Press Enter to close this window...'
+            $null = Read-Host
+        }
+        try { Stop-Transcript -ErrorAction SilentlyContinue } catch { }
+    }
+} else {
+    Log 'NO_WAIT=1: services launched, returning immediately (no readiness poll / Enter pause)'
     Write-Host ''
     Write-Host '=============================================' -ForegroundColor Green
-    Write-Host '  Dev environment is up (services running in background)' -ForegroundColor Green
+    Write-Host '  Dev environment launched (services running in background)' -ForegroundColor Green
     Write-Host '  Frontend: http://localhost:5173' -ForegroundColor Cyan
     Write-Host '  Admin   : http://localhost:5174' -ForegroundColor Cyan
     Write-Host '  Backend : http://localhost:3000' -ForegroundColor Cyan
-    if ($SKIP_WATCHDOG -ne '1') {
-        Write-Host '  Backend is auto-restarted by scripts/server-watchdog.js if it crashes' -ForegroundColor DarkGray
-    }
     Write-Host '  Logs: server.log / web.log / admin.log / startup.log' -ForegroundColor DarkGray
     Write-Host '=============================================' -ForegroundColor Green
-    # Open the frontend and admin pages as a visible confirmation that they are up (non-blocking)
-    try { Start-Process -FilePath 'http://localhost:5173' -ErrorAction SilentlyContinue } catch { }
-    try { Start-Process -FilePath 'http://localhost:5174' -ErrorAction SilentlyContinue } catch { }
-    Write-Host ''
-    Write-Host 'Press Enter to close this window (services keep running in background)...'
-    $null = Read-Host
-} else {
-    Err 'one or more services did not come up; tail of logs:'
-    if (-not $srvUp)   { Get-Content "$root\server.err" -Tail 20 -ErrorAction SilentlyContinue | Write-Host }
-    if (-not $webUp)   { Get-Content "$root\web.err"   -Tail 20 -ErrorAction SilentlyContinue | Write-Host }
-    if (-not $adminUp) { Get-Content "$root\admin.err" -Tail 20 -ErrorAction SilentlyContinue | Write-Host }
-    Write-Host ''
-    Write-Host 'Press Enter to close this window...'
-    $null = Read-Host
+    try { Stop-Transcript -ErrorAction SilentlyContinue } catch { }
 }
