@@ -92,7 +92,7 @@ export default function Gallery() {
         ) : list.length === 0 ? (
           <EmptyState text={t('gallery.empty', { defaultValue: '暂无图片，点击右上角上传' })} />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {list.map((a) => (
               <GalleryCard
                 key={a.id}

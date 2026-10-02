@@ -256,15 +256,16 @@ export function GalleryCard({
       <button
         type="button"
         onClick={onSelect ?? onPreview}
-        className="block h-32 w-full bg-gray-100"
+        className="block w-full bg-gray-100"
+        style={{ aspectRatio: '375 / 667' }}
         aria-label={t('gallery.preview', { defaultValue: '预览' })}
       >
         {err ? (
-          <span className="flex h-full items-center justify-center text-xs text-gray-300">—</span>
+          <span className="flex h-full w-full items-center justify-center text-xs text-gray-300">—</span>
         ) : url ? (
-          <img src={url} alt={asset.name} className="h-full w-full object-cover" />
+          <img src={url} alt={asset.name} className="h-full w-full object-contain p-2" />
         ) : (
-          <span className="flex h-full items-center justify-center text-xs text-gray-300">…</span>
+          <span className="flex h-full w-full items-center justify-center text-xs text-gray-300">…</span>
         )}
       </button>
       <div className="p-2">
