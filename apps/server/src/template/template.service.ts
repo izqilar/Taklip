@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ContentSafetyService, assertRejectRedline } from '../common/services/content-safety.service';
+import { ContributionService } from '../contribution/contribution.service';
 import type { Project } from '@h5design/core';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class TemplateService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly contentSafety: ContentSafetyService,
+    private readonly contribution: ContributionService,
   ) {}
 
   async findAll(category?: string, search?: string) {
@@ -394,11 +396,12 @@ export class TemplateService {
     });
 
     // 写入服务商钱包（如有 authorId）
-    if (template.authorId) {
+    const authorId = template.authorId;
+    if (authorId) {
       await this.prisma.providerWallet.upsert({
-        where: { providerId: template.authorId },
+        where: { providerId: authorId },
         create: {
-          providerId: template.authorId,
+          providerId: authorId,
           balance: providerIncome,
           totalIncome: providerIncome,
         },
@@ -408,6 +411,15 @@ export class TemplateService {
         },
       });
     }
+
+    // 贡献等级重算（fire-and-forget，异常吞掉，绝不阻断下单主流程）
+    if (authorId) this.contribution.recomputeProvider(authorId).catch(() => {});
+    this.prisma.user
+      .findUnique({ where: { id: buyerId }, select: { agentId: true } })
+      .then((u) => {
+        if (u?.agentId) this.contribution.recomputeAgent(u.agentId).catch(() => {});
+      })
+      .catch(() => {});
 
     return order;
   }

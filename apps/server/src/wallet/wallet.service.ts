@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ContributionService } from '../contribution/contribution.service';
 
 /** 提现状态 */
 type WithdrawalStatus = 'pending' | 'paid' | 'failed';
 
 @Injectable()
 export class WalletService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly contribution: ContributionService,
+  ) {}
 
   /** 服务商：获取自己的钱包余额 */
   async getMyWallet(userId: string) {
@@ -118,6 +122,10 @@ export class WalletService {
     return this.prisma.withdrawal.update({
       where: { id: withdrawalId },
       data: { status: 'paid' },
+    }).then((w) => {
+      // 贡献等级重算（fire-and-forget，异常吞掉，绝不阻断提现审批主流程）
+      this.contribution.recomputeProvider(w.providerId).catch(() => {});
+      return w;
     });
   }
 

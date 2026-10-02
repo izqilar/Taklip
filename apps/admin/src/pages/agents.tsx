@@ -11,6 +11,8 @@ import { dataProvider } from '../providers/dataProvider';
 import { T } from '../config/theme';
 import { t } from "../i18n/t";
 import { formatCents } from '../utility';
+import { TierBadge } from '../components/common/TierBadge';
+import { TierBreakdownCard } from '../components/common/TierBreakdownCard';
 
 
 interface IAgent {
@@ -23,6 +25,8 @@ interface IAgent {
   regionNamePath?: string;
   providerCount?: number;
   monthlyTurnoverCents?: number;
+  /** 贡献等级（牌级 L0..L4，详见 tier-defs.ts） */
+  agentTier?: number;
 }
 
 type ModalMode = 'view' | 'edit' | null;
@@ -85,6 +89,7 @@ const ViewModal = ({
     { label: t('pages.col.providerCount'), value: agent.providerCount ?? '—' },
     { label: t('pages.col.monthlyTurnover'), value: formatCents(agent.monthlyTurnoverCents ?? 0) },
     { label: t('pages.col.status'), value: <StatusTag value={agent.status} /> },
+    { label: t('pages.tier.contribution', '贡献等级'), value: <TierBadge kind="agent" tier={agent.agentTier ?? 0} /> },
   ];
 
   return (
@@ -108,6 +113,7 @@ const ViewModal = ({
           </div>
         ))}
       </dl>
+      <TierBreakdownCard userId={agent.id} kind="agent" />
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 18 }}>
         <Button onClick={onEdit}>{t('common.edit')}</Button>
         <Button onClick={onClose}>{t('common.close')}</Button>
@@ -284,6 +290,12 @@ export const AgentList = () => {
             dataIndex: 'status',
             width: 100,
             render: (v: string) => <StatusTag value={v} />,
+          },
+          {
+            title: t('pages.tier.contribution', '贡献等级'),
+            dataIndex: 'agentTier',
+            width: 110,
+            render: (v: number) => <TierBadge kind="agent" tier={v ?? 0} size="sm" />,
           },
         ]}
         rowActions={(record: IAgent) => (

@@ -17,6 +17,7 @@ import { TicketModule } from './ticket/ticket.module';
 import { MessageModule } from './message/message.module';
 import { ConsoleModule } from './console/console.module';
 import { ExportModule } from './export/export.module';
+import { ContributionModule } from './contribution/contribution.module';
 import { HealthController } from './health/health.controller';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -41,6 +42,7 @@ import { AppService } from './app.service';
     MessageModule,
     ConsoleModule,
     ExportModule,
+    ContributionModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

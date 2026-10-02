@@ -20,6 +20,8 @@ import { T } from '../config/theme';
 import { serviceRolesText } from '../config/labels';
 import { useLayer } from '../providers/layerContext';
 import { t } from '../i18n/t';
+import { TierBadge } from '../components/common/TierBadge';
+import { TierBreakdownCard } from '../components/common/TierBreakdownCard';
 
 const { Text } = Typography;
 
@@ -35,6 +37,8 @@ interface ProviderReviewRow {
   /** 省/市/区 中文名称路径（如 新疆维吾尔自治区/乌鲁木齐市/新市区） */
   regionNamePath?: string | null;
   providerStatus?: string;
+  /** 贡献等级（牌级 L0..L4，详见 tier-defs.ts） */
+  providerTier?: number;
 }
 
 const rolesCell = (v?: string[], color = 'cyan'): ReactNode =>
@@ -166,6 +170,7 @@ const ViewModal = ({
       label: t('pages.col.qualificationStatus'),
       value: <StatusTag value={row.providerStatus} />,
     },
+    { label: t('pages.tier.contribution', '贡献等级'), value: <TierBadge kind="provider" tier={row.providerTier ?? 0} /> },
   ];
 
   return (
@@ -201,6 +206,7 @@ const ViewModal = ({
           </div>
         ))}
       </dl>
+      <TierBreakdownCard userId={row.id} kind="provider" />
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 18 }}>
         <Button onClick={onClose}>{t('common.close')}</Button>
       </div>

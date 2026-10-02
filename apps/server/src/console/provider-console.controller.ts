@@ -32,6 +32,7 @@ import {
 } from '../common/font-license';
 import { PublishService } from '../publish/publish.service';
 import { StaffService } from './staff.service';
+import { ContributionService } from '../contribution/contribution.service';
 import { CreateStaffDto, UpdateStaffDto } from './dto/staff.dto';
 import { AdvanceContractDto } from './dto/advance-contract.dto';
 
@@ -112,6 +113,7 @@ export class ProviderConsoleController {
     private readonly prisma: PrismaService,
     private readonly publishService: PublishService,
     private readonly staff: StaffService,
+    private readonly contribution: ContributionService,
   ) {}
 
   /** 我的看板：钱包 + 订单 + 服务 + 反馈概览 */
@@ -2000,6 +2002,15 @@ export class ProviderConsoleController {
     return this.prisma.providerContract.update({
       where: { id },
       data: { signStage: 'EFFECTIVE', signDate: c.signDate ?? new Date() },
+    }).then((updated) => {
+      // 合同生效 → 重算所属代理商的有效下属服务商数（fire-and-forget，异常吞掉）
+      this.prisma.user
+        .findUnique({ where: { id: c.providerId }, select: { agentId: true } })
+        .then((p) => {
+          if (p?.agentId) this.contribution.recomputeAgent(p.agentId).catch(() => {});
+        })
+        .catch(() => {});
+      return updated;
     });
   }
 

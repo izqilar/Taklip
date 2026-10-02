@@ -128,6 +128,11 @@ export class UserConsoleController {
         realNameStatus: true,
         realNameVerifiedAt: true,
         lastLoginAt: true,
+        // —— 贡献等级（代理商/服务商经营分级，供 web 账户详情展示本人牌级）——
+        agentTier: true,
+        providerTier: true,
+        tierScore: true,
+        tierUpdatedAt: true,
       },
     });
     if (!target) throw new NotFoundException('目标用户不存在');
@@ -321,6 +326,11 @@ export class UserConsoleController {
         idCardBack: target.idCardBack ?? null,
         realNameStatus: target.realNameStatus ?? 'UNVERIFIED',
         realNameVerifiedAt: target.realNameVerifiedAt ?? null,
+        // —— 贡献等级（代理商/服务商经营分级）——
+        agentTier: target.agentTier ?? 0,
+        providerTier: target.providerTier ?? 0,
+        tierScore: target.tierScore ?? 0,
+        tierUpdatedAt: target.tierUpdatedAt ?? null,
       },
       orders: orderTotal,
       dealOrders,
@@ -498,6 +508,10 @@ export class UserConsoleController {
           providerStatus: true,
           serviceRoles: true,
           regionPath: true,
+          // —— 贡献等级（服务商经营分级，供 web 我的服务商列表牌级徽章）——
+          providerTier: true,
+          tierScore: true,
+          tierUpdatedAt: true,
         },
       }),
       this.prisma.user.count({ where: { id: { in: providerIds }, role: 'SERVICE_PROVIDER' } }),

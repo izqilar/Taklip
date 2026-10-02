@@ -13,6 +13,7 @@ import {
   UserListPage,
   ReviewEditor,
   serviceRolesText,
+  ContribTierBadge,
   type Column,
   type ChipFilterDef,
   type DetailFieldDef,
@@ -29,6 +30,7 @@ export default function Providers() {
     { key: 'rating', title: t('common:userCenter.providers.rating'), align: 'right', render: (r) => <Stars rating={r.rating} /> },
     { key: 'followedAt', title: t('common:userCenter.providers.followedAt'), render: (r) => <span className="text-xs text-[#6e5f4a]">{r.followedAt ? new Date(r.followedAt).toLocaleDateString('zh-CN') : '—'}</span> },
     { key: 'status', title: t('common:userCenter.feedback.status'), render: () => <StatusBadge tone="ok">{t('common:userCenter.providers.following')}</StatusBadge> },
+    { key: 'providerTier', title: t('common:tierUi.level'), align: 'center', render: (r) => <ContribTierBadge role="provider" tier={r.providerTier ?? 0} score={r.tierScore} showScore /> },
   ];
 
   const filters: ChipFilterDef[] = [
@@ -42,6 +44,8 @@ export default function Providers() {
     { label: t('common:userCenter.providers.type'), key: 'serviceRoles', format: 'roles' },
     { label: t('common:userCenter.providers.rating'), key: 'rating', format: 'stars' },
     { label: t('common:userCenter.providers.followedAt'), key: 'followedAt', format: 'date' },
+    { label: t('common:tierUi.providerTier'), key: 'providerTier', format: 'tier', tierRole: 'provider' },
+    { label: t('common:tierUi.score'), key: 'tierScore' },
   ];
 
   return (

@@ -52,6 +52,22 @@ export class AdminController {
     private readonly prisma: PrismaService,
   ) {}
 
+  /** 手动触发全量贡献等级重算（ADMIN 守卫） */
+  @Post('tiers/recompute')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async recomputeTiers() {
+    return this.adminService.recomputeTiers();
+  }
+
+  /** 查询某用户的贡献指标明细 + 当前档位（ADMIN 守卫，只读，供运营端展示贡献卡） */
+  @Get('tier-metrics/:id')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  async getTierMetrics(@Param('id') id: string) {
+    return this.adminService.getTierMetrics(id);
+  }
+
   /** 用户列表（ADMIN 全量 / AGENT 辖区） */
   @Get('users')
   @Roles('ADMIN', 'AGENT')

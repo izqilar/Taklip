@@ -959,4 +959,28 @@
       "loginHint": "Your account qualification changed — please sign in again."
     }
   }
-}
+,
+  "tierNames": {
+    "agent": {
+        "L0": "Trainee Agent",
+        "L1": "Bronze Agent",
+        "L2": "Silver Agent",
+        "L3": "Gold Agent",
+        "L4": "Diamond Agent"
+    },
+    "provider": {
+        "L0": "Rookie Provider",
+        "L1": "Bronze Provider",
+        "L2": "Silver Provider",
+        "L3": "Gold Provider",
+        "L4": "Diamond Provider"
+    }
+  },
+  "tierUi": {
+    "score": "Contribution",
+    "updatedAt": "Tiered at",
+    "level": "Tier",
+    "providerTier": "Provider tier",
+    "agentTier": "Agent tier",
+    "myContrib": "My contribution tier"
+  }}

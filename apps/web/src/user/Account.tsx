@@ -9,7 +9,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/api/client';
 import { useAuthStore } from '@/store/authStore';
-import { PageHead, Panel, StatusBadge, LoadingDots, tierKeyOf, formatCents, cleanCode, maskPhone } from './shared';
+import { PageHead, Panel, StatusBadge, LoadingDots, tierKeyOf, formatCents, cleanCode, maskPhone, ContribTierBadge, ContribTierCard } from './shared';
 
 /* ───────── 校验（与服务端 AuthService 同口径；前端只做即时提示，服务端仍二次校验） ───────── */
 
@@ -269,6 +269,13 @@ export default function Account() {
   const name = prof.nickname || prof.realName || prof.phone || user?.nickname || user?.realName || user?.phone || '—';
   const role = user?.role ?? 'USER';
   const roleLabel = t(`common:role.${role}`);
+  // 本人贡献等级（仅服务商/代理商角色有意义；USER 恒为 L0，不展示）
+  const ownTier =
+    role === 'SERVICE_PROVIDER'
+      ? { role: 'provider' as const, tier: prof.providerTier ?? 0, score: prof.tierScore ?? 0, updatedAt: prof.tierUpdatedAt ?? null }
+      : role === 'AGENT'
+        ? { role: 'agent' as const, tier: prof.agentTier ?? 0, score: prof.tierScore ?? 0, updatedAt: prof.tierUpdatedAt ?? null }
+        : null;
   const vipTier = tierKeyOf(prof.vipLevel);
   const regionName = prof.regionName || '未设置';
   // 用户 ID：与运营端 cleanCode 同口径（剥离测试前缀，真实 cuid 原样返回）
@@ -433,6 +440,7 @@ export default function Account() {
             <div className="flex items-center gap-2">
               <span className="text-[18px] font-semibold text-[#2a2118]">{name}</span>
               <StatusBadge tone="accent">{roleLabel}</StatusBadge>
+              {ownTier && <ContribTierBadge role={ownTier.role} tier={ownTier.tier} score={ownTier.score} showScore />}
             </div>
             <div className="mt-1 text-[12.5px] text-[#6e5f4a]">
               ID {fullId} · {t('common:userCenter.account.phone')} {phoneText} · {regionName} · 注册 {prof.createdAt ? new Date(prof.createdAt).toLocaleDateString('zh-CN') : '—'}
@@ -633,6 +641,13 @@ export default function Account() {
           <Field label={t('common:userCenter.account.followingProviders')} value={(p.followingProviderCount ?? 0).toLocaleString('zh-CN')} num />
         </div>
       </Panel>
+
+      {/* 贡献等级（仅服务商/代理商角色展示本人牌级；USER 恒为 L0 不展示） */}
+      {ownTier && (
+        <Panel title={t('common:tierUi.myContrib')} hint={t('common:tierUi.myContribHint', { defaultValue: '基于平台贡献分自动评定，随经营表现升降' })}>
+          <ContribTierCard role={ownTier.role} tier={ownTier.tier} score={ownTier.score} updatedAt={ownTier.updatedAt} />
+        </Panel>
+      )}
 
       {/* 修改手机号 */}
       {phoneOpen && (

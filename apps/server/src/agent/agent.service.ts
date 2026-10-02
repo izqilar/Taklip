@@ -23,6 +23,7 @@ const agentSelect = {
   avatar: true,
   role: true,
   status: true,
+  agentTier: true,
   regionId: true,
   regionPath: true,
   createdAt: true,

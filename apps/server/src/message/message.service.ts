@@ -71,8 +71,33 @@ export class MessageService {
       include: messageInclude,
       orderBy: { createdAt: 'desc' },
     });
-    if (user.role === 'ADMIN') return all; // 总台可见全部已发布
+    if (user.role === 'ADMIN') return all.filter((m) => m.scope !== 'USER'); // 总台不显示定向个人通知
     return all.filter((m) => this.visibleTo(user, m));
+  }
+
+  /**
+   * 系统通知（平台自动发送，无真实作者）。直接以 PUBLISHED 入库跳过审批流，
+   * 经 scope=USER + recipientId 定向投递给指定用户，出现在其收件箱（未读）。
+   * content 建议传结构化 JSON（如 {kind:'tier_change',role,old,new}），便于前端按语言渲染。
+   */
+  async sendSystemNotice(
+    recipientId: string,
+    payload: { title: string; content: string; bizType?: string; bizId?: string },
+  ): Promise<void> {
+    await this.prisma.message.create({
+      data: {
+        type: 'NOTICE',
+        scope: 'USER',
+        title: payload.title,
+        content: payload.content,
+        authorId: null,
+        authorRole: 'ADMIN',
+        recipientId,
+        status: 'PUBLISHED',
+        bizType: payload.bizType ?? 'SYSTEM',
+        bizId: payload.bizId ?? recipientId,
+      },
+    });
   }
 
   /** 管理总台：待审权威公告队列 */
@@ -109,7 +134,7 @@ export class MessageService {
 
   private visibleTo(
     user: JwtUser,
-    m: { scope: string; regionPath: string | null; targetRole: string | null },
+    m: { scope: string; regionPath: string | null; targetRole: string | null; recipientId: string | null },
   ): boolean {
     if (m.scope === 'GLOBAL') return true;
     if (m.scope === 'REGION') {
@@ -117,6 +142,9 @@ export class MessageService {
     }
     if (m.scope === 'OWN') {
       return m.targetRole === user.role;
+    }
+    if (m.scope === 'USER') {
+      return m.recipientId === user.id;
     }
     return false;
   }

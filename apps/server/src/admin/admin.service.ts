@@ -8,6 +8,7 @@ import {
 import type { Prisma } from '../../prisma/prisma-client';
 import type { Role, UserStatus, ProviderStatus } from '../../prisma/prisma-client';
 import { PrismaService } from '../prisma/prisma.service';
+import { ContributionService } from '../contribution/contribution.service';
 import { AuthService } from '../auth/auth.service';
 import { WalletService } from '../wallet/wallet.service';
 import { RegionService } from '../region/region.service';
@@ -92,6 +93,7 @@ export class AdminService {
     private readonly walletService: WalletService,
     private readonly regionService: RegionService,
     private readonly audit: AuditService,
+    private readonly contribution: ContributionService,
   ) {}
 
   /** 用户列表：合并数据作用域（ADMIN 全量 / AGENT 辖区） */
@@ -204,6 +206,7 @@ export class AdminService {
         serviceRoles: true,
         pendingServiceRoles: true as true,
         providerStatus: true,
+        providerTier: true,
         regionId: true,
         regionPath: true,
         region: { select: { id: true, name: true, regionPath: true } },
@@ -1082,5 +1085,18 @@ export class AdminService {
     });
 
     return updated;
+  }
+
+  /**
+   * 手动触发全量贡献等级重算（ADMIN 调用）。
+   * 日常由 ContributionService 的每日批跑自动覆盖；此入口用于运营即时校准。
+   */
+  async recomputeTiers() {
+    return this.contribution.recomputeAll();
+  }
+
+  /** 查询某用户的贡献指标明细 + 当前档位（只读，供运营端贡献卡展示） */
+  async getTierMetrics(id: string) {
+    return this.contribution.getTierBreakdown(id);
   }
 }

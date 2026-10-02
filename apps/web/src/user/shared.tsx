@@ -56,6 +56,89 @@ export function StatusBadge({
   );
 }
 
+/** 贡献等级（代理商/服务商经营分级）配色：L0 灰 → L1 铜 → L2 银 → L3 金 → L4 钻 */
+const TIER_COLORS: Record<number, { text: string; bg: string }> = {
+  0: { text: '#9b9286', bg: 'rgba(155,146,134,0.14)' },
+  1: { text: '#b06a3b', bg: 'rgba(176,106,59,0.14)' },
+  2: { text: '#8a8f98', bg: 'rgba(138,143,152,0.16)' },
+  3: { text: '#c79a2e', bg: 'rgba(199,154,46,0.16)' },
+  4: { text: '#4f9bc9', bg: 'rgba(79,155,201,0.15)' },
+};
+
+const tierColor = (tier?: number | null) => TIER_COLORS[Math.max(0, Math.min(4, tier ?? 0))];
+
+/** 贡献牌级徽章（代理商/服务商）：奖牌图标 + 本地化等级名 + 可选贡献分 */
+export function ContribTierBadge({
+  role = 'provider',
+  tier = 0,
+  score,
+  showScore = false,
+}: {
+  role?: 'agent' | 'provider';
+  tier?: number | null;
+  score?: number | null;
+  showScore?: boolean;
+}) {
+  const { t } = useTranslation();
+  const name = t(`common:tierNames.${role}.L${Math.max(0, Math.min(4, tier ?? 0))}`);
+  const c = tierColor(tier);
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-[9px] py-0.5 text-xs font-medium"
+      style={{ background: c.bg, color: c.text }}
+    >
+      <svg width={12} height={12} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.9 7.2 17l.9-5.4L4.2 7.7l5.4-.8z" />
+      </svg>
+      {name}
+      {showScore && score != null ? <span className="opacity-75">· {score}</span> : null}
+    </span>
+  );
+}
+
+/** 贡献牌级卡（账户详情「我的贡献等级」）：角色标签 + 大徽章 + 贡献分 + 定档时间 */
+export function ContribTierCard({
+  role = 'provider',
+  tier = 0,
+  score,
+  updatedAt,
+}: {
+  role?: 'agent' | 'provider';
+  tier?: number | null;
+  score?: number | null;
+  updatedAt?: string | null;
+}) {
+  const { t } = useTranslation();
+  const n = Math.max(0, Math.min(4, tier ?? 0));
+  const c = tierColor(tier);
+  const roleLabel = t(role === 'provider' ? 'common:tierUi.providerTier' : 'common:tierUi.agentTier');
+  return (
+    <div
+      className="rounded-[10px] border border-[rgba(74,60,42,0.10)] bg-[#fffefb] p-4"
+      style={{ borderTop: `3px solid ${c.text}` }}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-[12.5px] text-[#6e5f4a]">{roleLabel}</span>
+        <ContribTierBadge role={role} tier={n} />
+      </div>
+      <div className="mt-3 flex items-end gap-2">
+        <span className="text-[12.5px] text-[#6e5f4a]">{t('common:tierUi.score')}</span>
+        <span
+          className="text-[22px] font-[750] tabular-nums leading-none"
+          style={{ fontFamily: "'Bahnschrift','DIN Alternate',Arial,system-ui,sans-serif", color: c.text }}
+        >
+          {score ?? 0}
+        </span>
+      </div>
+      {updatedAt ? (
+        <div className="mt-1 text-xs text-[#6e5f4a]">
+          {t('common:tierUi.updatedAt')}：{new Date(updatedAt).toLocaleDateString('zh-CN')}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /** 卡片容器（原型 Panel） */
 export function Section({
   title,
@@ -168,11 +251,14 @@ export function UserTable<T extends { id?: string }>({
   rows,
   loading,
   emptyText,
+  rowClassName,
 }: {
   columns: Column<T>[];
   rows: T[];
   loading?: boolean;
   emptyText?: string;
+  /** 逐行附加 class（用于等级变更行高亮等场景） */
+  rowClassName?: (row: T) => string;
 }) {
   const { t } = useTranslation();
   const alignCls = (a?: string) =>
@@ -207,7 +293,7 @@ export function UserTable<T extends { id?: string }>({
             </tr>
           ) : (
             rows.map((r, i) => (
-              <tr key={r.id ?? i} className="border-b border-[rgba(74,60,42,0.10)] hover:bg-[#faf7f1]">
+              <tr key={r.id ?? i} className={`border-b border-[rgba(74,60,42,0.10)] hover:bg-[#faf7f1] ${rowClassName?.(r) ?? ''}`}>
                 {columns.map((c) => (
                   <td
                     key={c.key}
@@ -601,7 +687,9 @@ export function useUserPage<T>(
 export interface DetailFieldDef {
   label: ReactNode;
   key: string;
-  format?: 'cents' | 'date' | 'text' | 'stars' | 'status' | 'roles';
+  format?: 'cents' | 'date' | 'text' | 'stars' | 'status' | 'roles' | 'tier';
+  /** format==='tier' 时指定等级角色（agent/provider），默认 provider */
+  tierRole?: 'agent' | 'provider';
 }
 
 /**
@@ -628,6 +716,7 @@ export function UserListPage<T extends { id?: string }>({
   emptyText,
   onViewDetail,
   initialParams,
+  rowClassName,
   children,
 }: {
   title: string;
@@ -648,6 +737,8 @@ export function UserListPage<T extends { id?: string }>({
   emptyText?: string;
   onViewDetail?: (row: T) => void;
   initialParams?: Record<string, unknown>;
+  /** 逐行附加 class（如贡献等级变更行高亮） */
+  rowClassName?: (row: T) => string;
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -717,19 +808,20 @@ export function UserListPage<T extends { id?: string }>({
       : []),
   ];
 
-  const fmt = (v: any, format?: string) => {
+  const fmt = (v: any, format?: string, tierRole?: 'agent' | 'provider') => {
     if (format === 'cents') return formatCents(v ?? 0);
     if (format === 'date') return v ? new Date(v).toLocaleDateString('zh-CN') : '—';
     if (format === 'stars') return <Stars rating={v} />;
     if (format === 'status') return v ?? '—';
     if (format === 'roles') return serviceRolesText(v);
+    if (format === 'tier') return <ContribTierBadge role={tierRole ?? 'provider'} tier={v} />;
     return v ?? '—';
   };
 
   const detailValues =
     detailFields?.map((f) => {
       const raw = f.key.split('.').reduce((acc: any, k) => (acc == null ? acc : acc[k]), selected as any);
-      return { label: f.label, value: fmt(raw, f.format) };
+      return { label: f.label, value: fmt(raw, f.format, f.tierRole) };
     }) ?? [];
 
   const goPage = (p: number) => {
@@ -770,7 +862,7 @@ export function UserListPage<T extends { id?: string }>({
             </button>
           </div>
         ) : (
-          <UserTable columns={displayColumns} rows={dataSource} loading={loading} emptyText={emptyText ?? t('common:userCenter.empty')} />
+          <UserTable columns={displayColumns} rows={dataSource} loading={loading} emptyText={emptyText ?? t('common:userCenter.empty')} rowClassName={rowClassName} />
         )}
         <div className="flex items-center justify-end gap-1.5 border-t border-[rgba(74,60,42,0.10)] px-4 py-2.5 text-[12.5px] text-[#6e5f4a]">
           <span>

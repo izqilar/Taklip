@@ -35,6 +35,22 @@
     "user": "用户"
   },
   "pages": {
+    "tier": {
+      "agent": {
+        "L0": "Stajyor agent",
+        "L1": "Bronza agent",
+        "L2": "Kumush agent",
+        "L3": "Oltin agent",
+        "L4": "Olmos agent"
+      },
+      "provider": {
+        "L0": "Yangi provayder",
+        "L1": "Bronza provayder",
+        "L2": "Kumush provayder",
+        "L3": "Oltin provayder",
+        "L4": "Olmos provayder"
+      }
+    },
     "col": {
       "status": "Status",
       "action": "Actions",

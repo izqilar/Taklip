@@ -467,4 +467,29 @@
       }
     }
   }
-}
+,
+  "tierNames": {
+      "agent": {
+        "L0": "Shogird agent",
+        "L1": "Bronza agent",
+        "L2": "Kumush agent",
+        "L3": "Oltin agent",
+        "L4": "Olmos agent"
+      },
+      "provider": {
+        "L0": "Yangi provayder",
+        "L1": "Bronza provayder",
+        "L2": "Kumush provayder",
+        "L3": "Oltin provayder",
+        "L4": "Olmos provayder"
+      }
+  }
+,
+  "tierUi": {
+    "score": "Hissa ballari",
+    "updatedAt": "Darajalangan sana",
+    "level": "Daraja",
+    "providerTier": "Provayder darajasi",
+    "agentTier": "Agent darajasi",
+    "myContrib": "Mening hissa darajam"
+  }}
