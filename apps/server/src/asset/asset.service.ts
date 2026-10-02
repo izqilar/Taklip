@@ -141,12 +141,16 @@ export class AssetService {
     });
   }
 
-  async findAll(userId: string, type?: string) {
+  async findAll(userId: string, type?: string, galleryOnly = false) {
     return this.prisma.asset.findMany({
       where: {
         userId,
         deletedAt: null,
         ...(type ? { type } : {}),
+        // 图库列表仅展示「私有图库图」：该类资源必有 storageKey（private-assets/...）。
+        // 编辑器 openAssetPicker 把图库图转存为公开 media 副本供画布渲染时，
+        // 该副本 storageKey 为 null，不应作为重复条目出现在图库列表。
+        ...(galleryOnly ? { storageKey: { not: null } } : {}),
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -159,7 +163,7 @@ export class AssetService {
     });
     const limit = this.getLimit(user);
     const used = await this.prisma.asset.count({
-      where: { userId, type: 'image', status: 'ready', deletedAt: null },
+      where: { userId, type: 'image', storageKey: { not: null }, deletedAt: null },
     });
     // 牌级/卡级：供前端展示「见习/铜/银/金/钻石」或「免费/银卡/金卡/黑金」档位名
     const tierKind =

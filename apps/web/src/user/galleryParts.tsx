@@ -136,7 +136,7 @@ export function useGalleryData() {
     setLoading(true);
     try {
       const [lRes, qRes] = await Promise.all([
-        api.get<GalleryAsset[]>('/api/assets?type=image'),
+        api.get<GalleryAsset[]>('/api/assets?type=image&galleryOnly=1'),
         api.get<Quota>('/api/assets/quota'),
       ]);
       setList(lRes ?? []);

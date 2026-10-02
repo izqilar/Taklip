@@ -105,8 +105,16 @@ export class AssetController {
   }
 
   @Get()
-  findAll(@Req() req: AuthedRequest, @Query('type') type?: string) {
-    return this.assetService.findAll(req.user.id, type);
+  findAll(
+    @Req() req: AuthedRequest,
+    @Query('type') type?: string,
+    @Query('galleryOnly') galleryOnly?: string,
+  ) {
+    return this.assetService.findAll(
+      req.user.id,
+      type,
+      galleryOnly === '1' || galleryOnly === 'true',
+    );
   }
 
   /** 配额（仅统计图库图片），须置于 :id 路由之前以避免被其捕获 */

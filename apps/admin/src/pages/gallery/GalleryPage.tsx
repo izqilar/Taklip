@@ -133,7 +133,7 @@ export function GalleryPage({ layer }: { layer?: GalleryLayer }) {
     setLoading(true);
     try {
       const [lRes, qRes] = await Promise.all([
-        fetch(`${API_URL}/assets?type=image`, { headers: authHeaders() }),
+        fetch(`${API_URL}/assets?type=image&galleryOnly=1`, { headers: authHeaders() }),
         fetch(`${API_URL}/assets/quota`, { headers: authHeaders() }),
       ]);
       if (lRes.ok) setList((await lRes.json()) as GalleryAsset[]);
