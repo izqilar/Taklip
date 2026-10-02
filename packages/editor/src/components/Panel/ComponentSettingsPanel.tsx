@@ -976,6 +976,27 @@ function ImageSpecific({
     [update, commit, el.naturalWidth, el.naturalHeight, t],
   );
 
+  /** 更换图片：优先打开图库选择器，选中即用；未注入时回退原生文件上传 */
+  const onReplace = useCallback(async () => {
+    if (!services.openAssetPicker) {
+      fileInputRef.current?.click();
+      return;
+    }
+    try {
+      const a = await services.openAssetPicker({ kind: 'image' });
+      if (!a) return;
+      update({
+        src: a.url,
+        naturalWidth: a.width ?? el.naturalWidth,
+        naturalHeight: a.height ?? el.naturalHeight,
+      });
+      commit();
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('[image] pick failed:', err);
+      alert(t('errors:error.uploadFailed'));
+    }
+  }, [update, commit, el.naturalWidth, el.naturalHeight, t]);
+
   const handleCropApply = (clip: ImageClip, size?: { width: number; height: number }) => {
     const patch: Partial<Element> = { clip };
     if (size && el.width && el.height) {
@@ -1004,7 +1025,7 @@ function ImageSpecific({
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={onReplace}
           disabled={uploading}
           className="flex-1 rounded bg-blue-500 px-2 py-1.5 text-xs text-white transition hover:bg-blue-600 disabled:opacity-50"
         >

@@ -9,6 +9,7 @@ import {useEditorStore} from '@h5design/editor';
 import { EditorApp } from '@h5design/editor';
 import type { Project } from '@h5design/core';
 import { registerEditorServices } from '@/editorServices';
+import GalleryModal from '@/user/GalleryModal';
 
 // 本模块已被路由级懒加载（App.tsx 的 React.lazy），此处注册宿主服务实现：
 // 模块求值早于组件渲染，保证 <EditorApp/> 挂载前服务已就绪，
@@ -79,5 +80,11 @@ export default function Editor() {
 
   // 终端用户（web）没有发布作品/发布为模板的权限：顶栏主按钮为「导出」，
   // 打开的对话框不含「立即发布」页签，只做图片 / 视频 / GIF 导出。
-  return <EditorApp exportOnly />;
+  return (
+    <>
+      <EditorApp exportOnly />
+      {/* 编辑器内「图库选择器」弹窗：挂载即注册到 galleryPicker 桥，供内核 openAssetPicker 调用 */}
+      <GalleryModal />
+    </>
+  );
 }

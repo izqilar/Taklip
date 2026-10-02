@@ -806,6 +806,34 @@ export default function EditorApp({ exportOnly = false, exitPath = '/dashboard' 
     [addElement, t],
   );
 
+  /**
+   * 顶部「图片」菜单：优先打开图库选择器弹窗（web 端注入 openAssetPicker），
+   * 选中即插入；未注入（如运营端）时回退到原生文件上传。
+   */
+  const openGalleryAndInsertImage = useCallback(async () => {
+    if (!services.openAssetPicker) {
+      fileInputRef.current?.click();
+      return;
+    }
+    try {
+      const a = await services.openAssetPicker({ kind: 'image' });
+      if (!a) return;
+      const w = a.width || 200;
+      const h = a.height || 200;
+      const scale = Math.min(w > 320 ? 320 / w : 1, h > 480 ? 480 / h : 1);
+      addElement('image', {
+        src: a.url,
+        width: Math.round(w * scale),
+        height: Math.round(h * scale),
+        naturalWidth: Math.round(w),
+        naturalHeight: Math.round(h),
+      } as Partial<Element>);
+    } catch (err) {
+      console.error(err);
+      alert(t('errors:error.uploadFailed'));
+    }
+  }, [addElement, t]);
+
   const addTextPreset = useCallback(
     (preset: typeof TEXT_PRESETS[number]) => {
       const width = Math.min(300, 360 - preset.fontSize);
@@ -1088,7 +1116,7 @@ export default function EditorApp({ exportOnly = false, exitPath = '/dashboard' 
                         key={item.key}
                         type="button"
                         onClick={() => {
-                          if (item.key === 'image') fileInputRef.current?.click();
+                          if (item.key === 'image') openGalleryAndInsertImage();
                           else if (item.key === 'music') setMusicModalOpen(true);
                           else alert(t('editor:tool.comingSoon'));
                           setMultimediaMenuOpen(false);

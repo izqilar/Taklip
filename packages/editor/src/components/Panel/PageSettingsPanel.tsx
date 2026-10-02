@@ -285,6 +285,21 @@ export default function PageSettingsPanel() {
     [setPageBackgroundImage, t],
   );
 
+  /** 设置/更换背景图：优先打开图库选择器，选中即设为背景；未注入时回退原生文件上传 */
+  const onPickBackground = useCallback(async () => {
+    if (!services.openAssetPicker) {
+      fileInputRef.current?.click();
+      return;
+    }
+    try {
+      const a = await services.openAssetPicker({ kind: 'image' });
+      if (a) setPageBackgroundImage(a.url);
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('[page bg] pick failed:', err);
+      alert(t('errors:error.uploadFailed'));
+    }
+  }, [setPageBackgroundImage, t]);
+
   return (
     <div className="flex flex-col gap-4 p-4 text-sm text-gray-700">
       <h2 className="border-b border-gray-200 pb-2 text-center text-base font-semibold text-blue-500">
@@ -464,7 +479,7 @@ export default function PageSettingsPanel() {
           {!page.backgroundImage ? (
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={onPickBackground}
               disabled={uploading}
               className="flex min-w-0 flex-1 items-center justify-center gap-1 rounded border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-blue-500 transition hover:border-blue-400 hover:bg-blue-50"
             >
@@ -474,7 +489,7 @@ export default function PageSettingsPanel() {
           ) : (
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={onPickBackground}
               disabled={uploading}
               className="flex min-w-0 flex-1 items-center justify-center gap-1 rounded border border-blue-300 bg-blue-50 px-3 py-2 text-sm text-blue-500 transition hover:bg-blue-100"
             >
@@ -514,7 +529,7 @@ export default function PageSettingsPanel() {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={onPickBackground}
                 className="flex flex-1 items-center justify-center gap-1 rounded border border-blue-300 bg-blue-50 px-2 py-1.5 text-xs text-blue-500 transition hover:bg-blue-100"
               >
                 <PlusIcon className="h-3.5 w-3.5" />

@@ -39,6 +39,12 @@ export interface EditorServices {
   getSystemMusic(): Promise<any[]>;
   /** 列出用户已上传素材（kind: 'audio' | 'image' | 'video' …） */
   listAssets(kind: string): Promise<any[]>;
+  /**
+   * 打开「图库选择器」弹窗（宿主实现，web 端为私有图库）。
+   * 返回选中的素材（url + 尺寸）；取消 / 关闭返回 null。
+   * 未注入时内核回退到原生文件上传（保持旧行为，运营端即此路径）。
+   */
+  openAssetPicker?(opts?: { kind?: 'image' | 'video' | 'audio' }): Promise<UploadedAsset | null>;
   /** 拉取字体目录（自定义 / 艺术字体），用于字体选择器动态渲染；未注入返回 [] */
   listFonts?(): Promise<FontMeta[]>;
   /** 查询当前作品的字体授权状态（预览 / 本地兜底导出的水印判据）；未注入返回 { watermark:false } */

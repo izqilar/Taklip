@@ -12,9 +12,28 @@
 import { setEditorServices } from '@h5design/editor';
 import type { FontMeta } from '@h5design/core';
 import { setFontCatalog, ensureFontsByFamilies, getFontCatalog } from '@h5design/core';
-import { api } from '@/api/client';
+import { api, getStoredToken } from '@/api/client';
+import { openGalleryPicker } from './user/galleryPicker';
 
 let registered = false;
+
+/**
+ * 图库 → 编辑器插入的「公网可访问 URL」会话缓存。
+ * 图库文件是私有的（/api/assets/:id/file，需鉴权），编辑器渲染图片依赖可直接 <img>/Konva 加载的
+ * 公开 URL（与 services.uploadAsset 返回的一致）。因此选完图后把私有文件重新落到 media 用途得到公开 URL，
+ * 同一张图库图在本会话内只转存一次，避免重复占用存储。
+ */
+const galleryPublicUrlCache = new Map<string, string>();
+
+/** 鉴权拉取私有图库文件为 Blob */
+async function fetchPrivateAssetBlob(id: string): Promise<Blob> {
+  const token = getStoredToken();
+  const res = await fetch(`/api/assets/${id}/file`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error('load gallery asset failed');
+  return res.blob();
+}
 
 /**
  * 字体目录拉取（并发去重，每次调用都重新拉取 → 保证「目录即真相」）。
@@ -83,6 +102,36 @@ export function registerEditorServices(): void {
       const prep = await api.exportPrepare(projectId, 'draft');
       const blob = await api.exportVideo({ token: prep.token, secondsPerPage });
       return { blob, licensed: prep.licensed, missing: prep.missing ?? [] };
+    },
+
+    // 图库选择器：打开私有图库弹窗，选中后把私有文件转存为公开 media URL 再交还编辑器。
+    // 未挂载弹窗（如运营端）时 openGalleryPicker 返回 null，编辑器会回退到原生文件上传。
+    openAssetPicker: async (opts) => {
+      if (opts?.kind && opts.kind !== 'image') return null;
+      const picked = await openGalleryPicker();
+      if (!picked) return null;
+      try {
+        let url = galleryPublicUrlCache.get(picked.id);
+        if (!url) {
+          const blob = await fetchPrivateAssetBlob(picked.id);
+          const file = new File([blob], 'image.webp', { type: 'image/webp' });
+          const up = await api.uploadAsset(file, {
+            width: picked.width ?? undefined,
+            height: picked.height ?? undefined,
+          });
+          url = up.url;
+          galleryPublicUrlCache.set(picked.id, url);
+        }
+        return {
+          url,
+          id: picked.id,
+          width: picked.width ?? undefined,
+          height: picked.height ?? undefined,
+        };
+      } catch (err) {
+        if (import.meta.env.DEV) console.error('[openAssetPicker] failed:', err);
+        return null;
+      }
     },
   });
 

@@ -1007,6 +1007,21 @@ export function ImageFillEditor({
     }
   };
 
+  /** 图片填充：优先打开图库选择器，选中即设为填充图；未注入时回退原生文件上传 */
+  const onPick = useCallback(async () => {
+    if (!services.openAssetPicker) {
+      fileRef.current?.click();
+      return;
+    }
+    try {
+      const a = await services.openAssetPicker({ kind: 'image' });
+      if (a) set({ href: a.url });
+    } catch (err) {
+      console.error(err);
+      alert(t('errors:error.uploadFailed'));
+    }
+  }, [set, t]);
+
   return (
     <div className="flex flex-col gap-3">
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
@@ -1027,7 +1042,7 @@ export function ImageFillEditor({
         </div>
         <button
           type="button"
-          onClick={() => fileRef.current?.click()}
+          onClick={onPick}
           className="shrink-0 rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 transition hover:border-blue-300 hover:text-blue-500"
         >
           {t('editor:fill.uploadImage', { defaultValue: '上传图片' })}
