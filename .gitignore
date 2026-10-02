@@ -52,6 +52,8 @@ shots/
 
 # runtime user uploads (server) — never commit
 apps/server/uploads/
+# private gallery assets (per-user, soft-deleted originals) — never commit user data
+apps/server/private-assets/
 
 # diagnostic scratch scripts (keep real tooling: migrate-apply.sh, backup-postgres.sh, backup-datastores.ps1, fill_panel_e2e.cjs, verify_hooks_fix.cjs)
 scripts/_diag_*
