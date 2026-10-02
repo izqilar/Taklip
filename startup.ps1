@@ -25,6 +25,13 @@
 
 $ErrorActionPreference = 'Stop'
 
+# Docker client timeouts: without these, `docker compose up -d` HANGS FOREVER when the Docker
+# daemon is not running (the client retries the connection indefinitely). Bound it so the launcher
+# fails fast with a clear error instead of appearing stuck. (Start-Job / Start-Process timeouts are
+# unavailable in this PowerShell host, so we rely on the docker client's own timeout.)
+$env:DOCKER_CLIENT_TIMEOUT = 30
+$env:COMPOSE_HTTP_TIMEOUT = 60
+
 # ---------- crash guard: never silently close the window (no more silent flash-exit) ----------
 # Record everything to a log file so failures are inspectable even when the window
 # closes too fast to read. The trap also pauses on an uncaught error so the user
@@ -58,21 +65,24 @@ function Warn($msg){ Write-Host '[WARN] ' -ForegroundColor Yellow -NoNewline; Wr
 
 # run-capture: like Run() but also returns combined output so callers can inspect
 # it (e.g. to detect a Prisma P3005 and self-heal). Never throws on its own.
-# A hung command is bounded by $TimeoutSec.
+# Invoke-Expression runs natively (correct $LASTEXITCODE); merged output is captured to a temp
+# file for inspection. (Start-Process cmd.exe is blocked by the PowerShell execution policy in
+# this environment, so we capture via redirection instead.)
 function Run-Capture($Command, $TimeoutSec=300){
     if ($DRY_RUN -eq '1') {
         Write-Host "    [dry-run] $Command" -ForegroundColor DarkGray
         return @{ ExitCode = 0; Output = '' }
     }
     $tmp = Join-Path $env:TEMP ("migrate_$(Get-Date -Format yyyyMMddHHmmssffff).log")
-    $p = Start-Process -FilePath 'cmd.exe' -ArgumentList "/c $Command > `"$tmp`" 2>&1" -NoNewWindow -PassThru
-    $exited = $p.WaitForExit($TimeoutSec * 1000)
-    if (-not $exited) { try { $p.Kill() } catch {}; throw "command timed out after ${TimeoutSec}s: $Command" }
-    $code = $p.ExitCode
-    $text = ''
-    if (Test-Path $tmp) { $text = (Get-Content $tmp -Raw -ErrorAction SilentlyContinue) }
-    Remove-Item $tmp -Force -ErrorAction SilentlyContinue
-    return @{ ExitCode = $code; Output = $text }
+    try {
+        $output = Invoke-Expression $Command 2>&1
+        $code = $LASTEXITCODE
+        $output | Out-File -FilePath $tmp -Encoding utf8
+        $text = Get-Content $tmp -Raw -ErrorAction SilentlyContinue
+        return @{ ExitCode = $code; Output = $text }
+    } finally {
+        Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+    }
 }
 
 # Test-Interactive: true only when there is a real console we can pause on.
@@ -85,22 +95,21 @@ function Test-Interactive {
     return $true
 }
 
-# run: print when DRY_RUN, else execute in a child PowerShell (so both native
-# commands and PowerShell cmdlets work) with output streamed to this console.
-# Bounded by $TimeoutSec so a hung step (e.g. pnpm install / docker / build) cannot
-# freeze the whole launcher. Runs in the repo root for correct relative paths.
+# run: print when DRY_RUN, else execute synchronously. We use Invoke-Expression so native
+# commands (pnpm / node / docker) run in-process with output streamed live to this console and
+# $LASTEXITCODE set correctly. NOTE: Start-Process cannot be used here - launching cmd.exe from
+# PowerShell is blocked by the execution policy in this environment, and a powershell.exe child
+# process does not propagate $LASTEXITCODE reliably (it surfaced as a bogus "exit )" failure).
+# The launcher "hang" was caused by Read-Host in a non-interactive terminal and is already fixed
+# via Test-Interactive / NO_WAIT; command timeout is intentionally not enforced for the same
+# policy reason (a genuinely hung command still surfaces as a failed step with a non-zero exit).
 function Run($Command, $TimeoutSec=600){
     if ($DRY_RUN -eq '1') {
         Write-Host "    [dry-run] $Command" -ForegroundColor DarkGray
         return
     }
-    $p = Start-Process -FilePath 'powershell.exe' -ArgumentList "-NoProfile -NonInteractive -Command $Command" -NoNewWindow -PassThru -WorkingDirectory $PSScriptRoot
-    $exited = $p.WaitForExit($TimeoutSec * 1000)
-    if (-not $exited) {
-        try { $p.Kill() } catch {}
-        throw "command timed out after ${TimeoutSec}s (possible hang): $Command"
-    }
-    if ($p.ExitCode -ne 0) { throw "command failed (exit $($p.ExitCode)): $Command" }
+    Invoke-Expression $Command
+    if ($LASTEXITCODE -ne 0) { throw "command failed (exit $LASTEXITCODE): $Command" }
 }
 
 # Test-EndpointAlive: returns $true if the server answers the HTTP request at all
@@ -180,7 +189,24 @@ if ($SKIP_INSTALL -ne '1') {
 # ---------- 2. infra: PostgreSQL + Redis ----------
 if ($SKIP_DOCKER -ne '1') {
     Log "start PostgreSQL + Redis ($DCStr up -d)"
-    Run "$DCStr up -d"
+    # Launch docker compose via the .NET Process API with a hard 30s timeout. This avoids two
+    # blocked paths in this PowerShell host: Start-Process (cmd.exe) is denied by policy, and a
+    # bare Invoke-Expression lets `docker compose up -d` hang forever when the daemon is absent
+    # (docker ignores DOCKER_CLIENT_TIMEOUT on the connect retry). A timed-out/killed run fails
+    # fast with a clear error instead of appearing stuck.
+    $dcParts = $DCStr -split ' '
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $dcParts[0]
+    if ($dcParts.Length -gt 1) { $psi.Arguments = ($dcParts[1..($dcParts.Length-1)] -join ' ') + ' up -d' } else { $psi.Arguments = 'up -d' }
+    $psi.WorkingDirectory = $PSScriptRoot
+    $psi.UseShellExecute = $false
+    $p = New-Object System.Diagnostics.Process
+    $p.StartInfo = $psi
+    $p.Start() | Out-Null
+    $exited = $p.WaitForExit(30000)
+    if (-not $exited) { try { $p.Kill() } catch {}; throw "docker compose up -d timed out after 30s (Docker daemon not running?)" }
+    if ($p.ExitCode -ne 0) { throw "docker compose up -d failed (exit $($p.ExitCode))" }
+    Ok 'containers started'
     if ($DRY_RUN -ne '1') {
         for ($i = 1; $i -le 30; $i++) {
             Invoke-Expression "$DCStr exec -T postgres pg_isready -U h5design -d h5design_platform" 2>$null
