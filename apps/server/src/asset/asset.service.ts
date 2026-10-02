@@ -82,7 +82,18 @@ export class AssetService {
         this.safeUnlink(file.path);
         throw new BadRequestException('图片体积超过 2MB，请压缩后再上传');
       }
-      // 3) 配额事务校验（会话级 advisory 锁防并发超额）
+      // 3) 内容去重：同一用户上传内容（sha256）完全相同的图库图时，直接复用已有记录，
+      //    不新建行 —— 保证「每张已提交的图片在图库中始终唯一」，从源头杜绝重复条目
+      //    （含「同一张图被作品/模板引用后重复出现」的同类问题）。
+      const hash = createHash('sha256').update(data).digest('hex');
+      const dup = await this.prisma.asset.findFirst({
+        where: { userId, type: 'image', sha256: hash, storageKey: { not: null }, deletedAt: null },
+      });
+      if (dup) {
+        this.safeUnlink(file.path); // 丢弃本次重复上传的物理文件
+        return this.toGalleryDto(dup);
+      }
+      // 4) 配额事务校验（会话级 advisory 锁防并发超额）
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
         select: { role: true, vipLevel: true, agentTier: true, providerTier: true },
@@ -94,8 +105,9 @@ export class AssetService {
           // pg_advisory_xact_lock() 返回 void，Prisma $queryRaw 无法反序列化；
           // 改用 $executeRaw（不解析结果集，仅取受影响行数）获取事务级锁，事务提交/回滚后自动释放
           await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}::text))`;
+          // 配额仅统计「私有图库图」（storageKey 非空），与图库列表口径一致；media 副本不占额度
           const count = await tx.asset.count({
-            where: { userId, type: 'image', status: 'ready', deletedAt: null },
+            where: { userId, type: 'image', storageKey: { not: null }, deletedAt: null },
           });
           if (count >= limit) {
             throw new HttpException({ code: 'QUOTA_EXCEEDED', limit, used: count }, 429);
@@ -114,7 +126,7 @@ export class AssetService {
               height: opts?.height,
               compressed: true,
               derivedFrom: opts?.derivedFrom || null,
-              sha256: createHash('sha256').update(data).digest('hex'),
+              sha256: hash,
               status: 'ready',
             },
           });

@@ -392,7 +392,7 @@ function GalleryCard({
       <div
         onClick={onPreview}
         style={{
-          height: 140,
+          aspectRatio: '375 / 667',
           background: '#f5f5f5',
           display: 'flex',
           alignItems: 'center',
@@ -407,7 +407,7 @@ function GalleryCard({
           <img
             src={url}
             alt={asset.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 8 }}
           />
         ) : (
           <Spin size="small" />
