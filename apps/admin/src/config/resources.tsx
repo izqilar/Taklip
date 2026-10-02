@@ -91,6 +91,7 @@ export type MenuGroupKey =
   | 'trade'
   | 'message'
   | 'personal'
+  | 'resourcecenter' // 资源中心（我的图库 + 我的作品；用户/代理商共用）
   // ── 服务商视角七组（原型 MENU.provider）──
   | 'databoard'
   | 'orderfulfill'
@@ -116,6 +117,7 @@ export const GROUP_ORDER: MenuGroupKey[] = [
   'ops',
   'regionops',
   'recruit',
+  'resourcecenter',
   'trade',
   'orderfulfill',
   'servicecontent',
@@ -141,6 +143,8 @@ export const GROUP_LABEL: Record<MenuGroupKey, string> = {
   trade: '交易中心',
   message: '消息中心',
   personal: '个人中心',
+  // ── 资源中心（用户/代理商图库与作品入口）──
+  resourcecenter: '资源中心',
   // ── 服务商视角七组（原型 MENU.provider）──
   databoard: '数据看板',
   orderfulfill: '订单履约',
@@ -341,6 +345,12 @@ export const resources: ResourceProps[] = [
     list: '/agent/dashboard',
     meta: META('辖区经营概览', 'agent', { group: 'databoard', icon: <DashboardOutlined /> }),
   },
+  // ── 资源中心：代理商自有图库（与用户端「资源中心」同一分组键，按 layer 过滤显示）──
+  {
+    name: 'agent/gallery',
+    list: '/agent/gallery',
+    meta: META('我的图库', 'agent', { group: 'resourcecenter', icon: <FileImageOutlined /> }),
+  },
   // ── 辖区服务商（代理商监督簇）──
   {
     name: 'agent/providers',
@@ -473,6 +483,11 @@ export const resources: ResourceProps[] = [
     meta: META('我的客户', 'provider', { group: 'servicecontent', icon: <BankOutlined /> }),
   },
   {
+    name: 'sp/gallery',
+    list: '/sp/gallery',
+    meta: META('我的图库', 'provider', { group: 'servicecontent', icon: <FileImageOutlined /> }),
+  },
+  {
     name: 'sp/works',
     list: '/sp/works',
     meta: META('作品管理', 'provider', { group: 'servicecontent', icon: <FileImageOutlined /> }),
@@ -586,9 +601,14 @@ export const resources: ResourceProps[] = [
     meta: META('我的订单', 'user', { group: 'trade', icon: <ShoppingOutlined /> }),
   },
   {
+    name: 'user/gallery',
+    list: '/user/gallery',
+    meta: META('我的图库', 'user', { group: 'resourcecenter', icon: <FileImageOutlined /> }),
+  },
+  {
     name: 'user/works',
     list: '/user/works',
-    meta: META('我的作品', 'user', { group: 'trade', icon: <FileImageOutlined /> }),
+    meta: META('我的作品', 'user', { group: 'resourcecenter', icon: <FileImageOutlined /> }),
   },
   {
     name: 'user/reviews',

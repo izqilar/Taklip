@@ -164,7 +164,11 @@ exports.Prisma.UserScalarFieldEnum = {
   regionPath: 'regionPath',
   status: 'status',
   isZombie: 'isZombie',
-  zombieAt: 'zombieAt'
+  zombieAt: 'zombieAt',
+  agentTier: 'agentTier',
+  providerTier: 'providerTier',
+  tierScore: 'tierScore',
+  tierUpdatedAt: 'tierUpdatedAt'
 };
 
 exports.Prisma.ProjectScalarFieldEnum = {
@@ -245,10 +249,28 @@ exports.Prisma.AssetScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   url: 'url',
+  name: 'name',
   type: 'type',
+  storageKey: 'storageKey',
+  mime: 'mime',
+  compressed: 'compressed',
+  sha256: 'sha256',
+  derivedFrom: 'derivedFrom',
+  status: 'status',
+  deletedAt: 'deletedAt',
   size: 'size',
   width: 'width',
   height: 'height',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.WorkImageRefScalarFieldEnum = {
+  id: 'id',
+  workId: 'workId',
+  assetId: 'assetId',
+  usage: 'usage',
+  crop: 'crop',
+  zIndex: 'zIndex',
   createdAt: 'createdAt'
 };
 
@@ -708,6 +730,7 @@ exports.Prisma.ModelName = {
   Font: 'Font',
   ProjectVersion: 'ProjectVersion',
   Asset: 'Asset',
+  WorkImageRef: 'WorkImageRef',
   TemplateOrder: 'TemplateOrder',
   ProviderWallet: 'ProviderWallet',
   Withdrawal: 'Withdrawal',

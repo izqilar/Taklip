@@ -139,6 +139,12 @@ model User {
   isZombie   Boolean    @default(false) @map("is_zombie")
   zombieAt   DateTime?  @map("zombie_at") // 进入回收站的时间
 
+  // —— 贡献等级（代理商/服务商经营分级，P-tier）——
+  agentTier     Int       @default(0) @map("agent_tier") // 代理商等级 0..4（L0 见习 → L4 钻石）
+  providerTier  Int       @default(0) @map("provider_tier") // 服务商等级 0..4（L0 新锐 → L4 钻石）
+  tierScore     Int       @default(0) @map("tier_score") // 最近一次贡献评分（明细位，用于展示/诊断）
+  tierUpdatedAt DateTime? @map("tier_updated_at") // 最近定档时间
+
   // —— 评价与反馈 / 消息（P3/P4）回向关系 ——
   ticketsReporter  Ticket[]                   @relation("TicketReporter")
   ticketsTarget    Ticket[]                   @relation("TicketTarget")
@@ -274,18 +280,45 @@ model ProjectVersion {
 }
 
 model Asset {
-  id        String   @id @default(cuid())
-  userId    String
-  url       String
-  type      String // image | video | audio
-  size      Int
-  width     Int?
-  height    Int?
-  createdAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  userId      String
+  url         String // 历史公开资源（背景音乐等）仍存裸 url；图库私有图改用 storageKey
+  name        String?   @map("name") // 上传原始文件名（图库展示用）
+  type        String // image | video | audio
+  // —— 图库私有图管线（2026-10）——
+  storageKey  String?   @map("storage_key") // 对象/私有键：users/{userId}/imgs/{cuid}.webp（图库图片）
+  mime        String?   @map("mime") // 真实魔数判定后的 mime
+  compressed  Boolean   @default(true) @map("compressed")
+  sha256      String?   @map("sha256") // 完整性/去重
+  derivedFrom String?   @map("derived_from") // 裁剪派生：源 assetId（非破坏原图）
+  status      String    @default("ready") @map("status") // uploading | ready | deleted
+  deletedAt   DateTime? @map("deleted_at") // 软删；后台硬清后释放配额
+  size        Int
+  width       Int?
+  height      Int?
+  createdAt   DateTime  @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refs WorkImageRef[]
 
   @@index([userId])
+  @@index([deletedAt])
+}
+
+// 图 ↔ 作品 引用（编辑器选用图库图片时写入；crop 仅作变换参数，不破坏原图）
+model WorkImageRef {
+  id        String   @id @default(cuid())
+  workId    String   @map("work_id")
+  assetId   String   @map("asset_id")
+  usage     String   @default("decor") // cover | decor
+  crop      Json? // {x,y,w,h,rotation,scale,zoom}
+  zIndex    Int      @default(0) @map("z_index")
+  createdAt DateTime @default(now())
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([workId])
+  @@index([assetId])
 }
 
 // 付费模板购买订单（服务商变现）
@@ -452,8 +485,8 @@ model Message {
   title       String
   content     String
   status      MessageStatus @default(DRAFT)
-  authorId    String        @map("author_id")
-  author      User          @relation("MessageAuthor", fields: [authorId], references: [id])
+  authorId    String?       @map("author_id")
+  author      User?         @relation("MessageAuthor", fields: [authorId], references: [id])
   authorRole  Role          @map("author_role")
   // scope=REGION 时的发布区域（代理商强制为自身辖区，总台可指定）
   regionPath  String?       @map("region_path")

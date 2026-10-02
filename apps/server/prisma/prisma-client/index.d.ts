@@ -54,6 +54,11 @@ export type ProjectVersion = $Result.DefaultSelection<Prisma.$ProjectVersionPayl
  */
 export type Asset = $Result.DefaultSelection<Prisma.$AssetPayload>
 /**
+ * Model WorkImageRef
+ * 
+ */
+export type WorkImageRef = $Result.DefaultSelection<Prisma.$WorkImageRefPayload>
+/**
  * Model TemplateOrder
  * 
  */
@@ -529,6 +534,16 @@ export class PrismaClient<
     * ```
     */
   get asset(): Prisma.AssetDelegate<ExtArgs>;
+
+  /**
+   * `prisma.workImageRef`: Exposes CRUD operations for the **WorkImageRef** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more WorkImageRefs
+    * const workImageRefs = await prisma.workImageRef.findMany()
+    * ```
+    */
+  get workImageRef(): Prisma.WorkImageRefDelegate<ExtArgs>;
 
   /**
    * `prisma.templateOrder`: Exposes CRUD operations for the **TemplateOrder** model.
@@ -1198,6 +1213,7 @@ export namespace Prisma {
     Font: 'Font',
     ProjectVersion: 'ProjectVersion',
     Asset: 'Asset',
+    WorkImageRef: 'WorkImageRef',
     TemplateOrder: 'TemplateOrder',
     ProviderWallet: 'ProviderWallet',
     Withdrawal: 'Withdrawal',
@@ -1235,7 +1251,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, ClientOptions = {}> = {
     meta: {
-      modelProps: "region" | "user" | "project" | "template" | "redlineWord" | "font" | "projectVersion" | "asset" | "templateOrder" | "providerWallet" | "withdrawal" | "templateAppeal" | "ticket" | "message" | "review" | "messageRead" | "qualificationApplication" | "recruitLead" | "walletLog" | "coupon" | "userCoupon" | "providerSchedule" | "providerContract" | "orgStaff" | "teamJoinApplication" | "providerClient" | "providerClientReach" | "auditLog" | "providerLicense" | "platformFeeConfig"
+      modelProps: "region" | "user" | "project" | "template" | "redlineWord" | "font" | "projectVersion" | "asset" | "workImageRef" | "templateOrder" | "providerWallet" | "withdrawal" | "templateAppeal" | "ticket" | "message" | "review" | "messageRead" | "qualificationApplication" | "recruitLead" | "walletLog" | "coupon" | "userCoupon" | "providerSchedule" | "providerContract" | "orgStaff" | "teamJoinApplication" | "providerClient" | "providerClientReach" | "auditLog" | "providerLicense" | "platformFeeConfig"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1796,6 +1812,76 @@ export namespace Prisma {
           count: {
             args: Prisma.AssetCountArgs<ExtArgs>
             result: $Utils.Optional<AssetCountAggregateOutputType> | number
+          }
+        }
+      }
+      WorkImageRef: {
+        payload: Prisma.$WorkImageRefPayload<ExtArgs>
+        fields: Prisma.WorkImageRefFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.WorkImageRefFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkImageRefPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.WorkImageRefFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkImageRefPayload>
+          }
+          findFirst: {
+            args: Prisma.WorkImageRefFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkImageRefPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.WorkImageRefFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkImageRefPayload>
+          }
+          findMany: {
+            args: Prisma.WorkImageRefFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkImageRefPayload>[]
+          }
+          create: {
+            args: Prisma.WorkImageRefCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkImageRefPayload>
+          }
+          createMany: {
+            args: Prisma.WorkImageRefCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.WorkImageRefCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkImageRefPayload>[]
+          }
+          delete: {
+            args: Prisma.WorkImageRefDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkImageRefPayload>
+          }
+          update: {
+            args: Prisma.WorkImageRefUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkImageRefPayload>
+          }
+          deleteMany: {
+            args: Prisma.WorkImageRefDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.WorkImageRefUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.WorkImageRefUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkImageRefPayload>
+          }
+          aggregate: {
+            args: Prisma.WorkImageRefAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateWorkImageRef>
+          }
+          groupBy: {
+            args: Prisma.WorkImageRefGroupByArgs<ExtArgs>
+            result: $Utils.Optional<WorkImageRefGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.WorkImageRefCountArgs<ExtArgs>
+            result: $Utils.Optional<WorkImageRefCountAggregateOutputType> | number
           }
         }
       }
@@ -3818,6 +3904,37 @@ export namespace Prisma {
 
 
   /**
+   * Count Type AssetCountOutputType
+   */
+
+  export type AssetCountOutputType = {
+    refs: number
+  }
+
+  export type AssetCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    refs?: boolean | AssetCountOutputTypeCountRefsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * AssetCountOutputType without action
+   */
+  export type AssetCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AssetCountOutputType
+     */
+    select?: AssetCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * AssetCountOutputType without action
+   */
+  export type AssetCountOutputTypeCountRefsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WorkImageRefWhereInput
+  }
+
+
+  /**
    * Count Type ProviderWalletCountOutputType
    */
 
@@ -4976,6 +5093,9 @@ export namespace Prisma {
     totalSpent: number | null
     userBalance: number | null
     followingProviderCount: number | null
+    agentTier: number | null
+    providerTier: number | null
+    tierScore: number | null
   }
 
   export type UserSumAggregateOutputType = {
@@ -4984,6 +5104,9 @@ export namespace Prisma {
     totalSpent: number | null
     userBalance: number | null
     followingProviderCount: number | null
+    agentTier: number | null
+    providerTier: number | null
+    tierScore: number | null
   }
 
   export type UserMinAggregateOutputType = {
@@ -5018,6 +5141,10 @@ export namespace Prisma {
     status: $Enums.UserStatus | null
     isZombie: boolean | null
     zombieAt: Date | null
+    agentTier: number | null
+    providerTier: number | null
+    tierScore: number | null
+    tierUpdatedAt: Date | null
   }
 
   export type UserMaxAggregateOutputType = {
@@ -5052,6 +5179,10 @@ export namespace Prisma {
     status: $Enums.UserStatus | null
     isZombie: boolean | null
     zombieAt: Date | null
+    agentTier: number | null
+    providerTier: number | null
+    tierScore: number | null
+    tierUpdatedAt: Date | null
   }
 
   export type UserCountAggregateOutputType = {
@@ -5088,6 +5219,10 @@ export namespace Prisma {
     status: number
     isZombie: number
     zombieAt: number
+    agentTier: number
+    providerTier: number
+    tierScore: number
+    tierUpdatedAt: number
     _all: number
   }
 
@@ -5098,6 +5233,9 @@ export namespace Prisma {
     totalSpent?: true
     userBalance?: true
     followingProviderCount?: true
+    agentTier?: true
+    providerTier?: true
+    tierScore?: true
   }
 
   export type UserSumAggregateInputType = {
@@ -5106,6 +5244,9 @@ export namespace Prisma {
     totalSpent?: true
     userBalance?: true
     followingProviderCount?: true
+    agentTier?: true
+    providerTier?: true
+    tierScore?: true
   }
 
   export type UserMinAggregateInputType = {
@@ -5140,6 +5281,10 @@ export namespace Prisma {
     status?: true
     isZombie?: true
     zombieAt?: true
+    agentTier?: true
+    providerTier?: true
+    tierScore?: true
+    tierUpdatedAt?: true
   }
 
   export type UserMaxAggregateInputType = {
@@ -5174,6 +5319,10 @@ export namespace Prisma {
     status?: true
     isZombie?: true
     zombieAt?: true
+    agentTier?: true
+    providerTier?: true
+    tierScore?: true
+    tierUpdatedAt?: true
   }
 
   export type UserCountAggregateInputType = {
@@ -5210,6 +5359,10 @@ export namespace Prisma {
     status?: true
     isZombie?: true
     zombieAt?: true
+    agentTier?: true
+    providerTier?: true
+    tierScore?: true
+    tierUpdatedAt?: true
     _all?: true
   }
 
@@ -5333,6 +5486,10 @@ export namespace Prisma {
     status: $Enums.UserStatus
     isZombie: boolean
     zombieAt: Date | null
+    agentTier: number
+    providerTier: number
+    tierScore: number
+    tierUpdatedAt: Date | null
     _count: UserCountAggregateOutputType | null
     _avg: UserAvgAggregateOutputType | null
     _sum: UserSumAggregateOutputType | null
@@ -5388,6 +5545,10 @@ export namespace Prisma {
     status?: boolean
     isZombie?: boolean
     zombieAt?: boolean
+    agentTier?: boolean
+    providerTier?: boolean
+    tierScore?: boolean
+    tierUpdatedAt?: boolean
     projects?: boolean | User$projectsArgs<ExtArgs>
     assets?: boolean | User$assetsArgs<ExtArgs>
     templates?: boolean | User$templatesArgs<ExtArgs>
@@ -5448,6 +5609,10 @@ export namespace Prisma {
     status?: boolean
     isZombie?: boolean
     zombieAt?: boolean
+    agentTier?: boolean
+    providerTier?: boolean
+    tierScore?: boolean
+    tierUpdatedAt?: boolean
     region?: boolean | User$regionArgs<ExtArgs>
     agent?: boolean | User$agentArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
@@ -5486,6 +5651,10 @@ export namespace Prisma {
     status?: boolean
     isZombie?: boolean
     zombieAt?: boolean
+    agentTier?: boolean
+    providerTier?: boolean
+    tierScore?: boolean
+    tierUpdatedAt?: boolean
   }
 
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -5580,6 +5749,10 @@ export namespace Prisma {
       status: $Enums.UserStatus
       isZombie: boolean
       zombieAt: Date | null
+      agentTier: number
+      providerTier: number
+      tierScore: number
+      tierUpdatedAt: Date | null
     }, ExtArgs["result"]["user"]>
     composites: {}
   }
@@ -6029,6 +6202,10 @@ export namespace Prisma {
     readonly status: FieldRef<"User", 'UserStatus'>
     readonly isZombie: FieldRef<"User", 'Boolean'>
     readonly zombieAt: FieldRef<"User", 'DateTime'>
+    readonly agentTier: FieldRef<"User", 'Int'>
+    readonly providerTier: FieldRef<"User", 'Int'>
+    readonly tierScore: FieldRef<"User", 'Int'>
+    readonly tierUpdatedAt: FieldRef<"User", 'DateTime'>
   }
     
 
@@ -12015,7 +12192,15 @@ export namespace Prisma {
     id: string | null
     userId: string | null
     url: string | null
+    name: string | null
     type: string | null
+    storageKey: string | null
+    mime: string | null
+    compressed: boolean | null
+    sha256: string | null
+    derivedFrom: string | null
+    status: string | null
+    deletedAt: Date | null
     size: number | null
     width: number | null
     height: number | null
@@ -12026,7 +12211,15 @@ export namespace Prisma {
     id: string | null
     userId: string | null
     url: string | null
+    name: string | null
     type: string | null
+    storageKey: string | null
+    mime: string | null
+    compressed: boolean | null
+    sha256: string | null
+    derivedFrom: string | null
+    status: string | null
+    deletedAt: Date | null
     size: number | null
     width: number | null
     height: number | null
@@ -12037,7 +12230,15 @@ export namespace Prisma {
     id: number
     userId: number
     url: number
+    name: number
     type: number
+    storageKey: number
+    mime: number
+    compressed: number
+    sha256: number
+    derivedFrom: number
+    status: number
+    deletedAt: number
     size: number
     width: number
     height: number
@@ -12062,7 +12263,15 @@ export namespace Prisma {
     id?: true
     userId?: true
     url?: true
+    name?: true
     type?: true
+    storageKey?: true
+    mime?: true
+    compressed?: true
+    sha256?: true
+    derivedFrom?: true
+    status?: true
+    deletedAt?: true
     size?: true
     width?: true
     height?: true
@@ -12073,7 +12282,15 @@ export namespace Prisma {
     id?: true
     userId?: true
     url?: true
+    name?: true
     type?: true
+    storageKey?: true
+    mime?: true
+    compressed?: true
+    sha256?: true
+    derivedFrom?: true
+    status?: true
+    deletedAt?: true
     size?: true
     width?: true
     height?: true
@@ -12084,7 +12301,15 @@ export namespace Prisma {
     id?: true
     userId?: true
     url?: true
+    name?: true
     type?: true
+    storageKey?: true
+    mime?: true
+    compressed?: true
+    sha256?: true
+    derivedFrom?: true
+    status?: true
+    deletedAt?: true
     size?: true
     width?: true
     height?: true
@@ -12182,7 +12407,15 @@ export namespace Prisma {
     id: string
     userId: string
     url: string
+    name: string | null
     type: string
+    storageKey: string | null
+    mime: string | null
+    compressed: boolean
+    sha256: string | null
+    derivedFrom: string | null
+    status: string
+    deletedAt: Date | null
     size: number
     width: number | null
     height: number | null
@@ -12212,19 +12445,37 @@ export namespace Prisma {
     id?: boolean
     userId?: boolean
     url?: boolean
+    name?: boolean
     type?: boolean
+    storageKey?: boolean
+    mime?: boolean
+    compressed?: boolean
+    sha256?: boolean
+    derivedFrom?: boolean
+    status?: boolean
+    deletedAt?: boolean
     size?: boolean
     width?: boolean
     height?: boolean
     createdAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
+    refs?: boolean | Asset$refsArgs<ExtArgs>
+    _count?: boolean | AssetCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["asset"]>
 
   export type AssetSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
     url?: boolean
+    name?: boolean
     type?: boolean
+    storageKey?: boolean
+    mime?: boolean
+    compressed?: boolean
+    sha256?: boolean
+    derivedFrom?: boolean
+    status?: boolean
+    deletedAt?: boolean
     size?: boolean
     width?: boolean
     height?: boolean
@@ -12236,7 +12487,15 @@ export namespace Prisma {
     id?: boolean
     userId?: boolean
     url?: boolean
+    name?: boolean
     type?: boolean
+    storageKey?: boolean
+    mime?: boolean
+    compressed?: boolean
+    sha256?: boolean
+    derivedFrom?: boolean
+    status?: boolean
+    deletedAt?: boolean
     size?: boolean
     width?: boolean
     height?: boolean
@@ -12245,6 +12504,8 @@ export namespace Prisma {
 
   export type AssetInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
+    refs?: boolean | Asset$refsArgs<ExtArgs>
+    _count?: boolean | AssetCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type AssetIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -12254,12 +12515,21 @@ export namespace Prisma {
     name: "Asset"
     objects: {
       user: Prisma.$UserPayload<ExtArgs>
+      refs: Prisma.$WorkImageRefPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
       userId: string
       url: string
+      name: string | null
       type: string
+      storageKey: string | null
+      mime: string | null
+      compressed: boolean
+      sha256: string | null
+      derivedFrom: string | null
+      status: string
+      deletedAt: Date | null
       size: number
       width: number | null
       height: number | null
@@ -12629,6 +12899,7 @@ export namespace Prisma {
   export interface Prisma__AssetClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
+    refs<T extends Asset$refsArgs<ExtArgs> = {}>(args?: Subset<T, Asset$refsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkImageRefPayload<ExtArgs>, T, "findMany"> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -12661,7 +12932,15 @@ export namespace Prisma {
     readonly id: FieldRef<"Asset", 'String'>
     readonly userId: FieldRef<"Asset", 'String'>
     readonly url: FieldRef<"Asset", 'String'>
+    readonly name: FieldRef<"Asset", 'String'>
     readonly type: FieldRef<"Asset", 'String'>
+    readonly storageKey: FieldRef<"Asset", 'String'>
+    readonly mime: FieldRef<"Asset", 'String'>
+    readonly compressed: FieldRef<"Asset", 'Boolean'>
+    readonly sha256: FieldRef<"Asset", 'String'>
+    readonly derivedFrom: FieldRef<"Asset", 'String'>
+    readonly status: FieldRef<"Asset", 'String'>
+    readonly deletedAt: FieldRef<"Asset", 'DateTime'>
     readonly size: FieldRef<"Asset", 'Int'>
     readonly width: FieldRef<"Asset", 'Int'>
     readonly height: FieldRef<"Asset", 'Int'>
@@ -12984,6 +13263,26 @@ export namespace Prisma {
   }
 
   /**
+   * Asset.refs
+   */
+  export type Asset$refsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkImageRef
+     */
+    select?: WorkImageRefSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkImageRefInclude<ExtArgs> | null
+    where?: WorkImageRefWhereInput
+    orderBy?: WorkImageRefOrderByWithRelationInput | WorkImageRefOrderByWithRelationInput[]
+    cursor?: WorkImageRefWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: WorkImageRefScalarFieldEnum | WorkImageRefScalarFieldEnum[]
+  }
+
+  /**
    * Asset without action
    */
   export type AssetDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -12995,6 +13294,993 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: AssetInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model WorkImageRef
+   */
+
+  export type AggregateWorkImageRef = {
+    _count: WorkImageRefCountAggregateOutputType | null
+    _avg: WorkImageRefAvgAggregateOutputType | null
+    _sum: WorkImageRefSumAggregateOutputType | null
+    _min: WorkImageRefMinAggregateOutputType | null
+    _max: WorkImageRefMaxAggregateOutputType | null
+  }
+
+  export type WorkImageRefAvgAggregateOutputType = {
+    zIndex: number | null
+  }
+
+  export type WorkImageRefSumAggregateOutputType = {
+    zIndex: number | null
+  }
+
+  export type WorkImageRefMinAggregateOutputType = {
+    id: string | null
+    workId: string | null
+    assetId: string | null
+    usage: string | null
+    zIndex: number | null
+    createdAt: Date | null
+  }
+
+  export type WorkImageRefMaxAggregateOutputType = {
+    id: string | null
+    workId: string | null
+    assetId: string | null
+    usage: string | null
+    zIndex: number | null
+    createdAt: Date | null
+  }
+
+  export type WorkImageRefCountAggregateOutputType = {
+    id: number
+    workId: number
+    assetId: number
+    usage: number
+    crop: number
+    zIndex: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type WorkImageRefAvgAggregateInputType = {
+    zIndex?: true
+  }
+
+  export type WorkImageRefSumAggregateInputType = {
+    zIndex?: true
+  }
+
+  export type WorkImageRefMinAggregateInputType = {
+    id?: true
+    workId?: true
+    assetId?: true
+    usage?: true
+    zIndex?: true
+    createdAt?: true
+  }
+
+  export type WorkImageRefMaxAggregateInputType = {
+    id?: true
+    workId?: true
+    assetId?: true
+    usage?: true
+    zIndex?: true
+    createdAt?: true
+  }
+
+  export type WorkImageRefCountAggregateInputType = {
+    id?: true
+    workId?: true
+    assetId?: true
+    usage?: true
+    crop?: true
+    zIndex?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type WorkImageRefAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WorkImageRef to aggregate.
+     */
+    where?: WorkImageRefWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WorkImageRefs to fetch.
+     */
+    orderBy?: WorkImageRefOrderByWithRelationInput | WorkImageRefOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: WorkImageRefWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WorkImageRefs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WorkImageRefs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned WorkImageRefs
+    **/
+    _count?: true | WorkImageRefCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: WorkImageRefAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: WorkImageRefSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: WorkImageRefMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: WorkImageRefMaxAggregateInputType
+  }
+
+  export type GetWorkImageRefAggregateType<T extends WorkImageRefAggregateArgs> = {
+        [P in keyof T & keyof AggregateWorkImageRef]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateWorkImageRef[P]>
+      : GetScalarType<T[P], AggregateWorkImageRef[P]>
+  }
+
+
+
+
+  export type WorkImageRefGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WorkImageRefWhereInput
+    orderBy?: WorkImageRefOrderByWithAggregationInput | WorkImageRefOrderByWithAggregationInput[]
+    by: WorkImageRefScalarFieldEnum[] | WorkImageRefScalarFieldEnum
+    having?: WorkImageRefScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: WorkImageRefCountAggregateInputType | true
+    _avg?: WorkImageRefAvgAggregateInputType
+    _sum?: WorkImageRefSumAggregateInputType
+    _min?: WorkImageRefMinAggregateInputType
+    _max?: WorkImageRefMaxAggregateInputType
+  }
+
+  export type WorkImageRefGroupByOutputType = {
+    id: string
+    workId: string
+    assetId: string
+    usage: string
+    crop: JsonValue | null
+    zIndex: number
+    createdAt: Date
+    _count: WorkImageRefCountAggregateOutputType | null
+    _avg: WorkImageRefAvgAggregateOutputType | null
+    _sum: WorkImageRefSumAggregateOutputType | null
+    _min: WorkImageRefMinAggregateOutputType | null
+    _max: WorkImageRefMaxAggregateOutputType | null
+  }
+
+  type GetWorkImageRefGroupByPayload<T extends WorkImageRefGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<WorkImageRefGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof WorkImageRefGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], WorkImageRefGroupByOutputType[P]>
+            : GetScalarType<T[P], WorkImageRefGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type WorkImageRefSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workId?: boolean
+    assetId?: boolean
+    usage?: boolean
+    crop?: boolean
+    zIndex?: boolean
+    createdAt?: boolean
+    asset?: boolean | AssetDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["workImageRef"]>
+
+  export type WorkImageRefSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workId?: boolean
+    assetId?: boolean
+    usage?: boolean
+    crop?: boolean
+    zIndex?: boolean
+    createdAt?: boolean
+    asset?: boolean | AssetDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["workImageRef"]>
+
+  export type WorkImageRefSelectScalar = {
+    id?: boolean
+    workId?: boolean
+    assetId?: boolean
+    usage?: boolean
+    crop?: boolean
+    zIndex?: boolean
+    createdAt?: boolean
+  }
+
+  export type WorkImageRefInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    asset?: boolean | AssetDefaultArgs<ExtArgs>
+  }
+  export type WorkImageRefIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    asset?: boolean | AssetDefaultArgs<ExtArgs>
+  }
+
+  export type $WorkImageRefPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "WorkImageRef"
+    objects: {
+      asset: Prisma.$AssetPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      workId: string
+      assetId: string
+      usage: string
+      crop: Prisma.JsonValue | null
+      zIndex: number
+      createdAt: Date
+    }, ExtArgs["result"]["workImageRef"]>
+    composites: {}
+  }
+
+  type WorkImageRefGetPayload<S extends boolean | null | undefined | WorkImageRefDefaultArgs> = $Result.GetResult<Prisma.$WorkImageRefPayload, S>
+
+  type WorkImageRefCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<WorkImageRefFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: WorkImageRefCountAggregateInputType | true
+    }
+
+  export interface WorkImageRefDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['WorkImageRef'], meta: { name: 'WorkImageRef' } }
+    /**
+     * Find zero or one WorkImageRef that matches the filter.
+     * @param {WorkImageRefFindUniqueArgs} args - Arguments to find a WorkImageRef
+     * @example
+     * // Get one WorkImageRef
+     * const workImageRef = await prisma.workImageRef.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends WorkImageRefFindUniqueArgs>(args: SelectSubset<T, WorkImageRefFindUniqueArgs<ExtArgs>>): Prisma__WorkImageRefClient<$Result.GetResult<Prisma.$WorkImageRefPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one WorkImageRef that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {WorkImageRefFindUniqueOrThrowArgs} args - Arguments to find a WorkImageRef
+     * @example
+     * // Get one WorkImageRef
+     * const workImageRef = await prisma.workImageRef.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends WorkImageRefFindUniqueOrThrowArgs>(args: SelectSubset<T, WorkImageRefFindUniqueOrThrowArgs<ExtArgs>>): Prisma__WorkImageRefClient<$Result.GetResult<Prisma.$WorkImageRefPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first WorkImageRef that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkImageRefFindFirstArgs} args - Arguments to find a WorkImageRef
+     * @example
+     * // Get one WorkImageRef
+     * const workImageRef = await prisma.workImageRef.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends WorkImageRefFindFirstArgs>(args?: SelectSubset<T, WorkImageRefFindFirstArgs<ExtArgs>>): Prisma__WorkImageRefClient<$Result.GetResult<Prisma.$WorkImageRefPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first WorkImageRef that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkImageRefFindFirstOrThrowArgs} args - Arguments to find a WorkImageRef
+     * @example
+     * // Get one WorkImageRef
+     * const workImageRef = await prisma.workImageRef.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends WorkImageRefFindFirstOrThrowArgs>(args?: SelectSubset<T, WorkImageRefFindFirstOrThrowArgs<ExtArgs>>): Prisma__WorkImageRefClient<$Result.GetResult<Prisma.$WorkImageRefPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more WorkImageRefs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkImageRefFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all WorkImageRefs
+     * const workImageRefs = await prisma.workImageRef.findMany()
+     * 
+     * // Get first 10 WorkImageRefs
+     * const workImageRefs = await prisma.workImageRef.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const workImageRefWithIdOnly = await prisma.workImageRef.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends WorkImageRefFindManyArgs>(args?: SelectSubset<T, WorkImageRefFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkImageRefPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a WorkImageRef.
+     * @param {WorkImageRefCreateArgs} args - Arguments to create a WorkImageRef.
+     * @example
+     * // Create one WorkImageRef
+     * const WorkImageRef = await prisma.workImageRef.create({
+     *   data: {
+     *     // ... data to create a WorkImageRef
+     *   }
+     * })
+     * 
+     */
+    create<T extends WorkImageRefCreateArgs>(args: SelectSubset<T, WorkImageRefCreateArgs<ExtArgs>>): Prisma__WorkImageRefClient<$Result.GetResult<Prisma.$WorkImageRefPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many WorkImageRefs.
+     * @param {WorkImageRefCreateManyArgs} args - Arguments to create many WorkImageRefs.
+     * @example
+     * // Create many WorkImageRefs
+     * const workImageRef = await prisma.workImageRef.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends WorkImageRefCreateManyArgs>(args?: SelectSubset<T, WorkImageRefCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many WorkImageRefs and returns the data saved in the database.
+     * @param {WorkImageRefCreateManyAndReturnArgs} args - Arguments to create many WorkImageRefs.
+     * @example
+     * // Create many WorkImageRefs
+     * const workImageRef = await prisma.workImageRef.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many WorkImageRefs and only return the `id`
+     * const workImageRefWithIdOnly = await prisma.workImageRef.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends WorkImageRefCreateManyAndReturnArgs>(args?: SelectSubset<T, WorkImageRefCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkImageRefPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a WorkImageRef.
+     * @param {WorkImageRefDeleteArgs} args - Arguments to delete one WorkImageRef.
+     * @example
+     * // Delete one WorkImageRef
+     * const WorkImageRef = await prisma.workImageRef.delete({
+     *   where: {
+     *     // ... filter to delete one WorkImageRef
+     *   }
+     * })
+     * 
+     */
+    delete<T extends WorkImageRefDeleteArgs>(args: SelectSubset<T, WorkImageRefDeleteArgs<ExtArgs>>): Prisma__WorkImageRefClient<$Result.GetResult<Prisma.$WorkImageRefPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one WorkImageRef.
+     * @param {WorkImageRefUpdateArgs} args - Arguments to update one WorkImageRef.
+     * @example
+     * // Update one WorkImageRef
+     * const workImageRef = await prisma.workImageRef.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends WorkImageRefUpdateArgs>(args: SelectSubset<T, WorkImageRefUpdateArgs<ExtArgs>>): Prisma__WorkImageRefClient<$Result.GetResult<Prisma.$WorkImageRefPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more WorkImageRefs.
+     * @param {WorkImageRefDeleteManyArgs} args - Arguments to filter WorkImageRefs to delete.
+     * @example
+     * // Delete a few WorkImageRefs
+     * const { count } = await prisma.workImageRef.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends WorkImageRefDeleteManyArgs>(args?: SelectSubset<T, WorkImageRefDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more WorkImageRefs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkImageRefUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many WorkImageRefs
+     * const workImageRef = await prisma.workImageRef.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends WorkImageRefUpdateManyArgs>(args: SelectSubset<T, WorkImageRefUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one WorkImageRef.
+     * @param {WorkImageRefUpsertArgs} args - Arguments to update or create a WorkImageRef.
+     * @example
+     * // Update or create a WorkImageRef
+     * const workImageRef = await prisma.workImageRef.upsert({
+     *   create: {
+     *     // ... data to create a WorkImageRef
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the WorkImageRef we want to update
+     *   }
+     * })
+     */
+    upsert<T extends WorkImageRefUpsertArgs>(args: SelectSubset<T, WorkImageRefUpsertArgs<ExtArgs>>): Prisma__WorkImageRefClient<$Result.GetResult<Prisma.$WorkImageRefPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of WorkImageRefs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkImageRefCountArgs} args - Arguments to filter WorkImageRefs to count.
+     * @example
+     * // Count the number of WorkImageRefs
+     * const count = await prisma.workImageRef.count({
+     *   where: {
+     *     // ... the filter for the WorkImageRefs we want to count
+     *   }
+     * })
+    **/
+    count<T extends WorkImageRefCountArgs>(
+      args?: Subset<T, WorkImageRefCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], WorkImageRefCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a WorkImageRef.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkImageRefAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends WorkImageRefAggregateArgs>(args: Subset<T, WorkImageRefAggregateArgs>): Prisma.PrismaPromise<GetWorkImageRefAggregateType<T>>
+
+    /**
+     * Group by WorkImageRef.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkImageRefGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends WorkImageRefGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: WorkImageRefGroupByArgs['orderBy'] }
+        : { orderBy?: WorkImageRefGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, WorkImageRefGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetWorkImageRefGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the WorkImageRef model
+   */
+  readonly fields: WorkImageRefFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for WorkImageRef.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__WorkImageRefClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    asset<T extends AssetDefaultArgs<ExtArgs> = {}>(args?: Subset<T, AssetDefaultArgs<ExtArgs>>): Prisma__AssetClient<$Result.GetResult<Prisma.$AssetPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the WorkImageRef model
+   */ 
+  interface WorkImageRefFieldRefs {
+    readonly id: FieldRef<"WorkImageRef", 'String'>
+    readonly workId: FieldRef<"WorkImageRef", 'String'>
+    readonly assetId: FieldRef<"WorkImageRef", 'String'>
+    readonly usage: FieldRef<"WorkImageRef", 'String'>
+    readonly crop: FieldRef<"WorkImageRef", 'Json'>
+    readonly zIndex: FieldRef<"WorkImageRef", 'Int'>
+    readonly createdAt: FieldRef<"WorkImageRef", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * WorkImageRef findUnique
+   */
+  export type WorkImageRefFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkImageRef
+     */
+    select?: WorkImageRefSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkImageRefInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkImageRef to fetch.
+     */
+    where: WorkImageRefWhereUniqueInput
+  }
+
+  /**
+   * WorkImageRef findUniqueOrThrow
+   */
+  export type WorkImageRefFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkImageRef
+     */
+    select?: WorkImageRefSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkImageRefInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkImageRef to fetch.
+     */
+    where: WorkImageRefWhereUniqueInput
+  }
+
+  /**
+   * WorkImageRef findFirst
+   */
+  export type WorkImageRefFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkImageRef
+     */
+    select?: WorkImageRefSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkImageRefInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkImageRef to fetch.
+     */
+    where?: WorkImageRefWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WorkImageRefs to fetch.
+     */
+    orderBy?: WorkImageRefOrderByWithRelationInput | WorkImageRefOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WorkImageRefs.
+     */
+    cursor?: WorkImageRefWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WorkImageRefs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WorkImageRefs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WorkImageRefs.
+     */
+    distinct?: WorkImageRefScalarFieldEnum | WorkImageRefScalarFieldEnum[]
+  }
+
+  /**
+   * WorkImageRef findFirstOrThrow
+   */
+  export type WorkImageRefFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkImageRef
+     */
+    select?: WorkImageRefSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkImageRefInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkImageRef to fetch.
+     */
+    where?: WorkImageRefWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WorkImageRefs to fetch.
+     */
+    orderBy?: WorkImageRefOrderByWithRelationInput | WorkImageRefOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WorkImageRefs.
+     */
+    cursor?: WorkImageRefWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WorkImageRefs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WorkImageRefs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WorkImageRefs.
+     */
+    distinct?: WorkImageRefScalarFieldEnum | WorkImageRefScalarFieldEnum[]
+  }
+
+  /**
+   * WorkImageRef findMany
+   */
+  export type WorkImageRefFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkImageRef
+     */
+    select?: WorkImageRefSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkImageRefInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkImageRefs to fetch.
+     */
+    where?: WorkImageRefWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WorkImageRefs to fetch.
+     */
+    orderBy?: WorkImageRefOrderByWithRelationInput | WorkImageRefOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing WorkImageRefs.
+     */
+    cursor?: WorkImageRefWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WorkImageRefs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WorkImageRefs.
+     */
+    skip?: number
+    distinct?: WorkImageRefScalarFieldEnum | WorkImageRefScalarFieldEnum[]
+  }
+
+  /**
+   * WorkImageRef create
+   */
+  export type WorkImageRefCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkImageRef
+     */
+    select?: WorkImageRefSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkImageRefInclude<ExtArgs> | null
+    /**
+     * The data needed to create a WorkImageRef.
+     */
+    data: XOR<WorkImageRefCreateInput, WorkImageRefUncheckedCreateInput>
+  }
+
+  /**
+   * WorkImageRef createMany
+   */
+  export type WorkImageRefCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many WorkImageRefs.
+     */
+    data: WorkImageRefCreateManyInput | WorkImageRefCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * WorkImageRef createManyAndReturn
+   */
+  export type WorkImageRefCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkImageRef
+     */
+    select?: WorkImageRefSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many WorkImageRefs.
+     */
+    data: WorkImageRefCreateManyInput | WorkImageRefCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkImageRefIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * WorkImageRef update
+   */
+  export type WorkImageRefUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkImageRef
+     */
+    select?: WorkImageRefSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkImageRefInclude<ExtArgs> | null
+    /**
+     * The data needed to update a WorkImageRef.
+     */
+    data: XOR<WorkImageRefUpdateInput, WorkImageRefUncheckedUpdateInput>
+    /**
+     * Choose, which WorkImageRef to update.
+     */
+    where: WorkImageRefWhereUniqueInput
+  }
+
+  /**
+   * WorkImageRef updateMany
+   */
+  export type WorkImageRefUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update WorkImageRefs.
+     */
+    data: XOR<WorkImageRefUpdateManyMutationInput, WorkImageRefUncheckedUpdateManyInput>
+    /**
+     * Filter which WorkImageRefs to update
+     */
+    where?: WorkImageRefWhereInput
+  }
+
+  /**
+   * WorkImageRef upsert
+   */
+  export type WorkImageRefUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkImageRef
+     */
+    select?: WorkImageRefSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkImageRefInclude<ExtArgs> | null
+    /**
+     * The filter to search for the WorkImageRef to update in case it exists.
+     */
+    where: WorkImageRefWhereUniqueInput
+    /**
+     * In case the WorkImageRef found by the `where` argument doesn't exist, create a new WorkImageRef with this data.
+     */
+    create: XOR<WorkImageRefCreateInput, WorkImageRefUncheckedCreateInput>
+    /**
+     * In case the WorkImageRef was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<WorkImageRefUpdateInput, WorkImageRefUncheckedUpdateInput>
+  }
+
+  /**
+   * WorkImageRef delete
+   */
+  export type WorkImageRefDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkImageRef
+     */
+    select?: WorkImageRefSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkImageRefInclude<ExtArgs> | null
+    /**
+     * Filter which WorkImageRef to delete.
+     */
+    where: WorkImageRefWhereUniqueInput
+  }
+
+  /**
+   * WorkImageRef deleteMany
+   */
+  export type WorkImageRefDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WorkImageRefs to delete
+     */
+    where?: WorkImageRefWhereInput
+  }
+
+  /**
+   * WorkImageRef without action
+   */
+  export type WorkImageRefDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkImageRef
+     */
+    select?: WorkImageRefSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkImageRefInclude<ExtArgs> | null
   }
 
 
@@ -18437,7 +19723,7 @@ export namespace Prisma {
     title: string
     content: string
     status: $Enums.MessageStatus
-    authorId: string
+    authorId: string | null
     authorRole: $Enums.Role
     regionPath: string | null
     targetRole: $Enums.Role | null
@@ -18487,7 +19773,7 @@ export namespace Prisma {
     bizId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    author?: boolean | UserDefaultArgs<ExtArgs>
+    author?: boolean | Message$authorArgs<ExtArgs>
     reads?: boolean | Message$readsArgs<ExtArgs>
     recipient?: boolean | Message$recipientArgs<ExtArgs>
     _count?: boolean | MessageCountOutputTypeDefaultArgs<ExtArgs>
@@ -18512,7 +19798,7 @@ export namespace Prisma {
     bizId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    author?: boolean | UserDefaultArgs<ExtArgs>
+    author?: boolean | Message$authorArgs<ExtArgs>
     recipient?: boolean | Message$recipientArgs<ExtArgs>
   }, ExtArgs["result"]["message"]>
 
@@ -18538,20 +19824,20 @@ export namespace Prisma {
   }
 
   export type MessageInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    author?: boolean | UserDefaultArgs<ExtArgs>
+    author?: boolean | Message$authorArgs<ExtArgs>
     reads?: boolean | Message$readsArgs<ExtArgs>
     recipient?: boolean | Message$recipientArgs<ExtArgs>
     _count?: boolean | MessageCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type MessageIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    author?: boolean | UserDefaultArgs<ExtArgs>
+    author?: boolean | Message$authorArgs<ExtArgs>
     recipient?: boolean | Message$recipientArgs<ExtArgs>
   }
 
   export type $MessagePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Message"
     objects: {
-      author: Prisma.$UserPayload<ExtArgs>
+      author: Prisma.$UserPayload<ExtArgs> | null
       reads: Prisma.$MessageReadPayload<ExtArgs>[]
       recipient: Prisma.$UserPayload<ExtArgs> | null
     }
@@ -18562,7 +19848,7 @@ export namespace Prisma {
       title: string
       content: string
       status: $Enums.MessageStatus
-      authorId: string
+      authorId: string | null
       authorRole: $Enums.Role
       regionPath: string | null
       targetRole: $Enums.Role | null
@@ -18938,7 +20224,7 @@ export namespace Prisma {
    */
   export interface Prisma__MessageClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    author<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
+    author<T extends Message$authorArgs<ExtArgs> = {}>(args?: Subset<T, Message$authorArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
     reads<T extends Message$readsArgs<ExtArgs> = {}>(args?: Subset<T, Message$readsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MessageReadPayload<ExtArgs>, T, "findMany"> | Null>
     recipient<T extends Message$recipientArgs<ExtArgs> = {}>(args?: Subset<T, Message$recipientArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
     /**
@@ -19303,6 +20589,21 @@ export namespace Prisma {
      * Filter which Messages to delete
      */
     where?: MessageWhereInput
+  }
+
+  /**
+   * Message.author
+   */
+  export type Message$authorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
   }
 
   /**
@@ -35596,7 +36897,11 @@ export namespace Prisma {
     regionPath: 'regionPath',
     status: 'status',
     isZombie: 'isZombie',
-    zombieAt: 'zombieAt'
+    zombieAt: 'zombieAt',
+    agentTier: 'agentTier',
+    providerTier: 'providerTier',
+    tierScore: 'tierScore',
+    tierUpdatedAt: 'tierUpdatedAt'
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -35695,7 +37000,15 @@ export namespace Prisma {
     id: 'id',
     userId: 'userId',
     url: 'url',
+    name: 'name',
     type: 'type',
+    storageKey: 'storageKey',
+    mime: 'mime',
+    compressed: 'compressed',
+    sha256: 'sha256',
+    derivedFrom: 'derivedFrom',
+    status: 'status',
+    deletedAt: 'deletedAt',
     size: 'size',
     width: 'width',
     height: 'height',
@@ -35703,6 +37016,19 @@ export namespace Prisma {
   };
 
   export type AssetScalarFieldEnum = (typeof AssetScalarFieldEnum)[keyof typeof AssetScalarFieldEnum]
+
+
+  export const WorkImageRefScalarFieldEnum: {
+    id: 'id',
+    workId: 'workId',
+    assetId: 'assetId',
+    usage: 'usage',
+    crop: 'crop',
+    zIndex: 'zIndex',
+    createdAt: 'createdAt'
+  };
+
+  export type WorkImageRefScalarFieldEnum = (typeof WorkImageRefScalarFieldEnum)[keyof typeof WorkImageRefScalarFieldEnum]
 
 
   export const TemplateOrderScalarFieldEnum: {
@@ -36493,6 +37819,10 @@ export namespace Prisma {
     status?: EnumUserStatusFilter<"User"> | $Enums.UserStatus
     isZombie?: BoolFilter<"User"> | boolean
     zombieAt?: DateTimeNullableFilter<"User"> | Date | string | null
+    agentTier?: IntFilter<"User"> | number
+    providerTier?: IntFilter<"User"> | number
+    tierScore?: IntFilter<"User"> | number
+    tierUpdatedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     projects?: ProjectListRelationFilter
     assets?: AssetListRelationFilter
     templates?: TemplateListRelationFilter
@@ -36552,6 +37882,10 @@ export namespace Prisma {
     status?: SortOrder
     isZombie?: SortOrder
     zombieAt?: SortOrderInput | SortOrder
+    agentTier?: SortOrder
+    providerTier?: SortOrder
+    tierScore?: SortOrder
+    tierUpdatedAt?: SortOrderInput | SortOrder
     projects?: ProjectOrderByRelationAggregateInput
     assets?: AssetOrderByRelationAggregateInput
     templates?: TemplateOrderByRelationAggregateInput
@@ -36614,6 +37948,10 @@ export namespace Prisma {
     status?: EnumUserStatusFilter<"User"> | $Enums.UserStatus
     isZombie?: BoolFilter<"User"> | boolean
     zombieAt?: DateTimeNullableFilter<"User"> | Date | string | null
+    agentTier?: IntFilter<"User"> | number
+    providerTier?: IntFilter<"User"> | number
+    tierScore?: IntFilter<"User"> | number
+    tierUpdatedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     projects?: ProjectListRelationFilter
     assets?: AssetListRelationFilter
     templates?: TemplateListRelationFilter
@@ -36673,6 +38011,10 @@ export namespace Prisma {
     status?: SortOrder
     isZombie?: SortOrder
     zombieAt?: SortOrderInput | SortOrder
+    agentTier?: SortOrder
+    providerTier?: SortOrder
+    tierScore?: SortOrder
+    tierUpdatedAt?: SortOrderInput | SortOrder
     _count?: UserCountOrderByAggregateInput
     _avg?: UserAvgOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
@@ -36717,6 +38059,10 @@ export namespace Prisma {
     status?: EnumUserStatusWithAggregatesFilter<"User"> | $Enums.UserStatus
     isZombie?: BoolWithAggregatesFilter<"User"> | boolean
     zombieAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    agentTier?: IntWithAggregatesFilter<"User"> | number
+    providerTier?: IntWithAggregatesFilter<"User"> | number
+    tierScore?: IntWithAggregatesFilter<"User"> | number
+    tierUpdatedAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   }
 
   export type ProjectWhereInput = {
@@ -37186,24 +38532,42 @@ export namespace Prisma {
     id?: StringFilter<"Asset"> | string
     userId?: StringFilter<"Asset"> | string
     url?: StringFilter<"Asset"> | string
+    name?: StringNullableFilter<"Asset"> | string | null
     type?: StringFilter<"Asset"> | string
+    storageKey?: StringNullableFilter<"Asset"> | string | null
+    mime?: StringNullableFilter<"Asset"> | string | null
+    compressed?: BoolFilter<"Asset"> | boolean
+    sha256?: StringNullableFilter<"Asset"> | string | null
+    derivedFrom?: StringNullableFilter<"Asset"> | string | null
+    status?: StringFilter<"Asset"> | string
+    deletedAt?: DateTimeNullableFilter<"Asset"> | Date | string | null
     size?: IntFilter<"Asset"> | number
     width?: IntNullableFilter<"Asset"> | number | null
     height?: IntNullableFilter<"Asset"> | number | null
     createdAt?: DateTimeFilter<"Asset"> | Date | string
     user?: XOR<UserRelationFilter, UserWhereInput>
+    refs?: WorkImageRefListRelationFilter
   }
 
   export type AssetOrderByWithRelationInput = {
     id?: SortOrder
     userId?: SortOrder
     url?: SortOrder
+    name?: SortOrderInput | SortOrder
     type?: SortOrder
+    storageKey?: SortOrderInput | SortOrder
+    mime?: SortOrderInput | SortOrder
+    compressed?: SortOrder
+    sha256?: SortOrderInput | SortOrder
+    derivedFrom?: SortOrderInput | SortOrder
+    status?: SortOrder
+    deletedAt?: SortOrderInput | SortOrder
     size?: SortOrder
     width?: SortOrderInput | SortOrder
     height?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     user?: UserOrderByWithRelationInput
+    refs?: WorkImageRefOrderByRelationAggregateInput
   }
 
   export type AssetWhereUniqueInput = Prisma.AtLeast<{
@@ -37213,19 +38577,36 @@ export namespace Prisma {
     NOT?: AssetWhereInput | AssetWhereInput[]
     userId?: StringFilter<"Asset"> | string
     url?: StringFilter<"Asset"> | string
+    name?: StringNullableFilter<"Asset"> | string | null
     type?: StringFilter<"Asset"> | string
+    storageKey?: StringNullableFilter<"Asset"> | string | null
+    mime?: StringNullableFilter<"Asset"> | string | null
+    compressed?: BoolFilter<"Asset"> | boolean
+    sha256?: StringNullableFilter<"Asset"> | string | null
+    derivedFrom?: StringNullableFilter<"Asset"> | string | null
+    status?: StringFilter<"Asset"> | string
+    deletedAt?: DateTimeNullableFilter<"Asset"> | Date | string | null
     size?: IntFilter<"Asset"> | number
     width?: IntNullableFilter<"Asset"> | number | null
     height?: IntNullableFilter<"Asset"> | number | null
     createdAt?: DateTimeFilter<"Asset"> | Date | string
     user?: XOR<UserRelationFilter, UserWhereInput>
+    refs?: WorkImageRefListRelationFilter
   }, "id">
 
   export type AssetOrderByWithAggregationInput = {
     id?: SortOrder
     userId?: SortOrder
     url?: SortOrder
+    name?: SortOrderInput | SortOrder
     type?: SortOrder
+    storageKey?: SortOrderInput | SortOrder
+    mime?: SortOrderInput | SortOrder
+    compressed?: SortOrder
+    sha256?: SortOrderInput | SortOrder
+    derivedFrom?: SortOrderInput | SortOrder
+    status?: SortOrder
+    deletedAt?: SortOrderInput | SortOrder
     size?: SortOrder
     width?: SortOrderInput | SortOrder
     height?: SortOrderInput | SortOrder
@@ -37244,11 +38625,86 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"Asset"> | string
     userId?: StringWithAggregatesFilter<"Asset"> | string
     url?: StringWithAggregatesFilter<"Asset"> | string
+    name?: StringNullableWithAggregatesFilter<"Asset"> | string | null
     type?: StringWithAggregatesFilter<"Asset"> | string
+    storageKey?: StringNullableWithAggregatesFilter<"Asset"> | string | null
+    mime?: StringNullableWithAggregatesFilter<"Asset"> | string | null
+    compressed?: BoolWithAggregatesFilter<"Asset"> | boolean
+    sha256?: StringNullableWithAggregatesFilter<"Asset"> | string | null
+    derivedFrom?: StringNullableWithAggregatesFilter<"Asset"> | string | null
+    status?: StringWithAggregatesFilter<"Asset"> | string
+    deletedAt?: DateTimeNullableWithAggregatesFilter<"Asset"> | Date | string | null
     size?: IntWithAggregatesFilter<"Asset"> | number
     width?: IntNullableWithAggregatesFilter<"Asset"> | number | null
     height?: IntNullableWithAggregatesFilter<"Asset"> | number | null
     createdAt?: DateTimeWithAggregatesFilter<"Asset"> | Date | string
+  }
+
+  export type WorkImageRefWhereInput = {
+    AND?: WorkImageRefWhereInput | WorkImageRefWhereInput[]
+    OR?: WorkImageRefWhereInput[]
+    NOT?: WorkImageRefWhereInput | WorkImageRefWhereInput[]
+    id?: StringFilter<"WorkImageRef"> | string
+    workId?: StringFilter<"WorkImageRef"> | string
+    assetId?: StringFilter<"WorkImageRef"> | string
+    usage?: StringFilter<"WorkImageRef"> | string
+    crop?: JsonNullableFilter<"WorkImageRef">
+    zIndex?: IntFilter<"WorkImageRef"> | number
+    createdAt?: DateTimeFilter<"WorkImageRef"> | Date | string
+    asset?: XOR<AssetRelationFilter, AssetWhereInput>
+  }
+
+  export type WorkImageRefOrderByWithRelationInput = {
+    id?: SortOrder
+    workId?: SortOrder
+    assetId?: SortOrder
+    usage?: SortOrder
+    crop?: SortOrderInput | SortOrder
+    zIndex?: SortOrder
+    createdAt?: SortOrder
+    asset?: AssetOrderByWithRelationInput
+  }
+
+  export type WorkImageRefWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: WorkImageRefWhereInput | WorkImageRefWhereInput[]
+    OR?: WorkImageRefWhereInput[]
+    NOT?: WorkImageRefWhereInput | WorkImageRefWhereInput[]
+    workId?: StringFilter<"WorkImageRef"> | string
+    assetId?: StringFilter<"WorkImageRef"> | string
+    usage?: StringFilter<"WorkImageRef"> | string
+    crop?: JsonNullableFilter<"WorkImageRef">
+    zIndex?: IntFilter<"WorkImageRef"> | number
+    createdAt?: DateTimeFilter<"WorkImageRef"> | Date | string
+    asset?: XOR<AssetRelationFilter, AssetWhereInput>
+  }, "id">
+
+  export type WorkImageRefOrderByWithAggregationInput = {
+    id?: SortOrder
+    workId?: SortOrder
+    assetId?: SortOrder
+    usage?: SortOrder
+    crop?: SortOrderInput | SortOrder
+    zIndex?: SortOrder
+    createdAt?: SortOrder
+    _count?: WorkImageRefCountOrderByAggregateInput
+    _avg?: WorkImageRefAvgOrderByAggregateInput
+    _max?: WorkImageRefMaxOrderByAggregateInput
+    _min?: WorkImageRefMinOrderByAggregateInput
+    _sum?: WorkImageRefSumOrderByAggregateInput
+  }
+
+  export type WorkImageRefScalarWhereWithAggregatesInput = {
+    AND?: WorkImageRefScalarWhereWithAggregatesInput | WorkImageRefScalarWhereWithAggregatesInput[]
+    OR?: WorkImageRefScalarWhereWithAggregatesInput[]
+    NOT?: WorkImageRefScalarWhereWithAggregatesInput | WorkImageRefScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"WorkImageRef"> | string
+    workId?: StringWithAggregatesFilter<"WorkImageRef"> | string
+    assetId?: StringWithAggregatesFilter<"WorkImageRef"> | string
+    usage?: StringWithAggregatesFilter<"WorkImageRef"> | string
+    crop?: JsonNullableWithAggregatesFilter<"WorkImageRef">
+    zIndex?: IntWithAggregatesFilter<"WorkImageRef"> | number
+    createdAt?: DateTimeWithAggregatesFilter<"WorkImageRef"> | Date | string
   }
 
   export type TemplateOrderWhereInput = {
@@ -37705,7 +39161,7 @@ export namespace Prisma {
     title?: StringFilter<"Message"> | string
     content?: StringFilter<"Message"> | string
     status?: EnumMessageStatusFilter<"Message"> | $Enums.MessageStatus
-    authorId?: StringFilter<"Message"> | string
+    authorId?: StringNullableFilter<"Message"> | string | null
     authorRole?: EnumRoleFilter<"Message"> | $Enums.Role
     regionPath?: StringNullableFilter<"Message"> | string | null
     targetRole?: EnumRoleNullableFilter<"Message"> | $Enums.Role | null
@@ -37717,7 +39173,7 @@ export namespace Prisma {
     bizId?: StringNullableFilter<"Message"> | string | null
     createdAt?: DateTimeFilter<"Message"> | Date | string
     updatedAt?: DateTimeFilter<"Message"> | Date | string
-    author?: XOR<UserRelationFilter, UserWhereInput>
+    author?: XOR<UserNullableRelationFilter, UserWhereInput> | null
     reads?: MessageReadListRelationFilter
     recipient?: XOR<UserNullableRelationFilter, UserWhereInput> | null
   }
@@ -37729,7 +39185,7 @@ export namespace Prisma {
     title?: SortOrder
     content?: SortOrder
     status?: SortOrder
-    authorId?: SortOrder
+    authorId?: SortOrderInput | SortOrder
     authorRole?: SortOrder
     regionPath?: SortOrderInput | SortOrder
     targetRole?: SortOrderInput | SortOrder
@@ -37756,7 +39212,7 @@ export namespace Prisma {
     title?: StringFilter<"Message"> | string
     content?: StringFilter<"Message"> | string
     status?: EnumMessageStatusFilter<"Message"> | $Enums.MessageStatus
-    authorId?: StringFilter<"Message"> | string
+    authorId?: StringNullableFilter<"Message"> | string | null
     authorRole?: EnumRoleFilter<"Message"> | $Enums.Role
     regionPath?: StringNullableFilter<"Message"> | string | null
     targetRole?: EnumRoleNullableFilter<"Message"> | $Enums.Role | null
@@ -37768,7 +39224,7 @@ export namespace Prisma {
     bizId?: StringNullableFilter<"Message"> | string | null
     createdAt?: DateTimeFilter<"Message"> | Date | string
     updatedAt?: DateTimeFilter<"Message"> | Date | string
-    author?: XOR<UserRelationFilter, UserWhereInput>
+    author?: XOR<UserNullableRelationFilter, UserWhereInput> | null
     reads?: MessageReadListRelationFilter
     recipient?: XOR<UserNullableRelationFilter, UserWhereInput> | null
   }, "id">
@@ -37780,7 +39236,7 @@ export namespace Prisma {
     title?: SortOrder
     content?: SortOrder
     status?: SortOrder
-    authorId?: SortOrder
+    authorId?: SortOrderInput | SortOrder
     authorRole?: SortOrder
     regionPath?: SortOrderInput | SortOrder
     targetRole?: SortOrderInput | SortOrder
@@ -37807,7 +39263,7 @@ export namespace Prisma {
     title?: StringWithAggregatesFilter<"Message"> | string
     content?: StringWithAggregatesFilter<"Message"> | string
     status?: EnumMessageStatusWithAggregatesFilter<"Message"> | $Enums.MessageStatus
-    authorId?: StringWithAggregatesFilter<"Message"> | string
+    authorId?: StringNullableWithAggregatesFilter<"Message"> | string | null
     authorRole?: EnumRoleWithAggregatesFilter<"Message"> | $Enums.Role
     regionPath?: StringNullableWithAggregatesFilter<"Message"> | string | null
     targetRole?: EnumRoleNullableWithAggregatesFilter<"Message"> | $Enums.Role | null
@@ -39400,6 +40856,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -39459,6 +40919,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -39514,6 +40978,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -39573,6 +41041,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -39630,6 +41102,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
   }
 
   export type UserUpdateManyMutationInput = {
@@ -39664,6 +41140,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type UserUncheckedUpdateManyInput = {
@@ -39700,6 +41180,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type ProjectCreateInput = {
@@ -40235,52 +41719,96 @@ export namespace Prisma {
   export type AssetCreateInput = {
     id?: string
     url: string
+    name?: string | null
     type: string
+    storageKey?: string | null
+    mime?: string | null
+    compressed?: boolean
+    sha256?: string | null
+    derivedFrom?: string | null
+    status?: string
+    deletedAt?: Date | string | null
     size: number
     width?: number | null
     height?: number | null
     createdAt?: Date | string
     user: UserCreateNestedOneWithoutAssetsInput
+    refs?: WorkImageRefCreateNestedManyWithoutAssetInput
   }
 
   export type AssetUncheckedCreateInput = {
     id?: string
     userId: string
     url: string
+    name?: string | null
     type: string
+    storageKey?: string | null
+    mime?: string | null
+    compressed?: boolean
+    sha256?: string | null
+    derivedFrom?: string | null
+    status?: string
+    deletedAt?: Date | string | null
     size: number
     width?: number | null
     height?: number | null
     createdAt?: Date | string
+    refs?: WorkImageRefUncheckedCreateNestedManyWithoutAssetInput
   }
 
   export type AssetUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     type?: StringFieldUpdateOperationsInput | string
+    storageKey?: NullableStringFieldUpdateOperationsInput | string | null
+    mime?: NullableStringFieldUpdateOperationsInput | string | null
+    compressed?: BoolFieldUpdateOperationsInput | boolean
+    sha256?: NullableStringFieldUpdateOperationsInput | string | null
+    derivedFrom?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     size?: IntFieldUpdateOperationsInput | number
     width?: NullableIntFieldUpdateOperationsInput | number | null
     height?: NullableIntFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutAssetsNestedInput
+    refs?: WorkImageRefUpdateManyWithoutAssetNestedInput
   }
 
   export type AssetUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     type?: StringFieldUpdateOperationsInput | string
+    storageKey?: NullableStringFieldUpdateOperationsInput | string | null
+    mime?: NullableStringFieldUpdateOperationsInput | string | null
+    compressed?: BoolFieldUpdateOperationsInput | boolean
+    sha256?: NullableStringFieldUpdateOperationsInput | string | null
+    derivedFrom?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     size?: IntFieldUpdateOperationsInput | number
     width?: NullableIntFieldUpdateOperationsInput | number | null
     height?: NullableIntFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    refs?: WorkImageRefUncheckedUpdateManyWithoutAssetNestedInput
   }
 
   export type AssetCreateManyInput = {
     id?: string
     userId: string
     url: string
+    name?: string | null
     type: string
+    storageKey?: string | null
+    mime?: string | null
+    compressed?: boolean
+    sha256?: string | null
+    derivedFrom?: string | null
+    status?: string
+    deletedAt?: Date | string | null
     size: number
     width?: number | null
     height?: number | null
@@ -40290,7 +41818,15 @@ export namespace Prisma {
   export type AssetUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     type?: StringFieldUpdateOperationsInput | string
+    storageKey?: NullableStringFieldUpdateOperationsInput | string | null
+    mime?: NullableStringFieldUpdateOperationsInput | string | null
+    compressed?: BoolFieldUpdateOperationsInput | boolean
+    sha256?: NullableStringFieldUpdateOperationsInput | string | null
+    derivedFrom?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     size?: IntFieldUpdateOperationsInput | number
     width?: NullableIntFieldUpdateOperationsInput | number | null
     height?: NullableIntFieldUpdateOperationsInput | number | null
@@ -40301,10 +41837,87 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     type?: StringFieldUpdateOperationsInput | string
+    storageKey?: NullableStringFieldUpdateOperationsInput | string | null
+    mime?: NullableStringFieldUpdateOperationsInput | string | null
+    compressed?: BoolFieldUpdateOperationsInput | boolean
+    sha256?: NullableStringFieldUpdateOperationsInput | string | null
+    derivedFrom?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     size?: IntFieldUpdateOperationsInput | number
     width?: NullableIntFieldUpdateOperationsInput | number | null
     height?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkImageRefCreateInput = {
+    id?: string
+    workId: string
+    usage?: string
+    crop?: NullableJsonNullValueInput | InputJsonValue
+    zIndex?: number
+    createdAt?: Date | string
+    asset: AssetCreateNestedOneWithoutRefsInput
+  }
+
+  export type WorkImageRefUncheckedCreateInput = {
+    id?: string
+    workId: string
+    assetId: string
+    usage?: string
+    crop?: NullableJsonNullValueInput | InputJsonValue
+    zIndex?: number
+    createdAt?: Date | string
+  }
+
+  export type WorkImageRefUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workId?: StringFieldUpdateOperationsInput | string
+    usage?: StringFieldUpdateOperationsInput | string
+    crop?: NullableJsonNullValueInput | InputJsonValue
+    zIndex?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    asset?: AssetUpdateOneRequiredWithoutRefsNestedInput
+  }
+
+  export type WorkImageRefUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workId?: StringFieldUpdateOperationsInput | string
+    assetId?: StringFieldUpdateOperationsInput | string
+    usage?: StringFieldUpdateOperationsInput | string
+    crop?: NullableJsonNullValueInput | InputJsonValue
+    zIndex?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkImageRefCreateManyInput = {
+    id?: string
+    workId: string
+    assetId: string
+    usage?: string
+    crop?: NullableJsonNullValueInput | InputJsonValue
+    zIndex?: number
+    createdAt?: Date | string
+  }
+
+  export type WorkImageRefUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workId?: StringFieldUpdateOperationsInput | string
+    usage?: StringFieldUpdateOperationsInput | string
+    crop?: NullableJsonNullValueInput | InputJsonValue
+    zIndex?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkImageRefUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workId?: StringFieldUpdateOperationsInput | string
+    assetId?: StringFieldUpdateOperationsInput | string
+    usage?: StringFieldUpdateOperationsInput | string
+    crop?: NullableJsonNullValueInput | InputJsonValue
+    zIndex?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -40802,7 +42415,7 @@ export namespace Prisma {
     bizId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    author: UserCreateNestedOneWithoutMessagesAuthorInput
+    author?: UserCreateNestedOneWithoutMessagesAuthorInput
     reads?: MessageReadCreateNestedManyWithoutMessageInput
     recipient?: UserCreateNestedOneWithoutMessagesReceivedInput
   }
@@ -40814,7 +42427,7 @@ export namespace Prisma {
     title: string
     content: string
     status?: $Enums.MessageStatus
-    authorId: string
+    authorId?: string | null
     authorRole: $Enums.Role
     regionPath?: string | null
     targetRole?: $Enums.Role | null
@@ -40846,7 +42459,7 @@ export namespace Prisma {
     bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    author?: UserUpdateOneRequiredWithoutMessagesAuthorNestedInput
+    author?: UserUpdateOneWithoutMessagesAuthorNestedInput
     reads?: MessageReadUpdateManyWithoutMessageNestedInput
     recipient?: UserUpdateOneWithoutMessagesReceivedNestedInput
   }
@@ -40858,7 +42471,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     status?: EnumMessageStatusFieldUpdateOperationsInput | $Enums.MessageStatus
-    authorId?: StringFieldUpdateOperationsInput | string
+    authorId?: NullableStringFieldUpdateOperationsInput | string | null
     authorRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     targetRole?: NullableEnumRoleFieldUpdateOperationsInput | $Enums.Role | null
@@ -40880,7 +42493,7 @@ export namespace Prisma {
     title: string
     content: string
     status?: $Enums.MessageStatus
-    authorId: string
+    authorId?: string | null
     authorRole: $Enums.Role
     regionPath?: string | null
     targetRole?: $Enums.Role | null
@@ -40920,7 +42533,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     status?: EnumMessageStatusFieldUpdateOperationsInput | $Enums.MessageStatus
-    authorId?: StringFieldUpdateOperationsInput | string
+    authorId?: NullableStringFieldUpdateOperationsInput | string | null
     authorRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     targetRole?: NullableEnumRoleFieldUpdateOperationsInput | $Enums.Role | null
@@ -43072,6 +44685,10 @@ export namespace Prisma {
     status?: SortOrder
     isZombie?: SortOrder
     zombieAt?: SortOrder
+    agentTier?: SortOrder
+    providerTier?: SortOrder
+    tierScore?: SortOrder
+    tierUpdatedAt?: SortOrder
   }
 
   export type UserAvgOrderByAggregateInput = {
@@ -43080,6 +44697,9 @@ export namespace Prisma {
     totalSpent?: SortOrder
     userBalance?: SortOrder
     followingProviderCount?: SortOrder
+    agentTier?: SortOrder
+    providerTier?: SortOrder
+    tierScore?: SortOrder
   }
 
   export type UserMaxOrderByAggregateInput = {
@@ -43114,6 +44734,10 @@ export namespace Prisma {
     status?: SortOrder
     isZombie?: SortOrder
     zombieAt?: SortOrder
+    agentTier?: SortOrder
+    providerTier?: SortOrder
+    tierScore?: SortOrder
+    tierUpdatedAt?: SortOrder
   }
 
   export type UserMinOrderByAggregateInput = {
@@ -43148,6 +44772,10 @@ export namespace Prisma {
     status?: SortOrder
     isZombie?: SortOrder
     zombieAt?: SortOrder
+    agentTier?: SortOrder
+    providerTier?: SortOrder
+    tierScore?: SortOrder
+    tierUpdatedAt?: SortOrder
   }
 
   export type UserSumOrderByAggregateInput = {
@@ -43156,6 +44784,9 @@ export namespace Prisma {
     totalSpent?: SortOrder
     userBalance?: SortOrder
     followingProviderCount?: SortOrder
+    agentTier?: SortOrder
+    providerTier?: SortOrder
+    tierScore?: SortOrder
   }
 
   export type EnumRealNameStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -43625,11 +45256,29 @@ export namespace Prisma {
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
+  export type WorkImageRefListRelationFilter = {
+    every?: WorkImageRefWhereInput
+    some?: WorkImageRefWhereInput
+    none?: WorkImageRefWhereInput
+  }
+
+  export type WorkImageRefOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type AssetCountOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
     url?: SortOrder
+    name?: SortOrder
     type?: SortOrder
+    storageKey?: SortOrder
+    mime?: SortOrder
+    compressed?: SortOrder
+    sha256?: SortOrder
+    derivedFrom?: SortOrder
+    status?: SortOrder
+    deletedAt?: SortOrder
     size?: SortOrder
     width?: SortOrder
     height?: SortOrder
@@ -43646,7 +45295,15 @@ export namespace Prisma {
     id?: SortOrder
     userId?: SortOrder
     url?: SortOrder
+    name?: SortOrder
     type?: SortOrder
+    storageKey?: SortOrder
+    mime?: SortOrder
+    compressed?: SortOrder
+    sha256?: SortOrder
+    derivedFrom?: SortOrder
+    status?: SortOrder
+    deletedAt?: SortOrder
     size?: SortOrder
     width?: SortOrder
     height?: SortOrder
@@ -43657,7 +45314,15 @@ export namespace Prisma {
     id?: SortOrder
     userId?: SortOrder
     url?: SortOrder
+    name?: SortOrder
     type?: SortOrder
+    storageKey?: SortOrder
+    mime?: SortOrder
+    compressed?: SortOrder
+    sha256?: SortOrder
+    derivedFrom?: SortOrder
+    status?: SortOrder
+    deletedAt?: SortOrder
     size?: SortOrder
     width?: SortOrder
     height?: SortOrder
@@ -43684,6 +45349,47 @@ export namespace Prisma {
     _sum?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedIntNullableFilter<$PrismaModel>
     _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
+  export type AssetRelationFilter = {
+    is?: AssetWhereInput
+    isNot?: AssetWhereInput
+  }
+
+  export type WorkImageRefCountOrderByAggregateInput = {
+    id?: SortOrder
+    workId?: SortOrder
+    assetId?: SortOrder
+    usage?: SortOrder
+    crop?: SortOrder
+    zIndex?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type WorkImageRefAvgOrderByAggregateInput = {
+    zIndex?: SortOrder
+  }
+
+  export type WorkImageRefMaxOrderByAggregateInput = {
+    id?: SortOrder
+    workId?: SortOrder
+    assetId?: SortOrder
+    usage?: SortOrder
+    zIndex?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type WorkImageRefMinOrderByAggregateInput = {
+    id?: SortOrder
+    workId?: SortOrder
+    assetId?: SortOrder
+    usage?: SortOrder
+    zIndex?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type WorkImageRefSumOrderByAggregateInput = {
+    zIndex?: SortOrder
   }
 
   export type TemplateRelationFilter = {
@@ -46291,6 +47997,20 @@ export namespace Prisma {
     connect?: UserWhereUniqueInput
   }
 
+  export type WorkImageRefCreateNestedManyWithoutAssetInput = {
+    create?: XOR<WorkImageRefCreateWithoutAssetInput, WorkImageRefUncheckedCreateWithoutAssetInput> | WorkImageRefCreateWithoutAssetInput[] | WorkImageRefUncheckedCreateWithoutAssetInput[]
+    connectOrCreate?: WorkImageRefCreateOrConnectWithoutAssetInput | WorkImageRefCreateOrConnectWithoutAssetInput[]
+    createMany?: WorkImageRefCreateManyAssetInputEnvelope
+    connect?: WorkImageRefWhereUniqueInput | WorkImageRefWhereUniqueInput[]
+  }
+
+  export type WorkImageRefUncheckedCreateNestedManyWithoutAssetInput = {
+    create?: XOR<WorkImageRefCreateWithoutAssetInput, WorkImageRefUncheckedCreateWithoutAssetInput> | WorkImageRefCreateWithoutAssetInput[] | WorkImageRefUncheckedCreateWithoutAssetInput[]
+    connectOrCreate?: WorkImageRefCreateOrConnectWithoutAssetInput | WorkImageRefCreateOrConnectWithoutAssetInput[]
+    createMany?: WorkImageRefCreateManyAssetInputEnvelope
+    connect?: WorkImageRefWhereUniqueInput | WorkImageRefWhereUniqueInput[]
+  }
+
   export type NullableIntFieldUpdateOperationsInput = {
     set?: number | null
     increment?: number
@@ -46305,6 +48025,48 @@ export namespace Prisma {
     upsert?: UserUpsertWithoutAssetsInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutAssetsInput, UserUpdateWithoutAssetsInput>, UserUncheckedUpdateWithoutAssetsInput>
+  }
+
+  export type WorkImageRefUpdateManyWithoutAssetNestedInput = {
+    create?: XOR<WorkImageRefCreateWithoutAssetInput, WorkImageRefUncheckedCreateWithoutAssetInput> | WorkImageRefCreateWithoutAssetInput[] | WorkImageRefUncheckedCreateWithoutAssetInput[]
+    connectOrCreate?: WorkImageRefCreateOrConnectWithoutAssetInput | WorkImageRefCreateOrConnectWithoutAssetInput[]
+    upsert?: WorkImageRefUpsertWithWhereUniqueWithoutAssetInput | WorkImageRefUpsertWithWhereUniqueWithoutAssetInput[]
+    createMany?: WorkImageRefCreateManyAssetInputEnvelope
+    set?: WorkImageRefWhereUniqueInput | WorkImageRefWhereUniqueInput[]
+    disconnect?: WorkImageRefWhereUniqueInput | WorkImageRefWhereUniqueInput[]
+    delete?: WorkImageRefWhereUniqueInput | WorkImageRefWhereUniqueInput[]
+    connect?: WorkImageRefWhereUniqueInput | WorkImageRefWhereUniqueInput[]
+    update?: WorkImageRefUpdateWithWhereUniqueWithoutAssetInput | WorkImageRefUpdateWithWhereUniqueWithoutAssetInput[]
+    updateMany?: WorkImageRefUpdateManyWithWhereWithoutAssetInput | WorkImageRefUpdateManyWithWhereWithoutAssetInput[]
+    deleteMany?: WorkImageRefScalarWhereInput | WorkImageRefScalarWhereInput[]
+  }
+
+  export type WorkImageRefUncheckedUpdateManyWithoutAssetNestedInput = {
+    create?: XOR<WorkImageRefCreateWithoutAssetInput, WorkImageRefUncheckedCreateWithoutAssetInput> | WorkImageRefCreateWithoutAssetInput[] | WorkImageRefUncheckedCreateWithoutAssetInput[]
+    connectOrCreate?: WorkImageRefCreateOrConnectWithoutAssetInput | WorkImageRefCreateOrConnectWithoutAssetInput[]
+    upsert?: WorkImageRefUpsertWithWhereUniqueWithoutAssetInput | WorkImageRefUpsertWithWhereUniqueWithoutAssetInput[]
+    createMany?: WorkImageRefCreateManyAssetInputEnvelope
+    set?: WorkImageRefWhereUniqueInput | WorkImageRefWhereUniqueInput[]
+    disconnect?: WorkImageRefWhereUniqueInput | WorkImageRefWhereUniqueInput[]
+    delete?: WorkImageRefWhereUniqueInput | WorkImageRefWhereUniqueInput[]
+    connect?: WorkImageRefWhereUniqueInput | WorkImageRefWhereUniqueInput[]
+    update?: WorkImageRefUpdateWithWhereUniqueWithoutAssetInput | WorkImageRefUpdateWithWhereUniqueWithoutAssetInput[]
+    updateMany?: WorkImageRefUpdateManyWithWhereWithoutAssetInput | WorkImageRefUpdateManyWithWhereWithoutAssetInput[]
+    deleteMany?: WorkImageRefScalarWhereInput | WorkImageRefScalarWhereInput[]
+  }
+
+  export type AssetCreateNestedOneWithoutRefsInput = {
+    create?: XOR<AssetCreateWithoutRefsInput, AssetUncheckedCreateWithoutRefsInput>
+    connectOrCreate?: AssetCreateOrConnectWithoutRefsInput
+    connect?: AssetWhereUniqueInput
+  }
+
+  export type AssetUpdateOneRequiredWithoutRefsNestedInput = {
+    create?: XOR<AssetCreateWithoutRefsInput, AssetUncheckedCreateWithoutRefsInput>
+    connectOrCreate?: AssetCreateOrConnectWithoutRefsInput
+    upsert?: AssetUpsertWithoutRefsInput
+    connect?: AssetWhereUniqueInput
+    update?: XOR<XOR<AssetUpdateToOneWithWhereWithoutRefsInput, AssetUpdateWithoutRefsInput>, AssetUncheckedUpdateWithoutRefsInput>
   }
 
   export type UserCreateNestedOneWithoutOrdersInput = {
@@ -46543,10 +48305,12 @@ export namespace Prisma {
     set?: $Enums.MessageStatus
   }
 
-  export type UserUpdateOneRequiredWithoutMessagesAuthorNestedInput = {
+  export type UserUpdateOneWithoutMessagesAuthorNestedInput = {
     create?: XOR<UserCreateWithoutMessagesAuthorInput, UserUncheckedCreateWithoutMessagesAuthorInput>
     connectOrCreate?: UserCreateOrConnectWithoutMessagesAuthorInput
     upsert?: UserUpsertWithoutMessagesAuthorInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutMessagesAuthorInput, UserUpdateWithoutMessagesAuthorInput>, UserUncheckedUpdateWithoutMessagesAuthorInput>
   }
@@ -47430,6 +49194,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -47487,6 +49255,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -47632,6 +49404,10 @@ export namespace Prisma {
     status?: EnumUserStatusFilter<"User"> | $Enums.UserStatus
     isZombie?: BoolFilter<"User"> | boolean
     zombieAt?: DateTimeNullableFilter<"User"> | Date | string | null
+    agentTier?: IntFilter<"User"> | number
+    providerTier?: IntFilter<"User"> | number
+    tierScore?: IntFilter<"User"> | number
+    tierUpdatedAt?: DateTimeNullableFilter<"User"> | Date | string | null
   }
 
   export type ProjectCreateWithoutUserInput = {
@@ -47691,21 +49467,39 @@ export namespace Prisma {
   export type AssetCreateWithoutUserInput = {
     id?: string
     url: string
+    name?: string | null
     type: string
+    storageKey?: string | null
+    mime?: string | null
+    compressed?: boolean
+    sha256?: string | null
+    derivedFrom?: string | null
+    status?: string
+    deletedAt?: Date | string | null
     size: number
     width?: number | null
     height?: number | null
     createdAt?: Date | string
+    refs?: WorkImageRefCreateNestedManyWithoutAssetInput
   }
 
   export type AssetUncheckedCreateWithoutUserInput = {
     id?: string
     url: string
+    name?: string | null
     type: string
+    storageKey?: string | null
+    mime?: string | null
+    compressed?: boolean
+    sha256?: string | null
+    derivedFrom?: string | null
+    status?: string
+    deletedAt?: Date | string | null
     size: number
     width?: number | null
     height?: number | null
     createdAt?: Date | string
+    refs?: WorkImageRefUncheckedCreateNestedManyWithoutAssetInput
   }
 
   export type AssetCreateOrConnectWithoutUserInput = {
@@ -47970,6 +49764,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -48028,6 +49826,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -48087,6 +49889,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -48144,6 +49950,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -48384,7 +50194,7 @@ export namespace Prisma {
     bizId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    author: UserCreateNestedOneWithoutMessagesAuthorInput
+    author?: UserCreateNestedOneWithoutMessagesAuthorInput
     reads?: MessageReadCreateNestedManyWithoutMessageInput
   }
 
@@ -48395,7 +50205,7 @@ export namespace Prisma {
     title: string
     content: string
     status?: $Enums.MessageStatus
-    authorId: string
+    authorId?: string | null
     authorRole: $Enums.Role
     regionPath?: string | null
     targetRole?: $Enums.Role | null
@@ -48797,7 +50607,15 @@ export namespace Prisma {
     id?: StringFilter<"Asset"> | string
     userId?: StringFilter<"Asset"> | string
     url?: StringFilter<"Asset"> | string
+    name?: StringNullableFilter<"Asset"> | string | null
     type?: StringFilter<"Asset"> | string
+    storageKey?: StringNullableFilter<"Asset"> | string | null
+    mime?: StringNullableFilter<"Asset"> | string | null
+    compressed?: BoolFilter<"Asset"> | boolean
+    sha256?: StringNullableFilter<"Asset"> | string | null
+    derivedFrom?: StringNullableFilter<"Asset"> | string | null
+    status?: StringFilter<"Asset"> | string
+    deletedAt?: DateTimeNullableFilter<"Asset"> | Date | string | null
     size?: IntFilter<"Asset"> | number
     width?: IntNullableFilter<"Asset"> | number | null
     height?: IntNullableFilter<"Asset"> | number | null
@@ -49051,6 +50869,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -49109,6 +50931,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -49243,7 +51069,7 @@ export namespace Prisma {
     title?: StringFilter<"Message"> | string
     content?: StringFilter<"Message"> | string
     status?: EnumMessageStatusFilter<"Message"> | $Enums.MessageStatus
-    authorId?: StringFilter<"Message"> | string
+    authorId?: StringNullableFilter<"Message"> | string | null
     authorRole?: EnumRoleFilter<"Message"> | $Enums.Role
     regionPath?: StringNullableFilter<"Message"> | string | null
     targetRole?: EnumRoleNullableFilter<"Message"> | $Enums.Role | null
@@ -49565,6 +51391,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
     orders?: TemplateOrderCreateNestedManyWithoutBuyerInput
@@ -49623,6 +51453,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
     orders?: TemplateOrderUncheckedCreateNestedManyWithoutBuyerInput
@@ -49776,6 +51610,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
     orders?: TemplateOrderUpdateManyWithoutBuyerNestedInput
@@ -49834,6 +51672,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
     orders?: TemplateOrderUncheckedUpdateManyWithoutBuyerNestedInput
@@ -49981,6 +51823,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     orders?: TemplateOrderCreateNestedManyWithoutBuyerInput
@@ -50039,6 +51885,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     orders?: TemplateOrderUncheckedCreateNestedManyWithoutBuyerInput
@@ -50231,6 +52081,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     orders?: TemplateOrderUpdateManyWithoutBuyerNestedInput
@@ -50289,6 +52143,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     orders?: TemplateOrderUncheckedUpdateManyWithoutBuyerNestedInput
@@ -50495,6 +52353,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
     orders?: TemplateOrderCreateNestedManyWithoutBuyerInput
@@ -50553,6 +52415,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
     orders?: TemplateOrderUncheckedCreateNestedManyWithoutBuyerInput
@@ -50578,6 +52444,34 @@ export namespace Prisma {
   export type UserCreateOrConnectWithoutAssetsInput = {
     where: UserWhereUniqueInput
     create: XOR<UserCreateWithoutAssetsInput, UserUncheckedCreateWithoutAssetsInput>
+  }
+
+  export type WorkImageRefCreateWithoutAssetInput = {
+    id?: string
+    workId: string
+    usage?: string
+    crop?: NullableJsonNullValueInput | InputJsonValue
+    zIndex?: number
+    createdAt?: Date | string
+  }
+
+  export type WorkImageRefUncheckedCreateWithoutAssetInput = {
+    id?: string
+    workId: string
+    usage?: string
+    crop?: NullableJsonNullValueInput | InputJsonValue
+    zIndex?: number
+    createdAt?: Date | string
+  }
+
+  export type WorkImageRefCreateOrConnectWithoutAssetInput = {
+    where: WorkImageRefWhereUniqueInput
+    create: XOR<WorkImageRefCreateWithoutAssetInput, WorkImageRefUncheckedCreateWithoutAssetInput>
+  }
+
+  export type WorkImageRefCreateManyAssetInputEnvelope = {
+    data: WorkImageRefCreateManyAssetInput | WorkImageRefCreateManyAssetInput[]
+    skipDuplicates?: boolean
   }
 
   export type UserUpsertWithoutAssetsInput = {
@@ -50623,6 +52517,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
     orders?: TemplateOrderUpdateManyWithoutBuyerNestedInput
@@ -50681,6 +52579,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
     orders?: TemplateOrderUncheckedUpdateManyWithoutBuyerNestedInput
@@ -50701,6 +52603,127 @@ export namespace Prisma {
     walletLogs?: WalletLogUncheckedUpdateManyWithoutUserNestedInput
     coupons?: UserCouponUncheckedUpdateManyWithoutUserNestedInput
     joinApplications?: TeamJoinApplicationUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type WorkImageRefUpsertWithWhereUniqueWithoutAssetInput = {
+    where: WorkImageRefWhereUniqueInput
+    update: XOR<WorkImageRefUpdateWithoutAssetInput, WorkImageRefUncheckedUpdateWithoutAssetInput>
+    create: XOR<WorkImageRefCreateWithoutAssetInput, WorkImageRefUncheckedCreateWithoutAssetInput>
+  }
+
+  export type WorkImageRefUpdateWithWhereUniqueWithoutAssetInput = {
+    where: WorkImageRefWhereUniqueInput
+    data: XOR<WorkImageRefUpdateWithoutAssetInput, WorkImageRefUncheckedUpdateWithoutAssetInput>
+  }
+
+  export type WorkImageRefUpdateManyWithWhereWithoutAssetInput = {
+    where: WorkImageRefScalarWhereInput
+    data: XOR<WorkImageRefUpdateManyMutationInput, WorkImageRefUncheckedUpdateManyWithoutAssetInput>
+  }
+
+  export type WorkImageRefScalarWhereInput = {
+    AND?: WorkImageRefScalarWhereInput | WorkImageRefScalarWhereInput[]
+    OR?: WorkImageRefScalarWhereInput[]
+    NOT?: WorkImageRefScalarWhereInput | WorkImageRefScalarWhereInput[]
+    id?: StringFilter<"WorkImageRef"> | string
+    workId?: StringFilter<"WorkImageRef"> | string
+    assetId?: StringFilter<"WorkImageRef"> | string
+    usage?: StringFilter<"WorkImageRef"> | string
+    crop?: JsonNullableFilter<"WorkImageRef">
+    zIndex?: IntFilter<"WorkImageRef"> | number
+    createdAt?: DateTimeFilter<"WorkImageRef"> | Date | string
+  }
+
+  export type AssetCreateWithoutRefsInput = {
+    id?: string
+    url: string
+    name?: string | null
+    type: string
+    storageKey?: string | null
+    mime?: string | null
+    compressed?: boolean
+    sha256?: string | null
+    derivedFrom?: string | null
+    status?: string
+    deletedAt?: Date | string | null
+    size: number
+    width?: number | null
+    height?: number | null
+    createdAt?: Date | string
+    user: UserCreateNestedOneWithoutAssetsInput
+  }
+
+  export type AssetUncheckedCreateWithoutRefsInput = {
+    id?: string
+    userId: string
+    url: string
+    name?: string | null
+    type: string
+    storageKey?: string | null
+    mime?: string | null
+    compressed?: boolean
+    sha256?: string | null
+    derivedFrom?: string | null
+    status?: string
+    deletedAt?: Date | string | null
+    size: number
+    width?: number | null
+    height?: number | null
+    createdAt?: Date | string
+  }
+
+  export type AssetCreateOrConnectWithoutRefsInput = {
+    where: AssetWhereUniqueInput
+    create: XOR<AssetCreateWithoutRefsInput, AssetUncheckedCreateWithoutRefsInput>
+  }
+
+  export type AssetUpsertWithoutRefsInput = {
+    update: XOR<AssetUpdateWithoutRefsInput, AssetUncheckedUpdateWithoutRefsInput>
+    create: XOR<AssetCreateWithoutRefsInput, AssetUncheckedCreateWithoutRefsInput>
+    where?: AssetWhereInput
+  }
+
+  export type AssetUpdateToOneWithWhereWithoutRefsInput = {
+    where?: AssetWhereInput
+    data: XOR<AssetUpdateWithoutRefsInput, AssetUncheckedUpdateWithoutRefsInput>
+  }
+
+  export type AssetUpdateWithoutRefsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    type?: StringFieldUpdateOperationsInput | string
+    storageKey?: NullableStringFieldUpdateOperationsInput | string | null
+    mime?: NullableStringFieldUpdateOperationsInput | string | null
+    compressed?: BoolFieldUpdateOperationsInput | boolean
+    sha256?: NullableStringFieldUpdateOperationsInput | string | null
+    derivedFrom?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    size?: IntFieldUpdateOperationsInput | number
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutAssetsNestedInput
+  }
+
+  export type AssetUncheckedUpdateWithoutRefsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    type?: StringFieldUpdateOperationsInput | string
+    storageKey?: NullableStringFieldUpdateOperationsInput | string | null
+    mime?: NullableStringFieldUpdateOperationsInput | string | null
+    compressed?: BoolFieldUpdateOperationsInput | boolean
+    sha256?: NullableStringFieldUpdateOperationsInput | string | null
+    derivedFrom?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    size?: IntFieldUpdateOperationsInput | number
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type UserCreateWithoutOrdersInput = {
@@ -50735,6 +52758,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -50793,6 +52820,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -50924,6 +52955,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -50982,6 +53017,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -51103,6 +53142,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -51161,6 +53204,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -51267,6 +53314,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -51325,6 +53376,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -51395,6 +53450,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -51453,6 +53512,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -51548,6 +53611,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -51606,6 +53673,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -51752,6 +53823,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -51810,6 +53885,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -51947,6 +54026,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -52005,6 +54088,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -52059,6 +54146,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -52117,6 +54208,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -52176,6 +54271,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -52234,6 +54333,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -52293,6 +54396,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -52351,6 +54458,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -52421,6 +54532,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -52479,6 +54594,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -52544,6 +54663,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -52602,6 +54725,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -52667,6 +54794,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -52725,6 +54856,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -52779,6 +54914,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -52837,6 +54976,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -52918,6 +55061,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -52976,6 +55123,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -53046,6 +55197,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -53104,6 +55259,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -53185,6 +55344,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -53243,6 +55406,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -53297,6 +55464,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -53355,6 +55526,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -53414,6 +55589,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -53472,6 +55651,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -53542,6 +55725,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -53600,6 +55787,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -53665,6 +55856,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -53723,6 +55918,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -53762,7 +55961,7 @@ export namespace Prisma {
     bizId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    author: UserCreateNestedOneWithoutMessagesAuthorInput
+    author?: UserCreateNestedOneWithoutMessagesAuthorInput
     recipient?: UserCreateNestedOneWithoutMessagesReceivedInput
   }
 
@@ -53773,7 +55972,7 @@ export namespace Prisma {
     title: string
     content: string
     status?: $Enums.MessageStatus
-    authorId: string
+    authorId?: string | null
     authorRole: $Enums.Role
     regionPath?: string | null
     targetRole?: $Enums.Role | null
@@ -53824,6 +56023,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -53882,6 +56085,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -53937,7 +56144,7 @@ export namespace Prisma {
     bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    author?: UserUpdateOneRequiredWithoutMessagesAuthorNestedInput
+    author?: UserUpdateOneWithoutMessagesAuthorNestedInput
     recipient?: UserUpdateOneWithoutMessagesReceivedNestedInput
   }
 
@@ -53948,7 +56155,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     status?: EnumMessageStatusFieldUpdateOperationsInput | $Enums.MessageStatus
-    authorId?: StringFieldUpdateOperationsInput | string
+    authorId?: NullableStringFieldUpdateOperationsInput | string | null
     authorRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     targetRole?: NullableEnumRoleFieldUpdateOperationsInput | $Enums.Role | null
@@ -54005,6 +56212,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -54063,6 +56274,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -54117,6 +56332,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -54175,6 +56394,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -54245,6 +56468,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -54303,6 +56530,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -54357,6 +56588,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -54415,6 +56650,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -54485,6 +56724,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -54543,6 +56786,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -54639,6 +56886,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -54697,6 +56948,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -54800,6 +57055,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -54858,6 +57117,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -54951,6 +57214,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -55009,6 +57276,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -55079,6 +57350,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -55137,6 +57412,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -55191,6 +57470,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectCreateNestedManyWithoutUserInput
     assets?: AssetCreateNestedManyWithoutUserInput
     templates?: TemplateCreateNestedManyWithoutAuthorInput
@@ -55249,6 +57532,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
     projects?: ProjectUncheckedCreateNestedManyWithoutUserInput
     assets?: AssetUncheckedCreateNestedManyWithoutUserInput
     templates?: TemplateUncheckedCreateNestedManyWithoutAuthorInput
@@ -55319,6 +57606,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -55377,6 +57668,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -55440,6 +57735,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
   }
 
   export type RegionUpdateWithoutParentInput = {
@@ -55502,6 +57801,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -55559,6 +57862,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -55615,6 +57922,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type ProjectCreateManyUserInput = {
@@ -55641,7 +57952,15 @@ export namespace Prisma {
   export type AssetCreateManyUserInput = {
     id?: string
     url: string
+    name?: string | null
     type: string
+    storageKey?: string | null
+    mime?: string | null
+    compressed?: boolean
+    sha256?: string | null
+    derivedFrom?: string | null
+    status?: string
+    deletedAt?: Date | string | null
     size: number
     width?: number | null
     height?: number | null
@@ -55743,6 +58062,10 @@ export namespace Prisma {
     status?: $Enums.UserStatus
     isZombie?: boolean
     zombieAt?: Date | string | null
+    agentTier?: number
+    providerTier?: number
+    tierScore?: number
+    tierUpdatedAt?: Date | string | null
   }
 
   export type TicketCreateManyReporterInput = {
@@ -55826,7 +58149,7 @@ export namespace Prisma {
     title: string
     content: string
     status?: $Enums.MessageStatus
-    authorId: string
+    authorId?: string | null
     authorRole: $Enums.Role
     regionPath?: string | null
     targetRole?: $Enums.Role | null
@@ -56024,27 +58347,53 @@ export namespace Prisma {
   export type AssetUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     type?: StringFieldUpdateOperationsInput | string
+    storageKey?: NullableStringFieldUpdateOperationsInput | string | null
+    mime?: NullableStringFieldUpdateOperationsInput | string | null
+    compressed?: BoolFieldUpdateOperationsInput | boolean
+    sha256?: NullableStringFieldUpdateOperationsInput | string | null
+    derivedFrom?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     size?: IntFieldUpdateOperationsInput | number
     width?: NullableIntFieldUpdateOperationsInput | number | null
     height?: NullableIntFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    refs?: WorkImageRefUpdateManyWithoutAssetNestedInput
   }
 
   export type AssetUncheckedUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     type?: StringFieldUpdateOperationsInput | string
+    storageKey?: NullableStringFieldUpdateOperationsInput | string | null
+    mime?: NullableStringFieldUpdateOperationsInput | string | null
+    compressed?: BoolFieldUpdateOperationsInput | boolean
+    sha256?: NullableStringFieldUpdateOperationsInput | string | null
+    derivedFrom?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     size?: IntFieldUpdateOperationsInput | number
     width?: NullableIntFieldUpdateOperationsInput | number | null
     height?: NullableIntFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    refs?: WorkImageRefUncheckedUpdateManyWithoutAssetNestedInput
   }
 
   export type AssetUncheckedUpdateManyWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     type?: StringFieldUpdateOperationsInput | string
+    storageKey?: NullableStringFieldUpdateOperationsInput | string | null
+    mime?: NullableStringFieldUpdateOperationsInput | string | null
+    compressed?: BoolFieldUpdateOperationsInput | boolean
+    sha256?: NullableStringFieldUpdateOperationsInput | string | null
+    derivedFrom?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     size?: IntFieldUpdateOperationsInput | number
     width?: NullableIntFieldUpdateOperationsInput | number | null
     height?: NullableIntFieldUpdateOperationsInput | number | null
@@ -56275,6 +58624,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUpdateManyWithoutUserNestedInput
     assets?: AssetUpdateManyWithoutUserNestedInput
     templates?: TemplateUpdateManyWithoutAuthorNestedInput
@@ -56332,6 +58685,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projects?: ProjectUncheckedUpdateManyWithoutUserNestedInput
     assets?: AssetUncheckedUpdateManyWithoutUserNestedInput
     templates?: TemplateUncheckedUpdateManyWithoutAuthorNestedInput
@@ -56388,6 +58745,10 @@ export namespace Prisma {
     status?: EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
     isZombie?: BoolFieldUpdateOperationsInput | boolean
     zombieAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    agentTier?: IntFieldUpdateOperationsInput | number
+    providerTier?: IntFieldUpdateOperationsInput | number
+    tierScore?: IntFieldUpdateOperationsInput | number
+    tierUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type TicketUpdateWithoutReporterInput = {
@@ -56631,7 +58992,7 @@ export namespace Prisma {
     bizId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    author?: UserUpdateOneRequiredWithoutMessagesAuthorNestedInput
+    author?: UserUpdateOneWithoutMessagesAuthorNestedInput
     reads?: MessageReadUpdateManyWithoutMessageNestedInput
   }
 
@@ -56642,7 +59003,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     status?: EnumMessageStatusFieldUpdateOperationsInput | $Enums.MessageStatus
-    authorId?: StringFieldUpdateOperationsInput | string
+    authorId?: NullableStringFieldUpdateOperationsInput | string | null
     authorRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     targetRole?: NullableEnumRoleFieldUpdateOperationsInput | $Enums.Role | null
@@ -56663,7 +59024,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     status?: EnumMessageStatusFieldUpdateOperationsInput | $Enums.MessageStatus
-    authorId?: StringFieldUpdateOperationsInput | string
+    authorId?: NullableStringFieldUpdateOperationsInput | string | null
     authorRole?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     regionPath?: NullableStringFieldUpdateOperationsInput | string | null
     targetRole?: NullableEnumRoleFieldUpdateOperationsInput | $Enums.Role | null
@@ -57233,6 +59594,42 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type WorkImageRefCreateManyAssetInput = {
+    id?: string
+    workId: string
+    usage?: string
+    crop?: NullableJsonNullValueInput | InputJsonValue
+    zIndex?: number
+    createdAt?: Date | string
+  }
+
+  export type WorkImageRefUpdateWithoutAssetInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workId?: StringFieldUpdateOperationsInput | string
+    usage?: StringFieldUpdateOperationsInput | string
+    crop?: NullableJsonNullValueInput | InputJsonValue
+    zIndex?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkImageRefUncheckedUpdateWithoutAssetInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workId?: StringFieldUpdateOperationsInput | string
+    usage?: StringFieldUpdateOperationsInput | string
+    crop?: NullableJsonNullValueInput | InputJsonValue
+    zIndex?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkImageRefUncheckedUpdateManyWithoutAssetInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workId?: StringFieldUpdateOperationsInput | string
+    usage?: StringFieldUpdateOperationsInput | string
+    crop?: NullableJsonNullValueInput | InputJsonValue
+    zIndex?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type WithdrawalCreateManyWalletInput = {
     id?: string
     providerId: string
@@ -57363,6 +59760,10 @@ export namespace Prisma {
      */
     export type TemplateCountOutputTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = TemplateCountOutputTypeDefaultArgs<ExtArgs>
     /**
+     * @deprecated Use AssetCountOutputTypeDefaultArgs instead
+     */
+    export type AssetCountOutputTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = AssetCountOutputTypeDefaultArgs<ExtArgs>
+    /**
      * @deprecated Use ProviderWalletCountOutputTypeDefaultArgs instead
      */
     export type ProviderWalletCountOutputTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = ProviderWalletCountOutputTypeDefaultArgs<ExtArgs>
@@ -57406,6 +59807,10 @@ export namespace Prisma {
      * @deprecated Use AssetDefaultArgs instead
      */
     export type AssetArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = AssetDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use WorkImageRefDefaultArgs instead
+     */
+    export type WorkImageRefArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = WorkImageRefDefaultArgs<ExtArgs>
     /**
      * @deprecated Use TemplateOrderDefaultArgs instead
      */

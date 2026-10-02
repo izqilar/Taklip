@@ -10,22 +10,51 @@ import {
   UploadedFile,
   Query,
   BadRequestException,
+  Res,
+  NotFoundException,
+  HttpException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
+import { Response } from 'express';
+import { existsSync, mkdirSync } from 'fs';
 import { AssetService } from './asset.service';
 
-type AuthedRequest = Express.Request & {
-  user: { id: string };
-};
+type AuthedRequest = Express.Request & { user: { id: string } };
+
+/** 私有图库存放根目录（在 uploads/ 之外，避免被公开静态服务暴露） */
+const PRIVATE_ROOT = join(process.cwd(), 'private-assets');
 
 const storage = diskStorage({
-  destination: join(process.cwd(), 'uploads'),
-  filename: (_req, file, cb) => {
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname)}`;
-    cb(null, uniqueName);
+  // 按 purpose 分流：图库进私有目录并按 userId 前缀隔离；其余（背景音乐等）走原 uploads/
+  destination: (req: any, _file, cb) => {
+    const userId = req.user?.id;
+    const purpose = (req.query?.purpose as string) || 'media';
+    if (purpose === 'gallery' && userId) {
+      const dir = join(PRIVATE_ROOT, 'users', userId, 'imgs');
+      try {
+        mkdirSync(dir, { recursive: true });
+      } catch {
+        /* 已存在则忽略 */
+      }
+      cb(null, dir);
+    } else {
+      cb(null, join(process.cwd(), 'uploads'));
+    }
+  },
+  filename: (req: any, file, cb) => {
+    const purpose = (req.query?.purpose as string) || 'media';
+    if (purpose === 'gallery') {
+      // cuid 风格随机名，杜绝自增/可枚举；统一 webp 扩展名
+      const rand = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.originalname}`;
+      const cuid = Buffer.from(rand).toString('base64url').replace(/[^a-zA-Z0-9]/g, '').slice(0, 24);
+      cb(null, `${cuid}.webp`);
+    } else {
+      const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname)}`;
+      cb(null, uniqueName);
+    }
   },
 });
 
@@ -38,23 +67,17 @@ export class AssetController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage,
-      limits: { fileSize: 30 * 1024 * 1024 }, // 30MB：图片 + 背景音乐（音频文件较大）
+      limits: { fileSize: 30 * 1024 * 1024 }, // 上限 30MB（背景音乐等音频文件较大）；图库内部再强制 ≤2MB
       fileFilter: (_req, file, cb) => {
-        // 支持常见网页图片与音频格式。SVG 已允许，但发布页/编辑器中应通过 img 标签安全属性
-        // 及后续 CSP 策略降低 XSS 风险；必要时可引入 DOMPurify 等库做服务端清洗。
-        // 注：mimetype 由客户端声明，生产环境建议以文件魔数二次校验。
+        // 类型白名单：图片 / 音频 / 视频。注意 mimetype 由客户端声明，
+        // 图库场景在 service 内以魔数二次校验真实类型（拒绝 SVG/伪装）。
         const ALLOWED = [
-          /^image\/(jpg|jpeg|png|gif|webp|bmp|svg(\+xml)?|ico|tiff?|avif)$/,
-          /^audio\/(mpeg|mp3|wav|x-wav|wave|x-ms-wav|ogg|vorbis|m4a|x-m4a|aac|webm|flac|x-flac)$/i,
-          /^video\/(mp4|webm|ogg|quicktime|x-msvideo|x-matroska|m4v|x-m4v|avi|3gpp|3gpp2)$/i,
+          /^image\/(jpg|jpeg|png|gif|webp|bmp|svg(\+xml)?|ico|tiff?|avif)$/i,
+          /^audio\//i,
+          /^video\//i,
         ];
         if (!ALLOWED.some((re) => re.test(file.mimetype))) {
-          return cb(
-            new BadRequestException(
-              '仅支持 jpg、jpeg、png、gif、webp、bmp、svg、ico、tiff、avif 等图片格式，mp3、wav、ogg、m4a、aac、webm、flac 等音频格式，以及 mp4、webm、mov、avi、mkv、m4v 等视频格式',
-            ),
-            false,
-          );
+          return cb(new BadRequestException('仅支持常见图片、音频、视频格式'), false);
         }
         cb(null, true);
       },
@@ -63,6 +86,8 @@ export class AssetController {
   async upload(
     @UploadedFile() file: Express.Multer.File,
     @Req() req: AuthedRequest,
+    @Query('purpose') purpose?: string,
+    @Query('derivedFrom') derivedFrom?: string,
     @Query('width') width?: string,
     @Query('height') height?: string,
   ) {
@@ -70,14 +95,42 @@ export class AssetController {
     const meta: { width?: number; height?: number } = {};
     const w = Number(width);
     const h = Number(height);
-    if (Number.isFinite(w) && w > 0) meta.width = w;
-    if (Number.isFinite(h) && h > 0) meta.height = h;
-    return this.assetService.upload(file, req.user.id, meta);
+    if (Number.isFinite(w) && w > 0) meta.width = Math.round(w);
+    if (Number.isFinite(h) && h > 0) meta.height = Math.round(h);
+    return this.assetService.upload(file, req.user.id, {
+      ...meta,
+      purpose: purpose || 'media',
+      derivedFrom,
+    });
   }
 
   @Get()
   findAll(@Req() req: AuthedRequest, @Query('type') type?: string) {
     return this.assetService.findAll(req.user.id, type);
+  }
+
+  /** 配额（仅统计图库图片），须置于 :id 路由之前以避免被其捕获 */
+  @Get('quota')
+  quota(@Req() req: AuthedRequest) {
+    return this.assetService.getQuota(req.user.id);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string, @Req() req: AuthedRequest) {
+    return this.assetService.findOne(id, req.user.id);
+  }
+
+  /** 私有图鉴权下载（替代公开 /uploads/），仅本人可读取 */
+  @Get(':id/file')
+  async file(@Param('id') id: string, @Req() req: AuthedRequest, @Res() res: Response) {
+    const asset = await this.assetService.findOwned(id, req.user.id);
+    const filePath = asset.storageKey
+      ? join(process.cwd(), asset.storageKey)
+      : join(process.cwd(), 'uploads', String(asset.url).replace('/uploads/', ''));
+    if (!existsSync(filePath)) throw new NotFoundException('file missing');
+    res.setHeader('Content-Type', asset.mime || 'application/octet-stream');
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    return res.sendFile(filePath);
   }
 
   @Delete(':id')
