@@ -110,6 +110,7 @@ const ScheduleList = lazy(() => import('./pages/providerPages').then((m) => ({ d
 const TemplatesList = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.TemplatesList })));
 const WorksList = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.WorksList })));
 const GalleryPage = lazy(() => import('./pages/gallery/GalleryPage').then((m) => ({ default: m.GalleryPage })));
+const UpgradePage = lazy(() => import('./pages/upgrade/UpgradePage').then((m) => ({ default: m.UpgradePage })));
 const SPContract = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.SPContract })));
 const SPClients = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.SPClients })));
 const SPComplaints = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.SPComplaints })));
@@ -344,6 +345,7 @@ export const App = () => (
                 {/* ===================== 代理商中心（AGENT） ===================== */}
                 <Route path="/agent/dashboard" element={<AgentDashboard />} />
                 <Route path="/agent/gallery" element={<GalleryPage layer="agent" />} />
+                <Route path="/agent/upgrade" element={<UpgradePage kind="agent" />} />
                 <Route path="/agent/users" element={<AgentUsers />} />
                 <Route path="/agent/providers" element={<AgentProviders />} />
                 <Route path="/agent/orders" element={<AgentOrders />} />
@@ -393,6 +395,7 @@ export const App = () => (
                 <Route path="/sp/schedule/:id" element={<SPScheduleDetail />} />
                 <Route path="/sp/works" element={<WorksList />} />
                 <Route path="/sp/gallery" element={<GalleryPage layer="provider" />} />
+                <Route path="/sp/upgrade" element={<UpgradePage kind="provider" />} />
                 <Route path="/sp/templates" element={<TemplatesList />} />
                 <Route path="/sp/templates/new" element={<SPTemplateDetail />} />
                 <Route path="/sp/templates/:id" element={<SPTemplateDetail />} />
@@ -457,6 +460,7 @@ export const App = () => (
                 <Route path="/user/orders" element={<UserOrders />} />
                 <Route path="/user/works" element={<UserWorks />} />
                 <Route path="/user/gallery" element={<GalleryPage layer="user" />} />
+                <Route path="/user/upgrade" element={<UpgradePage kind="user" />} />
                 <Route path="/user/providers" element={<UserProviders />} />
                 <Route path="/user/reviews" element={<UserReviews />} />
                 <Route path="/user/complaints" element={<UserComplaints />} />

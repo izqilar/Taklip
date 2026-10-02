@@ -548,6 +548,7 @@
     "subtitle": "Manage your works, orders, wallet and messages",
     "menu": {
       "overview": "Dashboard",
+      "gallery": "My Gallery",
       "works": "My Works",
       "worksSubtitle": "Manage your H5 works and templates",
       "orders": "My Orders",

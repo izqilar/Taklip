@@ -59,6 +59,8 @@ const UserMessages = lazy(() => import('./user/Messages'));
 const UserNotices = lazy(() => import('./user/Notices'));
 const UserAccount = lazy(() => import('./user/Account'));
 const UserApply = lazy(() => import('./user/Apply'));
+const UserGallery = lazy(() => import('./user/Gallery'));
+const UserUpgrade = lazy(() => import('./user/Upgrade'));
 const NoticeDetailPage = lazy(() => import('./user/NoticeDetailPage'));
 const NoticeFillPage = lazy(() => import('./user/NoticeFillPage'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
@@ -129,6 +131,9 @@ export default function App() {
             <Route path="notices/:id" element={<NoticeDetailPage />} />
             <Route path="notices/fill" element={<NoticeFillPage />} />
             <Route path="account" element={<UserAccount />} />
+            {/* 资源中心：我的图库（§2.2 终端用户图片管理） */}
+            <Route path="gallery" element={<UserGallery />} />
+            <Route path="upgrade" element={<UserUpgrade />} />
             {/* 入驻申请：加入团队 / 资格升级双隧道入口 */}
             <Route path="apply" element={<UserApply />} />
           </Route>

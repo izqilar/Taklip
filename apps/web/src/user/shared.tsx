@@ -339,7 +339,9 @@ export const USER_CENTER_NAV: NavItem[] = [
   { to: '/user', labelKey: 'common:userCenter.menu.overview', group: '交易中心', icon: I(<><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /></>) },
   { to: '/user/providers', labelKey: 'common:userCenter.menu.providers', group: '交易中心', icon: I(<><path d="M3 21V8l9-5 9 5v13" /><path d="M9 21v-6h6v6" /></>) },
   { to: '/user/orders', labelKey: 'common:userCenter.menu.orders', group: '交易中心', icon: I(<><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" /></>) },
-  { to: '/user/works', labelKey: 'common:userCenter.menu.works', group: '交易中心', icon: I(<><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></>) },
+  // 资源中心（文档 §2.2）：我的图库 → 我的作品
+  { to: '/user/gallery', labelKey: 'common:userCenter.menu.gallery', group: '资源中心', icon: I(<><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></>) },
+  { to: '/user/works', labelKey: 'common:userCenter.menu.works', group: '资源中心', icon: I(<><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></>) },
   { to: '/user/reviews', labelKey: 'common:userCenter.menu.reviews', group: '评价与反馈', icon: I(<><path d="M12 2 9.2 8.6 2 9.3l5.5 4.8L5.8 21 12 17l6.2 4-1.7-6.9L22 9.3l-7.2-.7Z" /></>) },
   { to: '/user/feedback', labelKey: 'common:userCenter.menu.feedback', group: '评价与反馈', icon: I(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M9 13h6M9 17h6" /></>) },
   { to: '/user/notices', labelKey: 'common:userCenter.menu.notices', group: '消息中心', icon: I(<><path d="M3 11l18-5v12L3 14v-3Z" /><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" /></>) },

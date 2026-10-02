@@ -13,6 +13,19 @@ import { createHash } from 'crypto';
 /** 图库单图硬上限 2MB（超出由前端 canvas 预压缩后上传） */
 const MAX_GALLERY_BYTES = 2 * 1024 * 1024;
 
+/**
+ * 牌级 → 图库上限（张）：索引即 agentTier / providerTier（0..4）。
+ * L0 见习/新锐=10，L1 铜=16，L2 银=20，L3 金=26，L4 钻石=30。
+ * 与「图库管理管线开发文档.md」§2.1 服务商配额一致；代理商与服务商共用此档位。
+ */
+const TIER_GALLERY_LIMIT: readonly number[] = [10, 16, 20, 26, 30];
+
+/**
+ * 终端用户卡级 → 图库上限（张）：索引即 vipLevel（0..3）。
+ * 免费=4，银卡=6，金卡=10，黑金=16（文档 §2.2）。
+ */
+const USER_GALLERY_LIMIT: readonly number[] = [4, 6, 10, 16];
+
 /** 魔数判定真实格式：图库仅接受 WebP（RIFF....WEBP），从根上拒绝 SVG/伪装文件 */
 function isWebp(buf: Buffer): boolean {
   return (
@@ -27,14 +40,21 @@ export class AssetService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * 配额口径（按角色 + 会员等级，不硬编码在接口里）：
-   *  - 服务商 SERVICE_PROVIDER：30 张
-   *  - 用户 / 代理商 USER / AGENT：会员(vipLevel>=1) 20 张，免费 4 张
+   * 图库配额口径（分级动态上限，依据「图库管理管线开发文档.md」）：
+   *  - 代理商 AGENT  / 服务商 SERVICE_PROVIDER：按各自牌级 agentTier / providerTier 取
+   *      见习(L0)=10 / 铜(L1)=16 / 银(L2)=20 / 金(L3)=26 / 钻石(L4)=30。
+   *  - 终端用户 USER：按卡级（§2.2）免费 4 / 银卡 6 / 金卡 10 / 黑金 16。
+   * 牌级为 0..4（或卡级 0..3），越界统一夹到有效区间，避免脏数据导致无限额。
    */
-  private getLimit(user?: { role?: string; vipLevel?: number } | null): number {
+  private getLimit(
+    user?: { role?: string; vipLevel?: number; agentTier?: number; providerTier?: number } | null,
+  ): number {
+    const clamp = (n: number | undefined, max: number) => Math.max(0, Math.min(max, n ?? 0));
     if (!user) return 4;
-    if (user.role === 'SERVICE_PROVIDER') return 30;
-    return (user.vipLevel ?? 0) >= 1 ? 20 : 4;
+    if (user.role === 'AGENT') return TIER_GALLERY_LIMIT[clamp(user.agentTier, 4)];
+    if (user.role === 'SERVICE_PROVIDER') return TIER_GALLERY_LIMIT[clamp(user.providerTier, 4)];
+    // USER：终端用户卡级（§2.2）
+    return USER_GALLERY_LIMIT[clamp(user.vipLevel, 3)];
   }
 
   async upload(
@@ -65,7 +85,7 @@ export class AssetService {
       // 3) 配额事务校验（会话级 advisory 锁防并发超额）
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
-        select: { role: true, vipLevel: true },
+        select: { role: true, vipLevel: true, agentTier: true, providerTier: true },
       });
       const limit = this.getLimit(user);
       let created: any;
@@ -135,17 +155,28 @@ export class AssetService {
   async getQuota(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true, vipLevel: true },
+      select: { role: true, vipLevel: true, agentTier: true, providerTier: true },
     });
     const limit = this.getLimit(user);
     const used = await this.prisma.asset.count({
       where: { userId, type: 'image', status: 'ready', deletedAt: null },
     });
+    // 牌级/卡级：供前端展示「见习/铜/银/金/钻石」或「免费/银卡/金卡/黑金」档位名
+    const tierKind =
+      user?.role === 'AGENT' ? 'agent' : user?.role === 'SERVICE_PROVIDER' ? 'provider' : 'user';
+    const tier =
+      user?.role === 'AGENT'
+        ? user.agentTier ?? 0
+        : user?.role === 'SERVICE_PROVIDER'
+          ? user.providerTier ?? 0
+          : user?.vipLevel ?? 0;
     return {
       used,
       limit,
       role: user?.role,
       plan: (user?.vipLevel ?? 0) >= 1 ? 'PAID' : 'FREE',
+      tier,
+      tierKind,
     };
   }
 
