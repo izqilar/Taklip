@@ -116,10 +116,14 @@ export class AdminService {
     }
     if (params.keyword) {
       const kw = params.keyword;
+      // 关键字跨字段检索：用户ID / 手机号 / 昵称 / 姓名。
+      // 昵称、姓名、ID 均按不区分大小写匹配（Prisma mode:'insensitive' → Postgres ILIKE），
+      // 否则输入小写 "aygulum" 无法匹配库中 "Aygulum"；手机号为数字，无需 insensitive。
       where.OR = [
+        { id: { contains: kw, mode: 'insensitive' } },
         { phone: { contains: kw } },
-        { nickname: { contains: kw } },
-        { realName: { contains: kw } },
+        { nickname: { contains: kw, mode: 'insensitive' } },
+        { realName: { contains: kw, mode: 'insensitive' } },
       ];
     }
 

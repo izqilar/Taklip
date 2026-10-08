@@ -240,8 +240,8 @@ export const UserList = () => {
       chip="总台"
       resource="admin/users"
       searchable
-      searchField="nickname"
-      searchPlaceholder="搜索昵称 / 手机号…"
+      searchServerField="keyword"
+      searchPlaceholder="搜索 ID / 昵称 / 姓名 / 手机号…"
       chipFilters={[
         { label: '全部用户', value: 'all' },
         { label: '客户', value: 'USER', field: 'role' },
