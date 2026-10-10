@@ -7,8 +7,10 @@ import { useLayer } from '../../providers/layerContext';
  * 运营端（用户视角）· 诚邀名单制作（§16.4 入口 A）
  *
  * 唯一基准 = web 端 `apps/web/src/user/GuestLists.tsx`，逐模块对齐（布局 / 字段 / 按钮 / 列表 / 交互）：
- *   1. 顶部：标题 + 「模板列表」下拉 + 格式(xlsx|csv) 下拉 + 「下载模板」；
- *   2. 新建区：名单名称输入 + 「选择模板（可选）」+「新建名单」（创建后进入在线编辑详情页）；
+ *   1. 标题独立成行；
+ *   2. 新建区（同一行，垂直居中、等距）：模板选择 → 文件格式 → 「下载模板」 → 名单名称输入 → 「新建名单」
+ *      —— 模板选择为唯一真值（同时决定下载/导入校验的模板与新建名单的字段快照），
+ *      名称输入框右侧原有的重复「选择模板（可选）」下拉已删除，未留占位容器；
  *   3. 导入区：文件选择 + 目标名单（导入为新名单 / 某名单）+ 追加|覆盖 + 「导入」；
  *   4. 表格：名单名称 / 人数 / 更新时间 / 操作（编辑 → 详情页 · 删除）。
  *
@@ -80,8 +82,12 @@ export default function UserGuestLists() {
   const [importTarget, setImportTarget] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const [templates, setTemplates] = useState<{ id: string; name: string }[]>([]);
+  /**
+   * 模板选择为**唯一真值**：同时驱动「下载模板 / 导入校验」与「新建名单的模板快照」。
+   * 旧实现里名称输入框右侧还有一个「选择模板（可选）」下拉，与顶部下拉完全重复
+   * （两者默认值同为模板列表首项），已合并为本状态，避免两处选择互相矛盾。
+   */
   const [templateId, setTemplateId] = useState('');
-  const [newListTemplateId, setNewListTemplateId] = useState('');
   const [dlFormat, setDlFormat] = useState<'xlsx' | 'csv'>('xlsx');
 
   const loadTemplates = useCallback(async () => {
@@ -158,7 +164,7 @@ export default function UserGuestLists() {
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({
           name,
-          templateId: newListTemplateId || undefined,
+          templateId: templateId || undefined,
           ...(subject ? { subject } : {}),
         }),
       });
@@ -174,7 +180,7 @@ export default function UserGuestLists() {
     } finally {
       setCreating(false);
     }
-  }, [navigate, newListTemplateId, newName, q, subject]);
+  }, [navigate, templateId, newName, q, subject]);
 
   const upload = useCallback(async () => {
     const file = fileRef.current?.files?.[0];
@@ -229,30 +235,15 @@ export default function UserGuestLists() {
 
   return (
     <div style={{ padding: 16 }}>
-      {/* 顶部工具条 */}
-      <div style={{ marginBottom: 16, display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 8 }}>
-        <h2 style={{ margin: 0, marginRight: 'auto', fontSize: 18, fontWeight: 600, color: C.ink1 }}>
-          诚邀名单制作
-        </h2>
-        <select value={templateId} onChange={(e) => setTemplateId(e.target.value)} style={inputStyle}>
-          <option value="">模板列表</option>
-          {templates.map((tp) => (
-            <option key={tp.id} value={tp.id}>
-              {tp.name}
-            </option>
-          ))}
-        </select>
-        <select value={dlFormat} onChange={(e) => setDlFormat(e.target.value as 'xlsx' | 'csv')} style={inputStyle}>
-          <option value="xlsx">xlsx</option>
-          <option value="csv">csv</option>
-        </select>
-        <button style={btnGhost} onClick={() => void downloadTemplate(dlFormat)}>
-          下载模板
-        </button>
-      </div>
+      <h2 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 600, color: C.ink1 }}>诚邀名单制作</h2>
 
-      {/* 新建 */}
+      {/*
+        新建区：模板选择 → 文件格式 → 下载模板 → 名单名称 → 新建名单
+        同一行横向排列、垂直居中、等距（gap 8）；窄屏由 flexWrap 自然换行，
+        选择类控件 flexShrink:0 防止被压缩到不可点，输入框 flex:1 + minWidth 保证可用宽度。
+      */}
       <div
+        data-testid="new-list-form"
         style={{
           marginBottom: 16,
           display: 'flex',
@@ -265,29 +256,40 @@ export default function UserGuestLists() {
           padding: 12,
         }}
       >
-        <input
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          placeholder="名单名称，如：婚礼主桌"
-          style={{ ...inputStyle, flex: '1 1 200px', minWidth: 200 }}
-        />
         <select
-          value={newListTemplateId}
-          onChange={(e) => setNewListTemplateId(e.target.value)}
+          value={templateId}
+          onChange={(e) => setTemplateId(e.target.value)}
           data-testid="new-list-template"
-          style={inputStyle}
+          style={{ ...inputStyle, flexShrink: 0 }}
         >
-          <option value="">选择模板（可选）</option>
+          <option value="">模板列表</option>
           {templates.map((tp) => (
             <option key={tp.id} value={tp.id}>
               {tp.name}
             </option>
           ))}
         </select>
+        <select
+          value={dlFormat}
+          onChange={(e) => setDlFormat(e.target.value as 'xlsx' | 'csv')}
+          style={{ ...inputStyle, flexShrink: 0 }}
+        >
+          <option value="xlsx">xlsx</option>
+          <option value="csv">csv</option>
+        </select>
+        <button style={{ ...btnGhost, flexShrink: 0 }} onClick={() => void downloadTemplate(dlFormat)}>
+          下载模板
+        </button>
+        <input
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          placeholder="名单名称，如：婚礼主桌"
+          style={{ ...inputStyle, flex: '1 1 200px', minWidth: 160 }}
+        />
         <button
           onClick={create}
           disabled={creating || !newName.trim() || !canWrite}
-          style={{ ...btnPrimary, opacity: creating || !newName.trim() || !canWrite ? 0.5 : 1 }}
+          style={{ ...btnPrimary, flexShrink: 0, opacity: creating || !newName.trim() || !canWrite ? 0.5 : 1 }}
         >
           新建名单
         </button>

@@ -6,6 +6,11 @@ import { Link, useNavigate } from 'react-router-dom';
 /**
  * 用户端「我的请柬名单」（§16.4 入口 A：个人中心新增分组「批量请柬」）
  *
+ * 布局：标题独立成行；新建区为**同一行**的
+ *   模板选择 → 文件格式 → 「下载模板」 → 名单名称输入 → 「新建名单」
+ * 其中模板选择是唯一真值，同时决定「下载模板 / 导入校验」所用模板与「新建名单」的字段快照；
+ * 名称输入框右侧原有的重复「选择模板（可选）」下拉已删除（与顶部下拉同源、纯重复）。
+ *
  * 三大能力收口于此：
  *   1. 下载标准化模板（CSV / XLSX）
  *   2. 文件导入（append / overwrite）
@@ -32,8 +37,12 @@ export default function UserGuestLists() {
   const [importTarget, setImportTarget] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const [templates, setTemplates] = useState<{ id: string; name: string }[]>([]);
+  /**
+   * 模板选择为**唯一真值**：同时驱动「下载模板 / 导入校验」与「新建名单的模板快照」。
+   * 旧实现里名称输入框右侧还有一个「选择模板（可选）」下拉，与顶部下拉完全重复
+   * （两者默认值同为模板列表首项），已合并为本状态，避免两处选择互相矛盾。
+   */
   const [templateId, setTemplateId] = useState('');
-  const [newListTemplateId, setNewListTemplateId] = useState('');
   const [dlFormat, setDlFormat] = useState<'xlsx' | 'csv'>('xlsx');
 
   const loadTemplates = useCallback(async () => {
@@ -105,7 +114,7 @@ export default function UserGuestLists() {
       const res = await authFetch('/api/guest-lists', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, templateId: newListTemplateId || undefined }),
+        body: JSON.stringify({ name, templateId: templateId || undefined }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const created = await res.json();
@@ -116,7 +125,7 @@ export default function UserGuestLists() {
     } finally {
       setCreating(false);
     }
-  }, [newName, newListTemplateId, navigate]);
+  }, [newName, templateId, navigate]);
 
   const upload = useCallback(async () => {
     const file = fileRef.current?.files?.[0];
@@ -165,14 +174,24 @@ export default function UserGuestLists() {
 
   return (
     <div className="p-4">
-      <div className="mb-4 flex flex-wrap items-end gap-2">
-        <h2 className="mr-auto text-lg font-semibold text-gray-800">
-          {t('common:userCenter.menu.guestLists', { defaultValue: '诚邀名单制作' })}
-        </h2>
+      <h2 className="mb-4 text-lg font-semibold text-gray-800">
+        {t('common:userCenter.menu.guestLists', { defaultValue: '诚邀名单制作' })}
+      </h2>
+
+      {/*
+        新建区：模板选择 → 文件格式 → 下载模板 → 名单名称 → 新建名单
+        同一行横向排列、垂直居中、等距（gap-2）；窄屏由 flex-wrap 自然换行，
+        各控件加 shrink-0 防止被压缩到不可点，输入框 flex-1 + min-w 保证可用宽度。
+      */}
+      <div
+        data-testid="new-list-form"
+        className="mb-4 flex flex-wrap items-center gap-2 rounded border border-gray-200 bg-gray-50 p-3"
+      >
         <select
           value={templateId}
           onChange={(e) => setTemplateId(e.target.value)}
-          className="rounded border border-gray-300 px-2 py-1.5 text-sm"
+          data-testid="new-list-template"
+          className="shrink-0 rounded border border-gray-300 px-2 py-1.5 text-sm"
         >
           <option value="">{t('common:guest.templateList', { defaultValue: '模板列表' })}</option>
           {templates.map((tp) => (
@@ -184,44 +203,27 @@ export default function UserGuestLists() {
         <select
           value={dlFormat}
           onChange={(e) => setDlFormat(e.target.value as 'xlsx' | 'csv')}
-          className="rounded border border-gray-300 px-2 py-1.5 text-sm"
+          className="shrink-0 rounded border border-gray-300 px-2 py-1.5 text-sm"
         >
           <option value="xlsx">xlsx</option>
           <option value="csv">csv</option>
         </select>
         <button
           onClick={() => void downloadTemplate(dlFormat)}
-          className="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
+          className="shrink-0 rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
         >
           {t('common:guest.downloadBtn', { defaultValue: '下载模板' })}
         </button>
-      </div>
-
-      {/* 新建 */}
-      <div data-testid="new-list-form" className="mb-4 flex flex-wrap items-center gap-2 rounded border border-gray-200 bg-gray-50 p-3">
         <input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           placeholder={t('common:guest.listNamePlaceholder', { defaultValue: '名单名称，如：婚礼主桌' })}
-          className="min-w-[200px] flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-blue-400"
+          className="min-w-[160px] flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-blue-400"
         />
-        <select
-          value={newListTemplateId}
-          onChange={(e) => setNewListTemplateId(e.target.value)}
-          data-testid="new-list-template"
-          className="rounded border border-gray-300 px-2 py-1.5 text-sm"
-        >
-          <option value="">{t('common:guest.applyTemplate', { defaultValue: '选择模板（可选）' })}</option>
-          {templates.map((tp) => (
-            <option key={tp.id} value={tp.id}>
-              {tp.name}
-            </option>
-          ))}
-        </select>
         <button
           onClick={create}
           disabled={creating || !newName.trim()}
-          className="rounded bg-[#c81e42] px-4 py-1.5 text-sm text-white hover:opacity-90 disabled:opacity-50"
+          className="shrink-0 rounded bg-[#c81e42] px-4 py-1.5 text-sm text-white hover:opacity-90 disabled:opacity-50"
         >
           {t('common:guest.createList', { defaultValue: '新建名单' })}
         </button>

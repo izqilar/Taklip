@@ -1,6 +1,10 @@
 /**
- * 验证：web 端「诚邀名单制作」新建名单时，模板选择下拉框（位于名称输入框与新建名单按钮之间）
- * 选中已保存模板后，新建名单按模板字段生成列，编辑器渲染对应列（模板联动）。
+ * 验证：web 端「诚邀名单制作」新建名单时，模板选择下拉框（与「文件格式 / 下载模板」一起
+ * 位于名称输入框**左侧**、同一行垂直居中）选中已保存模板后，新建名单按模板字段生成列，
+ * 编辑器渲染对应列（模板联动）。
+ *
+ * 同时校验布局约束：控件顺序 = 模板→格式→下载→名称→新建；全页仅一个模板下拉
+ * （名称输入框右侧的重复下拉已删除）；窄屏 900px 下无重叠、控件均可点。
  *
  * 运行：node scripts/verify_list_template_link.mjs
  * 前置：web :5173 + server :3000 已启动。
@@ -70,19 +74,92 @@ check('创建特征模板成功', !!tplId, `tplId=${tplId}`);
 await page.goto(`${BASE}/user/invitations/lists`, { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(1500);
 
-/* 3) 新建名单表单：下拉框位于「名称输入框」与「新建名单」按钮之间（DOM 顺序） */
-const order = await page.evaluate(() => {
+/* 3) 新建名单表单布局：模板选择 → 文件格式 → 下载模板 → 名称输入 → 新建名单（同一行） */
+const layout = await page.evaluate(() => {
   const form = document.querySelector('[data-testid="new-list-form"]');
   if (!form) return null;
   const kids = [...form.children].filter((c) => ['INPUT', 'SELECT', 'BUTTON'].includes(c.tagName));
-  return kids.map((c) => c.tagName);
+  const rect = (el) => {
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) };
+  };
+  return {
+    order: kids.map((c) => c.tagName),
+    pageSelects: document.querySelectorAll('select').length,
+    tplSelCount: document.querySelectorAll('select[data-testid="new-list-template"]').length,
+    tplRect: rect(form.querySelector('select[data-testid="new-list-template"]')),
+    fmtRect: rect([...form.querySelectorAll('select')].find((s) => !s.dataset.testid)),
+    dlRect: rect([...form.querySelectorAll('button')].find((b) => b.textContent.includes('下载模板'))),
+    inputRect: rect(form.querySelector('input[placeholder*="名单名称"]')),
+    createRect: rect([...form.querySelectorAll('button')].find((b) => b.textContent.includes('新建名单'))),
+  };
 });
-check('新建表单含「模板选择」下拉', Array.isArray(order), JSON.stringify(order));
+check('新建表单可定位', !!layout, JSON.stringify(layout?.order));
 check(
-  '下拉框位于 名称输入框 与 新建名单按钮 之间',
-  JSON.stringify(order) === JSON.stringify(['INPUT', 'SELECT', 'BUTTON']),
-  JSON.stringify(order),
+  '控件顺序 = 模板 → 格式 → 下载 → 名称 → 新建',
+  JSON.stringify(layout?.order) === JSON.stringify(['SELECT', 'SELECT', 'BUTTON', 'INPUT', 'BUTTON']),
+  JSON.stringify(layout?.order),
 );
+check('名称输入框右侧无重复模板下拉（表单内唯一）', layout?.tplSelCount === 1, `tplSelCount=${layout?.tplSelCount}`);
+/*
+ * 「顶部模板下拉已删除」的结构性判据（不依赖脆弱的全页 select 计数）：
+ *   a) 标题 h2 的下一个兄弟节点就是新建表单 —— 说明原顶部那一行控件容器已整体移除，
+ *      没有被替换成空容器留下占位空隙；
+ *   b) 表单之外的任何 select 都不含模板名选项 —— 说明没有模板下拉残留在别处。
+ */
+const leftover = await page.evaluate(() => {
+  const form = document.querySelector('[data-testid="new-list-form"]');
+  if (!form) return null;
+  const h2 = [...document.querySelectorAll('h2')].find((e) => e.textContent.includes('诚邀名单制作'));
+  const nextIsForm = !!h2 && h2.nextElementSibling === form;
+  const tplNames = [...(form.querySelector('select[data-testid="new-list-template"]')?.options ?? [])]
+    .map((o) => o.textContent)
+    .filter((x) => x && x !== '模板列表' && x !== '选择模板（可选）');
+  const straySelects = [...document.querySelectorAll('select')]
+    .filter((s) => !form.contains(s))
+    .map((s) => ({ testid: s.dataset.testid || null, opts: [...s.options].map((o) => o.textContent) }));
+  const strayWithTpl = straySelects.filter((s) => s.opts.some((o) => tplNames.includes(o))).length;
+  return { nextIsForm, tplNames: tplNames.length, straySelects: straySelects.length, strayWithTpl };
+});
+check('标题下即新建表单（无残留的顶部控件容器/占位空隙）', leftover?.nextIsForm === true, JSON.stringify(leftover));
+check('表单外无残留的模板下拉', leftover?.strayWithTpl === 0, `strayWithTpl=${leftover?.strayWithTpl}（表单外 select=${leftover?.straySelects}，模板数=${leftover?.tplNames}）`);
+const vmid = (r) => (r ? r.y + r.h / 2 : NaN);
+const sameRow = (a, b) => !!a && !!b && Math.abs(vmid(a) - vmid(b)) <= 4;
+check('模板下拉与名称输入框同一行、垂直居中', sameRow(layout?.tplRect, layout?.inputRect), `${vmid(layout?.tplRect)} vs ${vmid(layout?.inputRect)}`);
+check('模板下拉在名称输入框左侧', (layout?.tplRect?.x ?? 1e9) < (layout?.inputRect?.x ?? -1e9), `tpl.x=${layout?.tplRect?.x}, input.x=${layout?.inputRect?.x}`);
+check('格式下拉在模板下拉右侧', (layout?.fmtRect?.x ?? -1e9) > (layout?.tplRect?.x ?? 1e9), `fmt.x=${layout?.fmtRect?.x}, tpl.x=${layout?.tplRect?.x}`);
+check('下载按钮在格式下拉右侧', (layout?.dlRect?.x ?? -1e9) > (layout?.fmtRect?.x ?? 1e9), `dl.x=${layout?.dlRect?.x}, fmt.x=${layout?.fmtRect?.x}`);
+check('新建名单按钮在名称输入框右侧', (layout?.createRect?.x ?? -1e9) > (layout?.inputRect?.x ?? 1e9), `create.x=${layout?.createRect?.x}`);
+
+/* 3b) 窄屏 900px：控件不得重叠、且各自仍有可见尺寸（可点） */
+await page.setViewportSize({ width: 900, height: 900 });
+await page.waitForTimeout(300);
+const narrow = await page.evaluate(() => {
+  const form = document.querySelector('[data-testid="new-list-form"]');
+  if (!form) return null;
+  const els = [...form.children].filter((c) => ['INPUT', 'SELECT', 'BUTTON'].includes(c.tagName));
+  const rects = els.map((e) => {
+    const r = e.getBoundingClientRect();
+    return { tag: e.tagName, x: r.x, y: r.y, w: r.width, h: r.height };
+  });
+  const overlap = [];
+  for (let i = 0; i < rects.length; i += 1) {
+    for (let j = i + 1; j < rects.length; j += 1) {
+      const a = rects[i];
+      const b = rects[j];
+      const ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+      const oy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+      if (ox > 1 && oy > 1) overlap.push(`${a.tag}#${i}-${b.tag}#${j}`);
+    }
+  }
+  return { count: rects.length, overlap, sizes: rects.map((r) => `${r.tag}:${Math.round(r.w)}x${Math.round(r.h)}`) };
+});
+check('窄屏(900px)表单控件数量不变', narrow?.count === 5, `count=${narrow?.count}`);
+check('窄屏(900px)无控件重叠', Array.isArray(narrow?.overlap) && narrow.overlap.length === 0, JSON.stringify(narrow?.overlap));
+check('窄屏(900px)所有控件均有可见尺寸', (narrow?.sizes ?? []).length === 5, JSON.stringify(narrow?.sizes));
+await page.setViewportSize({ width: 1440, height: 900 });
+await page.waitForTimeout(200);
 
 /* 4) 在下拉框选中特征模板 */
 const sel = page.locator('select[data-testid="new-list-template"]');
