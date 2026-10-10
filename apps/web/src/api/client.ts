@@ -294,6 +294,8 @@ export interface BatchProjectView {
   freeRendered: number;
   paidRendered: number;
   purchasedHeadcount: number;
+  /** 免费赠样人次上限（C1：服务端常量 FREE_SAMPLE_CAP = 3，服务端恒返回） */
+  freeSampleCap: number;
   totalRenderable: number;
   alreadyRendered: number;
   remaining: number;

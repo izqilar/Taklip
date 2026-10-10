@@ -10,7 +10,7 @@
  *
  * 数据源：聚合端点 GET /api/invitations/projects/:id/results（跨 job、按锁定快照顺序）。
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, getToken, ApiError, type ProjectResultRow, type BindingHealth } from '@/api/client';
 import {
@@ -216,18 +216,22 @@ export default function InvitationJobs() {
     }
     try {
       const v = await api.getBatchProject(picked.projectId);
-      const q = {
-        freeSampleCap: v.totalRenderable - v.purchasedHeadcount,
+      setQuota({
+        freeSampleCap: v.freeSampleCap,
         purchasedHeadcount: v.purchasedHeadcount,
         totalRenderable: v.totalRenderable,
         remaining: v.remaining,
-      };
-      setQuota(q);
-      const deficit =
-        q.remaining < picked.selectedRecordIds.length
-          ? Math.max(1, picked.selectedRecordIds.length - q.remaining)
-          : 1;
-      setBuyHeadcount(deficit);
+      });
+      // 权威缺口 = 逐行 paywalled 行数（B5）；结果行缺失时回退「勾选数 − 剩余额度」
+      let need = 0;
+      try {
+        const res = await api.projectResults(picked.projectId);
+        need = (res.results ?? []).filter((r) => r.paywalled === true).length;
+      } catch {
+        /* 拉取逐行结果失败不阻断购买弹窗，回退本地估算 */
+      }
+      if (need <= 0) need = Math.max(0, picked.selectedRecordIds.length - v.remaining);
+      setBuyHeadcount(need > 0 ? need : 1);
       setBuyMsg('');
       setBuyOpen(true);
     } catch (e) {
@@ -246,11 +250,13 @@ export default function InvitationJobs() {
     try {
       const r = await api.purchaseInvitation({ projectId: picked.projectId, headcount: n });
       setQuota({
-        freeSampleCap: r.totalRenderable - r.purchasedHeadcount,
+        freeSampleCap: r.freeSampleCap,
         purchasedHeadcount: r.purchasedHeadcount,
         totalRenderable: r.totalRenderable,
         remaining: r.remaining,
       });
+      // 刷新逐行结果：购买后槽位增加，paywalled 行会相应减少，「需解锁 N 人」提示随之更新
+      await loadResults(picked.projectId);
       setBuyMsg(
         t('common:guest.batch.buySuccess', {
           defaultValue: '已成功购买 {{n}} 人次，请重新打开「人员名单选择」勾选更多人员',
@@ -260,7 +266,7 @@ export default function InvitationJobs() {
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [picked, quota, buyHeadcount]);
+  }, [picked, quota, buyHeadcount, loadResults]);
 
   /** 第④步「批量生成」：仅执行生成，前置步骤由按钮 disabled 与下方守卫双重保障 */
   const handleGenerate = () => {
@@ -354,6 +360,17 @@ export default function InvitationJobs() {
     });
   const allChecked = results.length > 0 && checked.size === results.length;
   const failedCount = results.filter((r) => r.status === 'failed').length;
+  /**
+   * 还需购买解锁的人数。唯一真值是后端逐行 `paywalled`（B5）：已渲染行不占额度槽（名额生成时已扣）、
+   * 失败行也不占槽（生成收尾已回退配额），只有「未渲染且槽位用尽」的行才为 paywalled。
+   * 因此它天然规避了「用 勾选数 − remaining 推算」会把失败行算进已用而导致的虚高。
+   * 结果行尚未加载时（B5 后勾选即出结果行，此处仅兜底）回退本地估算。
+   */
+  const unlockCount = useMemo(() => {
+    if (results.length > 0) return results.filter((r) => r.paywalled === true).length;
+    if (!picked || !quota) return 0;
+    return Math.max(0, picked.selectedRecordIds.length - quota.remaining);
+  }, [results, picked, quota]);
   const toggleAll = () =>
     setChecked(allChecked ? new Set() : new Set(results.filter((r) => r.status === 'ok').map((r) => r.recordId)));
 
@@ -434,9 +451,7 @@ export default function InvitationJobs() {
           className="rounded bg-[#e879b4] px-4 py-1.5 text-sm text-white hover:bg-[#d965a0] disabled:opacity-50"
         >
           {t('common:guest.batch.buyQuantity', { defaultValue: '购买数量' })}
-          {picked && quota && quota.remaining < picked.selectedRecordIds.length
-            ? `（需解锁 ${Math.max(1, picked.selectedRecordIds.length - quota.remaining)} 人）`
-            : ''}
+          {unlockCount > 0 ? `（需解锁 ${unlockCount} 人）` : ''}
         </button>
 
         {/* 「购买数量」右侧实时配额标签：可渲染总数 / 剩余数量（随购买或库存变动自动同步） */}
