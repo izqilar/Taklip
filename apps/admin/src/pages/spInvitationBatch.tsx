@@ -406,8 +406,8 @@ export function SPInvitationBatch() {
     try {
       setGenBusy(true);
       // 落盘勾选：先取服务端并集基线，与本地勾选合并后**全量**提交。
-      // 只提交本地勾选会让已锁定的旧记录被判为「被移除」，超过 MINOR_EDIT 限额即
-      // 409 MINOR_EDIT_EXCEEDED，直接阻断生成（锁定后服务端不再「忽略」而是校验）。
+      // 只提交本地勾选会让已锁定的旧记录被判为「被移除」→ 409 RENDERED_RECORD_IMMUTABLE，
+      // 直接阻断生成（后端「增删分离」口径：新增不限量，移除已生成记录一律拒绝）。
       let toSubmit = selected;
       try {
         const base = await apiGet<{ selectedRecordIds?: string[] }>(

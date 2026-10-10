@@ -140,9 +140,10 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, p
 
         const sel = await apiGet<GuestSelectionView>(q(`/invitations/projects/${p.id}/selection`));
         if (!alive || !sel) return;
-        // 保留服务端返回的全量勾选（含其他名单的宾客）：提交时必须一并带回，否则后端会
-        // 判定为「移除/替换已锁定记录」→ 超过 MINOR_EDIT 限额即 409 MINOR_EDIT_EXCEEDED。
-        // 只有当前名单的人员渲染成行，其他名单的 id 仍留在提交集合中。
+        // 保留服务端返回的全量勾选（含其他名单的宾客）：提交时必须一并带回，否则这些
+        // 已锁定 id 会被判为「被移除」→ 409 RENDERED_RECORD_IMMUTABLE（增删分离口径：
+        // 新增不限量，移除已生成记录一律拒绝）。只有当前名单的人员渲染成行，
+        // 其他名单的 id 仍留在提交集合中。
         setSelected((sel.selectedRecordIds ?? []).filter(Boolean));
       } catch (e) {
         if (alive) setError(e instanceof Error ? e.message : String(e));
