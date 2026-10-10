@@ -324,6 +324,12 @@ export interface ProjectResultRow {
   status: 'ok' | 'failed' | 'pending';
   url: string | null;
   error: string | null;
+  /**
+   * 该宾客「尚未渲染且已超出剩余额度」→ 需购买人次（后端 L1264 恒返回布尔值）。
+   * 已渲染行 / 失败行恒为 false（失败行配额已回退，可续跑/重渲）。
+   * UI 上须区别于 status:'failed'：paywalled 既无图也不是失败，不应复用失败态红色样式。
+   */
+  paywalled?: boolean;
 }
 
 export interface ProjectResultsView {
