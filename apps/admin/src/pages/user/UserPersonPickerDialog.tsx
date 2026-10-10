@@ -128,6 +128,8 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, p
         if (!alive) return;
         setRows(res?.records ?? []);
         setColumns(res?.columnDefs ?? []);
+        // 当前名单人员 id（用于默认全选，修复「复用已锁定项目渲染新名单」误报 NOTHING_TO_RENDER）
+        const currentListIds = (res?.records ?? []).map((r) => String(r.id));
 
         const p = await apiPost<BatchProjectView>(q('/invitations/projects'), {
           templateId,
@@ -147,7 +149,12 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, p
         // 已锁定 id 会被判为「被移除」→ 409 RENDERED_RECORD_IMMUTABLE（增删分离口径：
         // 新增不限量，移除已生成记录一律拒绝）。只有当前名单的人员渲染成行，
         // 其他名单的 id 仍留在提交集合中。
-        setSelected((sel.selectedRecordIds ?? []).filter(Boolean));
+        // 默认勾选当前名单全部人员：复用已锁定项目渲染「新名单」时，继承勾选只含旧名单记录，
+        // 若不默认勾选当前名单，用户只点下拉不逐行打勾就确认 → 提交集合只剩已渲染旧记录 →
+        // 后端 targets 全为已渲染 → 误报 NOTHING_TO_RENDER。当前名单人员默认全选，
+        // 用户仍可手动取消；已锁定记录由 setSelection 并集保留、不会被移除（增删分离不变量）。
+        const inherited = (sel.selectedRecordIds ?? []).filter(Boolean).map(String);
+        setSelected(Array.from(new Set([...currentListIds, ...inherited])));
 
         // 取回逐行结果：已成功渲染的宾客不可移除（后端移除即 409 RENDERED_RECORD_IMMUTABLE），
         // 在 UI 上禁掉其取消勾选，避免用户点到必然报错的操作
