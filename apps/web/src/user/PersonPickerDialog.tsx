@@ -4,7 +4,8 @@
  * UI 与交互完全复刻编辑器 BatchGenerateDialog（名单下拉 + 搜索 + 全选/反选 + 已选 N 人
  * + 人员表 + 锁定提示 + 配额提示），但**不跳转编辑器**：
  *  - 内部 listGuestLists → 选名单 → listGuestRecords 拉人；
- *  - createBatchProject({templateId, listId}) 创建/复用批量项目（拿 projectId + 配额 remaining）；
+ *  - createBatchProject({templateId, listId, projectId?}) 创建/复用批量项目（拿 projectId + 配额 remaining）；
+ *    传入 projectId 时后端强制复用该项目，换名单也不会新建项目（否则已购人次会作废）；
  *  - getGuestSelection / setGuestSelection 持久化勾选；
  *  - 确认时回写 {projectId, listId, selectedRecordIds}，由调用方（InvitationJobs）统一发起批量生成。
  *
@@ -30,13 +31,26 @@ interface PersonPickerDialogProps {
   open: boolean;
   /** 已选中的模板（批量渲染 templateId） */
   templateId: string;
+  /**
+   * 既有项目 id（可选）：换名单 / 追加名单时传给后端**强制复用**该项目，
+   * 避免 createProject 按 (templateId, listId) 查重不命中而新建项目，导致已购人次作废。
+   */
+  projectId?: string;
   onClose: () => void;
   onConfirm: (picked: PickedPersons) => void;
   ownerType?: string;
   clientId?: string;
 }
 
-export function PersonPickerDialog({ open, templateId, onClose, onConfirm, ownerType, clientId }: PersonPickerDialogProps) {
+export function PersonPickerDialog({
+  open,
+  templateId,
+  projectId,
+  onClose,
+  onConfirm,
+  ownerType,
+  clientId,
+}: PersonPickerDialogProps) {
   const { t } = useTranslation(['common']);
 
   const [lists, setLists] = useState<ListItem[]>([]);
@@ -84,7 +98,14 @@ export function PersonPickerDialog({ open, templateId, onClose, onConfirm, owner
         setRows(res?.records ?? []);
         setColumns(res?.columnDefs ?? []);
 
-        const p = await api.createBatchProject({ templateId, listId, ownerType, clientId });
+        // 传 projectId → 强制复用既有项目（换名单/追加名单不新建，保住已购人次）
+        const p = await api.createBatchProject({
+          templateId,
+          listId,
+          projectId,
+          ownerType,
+          clientId,
+        });
         if (!alive) return;
         setBatchProjectId(p.id);
         setLocked(!!p.locked);
@@ -104,7 +125,7 @@ export function PersonPickerDialog({ open, templateId, onClose, onConfirm, owner
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, listId, templateId]);
+  }, [open, listId, templateId, projectId]);
 
   /** 实际渲染的列：优先用名单字段定义（按所选模板结构）；缺失时按记录实际字段键推导，避免 ext_* 名单整列空白 */
   const cols = useMemo(() => {

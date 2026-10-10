@@ -979,10 +979,16 @@ export const api = {
   listGuestRecords: (listId: string, page = 1, size = 50) =>
     request<GuestRecordPage>(`/api/guest-lists/${listId}/records?page=${page}&size=${size}`),
 
-  /** 创建/复用批量渲染项目（模板 + 名单） */
+  /**
+   * 创建/复用批量渲染项目（模板 + 名单）。
+   * `projectId` 可选：显式传入既有项目 id 时后端**强制复用**该项目（模板一致才复用，
+   * 不一致回退常规路径且不抛错），用于「换名单 / 追加名单」场景 —— 否则按 (templateId, listId)
+   * 命中才复用，换名单会新建项目导致已购人次作废。不传则行为与旧版逐字一致。
+   */
   createBatchProject: (payload: {
     templateId: string;
     listId: string;
+    projectId?: string;
     ownerType?: string;
     clientId?: string;
   }) =>

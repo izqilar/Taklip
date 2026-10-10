@@ -561,6 +561,7 @@ export default function InvitationJobs() {
         <PersonPickerDialog
           open={personOpen}
           templateId={template.id}
+          projectId={picked?.projectId}
           onClose={() => setPersonOpen(false)}
           onConfirm={onPickPersons}
         />
