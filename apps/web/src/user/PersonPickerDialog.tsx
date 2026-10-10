@@ -144,22 +144,19 @@ export function PersonPickerDialog({
 
   const selectedSet = useMemo(() => new Set(selected), [selected]);
 
-  const toggle = useCallback(
-    (id: string) => {
-      if (locked) return;
-      setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-    },
-    [locked],
-  );
+  // 冻结态（已首渲/已付费）也允许改勾选：后端 B3 会做「锁定 ids ∪ 本次提交 ids」并集，
+  // 且 9583636 起新增/追加不受限（仅「移除/替换」超过 3 条才 409）。此处若在 locked 时
+  // 直接 return，用户买完人次也勾不了人，跨名单追加彻底失效。
+  const toggle = useCallback((id: string) => {
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }, []);
 
   const selectAll = useCallback(() => {
-    if (locked) return;
     const ordered = filtered.map((r) => r.id);
     setSelected((prev) => [...new Set([...prev, ...ordered])]);
-  }, [filtered, locked]);
+  }, [filtered]);
 
   const invert = useCallback(() => {
-    if (locked) return;
     const inView = new Set(filtered.map((r) => r.id));
     setSelected((prev) => {
       const prevSet = new Set(prev);
@@ -167,7 +164,7 @@ export function PersonPickerDialog({
       const keep = prev.filter((id) => !inView.has(id));
       return [...keep, ...next];
     });
-  }, [filtered, locked]);
+  }, [filtered]);
 
   const confirm = useCallback(async () => {
     setError('');
@@ -178,17 +175,14 @@ export function PersonPickerDialog({
     }
     setSubmitting(true);
     try {
-      // 持久化勾选（锁定后跳过，与编辑器一致）
-      // 后端返回「已锁定 ids ∪ 本次提交 ids」的并集，以响应体为准回写调用方（后端契约 note 3）
-      let finalIds = selected;
-      if (!locked) {
-        const saved = await api.setGuestSelection({
-          projectId: batchProjectId,
-          listId,
-          selectedRecordIds: selected,
-        });
-        if (saved?.selectedRecordIds?.length) finalIds = saved.selectedRecordIds;
-      }
+      // 冻结态也必须提交：后端做「锁定 ids ∪ 本次提交 ids」并集，且新增/追加不受限。
+      // 跳过提交会让新勾的人根本进不了 selection，购买人次后依然加不了人。
+      const saved = await api.setGuestSelection({
+        projectId: batchProjectId,
+        listId,
+        selectedRecordIds: selected,
+      });
+      const finalIds = saved?.selectedRecordIds?.length ? saved.selectedRecordIds : selected;
       onConfirm({ projectId: batchProjectId, listId, selectedRecordIds: finalIds });
       onClose();
     } catch (e) {
@@ -216,7 +210,7 @@ export function PersonPickerDialog({
           <label className="text-sm text-gray-700">{t('common:guest.batch.list', { defaultValue: '人员名单' })}</label>
           <select
             value={listId}
-            disabled={locked || !lists.length}
+            disabled={!lists.length}
             onChange={(e) => setListId(e.target.value)}
             className="min-w-[180px] rounded border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-blue-400 disabled:bg-gray-100"
           >
@@ -232,10 +226,10 @@ export function PersonPickerDialog({
             placeholder={t('common:guest.batch.search', { defaultValue: '搜索姓名/单位/桌号' })}
             className="min-w-[160px] flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-blue-400"
           />
-          <button onClick={selectAll} disabled={locked} className="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50">
+          <button onClick={selectAll} className="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50">
             {t('common:guest.batch.selectAll', { defaultValue: '全选' })}
           </button>
-          <button onClick={invert} disabled={locked} className="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50">
+          <button onClick={invert} className="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50">
             {t('common:guest.batch.invert', { defaultValue: '反选' })}
           </button>
           <span className="text-sm text-gray-500">
@@ -245,7 +239,7 @@ export function PersonPickerDialog({
 
         {locked && (
           <div className="bg-amber-50 px-5 py-2 text-xs text-amber-700">
-            {t('common:guest.batch.lockedTip', { defaultValue: '已锁定名单，修改不影响已生成请柬' })}
+            {t('common:guest.batch.lockedTip', { defaultValue: '名单已锁定，已生成的请柬不受影响；可继续追加人员（不可批量移除已生成人员）' })}
           </div>
         )}
 
@@ -275,7 +269,6 @@ export function PersonPickerDialog({
                       <input
                         type="checkbox"
                         checked={selectedSet.has(r.id)}
-                        disabled={locked}
                         onClick={(e) => e.stopPropagation()}
                         onChange={() => toggle(r.id)}
                         className="h-4 w-4 accent-blue-500"
