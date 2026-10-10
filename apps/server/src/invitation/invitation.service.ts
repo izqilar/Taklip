@@ -386,20 +386,19 @@ export class InvitationService implements OnModuleInit {
 
     const snap = await this.prisma.renderSnapshot.findUnique({ where: { projectId: p.id } });
     const lockedIds = ((snap?.recordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
-    const lockedSet = new Set(lockedIds);
 
     // 冻结判定：已落快照 或 已发生付费渲染
     const frozen = !!snap || p.paidRendered > 0;
     if (frozen) {
       const submittedSet = new Set(submitted);
       const removed = lockedIds.filter((id) => !submittedSet.has(id));
-      const added = submitted.filter((id) => !lockedSet.has(id));
-      const diff = removed.length + added.length;
+      // 口径：仅「移除/替换已锁定记录」计入限额，新增/追加不计入（支持整份名单追加）
+      const diff = removed.length;
       if (diff > MINOR_EDIT_LIMIT) {
         throw new HttpException(
           {
             code: 'MINOR_EDIT_EXCEEDED',
-            message: `名单已锁定，仅允许少量局部修改（单次最多 ${MINOR_EDIT_LIMIT} 条）`,
+            message: `名单已锁定，不可整体替换或移除超过 ${MINOR_EDIT_LIMIT} 条宾客`,
           },
           409,
         );
