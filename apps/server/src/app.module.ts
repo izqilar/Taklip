@@ -18,6 +18,8 @@ import { MessageModule } from './message/message.module';
 import { ConsoleModule } from './console/console.module';
 import { ExportModule } from './export/export.module';
 import { ContributionModule } from './contribution/contribution.module';
+import { GuestListModule } from './guest-list/guest-list.module';
+import { InvitationModule } from './invitation/invitation.module';
 import { HealthController } from './health/health.controller';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -43,6 +45,8 @@ import { AppService } from './app.service';
     ConsoleModule,
     ExportModule,
     ContributionModule,
+    GuestListModule,
+    InvitationModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

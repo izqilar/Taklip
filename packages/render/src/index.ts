@@ -49,3 +49,8 @@ export type { WidgetDef, WidgetFieldDef, WidgetCommonField, WidgetDOMProps } fro
 
 // 把 core 的 schema 归一化工具一并 re-export，方便消费端「从 render 单点取用」
 export { normalizeSchema, CURRENT_SCHEMA_VERSION } from '@h5design/core';
+
+// 文本排版测量（与 Konva 逐像素对齐）——编辑器画布接 shrink 时需复用同一套测量真值，
+// 保证「编辑器预览 == 导出所得」的 shrink 决策完全一致（T8 续）。
+export { layoutText, measureFontMetrics, mapWordBreakToKonvaWrap } from './lib/textLayout';
+export type { TextLayoutInput, TextLayoutResult, TextLayoutLine } from './lib/textLayout';

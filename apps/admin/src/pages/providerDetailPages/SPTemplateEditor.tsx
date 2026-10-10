@@ -20,6 +20,7 @@ import { registerEditorServices } from '../../editorServices';
 import { withSubject } from '../../providers/dataProvider';
 import { API_URL, authHeaders } from '../../utility';
 import { App as AntdApp, Button, Tag, Spin, message } from 'antd';
+import GalleryPickerModal from '../../user/GalleryPickerModal';
 
 // 模块求值早于组件渲染：保证 <EditorApp/> 挂载前宿主服务已注入
 registerEditorServices();
@@ -142,5 +143,12 @@ export const SPTemplateEditor = () => {
 
   // 直接渲染 EditorApp，不包裹额外顶栏（元信息已通过 hostMeta 注入内核顶栏）
   // exitPath：运营端没有 web 的 /dashboard 路由，「退出编辑」必须回模板列表
-  return <EditorApp exitPath="/sp/templates" />;
+  return (
+    <>
+      <EditorApp exitPath="/sp/templates" />
+      {/* 编辑器内「选择图片」弹窗：挂载即注册 galleryPicker 桥，使插入/填充图片
+          走图库选择器（受配额限制），而非原生文件上传。模板编辑归属服务商，layer=provider。 */}
+      <GalleryPickerModal layer="provider" />
+    </>
+  );
 };

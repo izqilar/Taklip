@@ -100,7 +100,7 @@
     "rotation": "Rotation",
     "opacity": "Opacity",
     "content": "Content",
-    "name": "Alias",
+    "name": "Қабат атауы",
     "fontSize": "Font Size",
     "fontFamily": "Font Family",
     "fill": "Color",
@@ -187,6 +187,7 @@
     }
   },
   "section": {
+    "layer": "Қабат",
     "transform": "Transform",
     "fill": "Fill",
     "stroke": "Stroke",

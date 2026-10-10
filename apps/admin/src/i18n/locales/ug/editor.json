@@ -100,7 +100,7 @@
     "rotation": "Rotation",
     "opacity": "Opacity",
     "content": "Content",
-    "name": "Alias",
+    "name": "قاتلام نامى",
     "fontSize": "Font Size",
     "fontFamily": "Font Family",
     "fill": "Color",
@@ -187,6 +187,7 @@
     }
   },
   "section": {
+    "layer": "قاتلام",
     "transform": "Transform",
     "fill": "Fill",
     "stroke": "Stroke",

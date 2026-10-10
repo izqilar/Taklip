@@ -15,10 +15,12 @@
  * （`pages/providerDetailPages/SPTemplateEditor.tsx`）中调用 `registerEditorServices()`。
  */
 import { setEditorServices } from '@h5design/editor';
+import type { PlaceholderRegistryEntry } from '@h5design/editor';
 import type { FontMeta } from '@h5design/core';
 import { setFontCatalog, ensureFontsByFamilies, getFontCatalog } from '@h5design/core';
 import { API_URL, authHeaders } from './utility';
 import { withSubject } from './providers/dataProvider';
+import { openGalleryPicker } from './user/galleryPicker';
 
 async function authedFetch<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
@@ -162,6 +164,17 @@ export function registerEditorServices(kind: 'template' | 'work' = 'template'): 
       return getFontCatalog();
     },
 
+    // 图库选择器：打开私有图库弹窗（GalleryPickerModal 注册到 galleryPicker 桥），
+    // 选中即把私有图转存为公开 media URL 交还编辑器。未挂载弹窗时 openGalleryPicker 返回
+    // null，内核会回退到原生文件上传 —— 因此两个编辑器宿主页都必须挂载 <GalleryPickerModal/>。
+    // 选图后转存 media 不占图库配额（服务端仅 purpose=gallery 计配额），与 web 端一致。
+    openAssetPicker: async (opts) => {
+      if (opts?.kind && opts.kind !== 'image') return null;
+      const picked = await openGalleryPicker();
+      if (!picked) return null;
+      return { url: picked.url, id: picked.id, width: picked.width, height: picked.height };
+    },
+
     // 服务端导出（硬门槛）：目前仅「作品(work)」有 Project 实体可导出；
     // 模板(template)尚未提供服务端导出，明确提示而非静默失败。
     getFontLicense: async (_schema, projectId) => {
@@ -201,6 +214,65 @@ export function registerEditorServices(kind: 'template' | 'work' = 'template'): 
         secondsPerPage,
       });
       return { blob, licensed: prep.licensed, missing: prep.missing ?? [] };
+    },
+
+    // ── 批量请柬（决策 D4：批量生成面板在编辑器内）──
+    // 注入后 EditorApp 顶栏才出现「批量生成」按钮；名单归属由服务端按 orgId/clientId 收窄。
+    listGuestLists: (params) => {
+      const q = new URLSearchParams();
+      if (params?.ownerType) q.set('ownerType', params.ownerType);
+      if (params?.clientId) q.set('clientId', params.clientId);
+      const s = q.toString();
+      return authedFetch<{ id: string; name: string; recordCount: number }[]>(
+        `/guest-lists${s ? `?${s}` : ''}`,
+      );
+    },
+    listGuestRecords: (listId, page = 1, size = 50) =>
+      authedFetch<{
+        listId: string;
+        page: number;
+        size: number;
+        total: number;
+        records: { id: string; seq: number; data: Record<string, string | null> }[];
+      }>(`/guest-lists/${listId}/records?page=${page}&size=${size}`),
+    createBatchProject: (payload) =>
+      authedFetch<{ id: string; state: string; remaining: number; locked: boolean }>(
+        '/invitations/projects',
+        { method: 'POST', body: JSON.stringify(payload) },
+      ),
+    getBatchProject: (projectId) =>
+      authedFetch<{
+        id: string;
+        state: string;
+        freeRendered: number;
+        paidRendered: number;
+        purchasedHeadcount: number;
+        totalRenderable: number;
+        alreadyRendered: number;
+        remaining: number;
+        locked: boolean;
+      }>(`/invitations/projects/${projectId}`),
+    getGuestSelection: (projectId) =>
+      authedFetch<{ projectId: string; listId: string; selectedRecordIds: string[] }>(
+        `/invitations/projects/${projectId}/selection`,
+      ),
+    setGuestSelection: (payload) =>
+      authedFetch<{ count: number }>(`/invitations/projects/${payload.projectId}/selection`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    batchGenerate: (payload) =>
+      authedFetch<{ jobId: string; total: number }>('/invitations/batch-generate', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    // ── 占位符注册表（编辑器只绑定、不创建；只读端点 GET /console/placeholders）──
+    listPlaceholders: async () => {
+      const r = await authedFetch<{ items: PlaceholderRegistryEntry[]; total: number }>(
+        '/console/placeholders',
+      );
+      return (r.items ?? []) as PlaceholderRegistryEntry[];
     },
   });
 

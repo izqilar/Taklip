@@ -156,7 +156,7 @@
     "rotation": "Rotation",
     "opacity": "Opacity",
     "content": "Content",
-    "name": "Alias",
+    "name": "Layer name",
     "fontSize": "Font Size",
     "fontFamily": "Font Family",
     "fill": "Color",
@@ -304,6 +304,7 @@
     "typeBlend": "Blend"
   },
   "section": {
+    "layer": "Layer",
     "transform": "Transform",
     "fill": "Fill",
     "stroke": "Stroke",

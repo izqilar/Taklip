@@ -569,4 +569,26 @@ export class ConsoleDashboardController {
     const count = await this.contentSafety.refreshWordCache();
     return { reloaded: true, activeCount: count };
   }
+
+  /* ══════════════════ 占位符注册表（只读 · 供编辑器绑定） ══════════════════
+   * 编辑器「只绑定、不创建」。任何已登录角色都可读注册表，可按 scope/type 预过滤，
+   * 仅返回 status=visible 的条目（hidden 不向编辑器提供，避免绑定已下架占位符）。
+   * 底层仍映射 binding.key，渲染内核零改动。
+   */
+  @Get('placeholders')
+  @Roles('ADMIN', 'AGENT', 'SERVICE_PROVIDER', 'USER')
+  @UseGuards(RolesGuard)
+  async listPlaceholdersPublic(
+    @Query('scope') scope?: string,
+    @Query('type') type?: string,
+  ) {
+    const where: Record<string, unknown> = { status: 'visible' };
+    if (scope) where.scope = scope;
+    if (type) where.type = type;
+    const items = await this.prisma.placeholderRegistry.findMany({
+      where: where as any,
+      orderBy: { createdAt: 'asc' },
+    });
+    return { items, total: items.length };
+  }
 }

@@ -8,6 +8,7 @@ import { dataProvider } from '../providers/dataProvider';
 import { API_URL, getToken, formatCents } from '../utility';
 import { SettingPage, PreviewCard, FlowSteps, Timeline } from '../components/provider/SettingPage';
 import { Pill } from '../components/ui/Pill';
+import { ClientGuestLists } from './spInvitations';
 import { t } from '../i18n/t';
 
 /* ════════════ 与 providerPages / consolePages 同源口径的本地常量（避免跨文件耦合） ════════════ */
@@ -374,6 +375,10 @@ export const SPClientsDetail = () => {
               <div>标签：{arr(rec.tags)}</div>
             </div>
           </PreviewCard>
+          {/* §16.4 触发 A（主路径）：客户详情内嵌「请柬名单」子页，名单挂 clientId */}
+          <div style={{ marginTop: 8 }}>
+            <ClientGuestLists clientId={id} />
+          </div>
           <Form form={form} layout="vertical" initialValues={{ type: 'SERVICE_MSG', channel: 'INNER_SMS' }} onValuesChange={(_, all) => setPv(all)} style={{ marginTop: 8 }}>
             <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 14 }}>
               <Field label="维护类型*">

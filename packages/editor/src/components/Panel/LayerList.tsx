@@ -112,6 +112,21 @@ export default function LayerList() {
               {reg?.icon || '•'}
             </span>
 
+            {/* 变量徽标：该元素已在批量请柬中绑定名单字段（方案 §1.3 图层层） */}
+            {!!el.binding?.key && (
+              <span
+                data-testid={`layer-variable-${el.id}`}
+                title={t('editor:layer.variableTip', {
+                  defaultValue: '已绑定变量 {{key}}',
+                  key: el.binding.key,
+                })}
+                className="inline-flex shrink-0 items-center rounded px-1 text-[10px] font-medium text-white"
+                style={{ background: '#c81e42' }}
+              >
+                {el.binding.key}
+              </span>
+            )}
+
             {editingId === el.id ? (
               <input
                 autoFocus

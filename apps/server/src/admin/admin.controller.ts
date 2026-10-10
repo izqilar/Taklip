@@ -11,6 +11,8 @@ import {
   UseGuards,
   Req,
   NotFoundException,
+  BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { Prisma } from '../../prisma/prisma-client';
@@ -31,6 +33,9 @@ import {
   ListUsersQueryDto,
   UpdateProviderReviewDto,
   UpdateFeeConfigDto,
+  ListPlaceholdersQueryDto,
+  CreatePlaceholderDto,
+  UpdatePlaceholderDto,
 } from './dto/admin.dto';
 import { CreateStaffDto, UpdateStaffDto } from '../console/dto/staff.dto';
 
@@ -609,6 +614,57 @@ export class AdminController {
   @UseGuards(RolesGuard)
   updateFeeConfig(@Body() dto: UpdateFeeConfigDto, @Req() req: AdminRequest) {
     return this.adminService.updateFeeConfig(req.user, dto);
+  }
+
+  /* ════════════════ 占位符注册表（v2 占位符管理 · 2026-10-10） ════════════════
+   * 运营端「系统设置 → 占位符管理」独占配置唯一真相源。语义层用「占位符」组织字段，
+   * 底层仍映射 binding.key，渲染内核零改动；编辑器只绑定、不创建。
+   */
+
+  /** 列表（支持 type / scope / keyword 过滤；keyword 跨 key 与多语言标签模糊匹配） */
+  @Get('placeholders')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  listPlaceholders(@Query() q: ListPlaceholdersQueryDto) {
+    return this.adminService.listPlaceholders({
+      type: q.type,
+      scope: q.scope,
+      keyword: q.keyword,
+      page: q.page ? Number(q.page) : undefined,
+      pageSize: q.pageSize ? Number(q.pageSize) : undefined,
+    });
+  }
+
+  /** 新建占位符 */
+  @Post('placeholders')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  createPlaceholder(@Body() dto: CreatePlaceholderDto) {
+    return this.adminService.createPlaceholder(dto);
+  }
+
+  /** 编辑占位符（key 不可改） */
+  @Patch('placeholders/:id')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  updatePlaceholder(@Param('id') id: string, @Body() dto: UpdatePlaceholderDto) {
+    return this.adminService.updatePlaceholder(id, dto);
+  }
+
+  /** 兼容 PUT 语义（NestJS 方法装饰器堆叠会互相覆盖，单独注册以避免 PATCH 失效） */
+  @Put('placeholders/:id')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  replacePlaceholder(@Param('id') id: string, @Body() dto: UpdatePlaceholderDto) {
+    return this.adminService.updatePlaceholder(id, dto);
+  }
+
+  /** 删除占位符（系统内置 legacy 不可删） */
+  @Delete('placeholders/:id')
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  deletePlaceholder(@Param('id') id: string) {
+    return this.adminService.deletePlaceholder(id);
   }
 
   /* ══════════════════ 我的团队（OrgStaff · orgType=CONSOLE） ══════════════════

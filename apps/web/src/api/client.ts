@@ -3,7 +3,7 @@
  * 自动携带 JWT Authorization header。
  */
 
-import type { BackgroundMusic } from '@h5design/core';
+import type { BackgroundMusic, GuestFieldDef } from '@h5design/core';
 
 /**
  * 身份漂移守卫（静态引入安全：它对 client 只有「类型依赖」，运行时不反向引用，
@@ -267,6 +267,104 @@ export interface AssetItem {
   createdAt: string;
 }
 
+/* ── 批量请柬（名单 / 项目 / 任务）── 字段口径见规范 §9/§10 ── */
+export interface GuestListRow {
+  id: string;
+  name: string;
+  ownerType: string;
+  clientId: string | null;
+  recordCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GuestRecordPage {
+  listId: string;
+  page: number;
+  size: number;
+  total: number;
+  /** 名单字段定义（名单创建时快照的模板字段，如婚礼模板为 ext_husband/ext_wife）；服务人员名单弹窗据此渲染表头与取数 */
+  columnDefs?: GuestFieldDef[];
+  records: { id: string; seq: number; data: Record<string, string | null> }[];
+}
+
+export interface BatchProjectView {
+  id: string;
+  state: 'DRAFT' | 'LOCKED' | 'PAID';
+  freeRendered: number;
+  paidRendered: number;
+  purchasedHeadcount: number;
+  totalRenderable: number;
+  alreadyRendered: number;
+  remaining: number;
+  locked: boolean;
+}
+
+export interface GuestSelectionView {
+  projectId: string;
+  listId: string;
+  selectedRecordIds: string[];
+}
+
+export interface RenderJobRow {
+  id: string;
+  projectId: string;
+  status: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED' | 'PARTIAL';
+  mode: 'FREE_SAMPLE' | 'PAID' | 'RERENDER';
+  progress: number;
+  total: number;
+  error: string | null;
+  createdAt: string;
+}
+
+/** 项目级逐人渲染状态（跨 job 聚合，§18.3） */
+export interface ProjectResultRow {
+  recordId: string;
+  name: string | null;
+  status: 'ok' | 'failed' | 'pending';
+  url: string | null;
+  error: string | null;
+}
+
+export interface ProjectResultsView {
+  projectId: string;
+  total: number;
+  results: ProjectResultRow[];
+}
+
+/** 生成前变量匹配体检（D4 反转：含映射改指向，§2.5） */
+export interface BindingHealth {
+  projectId: string;
+  templateId: string;
+  listId: string;
+  mapping: Record<string, string>;
+  /** 模板变量视图（S5 新增） */
+  vars: { key: string; name?: string | null; label: string; elementIds: string[]; isStandard?: boolean }[];
+  /** 名单可用列（S5 新增，D 模式候选项） */
+  candidates: { key: string; label: string }[];
+  matched: { key: string; label: string; name?: string | null }[];
+  missing: { key: string; label: string; name?: string | null; critical: boolean; remapTargets: string[] }[];
+  emptyHits: { key: string; label: string; rows: number }[];
+  unusedFields: { key: string; label: string }[];
+  /** 字体覆盖体检（非阻断，琥珀色建议）：所选字体未覆盖实际数据字符 */
+  fontCoverage: {
+    elementId: string;
+    fontFamily: string;
+    bindingKey?: string;
+    missingChars: string[];
+    missingCodepoints: number[];
+    affectedRecords: number;
+    totalRecords: number;
+    /** true=仅维吾尔文缺字，已由整段确定性回退处理（设计预期，非缺陷） */
+    uyghurFallback?: boolean;
+  }[];
+  blocked: boolean;
+  /** S5 新增：孤儿变量（模板有、名单无关） */
+  orphaned: string[];
+  /** S5 新增：被取代字段（旧映射指向已重命名的列） */
+  superseded: string[];
+}
+
 /**
  * 令牌 / 本地用户快照的读写已迁到 ./session（单一真值源），
  * 这里统一再导出，保持既有 import 路径不变（authStore 等大量依赖此处的导出）。
@@ -427,16 +525,75 @@ async function request<T>(
   return res.json() as Promise<T>;
 }
 
-/** 二进制响应请求（服务端导出图片/视频）：带 JWT、返回 Blob，不做 JSON 解析 */
-async function requestBlob(path: string, body: unknown): Promise<Blob> {
+/**
+ * 带登录态的裸 fetch —— 供「需要自行处理响应体」的页面使用
+ *（下载 Blob、FormData 上传、需要读自定义状态码/自定义错误体等场景）。
+ *
+ * ★ 铁律（P0 缺陷修复，2026-10-05）：任何打后端 `/api` 的请求都必须走
+ *   `request()` 或本函数，**不得在页面里手搓 `Authorization` 头 + 裸 `fetch`**。
+ *
+ * 历史缺陷：`TemplateFieldDesignPage` / `GuestLists` / `GuestListEditor` 三个页面
+ * 各自手搓 `authHeaders()` 后直接 `fetch()`，绕过了 `request()` 里的
+ * 「401 → refresh token 静默续期 → 重试一次」管线。后果：
+ *   - access token（TTL 2h）过期或被清掉时，这些页面的 GET/POST 直接拿到
+ *     `401 {"message":"Unauthorized"}`，页面把服务端原文当业务错误抛给用户
+ *     （「新建模板」保存时弹出 "Unauthorized"、配置无法保存）；
+ *   - 而走 api client 的其它页面会静默续期、用户毫无感知 ⇒ 表现为「只有这个页面坏」。
+ *
+ * 本函数与 `request()` 共享同一条鉴权策略：注入 Authorization → 401 静默续期重试一次
+ * → 续期也失败则清理会话并抛「登录已失效，请重新登录」（不再把原始 "Unauthorized" 暴露给用户）。
+ * 注意：**不覆盖调用方显式提供的 header**（如 FormData 上传不得强设 Content-Type）。
+ */
+export async function authFetch(
+  path: string,
+  options: RequestInit = {},
+  _retry = false,
+): Promise<Response> {
+  const headers = new Headers(options.headers);
   const token = getToken();
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(`${BASE_URL}${path}`, {
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+
+  // 访问令牌过期（401）：静默续期后重试一次，避免用户被静默登出
+  if (res.status === 401 && !_retry) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) return authFetch(path, options, true);
+    // 续期也失败（refresh token 缺失/过期）：清理整个会话，使 UI 登录态与存储一致
+    clearTokens();
+    localStorage.removeItem('user_info');
+    throw new ApiError(401, 'API 401: 登录已失效，请重新登录', '登录已失效，请重新登录');
+  }
+
+  return res;
+}
+
+/**
+ * 二进制响应请求（服务端导出图片/视频 / 打包下载）：带 JWT、返回 Blob，不做 JSON 解析。
+ * 走 authFetch ⇒ 与 request() 同享「401 静默续期」策略（历史上这里也是裸 fetch，同样会 401）。
+ */
+async function requestBlob(path: string, body: unknown): Promise<Blob> {
+  const res = await authFetch(path, {
     method: 'POST',
-    headers,
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
+  if (!res.ok) {
+    let msg = `请求失败 ${res.status}`;
+    try {
+      const j = await res.json();
+      if (j?.message) msg = Array.isArray(j.message) ? j.message.join('; ') : j.message;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+  return res.blob();
+}
+
+/** 二进制 GET 请求（如打包下载 Zip）：带 JWT、返回 Blob */
+async function requestBlobGet(path: string): Promise<Blob> {
+  const res = await authFetch(path, { method: 'GET' });
   if (!res.ok) {
     let msg = `请求失败 ${res.status}`;
     try {
@@ -766,12 +923,18 @@ export const api = {
   health: () => request<{ status: string; timestamp: string }>('/health'),
 
   // ── 素材 ──
-  uploadAsset: (file: File, meta?: { width?: number; height?: number }) => {
+  uploadAsset: (
+    file: File,
+    meta?: { width?: number; height?: number; derivedFrom?: string },
+  ) => {
     const formData = new FormData();
     formData.append('file', file);
     const params = new URLSearchParams();
     if (meta?.width && meta.width > 0) params.set('width', String(Math.round(meta.width)));
     if (meta?.height && meta.height > 0) params.set('height', String(Math.round(meta.height)));
+    // 图库图经编辑器选择器转存为公开 media 副本时回带源图库图 id，
+    // 使副本可追溯（asset.derivedFrom），支撑「图库图被作品使用」的级联保护与「使用中 N」计数。
+    if (meta?.derivedFrom) params.set('derivedFrom', meta.derivedFrom);
     const qs = params.toString();
     const token = getToken();
     const headers: Record<string, string> = {};
@@ -795,6 +958,132 @@ export const api = {
   // ── 背景音乐 ──
   /** 获取平台预置的系统背景音乐列表（公开接口） */
   getSystemMusic: () => request<BackgroundMusic[]>('/api/music/system'),
+
+  // ── 批量请柬（名单导入与个性化渲染，§10 接口清单）──
+  /** 名单列表（归属由后端按 ownerType/clientId 收窄，前端不自行拼租户条件） */
+  listGuestLists: (params?: { ownerType?: string; clientId?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.ownerType) q.set('ownerType', params.ownerType);
+    if (params?.clientId) q.set('clientId', params.clientId);
+    const s = q.toString();
+    return request<GuestListRow[]>(`/api/guest-lists${s ? `?${s}` : ''}`);
+  },
+
+  /** 分页读取名单人员 */
+  listGuestRecords: (listId: string, page = 1, size = 50) =>
+    request<GuestRecordPage>(`/api/guest-lists/${listId}/records?page=${page}&size=${size}`),
+
+  /** 创建/复用批量渲染项目（模板 + 名单） */
+  createBatchProject: (payload: {
+    templateId: string;
+    listId: string;
+    ownerType?: string;
+    clientId?: string;
+  }) =>
+    request<BatchProjectView>('/api/invitations/projects', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  /** 读取项目状态与配额 */
+  getBatchProject: (projectId: string) =>
+    request<BatchProjectView>(`/api/invitations/projects/${projectId}`),
+
+  /** 读取当前勾选子集 */
+  getGuestSelection: (projectId: string) =>
+    request<GuestSelectionView>(`/api/invitations/projects/${projectId}/selection`),
+
+  /** 保存勾选子集（有序） */
+  setGuestSelection: (payload: {
+    projectId: string;
+    listId: string;
+    selectedRecordIds: string[];
+  }) =>
+    request<{ count: number }>(`/api/invitations/projects/${payload.projectId}/selection`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  /** 发起批量渲染（FREE_SAMPLE 首渲 / PAID 续渲 / RERENDER 重渲） */
+  batchGenerate: (payload: {
+    projectId: string;
+    mode?: 'FREE_SAMPLE' | 'PAID' | 'RERENDER';
+    targetRecordIds?: string[];
+  }) =>
+    request<{ jobId: string; total: number }>('/api/invitations/batch-generate', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  /** 生成前变量匹配体检（D4 反转：含映射改指向） */
+  getInvitationHealth: (projectId: string) =>
+    request<BindingHealth>(`/api/invitations/projects/${projectId}/health`),
+
+  /**
+   * 占位符注册表（只读，供编辑器绑定）。
+   * 返回全部 visible 占位符；编辑器按元素类型本地过滤。
+   * 端点：`GET /api/console/placeholders`（任意已登录角色可读）。
+   */
+  listPlaceholders: () =>
+    request<{ items: any[]; total: number }>('/api/console/placeholders'),
+
+  /** 保存变量映射（D4 反转：variableMapping 持久化） */
+  saveInvitationMapping: (projectId: string, mapping: Record<string, string>) =>
+    request<{ projectId: string; variableMapping: Record<string, string> }>(
+      `/api/invitations/projects/${projectId}/mapping`,
+      { method: 'PUT', body: JSON.stringify({ mapping }) },
+    ),
+
+  /** 获取项目生成期画布元素（D 模式点选用，§2.5） */
+  getProjectElements: (projectId: string) =>
+    request<{
+      projectId: string;
+      templateId: string;
+      previewSchema: unknown;
+      elements: Array<{ id: string; type: string; pageIndex: number; text?: string; bindingKey?: string }>;
+    }>(`/api/invitations/projects/${projectId}/elements`),
+
+  /** 保存 D 模式元素级绑定（project.elementBindings，不回写模板，§2.5） */
+  saveElementBindings: (
+    projectId: string,
+    elementBindings: Record<string, { key: string; name?: string; listField?: string }>,
+  ) =>
+    request<{ projectId: string; elementBindings: unknown }>(
+      `/api/invitations/projects/${projectId}/element-bindings`,
+      { method: 'PUT', body: JSON.stringify({ elementBindings }) },
+    ),
+
+  /** 渲染任务列表（进度 / 结果） */
+  listInvitationJobs: (projectId?: string) =>
+    request<RenderJobRow[]>(`/api/invitations/jobs${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ''}`),
+
+  /** 跨 job 聚合某项目的逐人渲染状态（按锁定快照顺序，§18.3） */
+  projectResults: (projectId: string) =>
+    request<ProjectResultsView>(`/api/invitations/projects/${projectId}/results`),
+
+  /** 跨 job 按 ?recordIds= 子集（或不传=全部）打包 Zip（§18.4） */
+  downloadProjectZip: (projectId: string, recordIds?: string[]) => {
+    const q = recordIds?.length ? `?recordIds=${recordIds.join(',')}` : '';
+    return requestBlobGet(`/api/invitations/projects/${projectId}/download${q}`);
+  },
+
+  /** 删除指定 recordIds 的生成记录（不退配额，§18.4） */
+  deleteProjectResults: (payload: { projectId: string; recordIds: string[] }) =>
+    request<void>(`/api/invitations/projects/${payload.projectId}/results`, {
+      method: 'DELETE',
+      body: JSON.stringify({ recordIds: payload.recordIds }),
+    }),
+
+  /** 单条生成图鉴权下载（逐人预览，§18.3） */
+  downloadJobFile: (jobId: string, recordId: string) =>
+    requestBlobGet(`/api/invitations/jobs/${jobId}/files/${recordId}`),
+
+  /** 断点续跑：仅重渲某 job 内失败/缺失的记录（T6） */
+  resumeInvitationJob: (jobId: string) =>
+    request<{ jobId: string; projectId: string; mode: string; total: number; resumedFrom: string }>(
+      `/api/invitations/jobs/${jobId}/resume`,
+      { method: 'POST', body: JSON.stringify({}) },
+    ),
 
   // ── 代理商工作台（辖区内数据，依赖后端 DataScopeInterceptor 的 REGION 作用域）──
   /** 行政区划树（用于把 agent.regionPath 解析成「省/市/区」可读名） */

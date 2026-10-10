@@ -59,6 +59,46 @@ export function isArabicText(text: string): boolean {
 }
 
 /**
+ * 把阿拉伯文「呈现形式码位」（Presentation Forms，U+FB50–U+FDFF / U+FE70–U+FEFF）
+ * 归一化回基本字母，其余字符原样保留。
+ *
+ * 为什么需要：老式维吾尔文输入法 / 部分文档复制产出的文本里，字母是**预先整形好的
+ * 呈现形式码位**（如 lam 首形 U+FEDF、alef 孤形 U+FE8D）。这些单字呈现形式没有
+ * Unicode 规范分解（canonical decomposition），HarfBuzz / 浏览器整形器**不会对它们
+ * 重新做连写整形**，而是按冻结字形原样绘制 —— 表现为「لا 断成 ﻟ ﺍ」（lam 与 alef
+ * 各自孤立、笔画断开），而同一文本在正确输入的场合（基本字母 U+0644 + U+0627）
+ * 会被整形器正常连成 لا 合字。真机复现（Chromium + UKIJ/Noto/Cairo 字体）已证实：
+ * 基本字母串始终正确连字；任一字符换成呈现形式码位后该字符立即「冻结」脱离连写链。
+ *
+ * 修复方式：NFKC 兼容分解恰好把呈现形式映射回基本字母（U+FEDF→U+0644、
+ * U+FE8D→U+0627、合字 U+FEFB→"لا" 两个基本字母），基本字母随后被整形器正常连字。
+ *
+ * ⚠️ 不能对整串做 `String.prototype.normalize('NFKC')`：那会连带改写全角字符、
+ * 带圈数字等无关兼容字符。这里只对呈现形式区段内的码点逐字符归一化；
+ * ZWNJ（U+200C，维吾尔正字法的合法断连控制符）与 Tatweel（U+0640）不在区段内，不受影响。
+ */
+export function normalizeArabicPresentationForms(text: string): string {
+  if (!text) return text;
+  const chars = Array.from(text);
+  let out: string | null = null;
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
+    const cp = ch.codePointAt(0);
+    const isPresentationForm =
+      cp !== undefined &&
+      ((cp >= 0xfb50 && cp <= 0xfdff) || (cp >= 0xfe70 && cp <= 0xfeff));
+    if (!isPresentationForm) {
+      if (out !== null) out += ch;
+      continue;
+    }
+    // 首次命中呈现形式：把前缀一次性落进输出缓冲（未命中时保持 out===null 原串返回）
+    if (out === null) out = chars.slice(0, i).join('');
+    out += ch.normalize('NFKC');
+  }
+  return out ?? text;
+}
+
+/**
  * 连写能力分类（按 Unicode 阿拉伯字母块的「形」规则）：
  *  - 有 initial 形（能向【下一个】字母连出）的字母：记作「向前连」。无 initial 形的字母
  *    （alef/hamza 系、waw、dal/dhal/reh/zay、teh marbuta、alef maksura 及维吾尔文基于 waw
@@ -98,10 +138,24 @@ const NO_BACK = new Set<number>([
   0x0621, // ء hamza（孤立形，无词尾形）
 ]);
 
+/** lam（合字前半） */
+const LAM = 0x0644;
+/** 必配合字 lam-X 家族（alef 变体）：Unicode 规定这些组合为必配合字（rlig），
+ * 其间【禁止】插延长符——插了会把合字拆成 lam+延长符+alef 三段
+ * （视觉上 لا 断开、alef 成独立高竖笔），正是「编辑态正常、画布断开」的根因：
+ * 编辑态 textarea 走原生 CSS letter-spacing（保留必配合字），画布走延长符替换。 */
+const LAM_ALEF_LIG_NEXT = new Set<number>([
+  0x0622, // آ ALEF WITH MADDA ABOVE
+  0x0623, // أ ALEF WITH HAMZA ABOVE
+  0x0625, // إ ALEF WITH HAMZA BELOW
+  0x0627, // ا ALEF
+]);
+
 /**
  * 找出所有合法延长符插入点。
  * @param chars 字符数组（Array.from，含代理对）
- * @returns 满足「A(前)=chars[i] 向前连、B(后)=chars[i+1] 向后连、二者皆阿拉伯字母（非标点）、且均非延长符」的 i 列表
+ * @returns 满足「A(前)=chars[i] 向前连、B(后)=chars[i+1] 向后连、二者皆阿拉伯字母（非标点）、
+ *          且均非延长符、且不构成 lam-alef 必配合字」的 i 列表
  */
 function findKashidaGaps(chars: string[]): number[] {
   const gaps: number[] = [];
@@ -120,7 +174,9 @@ function findKashidaGaps(chars: string[]): number[] {
       !NO_FORWARD.has(acp) && // A（前/逻辑右）须能向前连（有 initial 形）
       !NO_BACK.has(bcp) && // B（后/逻辑左）须能向后连（有 final 形）
       a !== TATWEEL &&
-      b !== TATWEEL
+      b !== TATWEEL &&
+      // lam-alef 必配合字（لا/لأ/لإ/لآ）：其间插延长符会把合字拆开 → 跳过该对
+      !(acp === LAM && LAM_ALEF_LIG_NEXT.has(bcp))
     ) {
       gaps.push(i);
     }
@@ -207,7 +263,12 @@ export function kashidaForLetterSpacing(
   // 合法插入点：相邻两字母 A(前)向前连、B(后)向后连、同属阿拉伯脚本（词内）、且均非延长符
   const gaps = findKashidaGaps(chars);
   if (gaps.length === 0) {
-    // 没有合法的连写插入点（如整段都是不连写字母）→ 退化为原字间距，至少不破坏连写
+    // 没有合法的连写插入点（如整段都是不连写字母、或只含 lam-alef 必配合字）：
+    //  - Konva 画布：字间距归零回传。非零 letterSpacing 在 ltr/inherit 方向会触发
+    //    Konva 逐字符绘制、彻底拆散连写（rtl 方向虽走整行+ctx.letterSpacing 不拆必配
+    //    合字，但统一归零可同时覆盖两种方向，且与负字间距的处理对称）；
+    //  - DOM 发布/导出：CSS letter-spacing 保留必配合字 → 原值透传。
+    if (forKonva) return { text, letterSpacing: 0 };
     return { text, letterSpacing };
   }
 

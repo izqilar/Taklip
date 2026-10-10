@@ -28,11 +28,14 @@ export default function GalleryModal() {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [cropId, setCropId] = useState<string | null>(null);
 
-  const { list, quota, loading, uploading, uploadPct, upload, remove, load, full } = useGalleryData();
+  const { list, quota, loading, uploading, uploadPct, upload, confirmRemove, load, full } = useGalleryData();
   const { fetchUrl, revokeAll } = usePrivateImage();
 
   useEffect(() => {
     registerGalleryPicker((resolve) => {
+      // 每次打开都静默重拉一次：上次打开后图片可能已被选入作品（引用关系变化），
+      // 保证「已使用 / 未使用」状态标签每次打开都与最新作品引用关系一致。
+      load(true);
       setPending(() => resolve);
       setOpen(true);
     });
@@ -40,7 +43,7 @@ export default function GalleryModal() {
       registerGalleryPicker(null);
       revokeAll();
     };
-  }, [revokeAll]);
+  }, [revokeAll, load]);
 
   const close = useCallback(
     (result: PickedGalleryAsset | null) => {
@@ -144,7 +147,7 @@ export default function GalleryModal() {
                   fetchUrl={fetchUrl}
                   onSelect={() => close({ id: a.id, width: a.width, height: a.height })}
                   onPreview={() => setPreviewId(a.id)}
-                  onDelete={() => remove(a.id)}
+                  onDelete={() => confirmRemove(a)}
                   onCrop={() => setCropId(a.id)}
                 />
               ))}
@@ -156,6 +159,7 @@ export default function GalleryModal() {
         <CropModal
           id={cropId}
           fetchUrl={fetchUrl}
+          quota={quota}
           onClose={() => setCropId(null)}
           onDone={() => {
             setCropId(null);

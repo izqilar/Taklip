@@ -35,8 +35,17 @@ export class AuthController {
    */
   @Post('ticket')
   @UseGuards(AuthGuard('jwt'), new RateLimitGuard(30, 60_000, 'ticket'))
-  issueTicket(@Req() req: Express.Request & { user: { id: string } }) {
-    return this.authService.issueTicket(req.user.id);
+  issueTicket(
+    @Req() req: Express.Request & { user: { id: string; role: string } },
+    @Body('subject') subject?: string,
+  ) {
+    // 跨端桥接票据（运营端用户视角工作台内嵌 Web 页用）：
+    // 监督视角（ADMIN / AGENT 在「用户视角」视察他人）可为「被视察对象」签发 Web 端一次性票据，
+    // 使内嵌的 Web 页以该用户身份渲染其自有数据；其余角色（USER / SERVICE_PROVIDER）只许
+    // 为本账号签发，subject 被忽略 —— 杜绝借 subject 越权冒充他人。
+    const canDelegate = req.user.role === 'ADMIN' || req.user.role === 'AGENT';
+    const targetId = canDelegate && subject ? subject : req.user.id;
+    return this.authService.issueTicket(targetId);
   }
 
   /**

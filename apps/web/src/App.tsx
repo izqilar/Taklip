@@ -60,6 +60,12 @@ const UserNotices = lazy(() => import('./user/Notices'));
 const UserAccount = lazy(() => import('./user/Account'));
 const UserApply = lazy(() => import('./user/Apply'));
 const UserGallery = lazy(() => import('./user/Gallery'));
+// 批量请柬（§16.4 用户端入口）：名单列表 / 在线编辑 / 生成任务
+const UserGuestLists = lazy(() => import('./user/GuestLists'));
+const UserGuestListEditor = lazy(() => import('./user/GuestListEditor'));
+const UserInvitationJobs = lazy(() => import('./user/InvitationJobs'));
+// 模板字段设计（§16.4 入口 A：批量请柬分组，与 admin 共用 @h5design/ui 组件）
+const WebTemplateFieldDesign = lazy(() => import('./user/TemplateFieldDesignPage'));
 const UserUpgrade = lazy(() => import('./user/Upgrade'));
 const NoticeDetailPage = lazy(() => import('./user/NoticeDetailPage'));
 const NoticeFillPage = lazy(() => import('./user/NoticeFillPage'));
@@ -133,6 +139,11 @@ export default function App() {
             <Route path="account" element={<UserAccount />} />
             {/* 资源中心：我的图库（§2.2 终端用户图片管理） */}
             <Route path="gallery" element={<UserGallery />} />
+            {/* 批量请柬（§16.4 入口 A）：名单模板下载 / 导入 / 在线编辑 + 生成任务进度 */}
+            <Route path="invitations/lists" element={<UserGuestLists />} />
+            <Route path="invitations/lists/:listId" element={<UserGuestListEditor />} />
+            <Route path="invitations/jobs" element={<UserInvitationJobs />} />
+            <Route path="invitations/fields" element={<WebTemplateFieldDesign />} />
             <Route path="upgrade" element={<UserUpgrade />} />
             {/* 入驻申请：加入团队 / 资格升级双隧道入口 */}
             <Route path="apply" element={<UserApply />} />

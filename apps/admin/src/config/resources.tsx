@@ -30,6 +30,8 @@ import {
   UserAddOutlined,
   FontSizeOutlined,
   DeleteOutlined,
+  ProfileOutlined,
+  UnorderedListOutlined,
 } from '@ant-design/icons';
 import type { LayerKey } from './permGroups';
 
@@ -92,6 +94,8 @@ export type MenuGroupKey =
   | 'message'
   | 'personal'
   | 'resourcecenter' // 资源中心（我的图库 + 我的作品；用户/代理商共用）
+  // ── 请柬事务中心（§18：与 web 端 USER_CENTER_NAV 同名的独立一级分组）──
+  | 'invitationcenter' // 模板字段设计 / 诚邀名单制作 / 请柬批量生成（用户视角专属，对齐 web 端三项）
   // ── 服务商视角七组（原型 MENU.provider）──
   | 'databoard'
   | 'orderfulfill'
@@ -104,6 +108,8 @@ export type MenuGroupKey =
   | 'regionops' // 辖区运营
   | 'recruit' // 招商拓展（代理商专有拓客）
   | 'contract' // 合同中枢（总台治理专属分组）
+  // ── 批量请柬（§16.4 触发 B：服务商侧栏「请柬营销」分组）──
+  | 'invitation'
   | 'recycle'; // 回收站（僵尸用户，侧栏最底部）
 
 /** 侧栏自上而下的分组展示顺序（不依赖 resources 声明顺序） */
@@ -117,10 +123,14 @@ export const GROUP_ORDER: MenuGroupKey[] = [
   'ops',
   'regionops',
   'recruit',
-  'resourcecenter',
+  // ── 用户视角分组顺序对齐 web 端 USER_CENTER_NAV：交易中心 → 资源中心 → 请柬事务中心 ──
   'trade',
+  'resourcecenter',
+  'invitationcenter',
   'orderfulfill',
   'servicecontent',
+  // ── 批量请柬：插在「服务与内容」之后（§16.4 触发 B：SP 侧栏「请柬营销」）──
+  'invitation',
   'qualification',
   'finance',
   // ── 总台治理专属：合同中枢（财务中心之后、评价与反馈之前）──
@@ -145,10 +155,14 @@ export const GROUP_LABEL: Record<MenuGroupKey, string> = {
   personal: '个人中心',
   // ── 资源中心（用户/代理商图库与作品入口）──
   resourcecenter: '资源中心',
+  // ── 请柬事务中心（独立一级分组，名称与 web 端 USER_CENTER_NAV 分组同名）──
+  invitationcenter: '请柬事务中心',
   // ── 服务商视角七组（原型 MENU.provider）──
   databoard: '数据看板',
   orderfulfill: '订单履约',
   servicecontent: '服务与内容',
+  // ── 批量请柬（服务商代客/自营：名单管理 + 生成任务）──
+  invitation: '请柬营销',
   qualification: '资质中心',
   teamsetting: '工作台设置',
   // ── 代理商视角四组（v2）──
@@ -283,6 +297,11 @@ export const resources: ResourceProps[] = [
     name: 'admin/fonts',
     list: '/admin/fonts',
     meta: META('字体管理', 'console', { group: 'system', icon: <FontSizeOutlined /> }),
+  },
+  {
+    name: 'admin/placeholders',
+    list: '/admin/placeholders',
+    meta: META('占位符管理', 'console', { group: 'system', icon: <ProfileOutlined /> }),
   },
   {
     name: 'admin/audit-logs',
@@ -492,6 +511,29 @@ export const resources: ResourceProps[] = [
     list: '/sp/works',
     meta: META('作品管理', 'provider', { group: 'servicecontent', icon: <FileImageOutlined /> }),
   },
+  // ── 批量请柬（§16.4 触发 B：SP 侧栏「请柬营销」分组）──
+  // 主路径仍是「客户管理 → 客户详情 → 请柬名单」（触发 A，代客上下文）；
+  // 此处为辅路径，覆盖服务商自营样板（ownerType=ORG，clientId 可空）。
+  {
+    name: 'sp/invitations/lists',
+    list: '/sp/invitations/lists',
+    meta: META('请柬名单', 'provider', { group: 'invitation', icon: <TeamOutlined /> }),
+  },
+  {
+    name: 'sp/invitations/jobs',
+    list: '/sp/invitations/jobs',
+    meta: META('生成任务', 'provider', { group: 'invitation', icon: <FileImageOutlined /> }),
+  },
+  {
+    name: 'sp/invitations/generate',
+    list: '/sp/invitations/generate',
+    meta: META('批量生成', 'provider', { group: 'invitation', icon: <FileImageOutlined /> }),
+  },
+  {
+    name: 'sp/invitations/fields',
+    list: '/sp/invitations/fields',
+    meta: META('模板字段设计', 'provider', { group: 'invitation', icon: <ProfileOutlined /> }),
+  },
   {
     name: 'sp/templates',
     list: '/sp/templates',
@@ -609,6 +651,24 @@ export const resources: ResourceProps[] = [
     name: 'user/works',
     list: '/user/works',
     meta: META('我的作品', 'user', { group: 'resourcecenter', icon: <FileImageOutlined /> }),
+  },
+  // ── 请柬事务中心（独立一级分组）：严格对齐 web 端 USER_CENTER_NAV 同名分组的三项 ──
+  // 基准：apps/web/src/user/shared.tsx USER_CENTER_NAV（顺序 模板字段设计 → 诚邀名单制作 → 请柬批量生成）
+  // 运营端已原生实现，不再 iframe 内嵌 web 端；路由路径与 web 端逐一对齐。
+  {
+    name: 'user/invitations/fields',
+    list: '/user/invitations/fields',
+    meta: META('模板字段设计', 'user', { group: 'invitationcenter', icon: <UnorderedListOutlined /> }),
+  },
+  {
+    name: 'user/invitations/lists',
+    list: '/user/invitations/lists',
+    meta: META('诚邀名单制作', 'user', { group: 'invitationcenter', icon: <UserAddOutlined /> }),
+  },
+  {
+    name: 'user/invitations/jobs',
+    list: '/user/invitations/jobs',
+    meta: META('请柬批量生成', 'user', { group: 'invitationcenter', icon: <FileTextOutlined /> }),
   },
   {
     name: 'user/reviews',

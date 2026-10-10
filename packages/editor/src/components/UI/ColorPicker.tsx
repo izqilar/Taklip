@@ -194,6 +194,31 @@ const PALETTE_COLORS = [
 const CHECKER =
   'linear-gradient(45deg, rgba(148,163,184,0.45) 25%, transparent 25%, transparent 75%, rgba(148,163,184,0.45) 75%, rgba(148,163,184,0.45)), linear-gradient(45deg, rgba(148,163,184,0.45) 25%, transparent 25%, transparent 75%, rgba(148,163,184,0.45) 75%, rgba(148,163,184,0.45))';
 
+/* ───────── 竖向色相条：位置 ↔ 色相 单一真值（★ 三处必须成对修改） ─────────
+ * 映射：归一化位置 t∈[0,1] 自上而下 → hue = t*360（0° 红在顶、360° 红在底）。
+ *   ① 拖拽取色：handleHueDrag 用 hueFromNorm(y)
+ *   ② 滑块位置：thumb 的 top 用 normFromHue(hsv.h)
+ *   ③ 色条渐变：HUE_TRACK_BG（由同一映射按 60° 步长生成停靠点）
+ *
+ * 为什么 60° 步长就够精确：HSL/HSV → RGB 在每一个 60° 区间内对 hue 是**线性**函数
+ * （如 h∈[0,60] 时 RGB = (255, 255·h/60, 0)），因此 sRGB 线性插值 == 精确色相轴，
+ * 不会出现中间档位偏色。
+ *
+ * ⚠️ 历史缺陷（务必别再犯）：本渐变曾被换成「手绘彩虹」
+ *   linear-gradient(to bottom, #f00 0%, #ff00a0 17%, #8000ff 33%, #0080ff 50%,
+ *                   #00ffd5 67%, #00ff00 83%, #ffff00 92%, #f00 100%)
+ * 它的色相顺序与位置映射**方向相反且非等步长**（0%→红、17%→322°、33%→270°…），
+ * 而映射未同步改动 → 在色条上点「绿色」（t≈0.33）实际取到 hue≈270（紫），
+ * 于是左侧预览区/滑块显示紫色。改色相条外观必须连带改这里的映射，三者永远一致。 */
+const HUE_STOPS = [0, 60, 120, 180, 240, 300, 360] as const;
+const hueFromNorm = (t: number) => t * 360;
+const normFromHue = (h: number) => h / 360;
+const HUE_TRACK_BG = `linear-gradient(to bottom, ${HUE_STOPS.map((h, i) => {
+  const { r, g, b } = hsvToRgb(h, 1, 1);
+  const pct = ((i / (HUE_STOPS.length - 1)) * 100).toFixed(4);
+  return `rgb(${r}, ${g}, ${b}) ${pct}%`;
+}).join(', ')})`;
+
 /** 色值输入框支持的颜色格式（设计稿左上「Hex ▾」下拉） */
 type ColorFormat = 'hex' | 'rgb' | 'hsl';
 
@@ -234,6 +259,13 @@ interface ColorPickerProps {
   onChange: (css: string) => void;
   onClear?: () => void;
   onConfirm?: () => void;
+  /**
+   * 历史提交（手势结束 / 输入确认 / 预设点选 / 确定）。
+   * 与 onChange 解耦：onChange 在拖拽过程中**持续**触发（实时预览），
+   * onCommit 仅在一次取色手势结束（mouseup）时触发一次，避免 undo 栈被每帧刷爆。
+   * 取色器「暂存」流程（staged）下由外层传入 undefined，使未确认的颜色不写历史。
+   */
+  onCommit?: () => void;
   /** 点击标题栏 X：由外层负责关闭弹层（并丢弃未确认的取色） */
   onClose?: () => void;
   /**
@@ -261,6 +293,7 @@ export default function ColorPicker({
   onChange,
   onClear,
   onConfirm,
+  onCommit,
   onClose,
   onEyedropper,
   clearLabel,
@@ -273,8 +306,17 @@ export default function ColorPicker({
   const eyedropperText = eyedropperLabel ?? t('editor:colorPicker.eyedropper', { defaultValue: '取色器' });
 
   const initial = parseCssColor(value);
+  /**
+   * 初始透明度：仅当传入值是「无颜色」哨兵（'transparent'/空串）时才兜底为 1。
+   * 否则沿用解析出的 alpha——这样渐变停靠点用 `rgba(r,g,b,0)` 显式表达「透明红色」时
+   * 仍能被原样往返编辑（不会被强改回不透明，破坏渐变淡出）。
+   * 修复：页面/元素从未设置背景（value='transparent'）时，取色器初始 alpha 曾被错置为 0，
+   * 导致在面板里任选颜色都发出 `rgba(...,0)`（=transparent），背景永远透明。
+   */
+  const initialAlpha =
+    value && value.trim().toLowerCase() !== 'transparent' && value.trim() !== '' ? initial.a : 1;
   const [hsv, setHsv] = useState<{ h: number; s: number; v: number }>(() => rgbToHsv(initial));
-  const [alpha, setAlpha] = useState(initial.a);
+  const [alpha, setAlpha] = useState(initialAlpha);
   const [tab, setTab] = useState<'custom' | 'palette'>('custom');
   const [format, setFormat] = useState<ColorFormat>('hex');
   const [formatOpen, setFormatOpen] = useState(false);
@@ -283,6 +325,14 @@ export default function ColorPicker({
   const svRef = useRef<HTMLDivElement>(null);
   const hueRef = useRef<HTMLDivElement>(null);
   const alphaRef = useRef<HTMLDivElement>(null);
+  /**
+   * hsv / alpha 的「最新值镜像」：拖拽过程中 setHsv/setAlpha 是异步的，
+   * 而 window 上的 mouseup 回调闭包捕获的是 mousedown 时的 commit（陈旧 hsv），
+   * 直接读状态会得到「起始色」而非「拖拽终点色」。
+   * 因此拖拽与提交一律走 ref，保证实时预览与最终落库颜色都是拖拽终点值。
+   */
+  const hsvRef = useRef(hsv);
+  const alphaValRef = useRef(alpha);
 
   const rgba: RgbaColor = { ...hsvToRgb(hsv.h, hsv.s, hsv.v), a: alpha };
   const pure = hsvToRgb(hsv.h, 1, 1);
@@ -292,23 +342,28 @@ export default function ColorPicker({
     setInputText(formatByFormat({ ...hsvToRgb(hsv.h, hsv.s, hsv.v), a: alpha }, format));
   }, [hsv, alpha, format]);
 
+  /** 落库提交：读 ref 中的最新值（拖拽终点），并触发一次历史提交。 */
   const commit = useCallback(() => {
-    onChange(rgbaToCss({ ...hsvToRgb(hsv.h, hsv.s, hsv.v), a: alpha }));
-  }, [hsv, alpha, onChange]);
-
-  const applyRgb = useCallback((rgb: { r: number; g: number; b: number }) => {
-    setHsv(rgbToHsv({ ...rgb, a: 1 }));
-  }, []);
+    const { h, s, v } = hsvRef.current;
+    const a = alphaValRef.current;
+    onChange(rgbaToCss({ ...hsvToRgb(h, s, v), a }));
+    onCommit?.();
+  }, [onChange, onCommit]);
 
   const commitInput = useCallback(() => {
     const rgb = parseByFormat(inputText, format);
     if (!rgb) {
-      setInputText(formatByFormat({ ...hsvToRgb(hsv.h, hsv.s, hsv.v), a: alpha }, format));
+      setInputText(formatByFormat({ ...hsvToRgb(hsvRef.current.h, hsvRef.current.s, hsvRef.current.v), a: alphaValRef.current }, format));
       return;
     }
-    applyRgb(rgb);
-    onChange(rgbaToCss({ ...rgb, a: alpha }));
-  }, [inputText, format, hsv, alpha, applyRgb, onChange]);
+    const nextHsv = rgbToHsv({ ...rgb, a: 1 });
+    hsvRef.current = nextHsv;
+    setHsv(nextHsv);
+    const css = rgbaToCss({ ...rgb, a: alphaValRef.current });
+    setInputText(formatByFormat({ ...rgb, a: alphaValRef.current }, format));
+    onChange(css);
+    onCommit?.();
+  }, [inputText, format, onChange, onCommit]);
 
   /* ───────── 拖拽：按住标题栏移动弹窗 ───────── */
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -335,6 +390,10 @@ export default function ColorPicker({
   };
 
   /* ───────── 色板交互 ───────── */
+  /**
+   * 拖拽取色（饱和度/明度面板）：实时把颜色同步给外层（onChange），
+   * 不等待 mouseup——画布上的选中对象会即时跟随变化。同时维护 ref 镜像。
+   */
   const handleSvDrag = useCallback(
     (e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent) => {
       const rect = svRef.current?.getBoundingClientRect();
@@ -343,9 +402,12 @@ export default function ColorPicker({
       const clientY = 'touches' in e ? e.touches[0]?.clientY ?? e.changedTouches[0]?.clientY : e.clientY;
       const x = clamp((clientX - rect.left) / rect.width, 0, 1);
       const y = clamp((clientY - rect.top) / rect.height, 0, 1);
-      setHsv((prev) => ({ ...prev, s: x, v: 1 - y }));
+      const next = { h: hsvRef.current.h, s: x, v: 1 - y };
+      hsvRef.current = next;
+      setHsv(next);
+      onChange(rgbaToCss({ ...hsvToRgb(next.h, next.s, next.v), a: alphaValRef.current }));
     },
-    [],
+    [onChange],
   );
 
   const handleHueDrag = useCallback(
@@ -354,9 +416,15 @@ export default function ColorPicker({
       if (!rect) return;
       const clientY = 'touches' in e ? e.touches[0]?.clientY ?? e.changedTouches[0]?.clientY : e.clientY;
       const y = clamp((clientY - rect.top) / rect.height, 0, 1);
-      setHsv((prev) => ({ ...prev, h: y * 360 }));
+      // 与色条渐变 HUE_TRACK_BG 共用同一映射，保证「点到哪个颜色就是哪个颜色」
+      const nextH = hueFromNorm(y);
+      const prev = hsvRef.current;
+      const next = { ...prev, h: nextH };
+      hsvRef.current = next;
+      setHsv(next);
+      onChange(rgbaToCss({ ...hsvToRgb(nextH, prev.s, prev.v), a: alphaValRef.current }));
     },
-    [],
+    [onChange],
   );
 
   const handleAlphaDrag = useCallback(
@@ -365,9 +433,12 @@ export default function ColorPicker({
       if (!rect) return;
       const clientX = 'touches' in e ? e.touches[0]?.clientX ?? e.changedTouches[0]?.clientX : e.clientX;
       const x = clamp((clientX - rect.left) / rect.width, 0, 1);
+      alphaValRef.current = x;
       setAlpha(x);
+      const { h, s, v } = hsvRef.current;
+      onChange(rgbaToCss({ ...hsvToRgb(h, s, v), a: x }));
     },
-    [],
+    [onChange],
   );
 
   const startDrag = useCallback(
@@ -395,11 +466,15 @@ export default function ColorPicker({
   const pickPreset = useCallback(
     (c: string) => {
       const parsed = parseCssColor(c);
-      setHsv(rgbToHsv(parsed));
+      const next = rgbToHsv(parsed);
+      hsvRef.current = next;
+      setHsv(next);
+      alphaValRef.current = parsed.a;
       setAlpha(parsed.a);
       onChange(rgbaToCss(parsed));
+      onCommit?.();
     },
-    [onChange],
+    [onChange, onCommit],
   );
 
   const alphaPct = Math.round(alpha * 100);
@@ -505,7 +580,10 @@ export default function ColorPicker({
               data-testid="colorpicker-hue"
               className="relative w-[22px] shrink-0 cursor-pointer overflow-hidden rounded-full"
               style={{
-                background: 'linear-gradient(to bottom, #f00 0%, #ff00a0 17%, #8000ff 33%, #0080ff 50%, #00ffd5 67%, #00ff00 83%, #ffff00 92%, #f00 100%)',
+                // ★ 必须与 hueFromNorm / normFromHue 同源（见 HUE_TRACK_BG 注释）：
+                //   色条自上而下 = 0°→360°，与拖拽/滑块位置逐段对应。
+                //   换成任何「手绘彩虹」都会立刻造成「点绿色得到紫色」。
+                background: HUE_TRACK_BG,
               }}
               onMouseDown={(e) => startDrag(handleHueDrag, e)}
               onTouchStart={(e) => startDrag(handleHueDrag, e)}
@@ -513,7 +591,7 @@ export default function ColorPicker({
               <div
                 className="pointer-events-none absolute left-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#111827] shadow-[0_0_0_2px_rgba(255,255,255,0.9)]"
                 style={{
-                  top: `${(hsv.h / 360) * 100}%`,
+                  top: `${normFromHue(hsv.h) * 100}%`,
                   backgroundColor: `rgb(${pure.r}, ${pure.g}, ${pure.b})`,
                 }}
               />
@@ -609,7 +687,13 @@ export default function ColorPicker({
               step={1}
               data-testid="colorpicker-opacity"
               value={alphaPct}
-              onChange={(e) => setAlpha(clamp(Number(e.target.value), 0, 100) / 100)}
+              onChange={(e) => {
+                const a = clamp(Number(e.target.value), 0, 100) / 100;
+                // 同步 ref 镜像：commit() 在 blur 时读取 alphaValRef.current（拖拽终点值），
+                // 仅更新 state 而不更新 ref 会导致输入的不透明度在失焦时被陈旧值覆盖。
+                alphaValRef.current = a;
+                setAlpha(a);
+              }}
               onBlur={commit}
               className="cp-field h-9 w-11 shrink-0 px-1 text-right text-xs"
             />

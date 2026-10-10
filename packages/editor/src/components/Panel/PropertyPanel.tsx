@@ -3,16 +3,17 @@ import { useTranslation } from 'react-i18next';
 import { useSelectedElement } from '../../store/editorStore';
 import ComponentSettingsPanel from './ComponentSettingsPanel';
 import PageSettingsPanel from './PageSettingsPanel';
+import VariablePanel from './VariablePanel';
 
-/* ───────── 属性面板（双选项卡容器） ───────── */
+/* ───────── 属性面板（三选项卡容器） ───────── */
 
 export default function PropertyPanel() {
   const { t } = useTranslation(['editor']);
   const el = useSelectedElement();
-  const [topTab, setTopTab] = useState<'component' | 'page'>('component');
+  const [topTab, setTopTab] = useState<'component' | 'page' | 'variable'>('component');
 
-  // 未选中元素时只能看到页面设置
-  const activeTab = el ? topTab : 'page';
+  // 未选中元素时只能看到页面设置（变量面板是模板级视图，不依赖选中）
+  const activeTab = el || topTab === 'variable' ? topTab : 'page';
 
   return (
     <aside className="flex h-full w-80 shrink-0 border-l border-gray-200 bg-white">
@@ -44,11 +45,29 @@ export default function PropertyPanel() {
           >
             {t('editor:panel.pageSettings')}
           </button>
+          <button
+            type="button"
+            data-testid="tab-variable"
+            onClick={() => setTopTab('variable')}
+            className={`flex-1 py-3 text-base font-medium transition ${
+              activeTab === 'variable'
+                ? 'border-b-2 border-blue-500 text-blue-500'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            {t('editor:panel.variables', { defaultValue: '变量' })}
+          </button>
         </div>
 
         {/* 内容区 */}
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
-          {activeTab === 'component' && el ? <ComponentSettingsPanel /> : <PageSettingsPanel />}
+          {activeTab === 'variable' ? (
+            <VariablePanel />
+          ) : activeTab === 'component' && el ? (
+            <ComponentSettingsPanel />
+          ) : (
+            <PageSettingsPanel />
+          )}
         </div>
       </div>
     </aside>

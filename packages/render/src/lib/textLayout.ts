@@ -27,7 +27,7 @@
  * 参考实现：node_modules/konva/lib/shapes/Text.js（_setTextData / _addTextLine / _sceneFunc）。
  */
 
-import { kashidaForLetterSpacing } from '@h5design/core';
+import { kashidaForLetterSpacing, normalizeArabicPresentationForms } from '@h5design/core';
 
 export interface TextLayoutLine {
   /** 该行的文本内容 */
@@ -280,11 +280,17 @@ export function layoutText(input: TextLayoutInput): TextLayoutResult {
   const shouldWrap = wrap !== 'none';
   const wrapAtWord = wrap !== 'char' && shouldWrap;
 
+  // 呈现形式归一化（必须在 kashida / 测量 / 折行之前）：老式输入法或文档复制会把
+  // 字母写成预先整形的呈现形式码位（U+FB50–FDFF / U+FE70–FEFF），整形器不会对它们
+  // 重新连写，表现为「لا 断成 ﻟ ﺍ」。归一化回基本字母后整形器恢复正常连字；
+  // 归一化后的文本同时用于测量与折行，保证 DOM 渲染行文本与测量同源一致。
+  const normalizedText = normalizeArabicPresentationForms(input.text ?? '');
+
   // 阿拉伯文等连写文字：把「字间距」转译为延长符（kashida）展开，保持笔画相连。
   // 展开后的文本用于测量 / 折行，剩余字间距归零（间隙改由延长符承担）。
   // 非阿拉伯文或字间距≤0 时原样返回，letterSpacing 保留。
   const userSpacing = input.letterSpacing ?? 0;
-  const kash = kashidaForLetterSpacing(input.text ?? '', userSpacing, fontSize);
+  const kash = kashidaForLetterSpacing(normalizedText, userSpacing, fontSize);
   const spacing = kash.letterSpacing;
 
   const fixedWidth = typeof input.width === 'number' && input.width > 0;
@@ -307,7 +313,6 @@ export function layoutText(input: TextLayoutInput): TextLayoutResult {
 
   // Konva: lines = this.text().split('\n')
   const paragraphs = String(kash.text ?? '').split('\n');
-
   outer: for (let i = 0; i < paragraphs.length; i++) {
     let line = paragraphs[i];
     let lineWidth = lineWidthOf(line);

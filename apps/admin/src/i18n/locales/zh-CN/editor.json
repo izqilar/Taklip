@@ -156,7 +156,7 @@
     "rotation": "旋转",
     "opacity": "透明度",
     "content": "内容",
-    "name": "组件别名",
+    "name": "图层名",
     "fontSize": "字号",
     "fontFamily": "字体",
     "fill": "颜色",
@@ -304,6 +304,7 @@
     "typeBlend": "混合模式"
   },
   "section": {
+    "layer": "图层",
     "transform": "变换",
     "fill": "填充",
     "stroke": "描边",

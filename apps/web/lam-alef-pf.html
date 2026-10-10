@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>Presentation forms vs base letters</title>
+<style>
+  html, body { margin: 0; padding: 10px; background: #fff; color: #000; }
+  .row { margin: 4px 0; border-bottom: 1px dashed #bbb; }
+  .name { font-size: 12px; font-family: monospace; }
+  .sample { font-size: 48px; white-space: nowrap; direction: rtl; line-height: 1.35; }
+</style>
+</head>
+<body>
+<div id="status">loading…</div>
+<div id="grid"></div>
+<script type="module">
+const cat = await (await fetch('/api/fonts')).json();
+const byFamily = new Map(cat.map((f) => [f.family, f]));
+const FONTS = ['NotoNaskhArabic-Regular', 'UKIJTuz', 'Cairo-Black'];
+async function register(meta) {
+  const f = meta.files;
+  const src = f.woff2 ? `url("${f.woff2}") format("woff2")`
+    : f.woff ? `url("${f.woff}") format("woff")`
+    : f.ttf ? `url("${f.ttf}") format("truetype")`
+    : f.otf ? `url("${f.otf}") format("opentype")` : null;
+  if (!src) return false;
+  const ff = new FontFace(meta.family, src);
+  document.fonts.add(ff);
+  try { await ff.load(); return true; } catch { return false; }
+}
+for (const fam of FONTS) await register(byFamily.get(fam));
+await document.fonts.ready;
+document.getElementById('status').textContent = 'fonts ready';
+
+// 关键对照：
+// A: 基本字母 "غۇلا" (063a 06c7 0644 0627) —— 应正确连字成 …ﻻ
+// B: 混入呈现形式: "ﻏﻮ" hmm 直接用: 063a 06c7 + FEDF(lam initial) + FE8D(alef isolated)
+// C: 合字呈现形式 FEFB(لا isolated ligature) 单独
+// D: ZWNJ 对照
+const rows = [
+  ['A 基本字母 غ+ۇ+ل+ا', '\u063a\u06c7\u0644\u0627 \u062a\u06c7\u0644\u0627 \u0626\u06c7\u0644\u0627'],
+  ['B 呈现形式混入: غ+ۇ+FEDF(lam首形)+FE8D(alef孤形)', '\u063a\u06c7\uFEDF\uFE8D \u062a\u06c7\uFEDF\uFE8D \u0626\u06c7\uFEDF\uFE8D'],
+  ['B2 全呈现形式: FECB(gh initial)+FEE3(waw medial?)+FEDF+FE8D', '\uFECB\uFB94\uFEDF\uFE8D'],
+  ['C 合字码位 FEFB', '\u063a\u06c7\uFEFB'],
+  ['D ZWNJ: غ+ۇ+ل+ZWNJ+ا', '\u063a\u06c7\u0644\u200c\u0627'],
+];
+const grid = document.getElementById('grid');
+for (const fam of FONTS) {
+  for (const [label, text] of rows) {
+    const div = document.createElement('div');
+    div.className = 'row';
+    div.innerHTML = `<div class="name">${fam} — ${label}</div>` +
+      `<div class="sample" style="font-family:'${fam}'">${text}</div>`;
+    grid.appendChild(div);
+  }
+}
+window.__READY__ = true;
+</script>
+</body>
+</html>

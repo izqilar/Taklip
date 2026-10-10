@@ -199,6 +199,7 @@ export default function ColorField({
             setStaged(null);
             onChange('transparent');
             setInput('transparent');
+            onCommit?.();
           }}
           onConfirm={() => {
             if (stagedCss != null) {
@@ -209,6 +210,11 @@ export default function ColorField({
             setOpen(false);
           }}
           onClose={closePicker}
+          /**
+           * 实时预览：取色手势结束（mouseup / 输入确认 / 预设点选）时提交一次历史。
+           * 取色器「暂存」流程下传 undefined，使未点「确定」的颜色不写历史（点确定时才落库）。
+           */
+          onCommit={stagedCss != null ? undefined : onCommit}
           onEyedropper={handleEyedropper}
           eyedropperLabel={t('editor:colorPicker.eyedropper', { defaultValue: '取色器' })}
         />

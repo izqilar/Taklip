@@ -12,7 +12,7 @@
  * 未注入时调用会抛出明确错误，而不是静默失败。
  */
 
-import type { FontMeta } from '@h5design/core';
+import type { FontMeta, GuestFieldDef } from '@h5design/core';
 
 export interface UploadedAsset {
   url: string;
@@ -20,6 +20,27 @@ export interface UploadedAsset {
   width?: number;
   height?: number;
   [key: string]: unknown;
+}
+
+/**
+ * 占位符注册表条目（运营端「系统设置 → 占位符管理」配置唯一真相源）。
+ * 编辑器只绑定、不创建：下拉只读这些已注册项，按元素类型过滤。
+ * 底层仍映射 `binding.key`，渲染内核零改动。
+ */
+export interface PlaceholderRegistryEntry {
+  id: string;
+  key: string;
+  type: 'text' | 'image' | 'datetime' | 'address';
+  /** 单语言标签（运营端按当前语言录入） */
+  label?: string;
+  /** 单语言编辑提示 */
+  hint?: string;
+  /** 单语言默认值 */
+  defaultValue?: string;
+  scope: 'record' | 'batch';
+  requiredDef?: boolean;
+  legacy?: boolean;
+  status?: string;
 }
 
 export interface EditorServices {
@@ -67,6 +88,72 @@ export interface EditorServices {
     projectId: string;
     secondsPerPage?: number;
   }): Promise<{ blob: Blob; licensed: boolean; missing: string[] }>;
+
+  /* ── 批量请柬（规范 §9.3 / §16 决策 D4：面板在编辑器内，两宿主共用） ── */
+
+  /** 列出可选用的人员名单 */
+  listGuestLists?(params?: {
+    ownerType?: string;
+    clientId?: string;
+  }): Promise<{ id: string; name: string; recordCount: number }[]>;
+  /** 分页读取名单人员 */
+  listGuestRecords?(
+    listId: string,
+    page?: number,
+    size?: number,
+  ): Promise<{
+    listId: string;
+    page: number;
+    size: number;
+    total: number;
+    /** 名单字段定义（名单创建时快照的模板字段，如婚礼模板为 ext_husband/ext_wife）；人员名单弹窗据此渲染表头与取数 */
+    columnDefs?: GuestFieldDef[];
+    records: { id: string; seq: number; data: Record<string, string | null> }[];
+  }>;
+  /** 创建/复用批量渲染项目（模板 + 名单） */
+  createBatchProject?(payload: {
+    templateId: string;
+    listId: string;
+    ownerType?: string;
+    clientId?: string;
+  }): Promise<{ id: string; state: string; remaining: number; locked: boolean }>;
+  /** 读取项目状态与配额 */
+  getBatchProject?(projectId: string): Promise<{
+    id: string;
+    state: string;
+    freeRendered: number;
+    paidRendered: number;
+    purchasedHeadcount: number;
+    totalRenderable: number;
+    alreadyRendered: number;
+    remaining: number;
+    locked: boolean;
+  }>;
+  /** 读取当前勾选子集 */
+  getGuestSelection?(projectId: string): Promise<{
+    projectId: string;
+    listId: string;
+    selectedRecordIds: string[];
+  }>;
+  /** 保存勾选子集 */
+  setGuestSelection?(payload: {
+    projectId: string;
+    listId: string;
+    selectedRecordIds: string[];
+  }): Promise<{ count: number }>;
+  /** 发起批量渲染 */
+  batchGenerate?(payload: {
+    projectId: string;
+    mode?: 'FREE_SAMPLE' | 'PAID' | 'RERENDER';
+    targetRecordIds?: string[];
+  }): Promise<{ jobId: string; total: number }>;
+
+  /**
+   * 拉取占位符注册表（只读，供编辑器绑定）。
+   * 宿主实现（web/运营端各自注入 API 客户端，调用 /api/console/placeholders）。
+   * 未注入时内核回落旧逻辑（GUEST_FIELD_DEFS + ext_ 自定义输入），不阻断创作。
+   */
+  listPlaceholders?(): Promise<PlaceholderRegistryEntry[]>;
 }
 
 const notInjected =

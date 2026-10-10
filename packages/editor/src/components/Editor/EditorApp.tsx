@@ -4,7 +4,7 @@
  */
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toCanvas } from 'html-to-image';
 import PageList from '../Panel/PageList';
 import PropertyPanel from '../Panel/PropertyPanel';
@@ -15,6 +15,7 @@ import PublishModal from '../Publish/PublishModal';
 import type { ImageExportOptions, ImageFormat } from '../Publish/PublishModal';
 import DOMRenderer from '../Preview/DOMRenderer';
 import VersionHistoryModal from './VersionHistoryModal';
+import BatchGenerateDialog from '../Panel/BatchGenerateDialog';
 import SettingsPanel from './SettingsPanel';
 import MusicManagerModal from './MusicManagerModal';
 import ComponentLibraryMenu, {
@@ -306,6 +307,15 @@ const SunIcon = () => (
   </svg>
 );
 
+/** 批量生成：多份卡片 + 勾选语义 */
+const BatchIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="11" height="11" rx="2" />
+    <path d="M14 8h7M14 12h7M14 16h7" />
+    <path d="m7 10 2 2 4-4" />
+  </svg>
+);
+
 const MoonIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />
@@ -373,6 +383,16 @@ export default function EditorApp({ exportOnly = false, exitPath = '/dashboard' 
   // 字体授权判定结果：付费字体未授权 → 预览/本地兜底导出叠加水印
   const [fontWatermark, setFontWatermark] = useState(false);
   const [versionOpen, setVersionOpen] = useState(false);
+  // 批量生成专属请柬（§16 D4：入口在编辑器顶栏，两宿主共用同一面板）
+  const [batchOpen, setBatchOpen] = useState(false);
+  // 编辑器 ?batchList=<id> 自动开批量生成面板并预选名单（§17.8）
+  const [batchSearch] = useSearchParams();
+  const batchListParam = batchSearch.get('batchList');
+  useEffect(() => {
+    if (batchListParam && !!services.listGuestLists && projectId) {
+      setBatchOpen(true);
+    }
+  }, [batchListParam, projectId]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [textMenuOpen, setTextMenuOpen] = useState(false);
   const [shapeMenuOpen, setShapeMenuOpen] = useState(false);
@@ -1174,6 +1194,17 @@ export default function EditorApp({ exportOnly = false, exitPath = '/dashboard' 
           >
             {isDark ? <SunIcon /> : <MoonIcon />}
           </button>
+          {/* 批量生成专属请柬：仅当宿主注入了名单能力时出现（用户端/运营端各自注入） */}
+          {!!services.listGuestLists && (
+            <button
+              onClick={() => setBatchOpen(true)}
+              title={t('editor:toolbar.batchGenerate', { defaultValue: '批量生成' })}
+              aria-label={t('editor:toolbar.batchGenerate', { defaultValue: '批量生成' })}
+              className="flex items-center justify-center rounded bg-blue-500 p-2 text-white transition hover:bg-blue-600"
+            >
+              <BatchIcon />
+            </button>
+          )}
           <button
             onClick={() => setPublishOpen(true)}
             title={exportOnly ? t('editor:toolbar.exportWork') : t('editor:toolbar.publish')}
@@ -1230,6 +1261,14 @@ export default function EditorApp({ exportOnly = false, exitPath = '/dashboard' 
         open={versionOpen}
         onClose={() => setVersionOpen(false)}
         projectId={projectId}
+      />
+      {/* 批量生成专属请柬：共享面板，web / admin 两宿主同一实现（D4） */}
+      <BatchGenerateDialog
+        open={batchOpen}
+        projectId={projectId}
+        onClose={() => setBatchOpen(false)}
+        onSubmitted={() => undefined}
+        initialListId={batchListParam ?? undefined}
       />
       <SettingsPanel
         open={settingsOpen}

@@ -127,6 +127,7 @@
       "pool": "Intent Pool",
       "settle": "Settlement Overview",
       "fee-config": "Revenue Share Rates",
+      "placeholders": "Placeholder Management",
       "contracts": "Platform Contracts"
     },
     "agent": {
@@ -936,4 +937,22 @@
       "confirm": "Sign in now"
     }
   }
-}
+,
+  "placeholders": {
+    "colLabel": "Label",
+    "labelSection": "Label",
+    "label": "Label",
+    "labelTip": "Single-language label entered in the current locale; shown directly in the editor binding dropdown",
+    "labelPh": "e.g. Groom / Name / Wedding date",
+    "labelRequired": "Please enter a label",
+    "hintSection": "Edit hint (optional)",
+    "hint": "Edit hint",
+    "hintPh": "Placeholder note when editing",
+    "defaultSection": "Default value (optional)",
+    "defaultValue": "Default value",
+    "defaultPhDatetime": "YYYY-MM-DD HH:mm",
+    "defaultPhAddress": "{province}{city}{detail}",
+    "defaultPhImage": "Gallery image resource key",
+    "defaultPhText": "Leave empty to use the fallback value",
+    "sub": "Exclusive config source on the operations console: new placeholders are created only here; the editor may only bind registered items. key is a stable ASCII; label/hint/default are single-language content entered in the current locale; UI chrome is unified via system i18n."
+  }}

@@ -13,7 +13,15 @@
 
 // —— 宿主适配层 ——
 export { setEditorServices, getEditorServices, services } from './services';
-export type { EditorServices, UploadedAsset } from './services';
+export type { EditorServices, UploadedAsset, PlaceholderRegistryEntry } from './services';
+export {
+  fetchPlaceholderRegistry,
+  invalidatePlaceholderRegistry,
+  usePlaceholderRegistry,
+  allowedPlaceholderTypes,
+  placeholderLabel,
+  placeholderDefault,
+} from './placeholderRegistry';
 export type { PublishResult } from './types';
 
 // —— 编辑器主体 ——
@@ -35,6 +43,8 @@ export { default as PropertyPanel } from './components/Panel/PropertyPanel';
 export { default as PageList } from './components/Panel/PageList';
 export { default as LayerList } from './components/Panel/LayerList';
 export { default as ComponentSettingsPanel } from './components/Panel/ComponentSettingsPanel';
+// 批量生成专属请柬面板（§16 D4：编辑器内入口，web/admin 两宿主共用）
+export { default as BatchGenerateDialog } from './components/Panel/BatchGenerateDialog';
 export { default as DOMRenderer, PublishedH5 } from './components/Preview/DOMRenderer';
 
 // —— 状态 ——

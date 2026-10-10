@@ -127,6 +127,7 @@
       "pool": "意向池",
       "settle": "结算总览",
       "fee-config": "分账费率",
+      "placeholders": "占位符管理",
       "contracts": "平台合同管理"
     },
     "agent": {
@@ -940,4 +941,22 @@
       "confirm": "立即重新登录"
     }
   }
-}
+,
+  "placeholders": {
+    "colLabel": "标签",
+    "labelSection": "标签",
+    "label": "标签",
+    "labelTip": "在当前语言环境下录入的单语言标签，编辑器绑定下拉直接展示此值",
+    "labelPh": "如：新郎 / 姓名 / 婚礼日期",
+    "labelRequired": "请输入标签",
+    "hintSection": "编辑提示（可选）",
+    "hint": "编辑提示",
+    "hintPh": "编辑时的占位说明",
+    "defaultSection": "默认值（可选）",
+    "defaultValue": "默认值",
+    "defaultPhDatetime": "YYYY年MM月DD日 HH:mm",
+    "defaultPhAddress": "{province}{city}{detail}",
+    "defaultPhImage": "图库图片资源 key",
+    "defaultPhText": "留空则按兜底值处理",
+    "sub": "运营端独占配置真相源：新建占位符只在此完成，编辑器仅可绑定已注册项。key 为稳定 ASCII；标签/提示/默认值按当前语言录入单一内容，界面框架文案由系统 i18n 统一多语言。"
+  }}

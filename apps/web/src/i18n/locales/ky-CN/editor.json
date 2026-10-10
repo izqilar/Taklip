@@ -100,7 +100,7 @@
     "rotation": "Rotation",
     "opacity": "Opacity",
     "content": "Content",
-    "name": "Alias",
+    "name": "Катмар атауы",
     "fontSize": "Font Size",
     "fontFamily": "Font Family",
     "fill": "Color",
@@ -189,6 +189,7 @@
     }
   },
   "section": {
+    "layer": "Катмар",
     "transform": "Transform",
     "fill": "Fill",
     "stroke": "Stroke",

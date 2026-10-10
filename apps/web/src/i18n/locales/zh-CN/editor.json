@@ -156,7 +156,7 @@
     "rotation": "旋转",
     "opacity": "透明度",
     "content": "内容",
-    "name": "组件别名",
+    "name": "图层名",
     "fontSize": "字号",
     "fontFamily": "字体",
     "fill": "颜色",
@@ -338,6 +338,9 @@
     "fitCover": "铺满裁剪",
     "fitContain": "完整显示",
     "fitRepeat": "平铺",
+    "fitRepeatX": "横向平铺",
+    "fitRepeatY": "纵向平铺",
+    "fitRepeatAll": "双向平铺",
     "typeVideo": "视频",
     "typeBlend": "混合模式",
     "kindLinear": "线性渐变",
@@ -378,6 +381,7 @@
     }
   },
   "section": {
+    "layer": "图层",
     "transform": "变换",
     "fill": "填充",
     "stroke": "描边",
@@ -385,6 +389,7 @@
     "specific": "专属",
     "border": "边框样式",
     "effects": "阴影效果",
+    "variable": "占位符绑定",
     "outline": "Outline",
     "textOutlineFill": "文本轮廓与填充"
   },
@@ -660,6 +665,9 @@
     "title": "背景"
   },
   "component": {
+      "bindAsVariable": "设为占位符",
+      "variableKey": "变量字段",
+      "variableHint": "批量生成时按该字段从人员名单取值替换本元素文案",
     "edit": "编辑",
     "animation": "动画",
     "events": "事件",

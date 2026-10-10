@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn, IsInt, Min, Max, IsObject } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsInt, Min, Max, IsObject, IsBoolean } from 'class-validator';
 import type { Role, UserStatus, ProviderStatus } from '../../../prisma/prisma-client';
 
 /** 启用/禁用账号 */
@@ -86,4 +86,77 @@ export class UpdateFeeConfigDto {
   @IsInt()
   @Min(0)
   minWithdrawCents?: number;
+}
+
+/** 占位符类型枚举 */
+export type PlaceholderType = 'text' | 'image' | 'datetime' | 'address';
+/** 占位符作用域枚举：record=名单字段型（从 record.data 取数）；batch=批次常量型（生成期一次性填写） */
+export type PlaceholderScope = 'record' | 'batch';
+/** 占位符状态枚举 */
+export type PlaceholderStatus = 'visible' | 'hidden';
+
+/** 列表查询参数（运营端「占位符管理」） */
+export class ListPlaceholdersQueryDto {
+  @IsOptional()
+  type?: PlaceholderType;
+  @IsOptional()
+  scope?: PlaceholderScope;
+  /** 关键字：跨 key 与单语言标签模糊匹配 */
+  @IsOptional()
+  keyword?: string;
+  @IsOptional()
+  page?: string;
+  @IsOptional()
+  pageSize?: string;
+}
+
+/** 新建占位符（运营端「占位符管理」）。key 唯一且为 ASCII，服务端二次校验。 */
+export class CreatePlaceholderDto {
+  @IsString()
+  key!: string;
+  @IsIn(['text', 'image', 'datetime', 'address'])
+  type!: PlaceholderType;
+  /** 单语言标签（管理员按当前语言录入） */
+  @IsString()
+  label!: string;
+  @IsOptional()
+  @IsString()
+  hint?: string;
+  @IsOptional()
+  @IsString()
+  defaultValue?: string;
+  @IsOptional()
+  @IsIn(['record', 'batch'])
+  scope?: PlaceholderScope;
+  @IsOptional()
+  @IsBoolean()
+  requiredDef?: boolean;
+  @IsOptional()
+  @IsIn(['visible', 'hidden'])
+  status?: PlaceholderStatus;
+}
+
+/** 编辑占位符（全部字段可选，前端只传变化项；key 不可改）。 */
+export class UpdatePlaceholderDto {
+  @IsOptional()
+  @IsIn(['text', 'image', 'datetime', 'address'])
+  type?: PlaceholderType;
+  @IsOptional()
+  @IsString()
+  label?: string;
+  @IsOptional()
+  @IsString()
+  hint?: string;
+  @IsOptional()
+  @IsString()
+  defaultValue?: string;
+  @IsOptional()
+  @IsIn(['record', 'batch'])
+  scope?: PlaceholderScope;
+  @IsOptional()
+  @IsBoolean()
+  requiredDef?: boolean;
+  @IsOptional()
+  @IsIn(['visible', 'hidden'])
+  status?: PlaceholderStatus;
 }

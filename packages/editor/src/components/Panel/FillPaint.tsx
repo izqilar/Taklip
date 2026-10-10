@@ -44,6 +44,7 @@ import {
   patternFromSolid,
   renderGradientKind,
   getVideoFrame,
+  getImageFill,
   getVideoFrameEpoch,
   subscribeVideoFrame,
   videoFrameUrl,
@@ -56,7 +57,12 @@ import {
   type PatternKind,
   type ImageFill,
   type VideoFill,
+  type ImageClip,
+  type ImageElement,
+  type FillFit,
 } from '@h5design/core';
+
+import ImageCropDialog from './ImageCropDialog';
 
 /* ───────────────────────── 通用小部件 ───────────────────────── */
 
@@ -301,6 +307,7 @@ function SwatchButton({
             setOpen(false);
           }}
           onClose={() => setOpen(false)}
+          onCommit={onCommit}
         />
       </Popover>
     </>
@@ -922,15 +929,22 @@ export function PatternEditor({
 const IMAGE_FIT_LABELS: Record<NonNullable<ImageFill['fit']>, string> = {
   cover: 'editor:fill.fitCover',
   contain: 'editor:fill.fitContain',
-  repeat: 'editor:fill.fitRepeat',
+  'repeat-x': 'editor:fill.fitRepeatX',
+  'repeat-y': 'editor:fill.fitRepeatY',
+  repeat: 'editor:fill.fitRepeatAll',
 };
 const IMAGE_FIT_DEFAULT: Record<NonNullable<ImageFill['fit']>, string> = {
   cover: '铺满裁剪',
   contain: '完整显示',
-  repeat: '平铺',
+  'repeat-x': '横向平铺',
+  'repeat-y': '纵向平铺',
+  repeat: '双向平铺',
 };
 
-/** 「适配方式」分段控件（图片 / 视频填充共用） */
+/** 适配方式选项（铺满裁剪 / 完整显示 / 横向平铺 / 纵向平铺 / 双向平铺） */
+const IMAGE_FIT_OPTIONS: NonNullable<ImageFill['fit']>[] = ['cover', 'contain', 'repeat-x', 'repeat-y', 'repeat'];
+
+/** 「适配方式」列表框（图片填充用） */
 function FitSegmented({
   value,
   onChange,
@@ -944,20 +958,17 @@ function FitSegmented({
       <span className="w-20 shrink-0 text-sm text-gray-700">
         {t('editor:fill.fit', { defaultValue: '适配方式' })}
       </span>
-      <div className="flex min-w-0 flex-1 gap-1">
-        {(['cover', 'contain', 'repeat'] as const).map((f) => (
-          <label key={f} className={segClass(value === f)}>
-            <input
-              type="radio"
-              name="fill-fit"
-              checked={value === f}
-              onChange={() => onChange(f)}
-              className="sr-only"
-            />
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as NonNullable<ImageFill['fit']>)}
+        className="min-w-0 flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 outline-none focus:border-blue-400"
+      >
+        {IMAGE_FIT_OPTIONS.map((f) => (
+          <option key={f} value={f}>
             {t(IMAGE_FIT_LABELS[f], { defaultValue: IMAGE_FIT_DEFAULT[f] })}
-          </label>
+          </option>
         ))}
-      </div>
+      </select>
     </div>
   );
 }
@@ -979,6 +990,9 @@ export function ImageFillEditor({
   const fileRef = useRef<HTMLInputElement>(null);
   const imgF: ImageFill = value && value.href ? value : { href: '', fit: 'cover' };
   const fit = imgF.fit ?? 'cover';
+  const [cropOpen, setCropOpen] = useState(false);
+  // 已加载图片的自然尺寸（供裁剪对话框初始化，避免误用形状自身宽高）
+  const nat = imgF.href ? getImageFill(imgF.href) : null;
 
   const set = useCallback(
     (patch: Partial<ImageFill>) => {
@@ -1026,26 +1040,39 @@ export function ImageFillEditor({
     <div className="flex flex-col gap-3">
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
 
-      {/* 预览 + 上传 */}
+      {/* 预览（带棋盘格背景，透明 PNG 可见） */}
       <div className="flex items-center gap-3">
         <span className="w-20 shrink-0 text-sm text-gray-700">
           {t('editor:fill.image', { defaultValue: '图片填充' })}
         </span>
-        <div className="relative h-16 min-w-0 flex-1 overflow-hidden rounded border border-gray-300 bg-gray-50">
+        <div className="relative h-16 min-w-0 flex-1 overflow-hidden rounded border border-gray-300">
+          <CheckerBackground className="absolute inset-0" />
           {imgF.href ? (
-            <img src={imgF.href} alt="" className="h-full w-full object-cover" />
+            <img src={imgF.href} alt="" className="relative h-full w-full object-contain" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
+            <div className="relative flex h-full w-full items-center justify-center text-xs text-gray-400">
               {t('editor:fill.noImage', { defaultValue: '尚未选择图片' })}
             </div>
           )}
         </div>
+      </div>
+
+      {/* 更换 / 裁剪 操作按钮（参考图片对象专属属性） */}
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={onPick}
-          className="shrink-0 rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 transition hover:border-blue-300 hover:text-blue-500"
+          className="flex-1 rounded bg-blue-500 px-2 py-1.5 text-xs text-white transition hover:bg-blue-600"
         >
-          {t('editor:fill.uploadImage', { defaultValue: '上传图片' })}
+          {t('editor:property.replace', { defaultValue: '更换' })}
+        </button>
+        <button
+          type="button"
+          onClick={() => setCropOpen(true)}
+          disabled={!imgF.href}
+          className="flex-1 rounded border border-gray-300 px-2 py-1.5 text-xs text-gray-700 transition hover:border-blue-300 hover:text-blue-500 disabled:opacity-50"
+        >
+          {t('editor:property.crop', { defaultValue: '裁剪' })}
         </button>
       </div>
 
@@ -1060,6 +1087,24 @@ export function ImageFillEditor({
         step={1}
         onChange={(v) => onChange({ ...imgF, opacity: v / 100 })}
         onCommit={onCommit}
+      />
+
+      {/* 形状图片填充裁剪：复用通用裁剪对话框，裁剪区域归一化后存入 imageFill.crop */}
+      <ImageCropDialog
+        open={cropOpen}
+        src={imgF.href || undefined}
+        naturalWidth={nat?.naturalWidth}
+        naturalHeight={nat?.naturalHeight}
+        el={
+          imgF.crop
+            ? ({ clip: { shape: 'none', crop: imgF.crop } } as unknown as ImageElement)
+            : undefined
+        }
+        onApply={(clip: ImageClip) => {
+          set({ crop: clip.crop });
+          setCropOpen(false);
+        }}
+        onClose={() => setCropOpen(false)}
       />
     </div>
   );
@@ -1289,10 +1334,8 @@ export function BlendFillEditor({
       <ColorField
         label={t('editor:fill.baseColor', { defaultValue: '基底色' })}
         value={color}
-        onChange={(v) => {
-          onChangeColor(v);
-          onCommit();
-        }}
+        onChange={(v) => onChangeColor(v)}
+        onCommit={onCommit}
       />
 
       <p className="text-xs text-gray-400">

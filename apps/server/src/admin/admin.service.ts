@@ -14,7 +14,11 @@ import { WalletService } from '../wallet/wallet.service';
 import { RegionService } from '../region/region.service';
 import { AuditService } from '../audit/audit.service';
 import type { JwtUser } from '../common/types/jwt-user';
-import { UpdateFeeConfigDto } from './dto/admin.dto';
+import {
+  UpdateFeeConfigDto,
+  CreatePlaceholderDto,
+  UpdatePlaceholderDto,
+} from './dto/admin.dto';
 
 /** 平台分账费率全局单例行的固定主键 */
 const FEE_CONFIG_ID = 'default';
@@ -1102,5 +1106,94 @@ export class AdminService {
   /** 查询某用户的贡献指标明细 + 当前档位（只读，供运营端贡献卡展示） */
   async getTierMetrics(id: string) {
     return this.contribution.getTierBreakdown(id);
+  }
+
+  // ===================== 占位符注册表（v2 占位符管理 · 2026-10-10）=====================
+  // 运营端「系统设置 → 占位符管理」独占配置唯一真相源。语义层用「占位符」组织字段，
+  // 底层仍映射 binding.key，渲染内核（personalizeSchema）零改动；编辑器只绑定、不创建。
+
+  /**
+   * 列表（支持 type/scope/keyword 过滤）。keyword 跨 key 与多语言标签模糊匹配，不区分大小写。
+   * 注册表体量小（数十行），统一在内存中做关键字过滤再分页，避免 JSONB 文本匹配复杂度。
+   */
+  async listPlaceholders(params: {
+    type?: string;
+    scope?: string;
+    keyword?: string;
+    page?: number;
+    pageSize?: number;
+  }) {
+    const where: Prisma.PlaceholderRegistryWhereInput = {};
+    if (params.type) where.type = params.type as any;
+    if (params.scope) where.scope = params.scope as any;
+
+    let all = await this.prisma.placeholderRegistry.findMany({
+      where,
+      orderBy: { createdAt: 'asc' },
+    });
+
+    if (params.keyword) {
+      const kw = params.keyword.toLowerCase();
+      all = all.filter(
+        (p) =>
+          p.key.toLowerCase().includes(kw) ||
+          (p.label ?? '').toLowerCase().includes(kw),
+      );
+    }
+
+    const total = all.length;
+    const page = params.page && params.page > 0 ? params.page : 1;
+    const pageSize = Math.min(params.pageSize && params.pageSize > 0 ? params.pageSize : 9999, 9999);
+    const items = all.slice((page - 1) * pageSize, page * pageSize);
+    return { items, total, page, pageSize };
+  }
+
+  /** 新建占位符：key 唯一 + ASCII 校验；已存在则冲突。 */
+  async createPlaceholder(dto: CreatePlaceholderDto) {
+    const key = (dto.key ?? '').trim();
+    if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(key)) {
+      throw new BadRequestException('变量名（key）须为 ASCII 字母/数字/下划线，且以字母开头');
+    }
+    const exists = await this.prisma.placeholderRegistry.findUnique({ where: { key } });
+    if (exists) throw new ConflictException('该变量名已存在');
+
+    return this.prisma.placeholderRegistry.create({
+      data: {
+        key,
+        type: dto.type,
+        label: dto.label ?? '',
+        hint: dto.hint ?? '',
+        defaultValue: dto.defaultValue ?? '',
+        scope: dto.scope ?? 'batch',
+        requiredDef: dto.requiredDef ?? false,
+        status: dto.status ?? 'visible',
+      },
+    });
+  }
+
+  /** 编辑占位符：key 不可改；仅更新传入字段。 */
+  async updatePlaceholder(id: string, dto: UpdatePlaceholderDto) {
+    const existing = await this.prisma.placeholderRegistry.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('占位符不存在');
+
+    const data: Prisma.PlaceholderRegistryUpdateInput = {};
+    if (dto.type !== undefined) data.type = dto.type;
+    if (dto.label !== undefined) data.label = dto.label;
+    if (dto.hint !== undefined) data.hint = dto.hint;
+    if (dto.defaultValue !== undefined) data.defaultValue = dto.defaultValue;
+    if (dto.scope !== undefined) data.scope = dto.scope;
+    if (dto.requiredDef !== undefined) data.requiredDef = dto.requiredDef;
+    if (dto.status !== undefined) data.status = dto.status;
+
+    return this.prisma.placeholderRegistry.update({ where: { id }, data });
+  }
+
+  /** 删除占位符：系统内置（legacy）不可删，防断渲染。 */
+  async deletePlaceholder(id: string) {
+    const existing = await this.prisma.placeholderRegistry.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('占位符不存在');
+    if (existing.legacy) throw new BadRequestException('系统内置占位符不可删除');
+    await this.prisma.placeholderRegistry.delete({ where: { id } });
+    return { success: true };
   }
 }

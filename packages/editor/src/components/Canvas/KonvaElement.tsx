@@ -8,7 +8,7 @@
  *
  * 共享的「图片布局 / 滤镜 / 边框 dash」辅助来自 ./konvaShared，避免重复实现易错细节。
  */
-import { Group, Rect, Text, Circle, Line, Image as KonvaImage, Star, RegularPolygon, Ellipse, Arrow as KonvaArrow } from 'react-konva';
+import { Group, Rect, Text, Circle, Line, Image as KonvaImage, Star, RegularPolygon, Ellipse, Arrow as KonvaArrow, Shape } from 'react-konva';
 import Konva from 'konva';
 import type {
   Element,
@@ -32,7 +32,7 @@ import type {
   LikeElement,
   WidgetElement,
 } from '@h5design/core';
-import { toKonvaCornerRadius, normalizeImageClip, drawClipOnContext, hasRealShadow, kashidaForLetterSpacing, resolveStrokeColor, lineStyleToDash, flipScale, konvaFill, fillBoxTopLeft, fillBoxCenter, fillBoxCircle, getFontMeta, buildFontFamilyStack } from '@h5design/core';
+import { toKonvaCornerRadius, normalizeImageClip, drawClipOnContext, hasRealShadow, kashidaForLetterSpacing, normalizeArabicPresentationForms, resolveStrokeColor, lineStyleToDash, flipScale, konvaFill, fillBoxTopLeft, fillBoxCenter, fillBoxCircle, getFontMeta, buildFontFamilyStack, clipBorderStrokes, borderDashArray, fitShrinkFontSize, DEFAULT_MIN_FONT_RATIO, DEFAULT_VARIABLE_FIT } from '@h5design/core';
 import {
   computeImageLayout,
   FilteredImage,
@@ -40,6 +40,8 @@ import {
   type KonvaFilter,
   mapWordBreakToKonvaWrap,
   borderDashFromStyle,
+  clipBorderSceneFunc,
+  clipShapeFillSceneFunc,
   toKonvaAlign,
   installTextJustifySupport,
   toKonvaOutlineStrokeWidth,
@@ -56,6 +58,7 @@ import CanvasTimeline from '../../elements/timeline/CanvasTimeline';
 import CanvasLike from '../../elements/like/CanvasLike';
 import CanvasWidget from '../../elements/widget/CanvasWidget';
 import KonvaTable from '../../elements/widget/KonvaTable';
+import { layoutText } from '@h5design/render';
 
 type ImagesMap = Map<string, HTMLImageElement | null>;
 
@@ -130,8 +133,11 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
       // 轮廓由独立「只描边」层负责（见下方），不再用 fillAfterStrokeEnabled：
       // 那样虽然只留外框，但阴影会在描边后与填充后各投一次，第二次会盖掉部分轮廓。
       const hasTextOutline = (textEl.outlineWidth || 0) > 0 && !!textEl.outlineColor;
+      // 呈现形式归一化：老式输入法 / 文档复制会把字母写成预先整形的呈现形式码位
+      // （U+FB50–FDFF / U+FE70–FEFF），整形器不会对其重新连写，表现为「لا 断成 ﻟ ﺍ」。
+      const rawText = normalizeArabicPresentationForms(textEl.text ?? '');
       // 阿拉伯文等连写文字：用 kashida 延长符（Tatweel）增加字间距，避免 letterSpacing 直接拆散字母连接。
-      const kashida = kashidaForLetterSpacing(textEl.text, textEl.letterSpacing ?? 0, textEl.fontSize ?? 16, true);
+      const kashida = kashidaForLetterSpacing(rawText, textEl.letterSpacing ?? 0, textEl.fontSize ?? 16, true);
       // 背景矩形用的阴影；文本阴影改由独立的阴影剪影层负责
       const textShadow = hasRealShadow(textEl)
         ? {
@@ -144,11 +150,42 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
         : {};
       const outlineStrokeWidth = toKonvaOutlineStrokeWidth(textEl.outlineWidth);
       // 有效字体栈：含维吾尔文且所选字体不覆盖时整段回退到统一补字字体（跨浏览器一致连字）
-      const effFamily = buildFontFamilyStack(textEl.fontFamily, textEl.text, getFontMeta(textEl.fontFamily)?.coverage);
+      const effFamily = buildFontFamilyStack(textEl.fontFamily, rawText, getFontMeta(textEl.fontFamily)?.coverage);
+      const fontStyleRaw = textEl.fontStyle ?? '';
+      // 溢出策略 shrink（T8 续）：与 DOM 渲染同源测量（layoutText），保证编辑器画布与导出一致。
+      // 注意：测量用「原始文案 + 原始字间距」与 DOM 渲染层（SchemaRenderer）完全一致，
+      // 使 shrink 决策出的字号两端完全相同（阿拉伯文 kashida 等既有差异不在此引入）。
+      const wantsShrink = (textEl.binding?.fit ?? DEFAULT_VARIABLE_FIT) === 'shrink';
+      const minRatio = textEl.binding?.minFontRatio ?? DEFAULT_MIN_FONT_RATIO;
+      const renderFontSize = wantsShrink
+        ? fitShrinkFontSize({
+            text: rawText,
+            baseSize: textEl.fontSize ?? 16,
+            minRatio,
+            maxWidth: el.width,
+            maxHeight: el.height,
+            measure: (size) => {
+              const L = layoutText({
+                text: rawText,
+                fontSize: size,
+                fontFamily: effFamily,
+                bold: fontStyleRaw.includes('bold'),
+                italic: fontStyleRaw.includes('italic'),
+                letterSpacing: textEl.letterSpacing ?? 0,
+                lineHeight: textEl.lineHeight ?? 1,
+                width: el.width,
+                height: el.height,
+                wrap: mapWordBreakToKonvaWrap(textEl.wordBreak),
+              });
+              const w = L.lines.reduce((m, l) => Math.max(m, l.width), 0);
+              return { width: w, height: L.contentHeight };
+            },
+          })
+        : (textEl.fontSize ?? 16);
       // 三层（阴影剪影 / 轮廓 / 填充）共用的排版参数，必须逐层一致否则会错位
       const textLayerProps = {
         text: kashida.text,
-        fontSize: textEl.fontSize,
+        fontSize: renderFontSize,
         fontFamily: effFamily,
         align: toKonvaAlign(textEl.align, textEl.direction === 'rtl' ? 'rtl' : 'ltr'),
         width: el.width,
@@ -401,14 +438,45 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
         };
 
         const clipShape = normalizeImageClip(imgEl.clip).shape;
-        const clipFunc =
+        const shapeClip =
           clipShape !== 'none'
             ? (ctx: Konva.Context) => drawClipOnContext(ctx, clipShape, el.width, el.height)
             : undefined;
 
+        const contentNode = isTiled ? (
+          <Rect
+            width={el.width}
+            height={el.height}
+            fillPatternImage={cached}
+            fillPatternRepeat={objectFit}
+            fillPatternScaleX={tileScale}
+            fillPatternScaleY={tileScale}
+            cornerRadius={cornerRadius}
+            filters={filters.length ? filters : undefined}
+            brightness={brightness}
+            contrast={contrast}
+            blurRadius={blurRadius}
+            perfectDrawEnabled={false}
+            shadowForStrokeEnabled={false}
+          />
+        ) : (
+          <FilteredImage
+            image={cached}
+            {...computeImageLayout(cached, imgEl)}
+            cornerRadius={cornerRadius}
+            filters={filters.length ? filters : undefined}
+            brightness={brightness}
+            blurRadius={blurRadius}
+            contrast={contrast}
+            perfectDrawEnabled={false}
+            shadowForStrokeEnabled={false}
+          />
+        );
+
         return (
-          <Group key={el.id} {...groupProps} offsetX={el.width / 2} offsetY={el.height / 2} clipFunc={clipFunc}>
-            {hasShadow && (
+          <Group key={el.id} {...groupProps} offsetX={el.width / 2} offsetY={el.height / 2}>
+            {/* 阴影：none 模式用图片节点自带矩形阴影；形状模式用透明填充 Shape 投射形状轮廓阴影 */}
+            {hasShadow && clipShape === 'none' && (
               isTiled ? (
                 <Rect
                   width={el.width}
@@ -435,7 +503,22 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
                 />
               )
             )}
-            {hasBorder ? (
+            {hasShadow && clipShape !== 'none' && (
+              // 形状模式阴影投射层：与裁剪蒙版同一套形状函数画出的 Shape，填充为阴影色，
+              // 其阴影（shadowOffset/blur）沿该形状剪影投射；填充本体被「裁到同一形状的」内容层
+              // 完全覆盖（内容层在下方代码中绘制于其后），只留下一圈随形状轮廓的偏移阴影。
+              // 用阴影色作填充（而非 transparent）以保证 Konva 对所有形状都稳定投射阴影。
+              <Shape
+                listening={false}
+                perfectDrawEnabled={false}
+                shadowForStrokeEnabled={false}
+                sceneFunc={clipShapeFillSceneFunc(clipShape, el.width, el.height)}
+                fill={imgEl.shadowColor}
+                {...shadowProps}
+              />
+            )}
+            {/* 内容层：none + 有边框走圆角盒裁剪；其余走形状裁剪（none 无边框则不裁） */}
+            {hasBorder && clipShape === 'none' ? (
               // 边框盒式（border-box）：图片裁到内容盒（边框内侧），边框画在最上层，
               // 与发布态 DOM（box-sizing:border-box + overflow:hidden）完全一致。
               <Group
@@ -450,66 +533,32 @@ export default function KonvaElement({ el, images, scaleK = 1, update = noop, fo
                   )
                 }
               >
-                {isTiled ? (
-                  <Rect
-                    width={el.width}
-                    height={el.height}
-                    fillPatternImage={cached}
-                    fillPatternRepeat={objectFit}
-                    fillPatternScaleX={tileScale}
-                    fillPatternScaleY={tileScale}
-                    cornerRadius={cornerRadius}
-                    filters={filters.length ? filters : undefined}
-                    brightness={brightness}
-                    contrast={contrast}
-                    blurRadius={blurRadius}
-                    perfectDrawEnabled={false}
-                    shadowForStrokeEnabled={false}
-                  />
-                ) : (
-                  <FilteredImage
-                    image={cached}
-                    {...computeImageLayout(cached, imgEl)}
-                    cornerRadius={cornerRadius}
-                    filters={filters.length ? filters : undefined}
-                    brightness={brightness}
-                    blurRadius={blurRadius}
-                    contrast={contrast}
-                    perfectDrawEnabled={false}
-                    shadowForStrokeEnabled={false}
-                  />
-                )}
+                {contentNode}
               </Group>
-            ) : isTiled ? (
-              <Rect
-                width={el.width}
-                height={el.height}
-                fillPatternImage={cached}
-                fillPatternRepeat={objectFit}
-                fillPatternScaleX={tileScale}
-                fillPatternScaleY={tileScale}
-                cornerRadius={cornerRadius}
-                filters={filters.length ? filters : undefined}
-                brightness={brightness}
-                contrast={contrast}
-                blurRadius={blurRadius}
-                perfectDrawEnabled={false}
-                shadowForStrokeEnabled={false}
-              />
             ) : (
-              <FilteredImage
-                image={cached}
-                {...computeImageLayout(cached, imgEl)}
-                cornerRadius={cornerRadius}
-                filters={filters.length ? filters : undefined}
-                brightness={brightness}
-                blurRadius={blurRadius}
-                contrast={contrast}
-                perfectDrawEnabled={false}
-                shadowForStrokeEnabled={false}
-              />
+              <Group clipFunc={shapeClip}>{contentNode}</Group>
             )}
-            {hasBorder && (
+            {hasBorder && clipShape !== 'none' && (
+              // ★ 裁剪形状模式：边框沿形状轮廓描边（与编辑器画布 / 发布态 DOM 同一真值）
+              clipBorderStrokes(borderWidth, imgEl.borderStyle).map((s, i) => (
+                <Shape
+                  key={`b${i}`}
+                  listening={false}
+                  perfectDrawEnabled={false}
+                  shadowForStrokeEnabled={false}
+                  sceneFunc={clipBorderSceneFunc(
+                    clipShape,
+                    el.width,
+                    el.height,
+                    s.inset,
+                    s.width,
+                    borderColor,
+                    borderDashArray(imgEl.borderStyle),
+                  )}
+                />
+              ))
+            )}
+            {hasBorder && clipShape === 'none' && (
               imgEl.borderStyle === 'double' ? (
                 <>
                   <Rect

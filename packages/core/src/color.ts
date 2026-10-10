@@ -190,3 +190,23 @@ export function resolveShadow(el: ShadowCapable | undefined | null): string | un
   const oy = el!.shadowOffsetY || 0;
   return `${ox}px ${oy}px ${blur}px ${color}`;
 }
+
+/**
+ * 形状裁剪模式（圆/椭圆/三角/六边/星/心形）下的阴影真值：CSS `filter: drop-shadow(...)`。
+ *
+ * 为什么不是 box-shadow：DOM 的 `box-shadow` 永远是矩形光环，且会被同元素的 `clip-path`
+ * 整圈裁掉 —— 形状模式下阴影落到形状之外，被 clip-path 裁没 → 表现为「没有阴影」。
+ * 而 `drop-shadow()` 跟随元素被裁后的 alpha 剪影，因此阴影会**沿形状轮廓**投射，
+ * 与「边框沿形状描边」表现完全一致（四端统一：设计态 / 预览态 / 导出态）。
+ *
+ * 注意：drop-shadow 没有 spread 段（box-shadow 的第四值），形状模式会丢失 spread，
+ * 但 blur/offset/color 与矩形模式逐值一致。无阴影时返回 undefined。
+ */
+export function resolveDropShadow(el: ShadowCapable | undefined | null): string | undefined {
+  const color = resolveShadowColor(el);
+  if (!color) return undefined;
+  const blur = el!.shadowBlur || 0;
+  const ox = el!.shadowOffsetX || 0;
+  const oy = el!.shadowOffsetY || 0;
+  return `drop-shadow(${ox}px ${oy}px ${blur}px ${color})`;
+}

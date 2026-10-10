@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>lam-alef canvas vs DOM</title>
+<style>
+  html, body { margin: 0; padding: 10px; background: #fff; color: #000; }
+  .row { margin: 6px 0; border: 1px solid #ccc; padding: 4px 8px; }
+  .name { font-size: 11px; font-family: monospace; }
+  .sample { font-size: 40px; white-space: nowrap; direction: rtl; }
+  canvas { border: 1px dashed #999; }
+  table { border-collapse: collapse; font-family: monospace; font-size: 12px; }
+  td, th { border: 1px solid #999; padding: 2px 8px; text-align: left; }
+</style>
+</head>
+<body>
+<div id="status">loading…</div>
+<div id="grid"></div>
+<table id="tbl"><thead><tr><th>config</th><th>ratio(لا)</th><th>w(لا)</th><th>w(ل)</th><th>w(ا)</th><th>w(句子)</th></tr></thead><tbody></tbody></table>
+<script type="module">
+const cat = await (await fetch('/api/fonts')).json();
+
+async function register(meta) {
+  const f = meta.files;
+  const src = f.woff2 ? `url("${f.woff2}") format("woff2")`
+    : f.woff ? `url("${f.woff}") format("woff")`
+    : f.ttf ? `url("${f.ttf}") format("truetype")`
+    : f.otf ? `url("${f.otf}") format("opentype")` : null;
+  if (!src) return false;
+  const ff = new FontFace(meta.family, src);
+  document.fonts.add(ff);
+  try { await ff.load(); return true; } catch { return false; }
+}
+const want = ['Cairo-Black', 'NotoNaskhArabic-Regular'];
+for (const meta of cat) {
+  if (want.includes(meta.family)) await register(meta);
+}
+await document.fonts.ready;
+
+const SENT = 'ھۆرمەتلىك مېھمانلار';
+const STACK = '"Cairo-Black", "NotoNaskhArabic-Regular", system-ui, "Microsoft YaHei", "PingFang SC", sans-serif';
+const FBONLY = '"NotoNaskhArabic-Regular", system-ui, "Microsoft YaHei", "PingFang SC", sans-serif';
+const FS = 48;
+
+const ctx = document.createElement('canvas').getContext('2d');
+function cvRatios(font, direction) {
+  ctx.font = font;
+  if (direction) ctx.direction = direction; else ctx.direction = 'inherit';
+  return {
+    la: ctx.measureText('لا').width,
+    l: ctx.measureText('ل').width,
+    a: ctx.measureText('ا').width,
+    sent: ctx.measureText(SENT).width,
+  };
+}
+function domWidth(fontFamily, text) {
+  const el = document.createElement('span');
+  el.style.cssText = `font:${fontFamily};font-size:${FS}px;white-space:nowrap;position:absolute;visibility:hidden;direction:rtl;`;
+  el.textContent = text;
+  document.body.appendChild(el);
+  const w = el.getBoundingClientRect().width;
+  el.remove();
+  return w;
+}
+
+const configs = [
+  { id: 'dom: single "Cairo-Black"', kind: 'dom', css: `bold ${FS}px "Cairo-Black"` },
+  { id: 'dom: full stack', kind: 'dom', css: `bold ${FS}px ${STACK}` },
+  { id: 'cv: bold single', kind: 'cv', font: `bold ${FS}px "Cairo-Black"` },
+  { id: 'cv: bold stack', kind: 'cv', font: `bold ${FS}px ${STACK}` },
+  { id: 'cv: stack (no bold)', kind: 'cv', font: `${FS}px ${STACK}` },
+  { id: 'cv: bold single + rtl', kind: 'cv', font: `bold ${FS}px "Cairo-Black"`, dir: 'rtl' },
+  { id: 'cv: bold stack + rtl', kind: 'cv', font: `bold ${FS}px ${STACK}`, dir: 'rtl' },
+  { id: 'cv: fallback-only (Noto)', kind: 'cv', font: `bold ${FS}px ${FBONLY}` },
+  { id: 'cv: bold single + ls0px', kind: 'cv', font: `bold ${FS}px "Cairo-Black"`, ls: '0px' },
+];
+
+const grid = document.getElementById('grid');
+const tbody = document.querySelector('#tbl tbody');
+const out = [];
+for (const c of configs) {
+  let r;
+  if (c.kind === 'dom') {
+    r = {
+      la: domWidth(c.css, 'لا'),
+      l: domWidth(c.css, 'ل'),
+      a: domWidth(c.css, 'ا'),
+      sent: domWidth(c.css, SENT),
+    };
+  } else {
+    r = cvRatios(c.font, c.dir);
+    if (c.ls) ctx.letterSpacing = c.ls;
+    // 可视行：canvas 实画
+    const cv = document.createElement('canvas');
+    cv.width = 560; cv.height = FS * 1.6;
+    const c2 = cv.getContext('2d');
+    c2.font = c.font;
+    if (c.dir) c2.direction = c.dir; else c2.direction = 'inherit';
+    c2.fillStyle = '#000';
+    c2.textBaseline = 'middle';
+    c2.fillText(SENT + '  لا', 10, cv.height / 2);
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<div class="name">${c.id}</div>`;
+    row.appendChild(cv);
+    grid.appendChild(row);
+  }
+  const ratio = r.la / (r.l + r.a);
+  out.push({ id: c.id, ratio: +ratio.toFixed(3), ...r });
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${c.id}</td><td>${ratio.toFixed(3)}</td><td>${r.la.toFixed(1)}</td><td>${r.l.toFixed(1)}</td><td>${r.a.toFixed(1)}</td><td>${r.sent.toFixed(1)}</td>`;
+  tbody.appendChild(tr);
+}
+document.getElementById('status').textContent = 'done';
+window.__RESULT__ = out;
+window.__READY__ = true;
+</script>
+</body>
+</html>

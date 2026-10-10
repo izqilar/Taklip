@@ -156,7 +156,7 @@
     "rotation": "Rotation",
     "opacity": "Opacity",
     "content": "Content",
-    "name": "Alias",
+    "name": "Layer name",
     "fontSize": "Font Size",
     "fontFamily": "Font Family",
     "fill": "Color",
@@ -378,6 +378,7 @@
     }
   },
   "section": {
+    "layer": "Layer",
     "transform": "Transform",
     "fill": "Fill",
     "stroke": "Stroke",
@@ -385,6 +386,7 @@
     "specific": "Specific",
     "border": "Border Style",
     "effects": "Shadow Effects",
+    "variable": "Variable",
     "outline": "Outline",
     "textOutlineFill": "Text Outline & Fill"
   },
@@ -660,6 +662,9 @@
     "title": "Background"
   },
   "component": {
+      "bindAsVariable": "Bind as variable",
+      "variableKey": "Field key",
+      "variableHint": "Batch generation replaces this text with the value of the selected guest field",
     "edit": "Edit",
     "animation": "Animation",
     "events": "Events",

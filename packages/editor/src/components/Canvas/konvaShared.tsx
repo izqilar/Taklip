@@ -9,8 +9,8 @@ import { useEffect, useRef, useSyncExternalStore } from 'react';
 import type { ComponentProps } from 'react';
 import { Image as KonvaImage } from 'react-konva';
 import Konva from 'konva';
-import type { ImageElement } from '@h5design/core';
-import { kashidaForJustify, subscribeFontLoad, getFontLoadVersion } from '@h5design/core';
+import type { ImageElement, ImageClipShape } from '@h5design/core';
+import { kashidaForJustify, subscribeFontLoad, getFontLoadVersion, drawClipOnContext, borderDashArray } from '@h5design/core';
 
 export type KonvaFilter = (typeof Konva.Filters)[keyof typeof Konva.Filters];
 
@@ -40,19 +40,62 @@ export function mapWordBreakToKonvaWrap(wordBreak: string | undefined): 'word' |
   }
 }
 
-/** 把 CSS 风格的 border-style 转成 Konva stroke dash 数组 */
+/** 把 CSS 风格的 border-style 转成 Konva stroke dash 数组（真值在 core：borderDashArray） */
 export function borderDashFromStyle(style?: string, _width = 1): number[] | undefined {
-  switch (style) {
-    case 'dashed':
-      return [6, 4];
-    case 'dotted':
-      return [2, 3];
-    case 'double':
-      // 双线通过绘制内外两条描边实现，这里不需要 dash
-      return undefined;
-    default:
-      return undefined;
-  }
+  return borderDashArray(style);
+}
+
+/**
+ * 「图片边框随裁剪形状自适应」的 Konva 绘制函数。
+ *
+ * 图片元素指定了裁剪形状（圆形 / 椭圆 / 三角形 / 六边形 / 星形 / 心形）时，矩形边框
+ * 会被形状蒙版裁掉（只剩零星残留）。这里改为**沿形状轮廓描边**：把形状路径按
+ * `inset` 内缩后描出，线宽 / 颜色 / dash 与矩形边框完全一致，因此边框严丝合缝地
+ * 贴合当前裁剪形状，并与发布态 DOM（SVG `<path>` 描边）逐像素对齐。
+ *
+ * 走 `sceneFunc` 而不是 `Konva.Path`：路径构造与裁剪蒙版（`drawClipOnContext`）**同一个
+ * 函数**，两条路径必然逐点重合，不存在 SVG path 解析器与 canvas 弧线参数不一致的风险。
+ */
+export function clipBorderSceneFunc(
+  shape: ImageClipShape,
+  w: number,
+  h: number,
+  inset: number,
+  strokeWidth: number,
+  color: string,
+  dash?: number[],
+) {
+  return (ctx: Konva.Context) => {
+    // 内缩后仍保证盒子为正，避免极细元素出现负尺寸路径
+    const iw = Math.max(0.01, w - inset * 2);
+    const ih = Math.max(0.01, h - inset * 2);
+    ctx.save();
+    ctx.translate(inset, inset);
+    drawClipOnContext(ctx, shape, iw, ih);
+    ctx.setAttr('strokeStyle', color);
+    ctx.setAttr('lineWidth', strokeWidth);
+    ctx.setLineDash(dash ?? []);
+    ctx.stroke();
+    ctx.restore();
+  };
+}
+
+/**
+ * 「图片阴影随裁剪形状自适应」的 Konva 绘制函数（形状裁剪模式专用）。
+ *
+ * 矩形 `box-shadow` / Konva 矩形阴影会被形状蒙版裁掉（阴影落在形状之外，被 clip 裁没）。
+ * 这里改为**画一个与形状同轮廓、填充透明、但带阴影的 Shape**：Konva 的阴影由该 Shape
+ * 的填充剪影投射，因此阴影沿形状轮廓扩散；填充透明让 Shape 本体不可见，真实图片
+ * （内容层，裁到同一形状）绘于其上将其完全覆盖 —— 只留下一圈贴合形状的阴影。
+ *
+ * 走 `sceneFunc` 而不是 `Konva.Path`：路径构造与裁剪蒙版（`drawClipOnContext`）同一个
+ * 函数，阴影轮廓与边框轮廓 / 内容轮廓三者逐点重合。
+ */
+export function clipShapeFillSceneFunc(shape: ImageClipShape, w: number, h: number) {
+  return (ctx: Konva.Context) => {
+    drawClipOnContext(ctx, shape, w, h);
+    ctx.fill();
+  };
 }
 
 /** 把 CSS lineStyle 转成 Konva dash 数组（line / shape 描边用） */

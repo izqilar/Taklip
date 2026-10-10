@@ -65,9 +65,13 @@ function Warn($msg){ Write-Host '[WARN] ' -ForegroundColor Yellow -NoNewline; Wr
 
 # run-capture: like Run() but also returns combined output so callers can inspect
 # it (e.g. to detect a Prisma P3005 and self-heal). Never throws on its own.
-# Invoke-Expression runs natively (correct $LASTEXITCODE); merged output is captured to a temp
-# file for inspection. (Start-Process cmd.exe is blocked by the PowerShell execution policy in
-# this environment, so we capture via redirection instead.)
+# The command is run via `cmd /c "cmd > file 2>&1"` so cmd.exe OWNS the redirection.
+# This is deliberate: under $ErrorActionPreference='Stop', PowerShell 5.1 turns ANY
+# native stderr write into a *terminating* error (e.g. Prisma's harmless
+# "Update available ..." banner printed to stderr broke `migrate deploy` on the first
+# run). Routing through cmd.exe keeps that stderr inside cmd's redirected stream, so
+# PowerShell never sees it as an error, while we still capture the full output (P3005
+# detection keeps working) and $LASTEXITCODE reflects the inner command's real exit.
 function Run-Capture($Command, $TimeoutSec=300){
     if ($DRY_RUN -eq '1') {
         Write-Host "    [dry-run] $Command" -ForegroundColor DarkGray
@@ -75,9 +79,8 @@ function Run-Capture($Command, $TimeoutSec=300){
     }
     $tmp = Join-Path $env:TEMP ("migrate_$(Get-Date -Format yyyyMMddHHmmssffff).log")
     try {
-        $output = Invoke-Expression $Command 2>&1
+        cmd /c "$Command > `"$tmp`" 2>&1"
         $code = $LASTEXITCODE
-        $output | Out-File -FilePath $tmp -Encoding utf8
         $text = Get-Content $tmp -Raw -ErrorAction SilentlyContinue
         return @{ ExitCode = $code; Output = $text }
     } finally {

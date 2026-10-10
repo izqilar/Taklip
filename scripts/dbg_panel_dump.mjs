@@ -1,0 +1,20 @@
+import { chromium } from 'playwright';
+const WEB='http://localhost:5173';
+const API='http://localhost:3000';
+const post=async(p,b,t)=>{const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json',...(t?{Authorization:`Bearer ${t}`}:{})},body:JSON.stringify(b??{})});const x=await r.text();if(!r.ok)throw new Error(p+' '+r.status+' '+x);return JSON.parse(x);};
+(async()=>{
+  const login=await post('/api/auth/login',{phone:'13900001001',password:'Test123456'});
+  const token=login.accessToken;
+  const br=await chromium.launch();const ctx=await br.newContext();
+  await ctx.addInitScript((t)=>localStorage.setItem('access_token',t),token);
+  const page=await ctx.newPage();
+  page.on('pageerror',e=>console.log('PAGEERR',e.message));
+  await page.goto(`${WEB}/editor/cmv0ozfb1000nlfboqnq7yvku`,{waitUntil:'domcontentloaded'});
+  await page.waitForTimeout(5000);
+  console.log('URL =', page.url());
+  console.log('=== BODY (first 1500) ===');
+  console.log((await page.locator('body').innerText()).slice(0,1500));
+  console.log('=== aside count ===', await page.locator('aside').count());
+  console.log('=== mb-1.5 count ===', await page.locator('div[class*="mb-1.5"]').count());
+  await br.close();
+})().catch(e=>{console.error('FATAL',e);process.exit(1);});

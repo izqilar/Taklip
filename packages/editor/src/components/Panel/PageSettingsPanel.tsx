@@ -117,6 +117,7 @@ export default function PageSettingsPanel() {
   const setPageHeight = useEditorStore((s) => s.setPageHeight);
   const setPageLongPage = useEditorStore((s) => s.setPageLongPage);
   const setPageBackground = useEditorStore((s) => s.setPageBackground);
+  const setPageBackgroundLive = useEditorStore((s) => s.setPageBackgroundLive);
   const setPageBackgroundImage = useEditorStore((s) => s.setPageBackgroundImage);
   const setPageBackgroundSize = useEditorStore((s) => s.setPageBackgroundSize);
   const setPageBackgroundRepeat = useEditorStore((s) => s.setPageBackgroundRepeat);
@@ -457,7 +458,18 @@ export default function PageSettingsPanel() {
         <Popover anchor={colorAnchorRef.current} open={colorOpen} onClose={() => setColorOpen(false)}>
           <ColorPicker
             value={bg}
-            onChange={(v) => setPageBackground(v)}
+            onChange={(v) => setPageBackgroundLive(v)}
+            /**
+             * 关键修复：onCommit 绝不能用闭包里的 `page.background`（拖拽前旧值）去 setPageBackground，
+             * 否则 ColorPicker.commit() 先 onChange 写入新色、再 onCommit 把它覆盖回旧值，
+             * 表现为「选了颜色却恢复成透明/白色」。这里直接从 store 读「刚刚被 onChange 写入的最新值」，
+             * 仅补一次历史提交，不再覆盖。
+             */
+            onCommit={() => {
+              const s = useEditorStore.getState();
+              const cur = s.project.pages[s.activePage]?.background;
+              if (cur != null) setPageBackground(cur);
+            }}
             onClear={() => setPageBackground('transparent')}
             onConfirm={() => setColorOpen(false)}
             onClose={() => setColorOpen(false)}

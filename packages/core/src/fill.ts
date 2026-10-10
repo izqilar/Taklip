@@ -102,14 +102,39 @@ export interface PatternFill {
   scale: number;
 }
 
+/**
+ * 填充适配方式（图片 / 视频填充共用）：
+ *  - cover    等比铺满并裁剪（不留白）
+ *  - contain  完整显示（可能留白）
+ *  - repeat-x 横向平铺
+ *  - repeat-y 纵向平铺
+ *  - repeat   双向平铺
+ */
+export type FillFit = 'cover' | 'contain' | 'repeat' | 'repeat-x' | 'repeat-y';
+
+export const FILL_FITS: readonly FillFit[] = ['cover', 'contain', 'repeat', 'repeat-x', 'repeat-y'];
+
+/**
+ * 填充图片的裁剪区域（相对于源图的归一化坐标 0~1）。
+ * 仅选择「源图的哪一块」参与填充；不重新编码像素 —— 三端按同一份几何换算实时渲染。
+ */
+export interface FillCrop {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 /** 图片填充配置：用一张图片填充形状（区别于「图案」几何瓦片） */
 export interface ImageFill {
   /** 图片地址（dataURL 或远程 URL） */
   href: string;
-  /** 适配方式：cover 等比铺满并裁剪 / contain 完整显示 / repeat 原始尺寸平铺 */
-  fit?: 'cover' | 'contain' | 'repeat';
+  /** 适配方式（默认 cover） */
+  fit?: FillFit;
   /** 图片填充不透明度 0~1（默认 1） */
   opacity?: number;
+  /** 裁剪区域（源图归一化 0~1）；缺省 = 使用整张图 */
+  crop?: FillCrop | null;
 }
 
 /**
@@ -127,7 +152,7 @@ export interface VideoFill {
   /** 取帧时刻（秒，默认 0 = 首帧） */
   time?: number;
   /** 适配方式，语义同 ImageFill */
-  fit?: 'cover' | 'contain' | 'repeat';
+  fit?: FillFit;
   /** 不透明度 0~1（默认 1） */
   opacity?: number;
 }
@@ -316,6 +341,116 @@ export function getFillType(el?: FillCapable | null): FillType {
 function fillOpacityOf(el: FillCapable): number {
   const o = el.fillOpacity;
   return Number.isFinite(o) ? clamp01(o as number) : 1;
+}
+
+/** 归一化适配方式：缺省 / 非法一律 'cover' */
+export function normalizeFit(raw?: string | null): FillFit {
+  return raw === 'contain' || raw === 'repeat' || raw === 'repeat-x' || raw === 'repeat-y'
+    ? raw
+    : 'cover';
+}
+
+/**
+ * 归一化填充裁剪区域：夹紧到 [0,1]，保证 w/h ≥ 0.01 且 x+w ≤ 1、y+h ≤ 1。
+ * 覆盖整图（0,0,1,1）时返回 undefined —— 避免留下无意义的「全图裁剪」键。
+ */
+export function normalizeFillCrop(raw?: FillCrop | null): FillCrop | undefined {
+  if (!raw) return undefined;
+  const width = clamp(raw.width, 0.01, 1);
+  const height = clamp(raw.height, 0.01, 1);
+  const x = clamp(raw.x, 0, 1 - width);
+  const y = clamp(raw.y, 0, 1 - height);
+  if (x <= 0.0001 && y <= 0.0001 && width >= 0.9999 && height >= 0.9999) return undefined;
+  return { x: round(x), y: round(y), width: round(width), height: round(height) };
+}
+
+/** 裁剪区域在源图上的实际像素尺寸（未裁剪 → 原图尺寸） */
+export function croppedImageSize(
+  img: { width: number; height: number },
+  crop?: FillCrop | null,
+): { width: number; height: number } {
+  const c = normalizeFillCrop(crop);
+  if (!c) return { width: img.width || 1, height: img.height || 1 };
+  return {
+    width: Math.max(1, (img.width || 1) * c.width),
+    height: Math.max(1, (img.height || 1) * c.height),
+  };
+}
+
+/** 填充图片在元素局部的绘制几何（DOM background / SVG pattern / 预览共用同一真值） */
+export interface ImageFillGeometry {
+  /** 图片绘制尺寸（px，cover/contain 为缩放后的尺寸；平铺为原始像素尺寸） */
+  drawW: number;
+  drawH: number;
+  /** 图片绘制起点（元素局部 px，可为负 —— 负值即被元素框裁掉的部分） */
+  drawX: number;
+  drawY: number;
+  /** CSS background-repeat 值 */
+  repeat: 'no-repeat' | 'repeat' | 'repeat-x' | 'repeat-y';
+}
+
+/**
+ * 计算「图片填充」在元素局部的绘制几何（三端唯一真值）。
+ *
+ * 输入 `img` 应为**裁剪后的图片尺寸**（见 croppedImageSize）—— 即「裁剪 → 得到一块源图区域」，
+ * 之后 cover/contain/平铺 都针对这块区域计算，语义与 Konva「把源图裁成该区域后交给
+ * fillPatternImage」完全一致，从根本上保证编辑态（Konva）与预览/发布（DOM/SVG）逐像素对齐。
+ *
+ * @param box 元素框尺寸
+ * @param img 裁剪后图片尺寸
+ * @param fit 适配方式
+ */
+export function imageFillGeometry(
+  box: { width: number; height: number },
+  img: { width: number; height: number },
+  fit: FillFit,
+): ImageFillGeometry {
+  const bw = box.width || 1;
+  const bh = box.height || 1;
+  const iw = img.width || 1;
+  const ih = img.height || 1;
+
+  if (fit === 'cover' || fit === 'contain') {
+    const s = fit === 'cover' ? Math.max(bw / iw, bh / ih) : Math.min(bw / iw, bh / ih);
+    return {
+      drawW: iw * s,
+      drawH: ih * s,
+      drawX: (bw - iw * s) / 2,
+      drawY: (bh - ih * s) / 2,
+      repeat: 'no-repeat',
+    };
+  }
+  const repeat: ImageFillGeometry['repeat'] =
+    fit === 'repeat-x' ? 'repeat-x' : fit === 'repeat-y' ? 'repeat-y' : 'repeat';
+  return { drawW: iw, drawH: ih, drawX: 0, drawY: 0, repeat };
+}
+
+/**
+ * SVG `<pattern>` 规格（userSpaceOnUse），与 imageFillGeometry 表达同一视觉。
+ *  - cover/contain：瓦片 = 元素框，`<image>` 按 drawW/drawH 居中（等价 slice/meet）
+ *  - 平铺：瓦片 = 裁剪区域原始像素；仅在平铺轴上取「元素框尺寸」以限制另一轴重复
+ */
+export function imageFillPatternSpec(
+  box: { width: number; height: number },
+  img: { width: number; height: number },
+  fit: FillFit,
+): { tileW: number; tileH: number; imgW: number; imgH: number; imgX: number; imgY: number } {
+  const geo = imageFillGeometry(box, img, fit);
+  const bw = box.width || 1;
+  const bh = box.height || 1;
+  const iw = img.width || 1;
+  const ih = img.height || 1;
+  if (fit === 'cover' || fit === 'contain') {
+    return { tileW: bw, tileH: bh, imgW: geo.drawW, imgH: geo.drawH, imgX: geo.drawX, imgY: geo.drawY };
+  }
+  if (fit === 'repeat-x') {
+    // 横向平铺：高度取元素框高 → 纵向只显示一行（不重复）
+    return { tileW: iw, tileH: bh, imgW: iw, imgH: ih, imgX: 0, imgY: 0 };
+  }
+  if (fit === 'repeat-y') {
+    return { tileW: bw, tileH: ih, imgW: iw, imgH: ih, imgX: 0, imgY: 0 };
+  }
+  return { tileW: iw, tileH: ih, imgW: iw, imgH: ih, imgX: 0, imgY: 0 };
 }
 
 /* ────────────────────────────── 渐变 ────────────────────────────── */
@@ -675,8 +810,22 @@ export function patternTileDataUrl(p: PatternFill, opacity = 1): string | undefi
  * 与 EditorCanvas 的 `imageCache` 解耦：本缓存专为元素「填充图片」服务，支持 crossOrigin 失败降级。
  */
 const imageFillCache = new Map<string, HTMLImageElement | null>();
+/** 已完成（成功或失败）的 href：用于让 preloadImageFills 区分「加载中」与「已失败」 */
+const imageFillSettled = new Set<string>();
+/** 等待某 href 结算的 Promise resolve 回调（成功/失败都会 resolve） */
+const imageFillWaiters = new Map<string, Set<() => void>>();
 let imageFillEpoch = 0;
 const imageFillListeners = new Set<() => void>();
+
+/** 结算某 href（成功或失败）：放行等待者 */
+function settleImageFill(href: string): void {
+  imageFillSettled.add(href);
+  const set = imageFillWaiters.get(href);
+  if (set) {
+    imageFillWaiters.delete(href);
+    set.forEach((fn) => fn());
+  }
+}
 
 /** 订阅图片填充加载完成事件（用于触发 Konva 重绘） */
 export function subscribeImageFill(cb: () => void): () => void {
@@ -711,6 +860,7 @@ export function ensureImageFillLoaded(href: string): void {
   img.crossOrigin = 'anonymous';
   img.onload = () => {
     imageFillCache.set(href, img);
+    settleImageFill(href);
     notifyImageFill();
   };
   img.onerror = () => {
@@ -718,15 +868,54 @@ export function ensureImageFillLoaded(href: string): void {
     const fb = new Image();
     fb.onload = () => {
       imageFillCache.set(href, fb);
+      settleImageFill(href);
       notifyImageFill();
     };
     fb.onerror = () => {
       imageFillCache.set(href, null);
+      settleImageFill(href);
       notifyImageFill();
     };
     fb.src = href;
   };
   img.src = href;
+}
+
+/**
+ * 等待若干「填充图片」加载结算（成功或失败都算结算），供**导出截图前预热**使用。
+ *
+ * 文本图片填充在 DOM 侧是 CSS `background-image`，不是 `<img>`，因此导出页
+ * 「等 `#export-stage img` 解码」覆盖不到它 —— 若不显式等待，无头浏览器可能在
+ * 图片加载完成前截图 → 几何算不出 → 文本回落单色（与设计态不一致）。
+ * 成功后由 `useImageFillEpoch` 触发的重渲染会补上真值几何。
+ */
+export function preloadImageFills(hrefs: Iterable<string | null | undefined>): Promise<void> {
+  const list = [...new Set([...hrefs].filter((h): h is string => !!h))];
+  if (!list.length || typeof document === 'undefined') return Promise.resolve();
+  return Promise.all(
+    list.map(
+      (href) =>
+        new Promise<void>((resolve) => {
+          // 已成功加载，或此前已结算（含失败）→ 无需等待
+          if (imageFillCache.get(href) || imageFillSettled.has(href)) {
+            resolve();
+            return;
+          }
+          let set = imageFillWaiters.get(href);
+          if (!set) {
+            set = new Set();
+            imageFillWaiters.set(href, set);
+          }
+          set.add(resolve);
+          // 触发加载（幂等）；若此前已在加载中，等待者会在结算时被放行
+          ensureImageFillLoaded(href);
+          // 兜底超时：网络异常等极端情况避免导出流程被永久挂住
+          setTimeout(() => {
+            if (!imageFillSettled.has(href)) settleImageFill(href);
+          }, 8000);
+        }),
+    ),
+  ).then(() => undefined);
 }
 
 /**
@@ -757,12 +946,67 @@ function composeWithOpacity(
   }
 }
 
+/** 裁剪区域合成结果缓存（与 imageFillCache 同生命周期，仅编辑器侧消费） */
+const cropCache = new Map<string, HTMLCanvasElement | null>();
+const CROP_CACHE_MAX = 32;
+
 /**
  * 取「图片填充」的绘制源（HTMLImageElement 或带透明度的 canvas）。
  * 当 opacity < 1 时，把图片合成到 canvas 再返回，使 Konva 能表达填充透明度。
+ * 当存在裁剪区域时，先把源图裁成该区域（canvas），后续 cover/contain/平铺 都针对该区域计算。
  */
-function imageFillSource(href: string, opacity?: number): HTMLImageElement | HTMLCanvasElement | null {
-  return composeWithOpacity(getImageFill(href), opacity);
+function imageFillSource(
+  href: string,
+  opacity?: number,
+  crop?: FillCrop | null,
+): HTMLImageElement | HTMLCanvasElement | null {
+  const base = getImageFill(href);
+  if (!base) return null;
+  const c = normalizeFillCrop(crop);
+  const o = typeof opacity === 'number' ? clamp01(opacity) : 1;
+  if (!c && o >= 1) return base;
+  const key = `${href}|${c ? `${c.x},${c.y},${c.width},${c.height}` : '-'}|${round(o, 3)}`;
+  const hit = cropCache.get(key);
+  if (hit) return hit;
+  if (typeof document === 'undefined') return base;
+  const natW = base.naturalWidth || base.width || 1;
+  const natH = base.naturalHeight || base.height || 1;
+  const sx = c ? c.x * natW : 0;
+  const sy = c ? c.y * natH : 0;
+  const sw = c ? c.width * natW : natW;
+  const sh = c ? c.height * natH : natH;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(sw));
+    canvas.height = Math.max(1, Math.round(sh));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return base;
+    ctx.globalAlpha = o;
+    ctx.drawImage(base, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+    if (cropCache.size >= CROP_CACHE_MAX) {
+      const oldest = cropCache.keys().next().value;
+      if (oldest !== undefined) cropCache.delete(oldest);
+    }
+    cropCache.set(key, canvas);
+    return canvas;
+  } catch {
+    return base;
+  }
+}
+
+/**
+ * 裁剪结果的 dataURL（DOM `background-image` / SVG `<image>` 用）。
+ * 无裁剪时直接返回原始地址；有裁剪但图片未加载时返回 undefined（调用方回落原地址）。
+ */
+export function imageFillDataUrl(href?: string | null, crop?: FillCrop | null): string | undefined {
+  if (!href) return undefined;
+  const c = normalizeFillCrop(crop);
+  if (!c) return href;
+  const base = getImageFill(href);
+  if (!base) return undefined;
+  const src = imageFillSource(href, 1, c);
+  if (src instanceof HTMLCanvasElement) return src.toDataURL('image/png');
+  return href;
 }
 
 /* ──────────────────────── 视频填充（抓帧） ──────────────────────── */
@@ -993,10 +1237,10 @@ function konvaImagePatternProps(
   el: FillCapable,
   source: HTMLImageElement | HTMLCanvasElement,
   box: FillBox,
-  fit: 'cover' | 'contain' | 'repeat',
+  fit: FillFit,
 ): KonvaFillProps {
-  const iw = (source as HTMLImageElement).naturalWidth || source.width;
-  const ih = (source as HTMLImageElement).naturalHeight || source.height;
+  const iw = (source as HTMLImageElement).naturalWidth || source.width || 1;
+  const ih = (source as HTMLImageElement).naturalHeight || source.height || 1;
   const bw = box.width;
   const bh = box.height;
   const props: KonvaFillProps = {
@@ -1006,8 +1250,9 @@ function konvaImagePatternProps(
     // 见 KonvaFillProps.fillPatternImage 的说明：运行时是 canvas，此处按 Konva 声明断言
     fillPatternImage: source as unknown as HTMLImageElement,
   };
-  if (fit === 'repeat') {
-    props.fillPatternRepeat = 'repeat';
+  // 平铺（横向 / 纵向 / 双向）：图案按原始像素尺寸平铺，不缩放。
+  if (fit === 'repeat' || fit === 'repeat-x' || fit === 'repeat-y') {
+    props.fillPatternRepeat = fit;
     props.fillPatternX = box.x;
     props.fillPatternY = box.y;
     props.fillPatternScaleX = 1;
@@ -1079,13 +1324,13 @@ export function konvaFillProps(el: FillCapable, box: FillBox): KonvaFillProps | 
   if (type === 'image') {
     const imgF = el.imageFill;
     if (!imgF || !imgF.href) return undefined;
-    const source = imageFillSource(imgF.href, imgF.opacity);
+    const source = imageFillSource(imgF.href, imgF.opacity, imgF.crop);
     if (!source) {
       // 未就绪：回落单色，同时触发异步加载；加载完成后 epoch 通知画布重绘
       ensureImageFillLoaded(imgF.href);
       return undefined;
     }
-    return konvaImagePatternProps(el, source, box, imgF.fit ?? 'cover');
+    return konvaImagePatternProps(el, source, box, normalizeFit(imgF.fit));
   }
 
   if (type === 'video') {
@@ -1179,17 +1424,29 @@ export function domFillStyle(el: FillCapable): DomFillStyle {
   if (type === 'image') {
     const imgF = el.imageFill;
     if (imgF && imgF.href) {
-      const fit = imgF.fit ?? 'cover';
-      // DOM 背景图天然支持 cover/contain/repeat，与 Konva 端几何口径一致。
-      // 注意：这里直接用原始 href 而非内联 dataURL —— 发布态就是 DOM 渲染，
-      // 内联图片会让产物体积暴涨；代价是 imageFill.opacity 在 DOM / SVG 侧不生效
-      // （Konva 侧已预乘）。这是改造前既有行为，本轮刻意保持不动。
+      const fit = normalizeFit(imgF.fit);
+      // 裁剪：DOM 背景图无法表达「只取源图某块区域」，故把裁剪结果内联为 dataURL，
+      // 交给 CSS cover/contain/平铺处理（与 Konva 端「先把源图裁成该区域」语义一致）。
+      // 无裁剪时沿用原始 href，避免发布态产物体积暴涨（改造前既有行为）。
+      const href = imgF.crop ? imageFillDataUrl(imgF.href, imgF.crop) ?? imgF.href : imgF.href;
+      const bgImage = href ? `url("${href}")` : undefined;
+      if (!bgImage) return { ...blend, backgroundColor: el.fill };
+      if (fit === 'repeat' || fit === 'repeat-x' || fit === 'repeat-y') {
+        return {
+          ...blend,
+          backgroundImage: bgImage,
+          backgroundSize: 'auto',
+          backgroundRepeat: fit,
+          backgroundPosition: '0 0',
+        };
+      }
+      // cover / contain：DOM 背景天然支持这两个关键字（相对元素框缩放居中），无需几何换算
       return {
         ...blend,
-        backgroundImage: `url("${imgF.href}")`,
-        backgroundSize: fit === 'repeat' ? 'auto' : fit,
-        backgroundRepeat: fit === 'repeat' ? 'repeat' : 'no-repeat',
-        backgroundPosition: fit === 'repeat' ? '0 0' : 'center',
+        backgroundImage: bgImage,
+        backgroundSize: fit,
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
       };
     }
     return { ...blend, backgroundColor: el.fill };
@@ -1242,10 +1499,12 @@ export interface SvgFillDef {
   /** pattern / image 共用 */
   href?: string;
   tile?: number;
-  /** image：填充适配方式与图片原生尺寸 */
-  fit?: 'cover' | 'contain' | 'repeat';
+  /** image：填充适配方式（5 种）与图片原生尺寸（裁剪后为裁剪区尺寸） */
+  fit?: FillFit;
   imgW?: number;
   imgH?: number;
+  /** image：裁剪区域（源图归一化 0~1）；存在时 href 即裁剪后的 dataURL */
+  crop?: FillCrop;
   /** image：填充不透明度 0~1 */
   opacity?: number;
 }
@@ -1299,17 +1558,21 @@ export function svgFill(el: FillCapable, id: string): SvgFillPaint {
     const imgF = el.imageFill;
     const img = imgF && imgF.href ? getImageFill(imgF.href) : null;
     if (imgF && imgF.href && img) {
-      // SVG 用 <pattern>（userSpaceOnUse）包裹 <image>，靠 preserveAspectRatio 实现 cover/contain
-      const fit = imgF.fit ?? 'cover';
+      const fit = normalizeFit(imgF.fit);
+      const crop = normalizeFillCrop(imgF.crop);
+      const cropped = croppedImageSize(img, crop);
+      // 裁剪：把裁剪结果内联为 dataURL 作 <image href>，后续 cover/contain/平铺都针对该区域，
+      // 与 Konva / DOM 端「先把源图裁成该区域」语义一致；无裁剪沿用原始 href。
+      const href = crop ? imageFillDataUrl(imgF.href, crop) ?? imgF.href : imgF.href;
       return {
         fillAttr: `url(#${id})`,
         def: {
           id,
           kind: 'image',
-          href: imgF.href,
+          href,
           fit,
-          imgW: img.naturalWidth || img.width,
-          imgH: img.naturalHeight || img.height,
+          imgW: cropped.width,
+          imgH: cropped.height,
           opacity: typeof imgF.opacity === 'number' ? clamp01(imgF.opacity) : 1,
         },
       };

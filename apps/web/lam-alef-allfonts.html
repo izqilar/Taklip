@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>All fonts lam-alef check</title>
+<style>
+  html, body { margin: 0; padding: 10px; background: #fff; color: #000; }
+  .cell { display: inline-block; width: 300px; margin: 2px; border: 1px solid #ccc; padding: 2px 6px; }
+  .sample { font-size: 30px; white-space: nowrap; direction: rtl; }
+  .name { font-size: 11px; font-family: monospace; }
+  .flag { font-size: 11px; font-family: monospace; font-weight: bold; }
+  .BAD { color: #c00; } .ok { color: #0a0; }
+</style>
+</head>
+<body>
+<div id="status">loading…</div>
+<div id="grid"></div>
+<script type="module">
+const cat = await (await fetch('/api/fonts')).json();
+
+// 逐个注册（不带 unicode-range：排除 range 干扰，纯测字体自身 GSUB 是否有 lam-alef 合字）
+async function register(meta) {
+  const f = meta.files;
+  const src = f.woff2 ? `url("${f.woff2}") format("woff2")`
+    : f.woff ? `url("${f.woff}") format("woff")`
+    : f.ttf ? `url("${f.ttf}") format("truetype")`
+    : f.otf ? `url("${f.otf}") format("opentype")` : null;
+  if (!src) return false;
+  const ff = new FontFace(meta.family, src);
+  document.fonts.add(ff);
+  try { await ff.load(); return true; } catch { return false; }
+}
+const loaded = [];
+for (const meta of cat) {
+  const ok = await register(meta);
+  if (ok) loaded.push(meta);
+}
+await document.fonts.ready;
+
+const ctx = document.createElement('canvas').getContext('2d');
+// 连字判定：w(لا) 相对 w(ل)+w(ا) 的压缩比；同时用词内 "بالا" 对照
+function ratios(family) {
+  const font = `32px "${family}"`;
+  ctx.font = font;
+  const wLa = ctx.measureText('لا').width;
+  const wL = ctx.measureText('ل').width;
+  const wA = ctx.measureText('ا').width;
+  return { ratio: wLa / (wL + wA), wLa, wL, wA };
+}
+
+const grid = document.getElementById('grid');
+const out = [];
+for (const meta of loaded) {
+  const { ratio } = ratios(meta.family);
+  const bad = ratio > 0.95;
+  out.push({ family: meta.family, ratio: +ratio.toFixed(3), bad, uyghur: meta.coverage?.uyghur });
+  const div = document.createElement('div');
+  div.className = 'cell';
+  div.innerHTML =
+    `<div class="name">${meta.family}</div>` +
+    `<div class="flag ${bad ? 'BAD' : 'ok'}">ratio=${ratio.toFixed(3)} ${bad ? 'NO-LIGATURE?' : ''}</div>` +
+    `<div class="sample" style="font-family:'${meta.family}'">لا بالا</div>` +
+    `<div class="sample" style="font-family:'${meta.family}'">ل‌ا (ZWNJ)</div>`;
+  grid.appendChild(div);
+}
+document.getElementById('status').textContent = `done: ${loaded.length} fonts loaded, ${out.filter(o=>o.bad).length} suspicious`;
+window.__ALL_FONTS__ = out;
+window.__READY__ = true;
+</script>
+</body>
+</html>

@@ -187,6 +187,7 @@ export function SchemaThumbnail({ schema }: { schema: unknown }) {
   return (
     <div
       ref={containerRef}
+      data-thumb-state={inView ? 'rendered' : 'skeleton'}
       style={{
         position: 'absolute',
         top: 0,

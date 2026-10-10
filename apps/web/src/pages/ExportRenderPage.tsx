@@ -13,8 +13,29 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SchemaRenderer } from '@h5design/render';
-import { ensureFontsByFamilies, setFontCatalog, type FontMeta } from '@h5design/core';
+import { ensureFontsByFamilies, setFontCatalog, preloadImageFills, type FontMeta } from '@h5design/core';
 import type { Project } from '@h5design/core';
+
+/**
+ * 深度收集 schema 中所有「图片填充」的 href（含嵌套子元素）。
+ * 用于导出前预热：文本图片填充在 DOM 侧是 CSS `background-image` 而非 `<img>`，
+ * 导出页「等 `#export-stage img` 解码」覆盖不到它（见 core preloadImageFills）。
+ */
+function collectImageFillHrefs(node: unknown, out: string[] = []): string[] {
+  if (!node || typeof node !== 'object') return out;
+  if (Array.isArray(node)) {
+    for (const n of node) collectImageFillHrefs(n, out);
+    return out;
+  }
+  const obj = node as Record<string, unknown>;
+  const f = obj.imageFill as { href?: string } | undefined;
+  if (f && typeof f.href === 'string' && f.href) out.push(f.href);
+  for (const k of Object.keys(obj)) {
+    const v = obj[k];
+    if (v && typeof v === 'object') collectImageFillHrefs(v, out);
+  }
+  return out;
+}
 
 interface ExportPayload {
   project: Project;
@@ -99,6 +120,11 @@ export default function ExportRenderPage() {
           await document.fonts?.ready;
         }
         await new Promise((r) => setTimeout(r, 120));
+        if (cancelled) return;
+        // 文本 / 形状的「图片填充」在 DOM 侧是 CSS `background-image`（非 `<img>`），
+        // 上面的 `#export-stage img` 解码等待覆盖不到它。若不显式等待，无头浏览器可能在
+        // 图片加载完成前截图 → 几何算不出 → 回落单色（与设计态不一致）。
+        await preloadImageFills(collectImageFillHrefs(project));
         if (cancelled) return;
         const imgs = Array.from(document.querySelectorAll<HTMLImageElement>('#export-stage img'));
         await Promise.all(imgs.map((img) => img.decode().catch(() => undefined)));

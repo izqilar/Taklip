@@ -58,6 +58,9 @@ const FeedbackList = lazy(() => import('./pages/feedback').then((m) => ({ defaul
 const MessageList = lazy(() => import('./pages/messages').then((m) => ({ default: m.MessageList })));
 const SettingsPage = lazy(() => import('./pages/settings').then((m) => ({ default: m.SettingsPage })));
 const FontAdminList = lazy(() => import('./pages/fonts').then((m) => ({ default: m.FontAdminList })));
+const PlaceholderRegistryAdmin = lazy(() =>
+  import('./pages/placeholders').then((m) => ({ default: m.PlaceholderRegistryAdmin })),
+);
 const TemplateReviewList = lazy(() => import('./pages/templates').then((m) => ({ default: m.TemplateReviewList })));
 const RolesPage = lazy(() => import('./pages/roles').then((m) => ({ default: m.RolesPage })));
 const TeamManagePage = lazy(() => import('./pages/teamManage').then((m) => ({ default: m.TeamManagePage })));
@@ -106,10 +109,28 @@ const UserComplaintNew = lazy(() => import('./pages/user/UserComplaintNew').then
 const UserApply = lazy(() => import('./pages/user/UserApply').then((m) => ({ default: m.UserApply })));
 const UserComplaintDetail = lazy(() => import('./pages/user/UserComplaintDetail').then((m) => ({ default: m.UserComplaintDetail })));
 const UserNoticeFill = lazy(() => import('./pages/user/UserNoticeFill').then((m) => ({ default: m.UserNoticeFill })));
+// 用户视角 · 请柬事务中心：内嵌 Web 端「请柬批量生成」详情页（iframe 原样挂载，§18）
+const UserInvitationCenter = lazy(() =>
+  import('./pages/user/UserInvitationCenter').then((m) => ({ default: m.default })),
+);
+const UserTemplateFieldDesign = lazy(() =>
+  import('./pages/user/UserTemplateFieldDesign').then((m) => ({ default: m.default })),
+);
+const UserGuestLists = lazy(() =>
+  import('./pages/user/UserGuestLists').then((m) => ({ default: m.default })),
+);
+const UserGuestListEditor = lazy(() =>
+  import('./pages/user/UserGuestListEditor').then((m) => ({ default: m.default })),
+);
 const ScheduleList = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.ScheduleList })));
 const TemplatesList = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.TemplatesList })));
 const WorksList = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.WorksList })));
 const GalleryPage = lazy(() => import('./pages/gallery/GalleryPage').then((m) => ({ default: m.GalleryPage })));
+// 批量请柬（§16.4 触发 B）：服务商侧栏「请柬营销」
+const SPInvitationLists = lazy(() => import('./pages/spInvitations').then((m) => ({ default: m.SPInvitationLists })));
+const SPInvitationJobs = lazy(() => import('./pages/spInvitations').then((m) => ({ default: m.SPInvitationJobs })));
+const SPInvitationBatch = lazy(() => import('./pages/spInvitationBatch').then((m) => ({ default: m.SPInvitationBatch })));
+const SPTemplateFieldDesign = lazy(() => import('./pages/TemplateFieldDesignPage'));
 const UpgradePage = lazy(() => import('./pages/upgrade/UpgradePage').then((m) => ({ default: m.UpgradePage })));
 const SPContract = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.SPContract })));
 const SPClients = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.SPClients })));
@@ -303,6 +324,8 @@ export const App = () => (
                 <Route path="/admin/settings" element={<SettingsPage />} />
                 {/* 总台：字体管理（CP 目录扫描入库 / 清理失效） */}
                 <Route path="/admin/fonts" element={<FontAdminList />} />
+                {/* 总台：占位符管理（v2 占位符真相源，运营端独占写） */}
+                <Route path="/admin/placeholders" element={<PlaceholderRegistryAdmin />} />
                 {/* 总台：模板审核 / 角色与权限（M2 真实化） */}
                 <Route path="/admin/templates" element={<TemplateReviewList />} />
                 <Route path="/admin/roles" element={<RolesPage />} />
@@ -395,6 +418,11 @@ export const App = () => (
                 <Route path="/sp/schedule/:id" element={<SPScheduleDetail />} />
                 <Route path="/sp/works" element={<WorksList />} />
                 <Route path="/sp/gallery" element={<GalleryPage layer="provider" />} />
+                {/* 批量请柬（§16.4 触发 B）：服务商侧栏「请柬营销」分组 */}
+                <Route path="/sp/invitations/lists" element={<SPInvitationLists />} />
+                <Route path="/sp/invitations/jobs" element={<SPInvitationJobs />} />
+                <Route path="/sp/invitations/generate" element={<SPInvitationBatch />} />
+                <Route path="/sp/invitations/fields" element={<SPTemplateFieldDesign />} />
                 <Route path="/sp/upgrade" element={<UpgradePage kind="provider" />} />
                 <Route path="/sp/templates" element={<TemplatesList />} />
                 <Route path="/sp/templates/new" element={<SPTemplateDetail />} />
@@ -473,6 +501,12 @@ export const App = () => (
                 <Route path="/user/coupons" element={<UserCoupons />} />
                 {/* 入驻申请（JOIN 加入 / SETTLE 入驻双隧道，与 web 端 /user/apply 同构） */}
                 <Route path="/user/apply" element={<UserApply />} />
+                {/* 请柬事务中心：iframe 原样内嵌 Web 端批量请柬生成详情页（§18） */}
+                {/* 请柬事务中心（独立一级分组，路由路径与 web 端逐一对齐） */}
+                <Route path="/user/invitations/fields" element={<UserTemplateFieldDesign />} />
+                <Route path="/user/invitations/lists" element={<UserGuestLists />} />
+                <Route path="/user/invitations/lists/:id" element={<UserGuestListEditor />} />
+                <Route path="/user/invitations/jobs" element={<UserInvitationCenter />} />
 
                 <Route path="*" element={<ErrorComponent />} />
               </Route>

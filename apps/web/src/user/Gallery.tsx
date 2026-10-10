@@ -20,7 +20,7 @@ export default function Gallery() {
   const { t } = useTranslation();
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [cropId, setCropId] = useState<string | null>(null);
-  const { list, quota, loading, uploading, uploadPct, upload, remove, load, full } = useGalleryData();
+  const { list, quota, loading, uploading, uploadPct, upload, confirmRemove, load, full } = useGalleryData();
   const { fetchUrl, revokeAll } = usePrivateImage();
 
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function Gallery() {
                 asset={a}
                 fetchUrl={fetchUrl}
                 onPreview={() => setPreviewId(a.id)}
-                onDelete={() => remove(a.id)}
+                onDelete={() => confirmRemove(a)}
                 onCrop={() => setCropId(a.id)}
               />
             ))}
@@ -111,6 +111,7 @@ export default function Gallery() {
       <CropModal
         id={cropId}
         fetchUrl={fetchUrl}
+        quota={quota}
         onClose={() => setCropId(null)}
         onDone={() => {
           setCropId(null);

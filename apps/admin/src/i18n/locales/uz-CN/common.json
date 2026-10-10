@@ -440,4 +440,23 @@
       "confirm": "立即重新登录"
     }
   }
-}
+,
+  "menu": { "admin": { "placeholders": "Yorliq boshqaruvi" } },
+  "placeholders": {
+    "colLabel": "Yorliq",
+    "labelSection": "Yorliq",
+    "label": "Yorliq",
+    "labelTip": "Joriy til muhitida kiritilgan bitta tilli yorliq, tahrirlovchi bog‘lash ro‘yxatida to‘g‘ridan-to‘g‘ri ko‘rsatiladi",
+    "labelPh": "Masalan: Kuyov / Ism / To‘y sanasi",
+    "labelRequired": "Yorliqni kiriting",
+    "hintSection": "Tahrirlash maslahati (ixtiyoriy)",
+    "hint": "Tahrirlash maslahati",
+    "hintPh": "Tahrirlashdagi joy maslahati",
+    "defaultSection": "Standart qiymat (ixtiyoriy)",
+    "defaultValue": "Standart qiymat",
+    "defaultPhDatetime": "YYYY-MM-DD SS:dd",
+    "defaultPhAddress": "{province}{city}{detail}",
+    "defaultPhImage": "Galereya rasm resursi kaliti",
+    "defaultPhText": "Standart qiymat uchun bo‘sh qoldiring",
+    "sub": "Boshqaruv konsolining eksklyuziv konfiguratsiya manbai: yangi yorliqlar faqat shu yerda yaratiladi; tahrirlovchi faqat ro‘yxatdan o‘tgan elementlarni bog‘lashi mumkin. key — barqaror ASCII; yorliq/maslahat/standart qiymat joriy tilda yagona mazmun sifatida kiritiladi, interfeys matni tizimli i18n orqali birlashtiriladi."
+  }}

@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards,
   Req,
 } from '@nestjs/common';
@@ -14,8 +15,14 @@ import { ProjectService } from './project.service';
 import { CreateProjectDto, UpdateProjectDto } from './dto/create-project.dto';
 
 type AuthedRequest = Express.Request & {
-  user: { id: string };
+  user: { id: string; role?: string };
 };
+
+/** 视察视角作用域解析（与 invitation / guest-list 的 subjectId 口径一致）：
+ *  ADMIN 在「用户视角」监督某终端用户时携带 ?subject=<被视察用户id>，以该用户身份读其作品；
+ *  其余角色忽略 subject 走自身 JWT 身份。 */
+const subjectId = (req: AuthedRequest, subject?: string) =>
+  subject && req.user.role === 'ADMIN' ? subject : req.user.id;
 
 @Controller('api/projects')
 @UseGuards(AuthGuard('jwt'))
@@ -28,13 +35,13 @@ export class ProjectController {
   }
 
   @Get()
-  findAll(@Req() req: AuthedRequest) {
-    return this.projectService.findAll(req.user.id);
+  findAll(@Req() req: AuthedRequest, @Query('subject') subject?: string) {
+    return this.projectService.findAll(subjectId(req, subject));
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @Req() req: AuthedRequest) {
-    return this.projectService.findOne(id, req.user.id);
+  findOne(@Param('id') id: string, @Req() req: AuthedRequest, @Query('subject') subject?: string) {
+    return this.projectService.findOne(id, subjectId(req, subject));
   }
 
   @Put(':id')

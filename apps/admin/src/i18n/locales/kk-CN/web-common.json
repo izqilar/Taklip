@@ -399,5 +399,28 @@
       "fail": "Failed, please retry",
       "loginRedirect": "Log in to continue Quick Make"
     }
+  },
+  "invitationMapping": {
+    "title": "Field pairing",
+    "modeVariable": "Variable view",
+    "modeElement": "Canvas pick",
+    "mapToList": "Map to list column",
+    "unmapped": "Unmapped",
+    "noMappingAtAll": "No mapping established yet; you may skip to generate the unified layout",
+    "requiredUnmapped": "Required variable not mapped; please map it first",
+    "noUsableColumn": "No usable column in the guest list; mapping unavailable",
+    "willBeEmpty": "Will be left empty or hidden, {{count}} in total",
+    "noVarsHint": "This template has no preset variables; pick elements on the canvas and map them to list fields",
+    "orphanedHint": "{{count}} binding(s) point to non-existent elements (ignored)",
+    "supersededHint": "{{count}} element(s) have been overridden by other variables",
+    "clearAll": "Clear all and reselect",
+    "cancel": "Cancel",
+    "skipUnified": "Skip",
+    "save": "Save pairing",
+    "saving": "Saving…",
+    "element": "Element",
+    "field": "Field",
+    "noPreview": "No preview",
+    "noElements": "No selectable elements"
   }
 }

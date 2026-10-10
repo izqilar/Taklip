@@ -73,7 +73,38 @@ async function main() {
     },
   });
 
-  console.log('✅ Seed 完成：dev_user_001 / dev_provider_001 / dev_admin_001 / dev_user_004 已就绪');
+  // ── 占位符注册表种子（v2 占位符管理 §8）：把标准名单字段登记为 legacy 项。
+  // 真值源仍是 packages/core/src/guest-fields.ts 的 GUEST_FIELD_DEFS；此处仅做展示/回落登记，
+  // key 不变（guest_name…），scope=record（名单字段型），type=text，legacy=true（不可删）。
+  const guestFieldDefs: { key: string; label: string; required: boolean }[] = [
+    { key: 'guest_name', label: '姓名', required: true },
+    { key: 'guest_title', label: '称谓', required: false },
+    { key: 'gender', label: '性别', required: false },
+    { key: 'unit', label: '单位', required: false },
+    { key: 'table_no', label: '桌号', required: false },
+    { key: 'phone', label: '手机号', required: false },
+    { key: 'address', label: '地址', required: false },
+    { key: 'remark', label: '备注', required: false },
+  ];
+  for (const f of guestFieldDefs) {
+    await prisma.placeholderRegistry.upsert({
+      where: { key: f.key },
+      update: {},
+      create: {
+        key: f.key,
+        type: 'text',
+        label: f.label,
+        hint: '',
+        defaultValue: '',
+        scope: 'record',
+        requiredDef: f.required,
+        status: 'visible',
+        legacy: true,
+      },
+    });
+  }
+
+  console.log('✅ Seed 完成：dev_user_001 / dev_provider_001 / dev_admin_001 / dev_user_004 已就绪；占位符注册表 legacy 字段已登记');
 }
 
 main()

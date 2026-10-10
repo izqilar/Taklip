@@ -46,6 +46,8 @@ import {
   normalizeBlendMode,
   gradientFromSolid,
   patternFromSolid,
+  GUEST_FIELD_DEFS,
+  getGuestFieldDef,
   type FillType,
   type GradientFill,
   type PatternFill,
@@ -54,6 +56,7 @@ import {
 } from '@h5design/core';
 import { useEditorStore, useSelectedElement } from '../../store/editorStore';
 import { services } from '../../services';
+import { usePlaceholderRegistry, placeholderLabel, placeholderDefault } from '../../placeholderRegistry';
 import { validateImageFile, readImageDimensions } from '../../utils/image';
 import ImageCropDialog from './ImageCropDialog';
 import { getElementRegistration } from '../../elements/registry';
@@ -424,9 +427,49 @@ const ICON_TEXT = <path d="M4 6h16M12 6v12M9 18h6" />;
 const ICON_SPECIFIC = <path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h12M18 18h2" />;
 const ICON_BORDER = <path d="M4 4h16v16H4zM8 8h8v8H8z" />;
 const ICON_EFFECTS = <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18" />;
+/** 批量请柬变量绑定：花括号占位符语义 */
+const ICON_VARIABLE = <path d="M8 3H7a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2 2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h1M16 3h1a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2 2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-1" />;
+/** 图层名：层叠语义 */
+const ICON_LAYER = <><path d="M12 2 2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" /></>;
 
 function SectionBody({ children }: { children: React.ReactNode }) {
   return <div className="flex flex-col gap-3">{children}</div>;
+}
+
+/* ───────── 图层名 Layer name ─────────
+ * 图层名单独成组、置于「变换」上方：图层名是元素的标识，与几何变换（X/Y/宽高/旋转/透明度）
+ * 语义不同，独立分组更清晰。占位符绑定（含「设为占位符」开关）统一归入下方「占位符绑定」组，
+ * 本组不再重复提供绑定开关。 */
+
+function LayerNameSection({ el, update }: { el: Element; update: (patch: Partial<Element>) => void }) {
+  const { t } = useTranslation(['editor']);
+  return (
+    <CollapsibleSection
+      title={<SectionTitle title={t('editor:section.layer')}>{ICON_LAYER}</SectionTitle>}
+      defaultOpen
+    >
+      <SectionBody>
+        <div className="flex items-center gap-3">
+          <label className="w-20 shrink-0 text-sm text-gray-700">{t('editor:property.name')}</label>
+          <input
+            type="text"
+            value={el.name || ''}
+            onChange={(e) => {
+              const nextName = e.target.value;
+              // 改名只同步 binding.name（key 冻结），保证已建映射不断（S2）
+              update(
+                el.binding?.key
+                  ? { name: nextName, binding: { ...el.binding, name: nextName } }
+                  : { name: nextName },
+              );
+            }}
+            placeholder={t('editor:property.name')}
+            className="min-w-0 flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 outline-none focus:border-blue-400"
+          />
+        </div>
+      </SectionBody>
+    </CollapsibleSection>
+  );
 }
 
 /* ───────── 变换 Transform ───────── */
@@ -439,16 +482,6 @@ function TransformSection({ el, update, commit }: { el: Element; update: (patch:
       defaultOpen
     >
       <SectionBody>
-        <div className="flex items-center gap-3">
-          <label className="w-20 shrink-0 text-sm text-gray-700">{t('editor:property.name')}</label>
-          <input
-            type="text"
-            value={el.name || ''}
-            onChange={(e) => update({ name: e.target.value })}
-            placeholder={t('editor:property.name')}
-            className="min-w-0 flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 outline-none focus:border-blue-400"
-          />
-        </div>
         <NumberField label="X" value={el.x} onChange={(v) => update({ x: v })} onCommit={commit} />
         <NumberField label="Y" value={el.y} onChange={(v) => update({ y: v })} onCommit={commit} />
         <NumberField label={t('editor:property.width')} value={el.width} min={1} onChange={(v) => update({ width: v })} onCommit={commit} />
@@ -458,6 +491,29 @@ function TransformSection({ el, update, commit }: { el: Element; update: (patch:
       </SectionBody>
     </CollapsibleSection>
   );
+}
+
+/* ───────── 镜像下四角映射 ─────────
+ * 元素经 flipX/flipY 后，渲染端对整个包围盒做 `scaleX(-1)/scaleY(-1)`，于是数据空间的
+ * 圆角与对象上「真实可见」的圆角位置互换。属性面板里若仍按数据空间写四角，就会出现
+ * 「调左上角、实际改的是对象可见的右上角」的错位。
+ *
+ * 这里把「面板里用户看到并操作的视觉角（visual）」换算回「应当写入的数据角（data）」：
+ * 面板滑块的标签始终表示视觉位置，写回时落到真正出现在该视觉位置的数据角，保证映射正确。
+ */
+function dataCornerForVisual(
+  visual: keyof CornerRadius,
+  flipX?: boolean,
+  flipY?: boolean,
+): keyof CornerRadius {
+  let k = visual;
+  if (flipX) {
+    k = k === 'topLeft' ? 'topRight' : k === 'topRight' ? 'topLeft' : k === 'bottomLeft' ? 'bottomRight' : 'bottomLeft';
+  }
+  if (flipY) {
+    k = k === 'topLeft' ? 'bottomLeft' : k === 'bottomLeft' ? 'topLeft' : k === 'topRight' ? 'bottomRight' : 'topRight';
+  }
+  return k;
 }
 
 /* ───────── 矩形圆角（四角独立调节） ───────── */
@@ -495,18 +551,22 @@ function RectCornerSection({ el, update, commit }: { el: RectElement; update: (p
         {showPerCorner ? t('editor:property.cornerPerCollapse') : t('editor:property.cornerPerExpand')}
       </button>
       {showPerCorner &&
-        corners.map((c) => (
-          <SliderField
-            key={c.key}
-            label={t(c.labelKey)}
-            value={cr[c.key]}
-            min={0}
-            max={100}
-            step={1}
-            onChange={(v) => setCorner(c.key, v)}
-            onCommit={commit}
-          />
-        ))}
+        corners.map((c) => {
+          // 镜像后：面板标签表示「视觉角」，写回落到真正出现在该视觉位置的数据角
+          const dataKey = dataCornerForVisual(c.key, el.flipX, el.flipY);
+          return (
+            <SliderField
+              key={c.key}
+              label={t(c.labelKey)}
+              value={cr[dataKey]}
+              min={0}
+              max={100}
+              step={1}
+              onChange={(v) => setCorner(dataKey, v)}
+              onCommit={commit}
+            />
+          );
+        })}
     </SectionBody>
   );
 }
@@ -545,7 +605,7 @@ function FillSection({ el, update, commit }: { el: Element; update: (patch: Part
 
         {/* ① 单色：完全沿用既有取色/填充能力（ColorField 原路径，零改动） */}
         {fillType === 'solid' && (
-          <ColorField label={label} value={(el as { fill: string }).fill} onChange={(v) => { update({ fill: v }); commit(); }} />
+          <ColorField label={label} value={(el as { fill: string }).fill} onChange={(v) => update({ fill: v })} onCommit={commit} />
         )}
 
         {/* ② 渐变：单色区域替换为渐变编辑器 */}
@@ -614,7 +674,8 @@ function FillSection({ el, update, commit }: { el: Element; update: (patch: Part
             <ColorField
               label={t('editor:component.outlineColor')}
               value={outlineColor}
-              onChange={(v) => { update({ outlineColor: v, outlineWidth: outlineWidth > 0 ? outlineWidth : 1 }); commit(); }}
+              onChange={(v) => { update({ outlineColor: v, outlineWidth: outlineWidth > 0 ? outlineWidth : 1 }); }}
+              onCommit={commit}
             />
             <SliderField
               label={t('editor:component.outlineWidth')}
@@ -662,15 +723,15 @@ function StrokeSection({ el, update, commit }: { el: Element; update: (patch: Pa
       defaultOpen
     >
       <SectionBody>
-        <ColorField
-          label={t('editor:component.strokeColor')}
-          value={stroke ?? 'transparent'}
-          onChange={(v) => {
-            const next = v === 'transparent' ? undefined : v;
-            update({ stroke: next, strokeWidth: next ? Math.max(1, (el as { strokeWidth?: number }).strokeWidth ?? 1) : 0 } as Partial<Element>);
-            commit();
-          }}
-        />
+            <ColorField
+              label={t('editor:component.strokeColor')}
+              value={stroke ?? 'transparent'}
+              onChange={(v) => {
+                const next = v === 'transparent' ? undefined : v;
+                update({ stroke: next, strokeWidth: next ? Math.max(1, (el as { strokeWidth?: number }).strokeWidth ?? 1) : 0 } as Partial<Element>);
+              }}
+              onCommit={commit}
+            />
         <SliderField
           label={t('editor:component.strokeWidth')}
           value={strokeWidth}
@@ -868,11 +929,12 @@ function TextSection({ el, update, commit }: { el: Element; update: (patch: Part
         <SliderField label={t('editor:property.letterSpacing')} value={textEl.letterSpacing} min={-10} max={50} step={0.1} onChange={(v) => update({ letterSpacing: v })} onCommit={commit} />
 
         {/* 文本背景（仅 text） */}
-        <ColorField
-          label={t('editor:property.backgroundColor')}
-          value={textEl.backgroundColor}
-          onChange={(v) => { update({ backgroundColor: v }); commit(); }}
-        />
+          <ColorField
+            label={t('editor:property.backgroundColor')}
+            value={textEl.backgroundColor}
+            onChange={(v) => update({ backgroundColor: v })}
+            onCommit={commit}
+          />
 
         {/* 换行方式 */}
         <div className="flex items-center gap-3">
@@ -937,6 +999,8 @@ function ImageSpecific({
     { key: 'bottomRight', labelKey: 'editor:property.cornerBottomRight' },
     { key: 'bottomLeft', labelKey: 'editor:property.cornerBottomLeft' },
   ];
+  // 镜像后四角映射：标签表示视觉角，写回落到真正出现在该视觉位置的数据角（见 dataCornerForVisual）
+  const cornerDataKey = (visual: keyof CornerRadius) => dataCornerForVisual(visual, el.flipX, el.flipY);
 
   const handleUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1058,18 +1122,22 @@ function ImageSpecific({
         {showPerCorner ? t('editor:property.cornerPerCollapse') : t('editor:property.cornerPerExpand')}
       </button>
       {showPerCorner &&
-        corners.map((c) => (
-          <SliderField
-            key={c.key}
-            label={t(c.labelKey)}
-            value={cr[c.key]}
-            min={0}
-            max={100}
-            step={1}
-            onChange={(v) => setCorner(c.key, v)}
-            onCommit={commit}
-          />
-        ))}
+        corners.map((c) => {
+          // 镜像后：面板标签表示视觉角，写回落到真正出现在该视觉位置的数据角
+          const dataKey = cornerDataKey(c.key);
+          return (
+            <SliderField
+              key={c.key}
+              label={t(c.labelKey)}
+              value={cr[dataKey]}
+              min={0}
+              max={100}
+              step={1}
+              onChange={(v) => setCorner(dataKey, v)}
+              onCommit={commit}
+            />
+          );
+        })}
 
       {/* 适配方式 */}
       <div className="flex items-center gap-3">
@@ -1145,7 +1213,7 @@ function ButtonSpecific({ el, update, commit }: { el: ButtonElement; update: (pa
         />
       </div>
       <SliderField label={t('editor:property.fontSize')} value={el.fontSize} min={8} max={200} step={1} onChange={(v) => update({ fontSize: v })} onCommit={commit} />
-      <ColorField label={t('editor:property.textColor')} value={el.color} onChange={(v) => { update({ color: v }); commit(); }} />
+      <ColorField label={t('editor:property.textColor')} value={el.color} onChange={(v) => update({ color: v })} onCommit={commit} />
       <SliderField label={t('editor:property.cornerRadius')} value={el.radius} min={0} max={100} step={1} onChange={(v) => update({ radius: v })} onCommit={commit} />
       <div className="flex flex-col gap-1">
         <label className="text-sm text-gray-700">{t('editor:property.link')}</label>
@@ -1324,7 +1392,7 @@ function BorderSection({ el, update, commit }: { el: Element; update: (patch: Pa
             <option value="double">{t('editor:component.borderDouble')}</option>
           </select>
         </div>
-        <ColorField label={t('editor:component.borderColor')} value={el.borderColor || '#000000'} onChange={(v) => { update({ borderColor: v }); commit(); }} />
+        <ColorField label={t('editor:component.borderColor')} value={el.borderColor || '#000000'} onChange={(v) => update({ borderColor: v })} onCommit={commit} />
         <SliderField label={t('editor:component.borderSize')} value={el.borderWidth || 0} min={0} max={20} step={0.5} onChange={(v) => update({ borderWidth: v })} onCommit={commit} />
         {!isImage && (
           <SliderField label={t('editor:component.borderRadius')} value={el.borderRadius || 0} min={0} max={100} step={1} onChange={(v) => update({ borderRadius: v })} onCommit={commit} />
@@ -1344,11 +1412,272 @@ function EffectsSection({ el, update, commit }: { el: Element; update: (patch: P
       defaultOpen
     >
       <SectionBody>
-        <ColorField label={t('editor:component.shadowColor')} value={el.shadowColor || 'transparent'} onChange={(v) => { update({ shadowColor: v }); commit(); }} />
+        <ColorField label={t('editor:component.shadowColor')} value={el.shadowColor || 'transparent'} onChange={(v) => update({ shadowColor: v })} onCommit={commit} />
         <SliderField label={t('editor:component.shadowX')} value={el.shadowOffsetX || 0} min={-50} max={50} step={1} onChange={(v) => update({ shadowOffsetX: v })} onCommit={commit} />
         <SliderField label={t('editor:component.shadowY')} value={el.shadowOffsetY || 0} min={-50} max={50} step={1} onChange={(v) => update({ shadowOffsetY: v })} onCommit={commit} />
         <SliderField label={t('editor:component.shadowBlur')} value={el.shadowBlur || 0} min={0} max={50} step={1} onChange={(v) => update({ shadowBlur: v })} onCommit={commit} />
         <SliderField label={t('editor:component.shadowOpacity')} value={Math.round((typeof el.shadowOpacity === 'number' ? el.shadowOpacity : 1) * 100)} min={0} max={100} step={1} onChange={(v) => update({ shadowOpacity: v / 100 })} onCommit={commit} />
+      </SectionBody>
+    </CollapsibleSection>
+  );
+}
+
+/* ───────── 批量请柬变量绑定（规范 §7 模板变量模块 / 方案 S2） ───────── */
+
+/** 标准名单字段 key 全集（D4 反转：key 不强制等于名单字段 key，恒等仍是零配置主路径） */
+const STANDARD_GUEST_KEYS: string[] = GUEST_FIELD_DEFS.map((d) => d.key);
+
+/**
+ * 把元素标记为「占位符」（个性化变量）。
+ * 标记后批量生成时由 `personalizeSchema` 按 key 从名单记录（record 型）
+ * 或批次常量（batch 型）取值替换该元素内容。
+ *
+ * ★ 改造清单 §B（编辑器只绑定、不创建）：
+ *   - 下拉选项读运营端「占位符注册表」，按元素类型过滤：
+ *       文本对象 → 仅 type ∈ {text, datetime, address}；
+ *       图像对象 → 仅 type = image。
+ *   - label 取当前 locale（回退 zh-CN → key），不再提供"自定义 ext_"自由输入。
+ *   - 注册表为空 / 接口失败 / 宿主未注入 → 完整回落旧逻辑
+ *     （GUEST_FIELD_DEFS + ext_ 输入），绝不阻断创作。
+ */
+function VariableBindingSection({
+  el,
+  update,
+  commit,
+}: {
+  el: Element;
+  update: (patch: Partial<Element>) => void;
+  commit: () => void;
+}) {
+  const { t, i18n } = useTranslation(['editor']);
+  // ★ hooks 必须无条件调用（早于下面的 early return），否则 hook 数量在
+  //   「文本/图像 ↔ 其它类型」切换时变化 → React 报 Rendered fewer hooks than expected。
+  const [customMode, setCustomMode] = useState(false);
+  // 按元素类型过滤注册表；entries === null 表示接口未就绪/失败 → 回落旧逻辑
+  const { entries, available } = usePlaceholderRegistry(el.type);
+  const locale = i18n.language;
+
+  // 仅文本 / 图像元素支持占位符绑定（其余类型不开放）
+  const supportsBinding = el.type === 'text' || el.type === 'image';
+  if (!supportsBinding) return null;
+
+  // 图像对象：历史上本无绑定 UI；当注册表无可用图像占位符时直接隐藏（不提供文本字段）
+  if (el.type === 'image' && !available) return null;
+
+  const binding = el.binding;
+  const enabled = !!binding?.key;
+  const key = binding?.key || '';
+
+  // 是否进入「注册表模式」（注册表就绪且含本类型占位符）
+  const useRegistry = available;
+
+  // ★ 回落态修复：customMode 是本地 UI 状态，重载/切换元素后会重置为 false。
+  //   若此时 binding.key 是自定义 key（ext_ 前缀或非标准字段），应据 key 自动回到「自定义输入」视图，
+  //   否则 <select value={key}> 因 key 不在选项内回落到首项，造成「被替换」假象。
+  const isCustomKey = !!key && !useRegistry && key !== '__custom__' && !STANDARD_GUEST_KEYS.includes(key);
+  const showCustomInput = !useRegistry && (customMode || isCustomKey);
+
+  /**
+   * 整段变量元素：设计态样例即画布文案（WYSIWYG）。
+   * 因此改 key / 改样例时同步把样例写进 `text`——用户在画布上双击看到的、能直接改的，
+   * 就是那份样例；批量渲染时由 `personalizeSchema` 用真实名单值整段覆盖。
+   * ★ 混合文案元素（text 含 `{{}}`）不在此列，其 text 由用户自行编辑，不受样例影响。
+   */
+  const isMixed = typeof (el as { text?: string }).text === 'string'
+    && (el as { text?: string }).text!.includes('{{');
+  const syncTextFor = (sample: string): { syncText?: string } =>
+    el.type === 'text' && !isMixed && sample !== '' ? { syncText: sample } : {};
+
+  /** 取某 key 的设计态样例（注册表 defaultValue → 标准字段 example → 空串） */
+  const sampleFor = (k: string): string => {
+    if (useRegistry) {
+      const e = entries!.find((x) => x.key === k);
+      if (e) return placeholderDefault(e, locale);
+    }
+    return getGuestFieldDef(k)?.example ?? '';
+  };
+
+  const patch = (p: Partial<NonNullable<Element['binding']>>, opts?: { syncText?: string }) => {
+    const nextBinding = {
+      key: key || (useRegistry && entries!.length ? entries![0].key : 'guest_name'),
+      ...binding,
+      ...p,
+    };
+    if (!isMixed && opts?.syncText !== undefined) {
+      update({ binding: nextBinding, text: opts.syncText } as Partial<Element>);
+    } else {
+      update({ binding: nextBinding } as Partial<Element>);
+    }
+    commit();
+  };
+
+  const setEnabled = (on: boolean) => {
+    if (!on) {
+      // 关闭时显式置 undefined（JSON 序列化即删除该字段，与历史数据无差异）
+      update({ binding: undefined } as Partial<Element>);
+      commit();
+      return;
+    }
+    setCustomMode(false);
+    const defKey = useRegistry && entries!.length ? entries![0].key : 'guest_name';
+    const sample = sampleFor(defKey);
+    const patchText = el.type === 'text' && !isMixed ? { text: sample } : {};
+    update({
+      binding: { key: defKey, sample },
+      ...patchText,
+    } as Partial<Element>);
+    commit();
+  };
+
+  /** 切换占位符字段 */
+  const setKey = (next: string) => {
+    const ex = sampleFor(next);
+    if (ex) {
+      // 有样例：同步画布文案（WYSIWYG，仅文本元素）
+      patch({ key: next, sample: ex }, syncTextFor(ex));
+    } else {
+      // 无样例（自定义 key / 图像）：保留画布现有文案作为设计态样例，避免元素变空白
+      const curText = typeof (el as { text?: string }).text === 'string' ? (el as { text?: string }).text! : '';
+      patch({ key: next, sample: curText || undefined });
+    }
+  };
+
+  // 下拉选项集合 + 是否需追加「历史/未在注册表的绑定 key」一项
+  const listedKeys = useRegistry ? entries!.map((e) => e.key) : STANDARD_GUEST_KEYS;
+  const boundMissing = !!key && !listedKeys.includes(key);
+
+  return (
+    <CollapsibleSection
+      title={
+        <SectionTitle title={t('editor:section.variable', { defaultValue: '占位符绑定' })}>
+          {ICON_VARIABLE}
+        </SectionTitle>
+      }
+      defaultOpen
+    >
+      <SectionBody>
+        <label className="flex items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            data-testid="placeholder-enable"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+            className="h-4 w-4 accent-blue-500"
+          />
+          <span>{t('editor:component.bindAsVariable', { defaultValue: '设为占位符' })}</span>
+        </label>
+
+        {enabled && (
+          <>
+            {/* 占位符字段：注册表模式 → 注册表下拉（只读、不创建）；回落模式 → 标准字段 + 自定义 */}
+            <div className="flex items-center gap-3">
+              <label className="w-20 shrink-0 text-sm text-gray-700">
+                {t('editor:component.variableKey', { defaultValue: '占位符' })}
+              </label>
+              {useRegistry ? (
+                <select
+                  data-testid="variable-key-select"
+                  value={key}
+                  onChange={(e) => setKey(e.target.value)}
+                  className="min-w-0 flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 outline-none focus:border-blue-400"
+                >
+                  {entries!.map((e) => (
+                    <option key={e.key} value={e.key}>
+                      {placeholderLabel(e, locale)}（{e.key}）
+                    </option>
+                  ))}
+                  {boundMissing && (
+                    <option value={key}>
+                      {t('editor:component.variableLegacy', { defaultValue: '（旧字段）' })} {key}
+                    </option>
+                  )}
+                </select>
+              ) : showCustomInput ? (
+                <input
+                  data-testid="variable-key-custom"
+                  value={key}
+                  onChange={(e) => setKey(e.target.value.trim())}
+                  placeholder="ext_session"
+                  className="min-w-0 flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 outline-none focus:border-blue-400"
+                />
+              ) : (
+                <select
+                  data-testid="variable-key-select"
+                  value={key}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '__custom__') {
+                      setCustomMode(true);
+                      setKey('ext_');
+                      return;
+                    }
+                    setCustomMode(false);
+                    setKey(v);
+                  }}
+                  className="min-w-0 flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 outline-none focus:border-blue-400"
+                >
+                  {GUEST_FIELD_DEFS.map((d) => (
+                    <option key={d.key} value={d.key}>
+                      {d.label}（{d.key}）
+                    </option>
+                  ))}
+                  <option value="__custom__">
+                    {t('editor:component.variableCustom', { defaultValue: '自定义字段…' })}
+                  </option>
+                </select>
+              )}
+            </div>
+
+            {/* 样例值：设计态显示，避免绑定后元素变空白无法判断排版 */}
+            <div className="flex items-center gap-3">
+              <label className="w-20 shrink-0 text-sm text-gray-700">
+                {t('editor:component.variableSample', { defaultValue: '样例值' })}
+              </label>
+              <input
+                data-testid="variable-sample"
+                value={binding?.sample ?? ''}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  patch({ sample: v || undefined }, syncTextFor(v));
+                }}
+                placeholder={
+                  useRegistry && key
+                    ? placeholderDefault(entries!.find((e) => e.key === key) ?? ({} as any), locale) ||
+                      t('editor:component.variableSamplePh', { defaultValue: '设计态显示' })
+                    : getGuestFieldDef(key)?.example ??
+                      t('editor:component.variableSamplePh', { defaultValue: '设计态显示' })
+                }
+                className="min-w-0 flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 outline-none focus:border-blue-400"
+              />
+            </div>
+
+            {/* 兜底值：名单该字段为空时使用（D2：无兜底且值为空 → 隐藏元素） */}
+            <div className="flex items-center gap-3">
+              <label className="w-20 shrink-0 text-sm text-gray-700">
+                {t('editor:component.variableFallback', { defaultValue: '兜底值' })}
+              </label>
+              <input
+                data-testid="variable-fallback"
+                value={binding?.fallback ?? ''}
+                onChange={(e) => patch({ fallback: e.target.value || undefined })}
+                placeholder={t('editor:component.variableFallbackPh', { defaultValue: '名单为空时用此值（留空则隐藏）' })}
+                className="min-w-0 flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 outline-none focus:border-blue-400"
+              />
+            </div>
+
+            <p className="text-xs leading-5 text-gray-500">
+              {useRegistry
+                ? t('editor:component.variableHintRegistry', {
+                    defaultValue:
+                      '占位符来自「系统设置 → 占位符管理」，仅可绑定、不可在编辑器内新建。取值顺序：名单字段值 → 兜底值 → 称谓推断 → 空（整段变量元素则隐藏）。',
+                  })
+                : t('editor:component.variableHint', {
+                    defaultValue:
+                      '变量 key 可自定义（如 ext_ 前缀），绑定名单字段后可建立映射。取值顺序：映射字段值 → 兜底值 → 称谓推断 → 空（整段变量元素则隐藏）。',
+                  })}
+            </p>
+          </>
+        )}
       </SectionBody>
     </CollapsibleSection>
   );
@@ -1742,6 +2071,9 @@ export default function ComponentSettingsPanel() {
                   </div>
                 </div>
 
+                {/* 图层名（独立分组，置于「变换」上方） */}
+                <LayerNameSection el={el} update={update} />
+
                 {/* 六个类型守卫 section */}
                 <TransformSection el={el} update={update} commit={commit} />
                 <FillSection el={el} update={update} commit={commit} />
@@ -1755,6 +2087,7 @@ export default function ComponentSettingsPanel() {
                 />
                 <BorderSection el={el} update={update} commit={commit} />
                 <EffectsSection el={el} update={update} commit={commit} />
+                <VariableBindingSection el={el} update={update} commit={commit} />
 
                 {/* 层级工具条 */}
                 <div className="flex flex-col gap-2 border-t border-gray-100 px-4 py-3">

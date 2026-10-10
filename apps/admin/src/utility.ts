@@ -87,6 +87,26 @@ export function jsonHeaders(): Record<string, string> {
   return { 'Content-Type': 'application/json', ...authHeaders() };
 }
 
+/**
+ * 带鉴权的文件下载（解决 admin Vite 不代理 /api、且 `<a href>` 无法携带 Authorization 头的双重约束）。
+ * 批量请柬的 Zip 打包与逐人图片均落 `private-assets`（不公开静态暴露），必须经此函数
+ * 以 fetch + Blob + 本地锚点触发下载。path 可为相对 `/api/...` 或服务端回传的绝对 url。
+ */
+export async function downloadWithAuth(path: string, filename: string): Promise<void> {
+  const url = path.startsWith('http') ? path : `${STATIC_URL}${path}`;
+  const res = await fetch(url, { headers: authHeaders() });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = objectUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
 export interface AccessInfo {
   id: string;
   role: 'USER' | 'SERVICE_PROVIDER' | 'AGENT' | 'ADMIN';
@@ -113,12 +133,16 @@ export interface StaffMembershipLite {
  * 用于把登录态从该端安全带到另一端，避免把 JWT 明文放进 URL。
  * 失败返回 null（调用方降级为不带登录态跳转，让用户到对端重新登录）。
  */
-export async function issueBridgeTicket(token: string): Promise<string | null> {
+export async function issueBridgeTicket(
+  token: string,
+  subject?: string,
+): Promise<string | null> {
   if (!token) return null;
   try {
     const res = await fetch(`${API_URL}/auth/ticket`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(subject ? { subject } : {}),
     });
     if (!res.ok) return null;
     const data = await res.json();

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>Lam-Alef joining repro</title>
+<style>
+  html, body { margin: 0; padding: 12px; background: #fff; color: #000; font-size: 14px; }
+  table { border-collapse: collapse; }
+  td, th { border: 1px solid #999; padding: 4px 8px; text-align: left; vertical-align: middle; }
+  .sample { font-size: 32px; white-space: nowrap; }
+  .ratio { font-family: monospace; }
+  .ok { color: #0a0; } .bad { color: #c00; }
+</style>
+</head>
+<body>
+<h3>لا 连字复现矩阵（value = measure("لا") / (measure("ل")+measure("ا"))，明显 &lt;1 表示连字/合字发生）</h3>
+<div id="status">loading fonts…</div>
+<table id="tbl"></table>
+<script type="module">
+const FONTS_API = '/api/fonts';
+// 待测字体
+const TEST_FAMILIES = [
+  'NotoNaskhArabic-Regular',
+  'UKIJTuz',
+  'ALKATIP-Asliya',
+  'narm-Regular',
+  '18 Khebrat Musamim Bold',
+  'UKIJKu',
+];
+const FB_FAMILY = 'NotoNaskhArabic-Regular';
+const TEST_TEXTS = ['لا', 'بالا', 'ﻻ'];
+const SAMPLE = 'بالا لا';
+
+const cat = await (await fetch(FONTS_API)).json();
+const byFamily = new Map(cat.map((f) => [f.family, f]));
+
+async function registerLikeApp(meta) {
+  // 与 packages/core/src/fonts.ts ensureFont 一致：主字体带 unicode-range
+  const src = meta.files.ttf ? `url("${meta.files.ttf}") format("truetype")`
+    : meta.files.woff2 ? `url("${meta.files.woff2}") format("woff2")` : null;
+  if (!src) return false;
+  const range = meta.coverage?.ranges?.length ? meta.coverage.ranges.join(', ') : undefined;
+  const ff = range ? new FontFace(meta.family, src, { unicodeRange: range }) : new FontFace(meta.family, src);
+  document.fonts.add(ff);
+  try { await ff.load(); return true; } catch (e) { console.warn('load fail', meta.family, e); return false; }
+}
+
+for (const fam of [...new Set([...TEST_FAMILIES, FB_FAMILY])]) {
+  const meta = byFamily.get(fam);
+  if (!meta) { console.warn('not in catalog:', fam); continue; }
+  await registerLikeApp(meta);
+}
+await document.fonts.ready;
+document.getElementById('status').textContent = 'fonts ready';
+
+// 复刻 buildFontFamilyStack 的整段回退规则
+function appStack(family, coverage) {
+  const fb = `"${FB_FAMILY}", system-ui, "Microsoft YaHei", "PingFang SC", sans-serif`;
+  if (coverage && coverage.uyghur === false) return fb;
+  return `"${family}", ${fb}`;
+}
+
+const ctx = document.createElement('canvas').getContext('2d');
+function measure(font, text) {
+  ctx.font = font;
+  return ctx.measureText(text).width;
+}
+
+const rows = [];
+for (const fam of TEST_FAMILIES) {
+  const meta = byFamily.get(fam);
+  const cov = meta?.coverage;
+  const stack = appStack(fam, cov);
+  for (const [label, domFamily, canvasFont] of [
+    ['DOM 单字体', `"${fam}"`, `32px "${fam}"`],
+    ['DOM 应用栈', stack, `32px ${stack}`],
+  ]) {
+    const cells = [`<td>${fam}<br><small>${label}</small></td>`];
+    for (const t of TEST_TEXTS) {
+      const joined = measure(canvasFont, t);
+      const sep = measure(canvasFont, t.replace('ا', '')) ; // 占位，真实比较在下面
+      // 数值判定：لا 与 ل+ا 宽度比（仅对 لا 与 بالا 有意义）
+      let ratio = '';
+      if (t === 'لا') {
+        const wLa = measure(canvasFont, 'لا');
+        const wL = measure(canvasFont, 'ل');
+        const wA = measure(canvasFont, 'ا');
+        ratio = (wLa / (wL + wA));
+        cells.push(`<td class="ratio ${ratio < 0.95 ? 'ok' : 'bad'}">${ratio.toFixed(3)}<br><small>w(لا)=${wLa.toFixed(1)} w(ل)=${wL.toFixed(1)} w(ا)=${wA.toFixed(1)}</small></td>`);
+      } else if (t === 'بالا') {
+        const wWord = measure(canvasFont, t);
+        const wNoLig = measure(canvasFont, 'ل') + measure(canvasFont, 'ا') + measure(canvasFont, 'ب') * 2;
+        cells.push(`<td class="ratio">w=${wWord.toFixed(1)}</td>`);
+      } else {
+        cells.push('<td></td>');
+      }
+    }
+    // 视觉样本：DOM
+    cells.push(`<td class="sample" style="font-family:${domFamily}; direction:rtl">${SAMPLE}</td>`);
+    rows.push(`<tr>${cells.join('')}</tr>`);
+  }
+  // canvas 视觉样本（应用栈）
+  rows.push(`<tr><td>${fam}<br><small>CANVAS 应用栈</small></td><td colspan="3"></td><td><canvas class="cv" width="360" height="56" data-font='32px ${stack}'></canvas></td></tr>`);
+}
+
+document.getElementById('tbl').innerHTML =
+  '<tr><th>字体 / 目标</th><th>لا 比值</th><th>بالا</th><th>ﻻ</th><th>视觉样本（DOM/CANVAS, rtl）：بالا لا</th></tr>' + rows.join('');
+
+for (const cv of document.querySelectorAll('canvas.cv')) {
+  const c = cv.getContext('2d');
+  c.font = cv.dataset.font;
+  c.direction = 'rtl';
+  c.textBaseline = 'middle';
+  c.fillStyle = '#000';
+  c.fillText(SAMPLE, 350, 28);
+}
+window.__REPRO_READY__ = true;
+</script>
+</body>
+</html>

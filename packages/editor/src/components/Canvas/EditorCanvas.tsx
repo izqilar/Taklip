@@ -14,6 +14,7 @@ import {
   Image as KonvaImage,
   Transformer,
   Group,
+  Shape,
 } from 'react-konva';
 import Konva from 'konva';
 import { useEditorStore } from '../../store/editorStore';
@@ -27,15 +28,19 @@ import CanvasTimeline from '../../elements/timeline/CanvasTimeline';
 import CanvasLike from '../../elements/like/CanvasLike';
 import CanvasWidget from '../../elements/widget/CanvasWidget';
 import GalleryEditorOverlay from './GalleryEditorOverlay';
+import VariableOverlay from './VariableOverlay';
 import ContextMenu from './ContextMenu';
 import type { Element, TextElement, ImageElement, RectElement, CircleElement, PolygonElement, ArrowElement, CornerRadius, ImageClip, CalendarElement, GalleryElement, PuzzleElement, CountdownElement, MapNavElement, MessageBoardElement, TimelineElement, LikeElement, WidgetElement } from '@h5design/core';
-import { CANVAS_DEFAULT, toKonvaCornerRadius, normalizeCornerRadius, drawClipOnContext, normalizeImageClip, hasRealShadow, kashidaForLetterSpacing, resolveStrokeColor, lineStyleToDash, flipScale, flipCssTransform, konvaFill, fillBoxTopLeft, fillBoxCenter, fillBoxCircle, subscribeImageFill, getImageFillEpoch, getFontMeta, buildFontFamilyStack } from '@h5design/core';
+import { CANVAS_DEFAULT, toKonvaCornerRadius, normalizeCornerRadius, drawClipOnContext, normalizeImageClip, hasRealShadow, kashidaForLetterSpacing, normalizeArabicPresentationForms, resolveStrokeColor, lineStyleToDash, flipScale, flipCssTransform, konvaFill, fillBoxTopLeft, fillBoxCenter, fillBoxCircle, subscribeImageFill, getImageFillEpoch, getFontMeta, buildFontFamilyStack, getFillType, clipBorderStrokes, borderDashArray, fitShrinkFontSize, DEFAULT_MIN_FONT_RATIO, DEFAULT_VARIABLE_FIT } from '@h5design/core';
+import { layoutText } from '@h5design/render';
 import {
   toKonvaAlign,
   installTextJustifySupport,
   toKonvaOutlineStrokeWidth,
   TEXT_OUTLINE_LINE_JOIN,
   useFontLoadEpoch,
+  clipBorderSceneFunc,
+  clipShapeFillSceneFunc,
 } from './konvaShared';
 
 const CANVAS_H = CANVAS_DEFAULT.height;
@@ -253,7 +258,12 @@ interface RenderProps {
   isSelected: boolean;
   onSelect: (e?: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void;
   onChange: (patch: Partial<Element>) => void;
-  onDragStart: () => void;
+  /** 元素拖拽开始：把元素 id 透传给父级（用于快照整组起点 + 单次 pushHistory） */
+  onElementDragStart: (id: string) => void;
+  /** 元素拖拽中：每帧把 id 与 Konva 事件透传，由父级计算整组位移并实时写回 */
+  onElementDragMove: (id: string, e: Konva.KonvaEventObject<DragEvent>) => void;
+  /** 元素拖拽结束：父级落最终坐标并清理 */
+  onElementDragEnd: (id: string, e: Konva.KonvaEventObject<DragEvent>) => void;
   onTransformStart: () => void;
   onDoubleClick?: () => void;
   onMouseEnter: (id: string) => void;
@@ -275,19 +285,9 @@ function mapWordBreakToKonvaWrap(wordBreak: string | undefined): 'word' | 'char'
   }
 }
 
-/** 把 CSS 风格的 border-style 转成 Konva stroke dash 数组 */
-function borderDashFromStyle(style?: string, width = 1): number[] | undefined {
-  switch (style) {
-    case 'dashed':
-      return [6, 4];
-    case 'dotted':
-      return [2, 3];
-    case 'double':
-      // 双线通过绘制内外两条描边实现，这里不需要 dash
-      return undefined;
-    default:
-      return undefined;
-  }
+/** 把 CSS 风格的 border-style 转成 Konva stroke dash 数组（真值在 core：borderDashArray） */
+function borderDashFromStyle(style?: string, _width = 1): number[] | undefined {
+  return borderDashArray(style);
 }
 
 /** 根据 object-fit 计算 Konva.Image 的显示位置、尺寸与裁剪区域 */
@@ -645,7 +645,9 @@ function ElementNode({
   el,
   onSelect,
   onChange,
-  onDragStart,
+  onElementDragStart,
+  onElementDragMove,
+  onElementDragEnd,
   onTransformStart,
   onDoubleClick,
   onMouseEnter,
@@ -655,6 +657,10 @@ function ElementNode({
 }: RenderProps) {
   const cx = el.x + el.width / 2;
   const cy = el.y + el.height / 2;
+  // 形状（rect/circle/star/...）的填充类型为「图片」时，缩放需对齐图片对象范式
+  // （复位节点 scale + 把宽高写回数据模型，由 konvaFill 重新 cover/contain 适配），
+  // 否则整组被 Transformer 拉伸 → 填充图案跟随拉伸（橡皮泥），见 onTransform。
+  const isImageFillShape = el.type !== 'text' && el.type !== 'image' && getFillType(el) === 'image';
   // 文本缩放实时反算所需的子层原始几何（transformStart 时快照，拖拽帧内按增长量平移保持居中）
   const tfChildBase = useRef<Map<string, { x: number; y: number }>>(new Map());
   // 文本缩放累积尺寸：onTransform 每帧 = 上一帧盒 × Konva 刚写入的增量 = 本帧目标尺寸。
@@ -685,15 +691,11 @@ function ElementNode({
     onDblClick: onDoubleClick,
     onMouseEnter: () => onMouseEnter(el.id),
     onMouseLeave: () => onMouseLeave(el.id),
-    onDragStart,
+    onDragStart: () => onElementDragStart(el.id),
     // Konva 节点 x/y 现在表示对象几何中心；写回数据模型时转回左上角。
-    onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => {
-      const node = e.target;
-      onChange({
-        x: node.x() - el.width / 2,
-        y: node.y() - el.height / 2,
-      });
-    },
+    // 多选拖拽：把位移交给父级（onElementDragEnd）统一处理所有选中对象，避免只挪一个。
+    onDragMove: (e: Konva.KonvaEventObject<DragEvent>) => onElementDragMove(el.id, e),
+    onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => onElementDragEnd(el.id, e),
     // transformStart：快照子层原始几何（x/y），并初始化累积尺寸 ref。
     // 文本缩放采用「组缩放复位 + 子层承载尺寸」范式（见 onTransform 注释），
     // 需要记录初始宽高作为累积计算的基准。
@@ -702,6 +704,10 @@ function ElementNode({
         const node = e.target as Konva.Group;
         tfChildBase.current.clear();
         node.getChildren().forEach((c) => tfChildBase.current.set(c.id(), { x: c.x(), y: c.y() }));
+      }
+      // 文本与图片缩放都以「初始宽高」为累积基准；图片在 onTransform 中把宽高实时写回数据模型，
+      // 需与文本同样初始化 tfSize（见 onTransform 注释）。图片填充形状同样需要累积基准。
+      if (el.type === 'text' || el.type === 'image' || isImageFillShape) {
         tfSize.current = { w: el.width || 0, h: el.height || 0 };
       }
       if (onTransformStart) onTransformStart();
@@ -721,39 +727,57 @@ function ElementNode({
     //    尺寸单向累积、中心恒固定于几何中心 → 不滑动、不橡皮筋。
     //  - 旋转手柄（rotater）与镜像元素跳过本处理，沿用 Konva 原生行为。
     onTransform: (e: Konva.KonvaEventObject<Event>) => {
-      if (el.type !== 'text') return;
+      if (el.type !== 'text' && el.type !== 'image' && !isImageFillShape) return;
       const { scaleX: bsx, scaleY: bsy } = flipScale(el);
-      if (bsx < 0 || bsy < 0) return; // 镜像元素：保持原生拉伸行为
+      if (bsx < 0 || bsy < 0) return; // 镜像元素：保持原生拉伸行为（文本/图片）
       const node = e.target as Konva.Group;
       const tr = node.getStage()?.findOne('Transformer') as unknown as
         | { _movingAnchorName?: string }
         | null
         | undefined;
       const anchor = tr?._movingAnchorName;
-      if (!anchor || anchor === 'rotater') return; // 旋转不动文本
+      if (!anchor || anchor === 'rotater') return; // 旋转不动
       // Konva 刚写入的增量（相对上一帧绝对盒）
       const incX = node.scaleX() / bsx;
       const incY = node.scaleY() / bsy;
       // 累积目标尺寸 = 上一帧盒 × 本帧增量（prevW × 增量 = 绝对目标，不会逐帧丢失）
       const W = Math.max(5, (tfSize.current.w || el.width || 0) * incX);
       const H = Math.max(5, (tfSize.current.h || el.height || 0) * incY);
-      // 组缩放复位为基准：尺寸改由子层承载（不累积、不振荡）
-      node.scaleX(bsx);
-      node.scaleY(bsy);
-      const dx = (W - (el.width || 0)) / 2;
-      const dy = (H - (el.height || 0)) / 2;
-      node.getChildren().forEach((c) => {
-        const base = tfChildBase.current.get(c.id()) ?? { x: c.x(), y: c.y() };
-        // 子层字号不变（scale=1），盒宽高随框缩放；向中心平移保持各自内嵌偏移并居中
-        c.scaleX(1);
-        c.scaleY(1);
-        c.width(W);
-        c.height(H);
-        c.offsetX(0);
-        c.offsetY(0);
-        c.x(base.x - dx);
-        c.y(base.y - dy);
-      });
+
+      if (el.type === 'text') {
+        // 文本：组缩放复位为基准，尺寸改由子层承载（不累积、不振荡）
+        node.scaleX(bsx);
+        node.scaleY(bsy);
+        const dx = (W - (el.width || 0)) / 2;
+        const dy = (H - (el.height || 0)) / 2;
+        node.getChildren().forEach((c) => {
+          const base = tfChildBase.current.get(c.id()) ?? { x: c.x(), y: c.y() };
+          // 子层字号不变（scale=1），盒宽高随框缩放；向中心平移保持各自内嵌偏移并居中
+          c.scaleX(1);
+          c.scaleY(1);
+          c.width(W);
+          c.height(H);
+          c.offsetX(0);
+          c.offsetY(0);
+          c.x(base.x - dx);
+          c.y(base.y - dy);
+        });
+      } else {
+        // 图片 / 形状（图片填充）：节点 scale 复位为基准，宽高写回数据模型（el.width/height）。
+        // 图片内层 FilteredImage（或形状 konvaFill）以 cover/contain 重新适配 →
+        // 内容保持原始宽高比，仅边框宽高随调整变化，不再被整组拉伸（橡皮泥效应）。
+        node.scaleX(bsx);
+        node.scaleY(bsy);
+        // 节点中心即 node.x()/node.y()（形状 offset 居中 / 图片组 offset 居中），
+        // 换算回左上角写入数据，避免 React 重置节点位置时跳变。
+        if (el.type === 'circle') {
+          // 圆形保持正圆：半径取最终盒短边一半，宽高同步收为正方形
+          const d = Math.min(W, H);
+          onChange({ x: node.x() - d / 2, y: node.y() - d / 2, width: d, height: d, radius: d / 2 } as Partial<CircleElement>);
+        } else {
+          onChange({ x: node.x() - W / 2, y: node.y() - H / 2, width: W, height: H });
+        }
+      }
       tfSize.current = { w: W, h: H };
     },
     onTransformEnd: (e: Konva.KonvaEventObject<Event>) => {
@@ -770,7 +794,7 @@ function ElementNode({
       let kx = 1;
       let ky = 1;
       let rotation = el.rotation || 0;
-      if (el.type === 'text' && !isRotating && baseScaleX >= 0 && baseScaleY >= 0) {
+      if ((el.type === 'text' || el.type === 'image' || isImageFillShape) && !isRotating && baseScaleX >= 0 && baseScaleY >= 0) {
         const W = tfSize.current.w || el.width || 0;
         const H = tfSize.current.h || el.height || 0;
         kx = (el.width || 0) > 0 ? W / (el.width as number) : 1;
@@ -807,19 +831,28 @@ function ElementNode({
       }
       const newWidth = Math.max(5, Math.round((el.width || 0) * kx));
       const newHeight = Math.max(5, Math.round((el.height || 0) * ky));
-      onChange({
+      const patch: Partial<Element> = {
         x: node.x() - newWidth / 2,
         y: node.y() - newHeight / 2,
         rotation,
         width: newWidth,
         height: newHeight,
-      });
+      };
+      // 圆形（图片填充）：保持正圆，半径取最终盒短边一半（与 onTransform 写入一致）
+      if (el.type === 'circle' && isImageFillShape) {
+        (patch as Partial<CircleElement>).radius = Math.min(newWidth, newHeight) / 2;
+      }
+      onChange(patch);
     },
   };
 
   switch (el.type) {
     case 'text': {
       const textEl = el as TextElement;
+      // 呈现形式归一化：老式输入法 / 文档复制会把字母写成预先整形的呈现形式码位
+      // （U+FB50–FDFF / U+FE70–FEFF），整形器不会对其重新连写，表现为「لا 断成 ﻟ ﺍ」。
+      // 归一化回基本字母后在三端（编辑器画布 / 预览 / 导出）恢复正常连字。
+      const rawText = normalizeArabicPresentationForms(textEl.text ?? '');
       const hasBg = textEl.backgroundColor && textEl.backgroundColor !== 'transparent';
       const hasBorder = (textEl.borderWidth || 0) > 0;
       // 文本轮廓：先描边、后填充。Konva 默认是 fill→stroke，描边会压在填充之上，
@@ -827,7 +860,7 @@ function ElementNode({
       const hasTextOutline = (textEl.outlineWidth || 0) > 0 && !!textEl.outlineColor;
       // 阿拉伯文等连写文字：字间距改用延长符（kashida）展开，保持笔画相连，
       // 而非用 letterSpacing 在两字母间插间隙把连写拆开。编辑器与发布页共用同一函数。
-      const kashida = kashidaForLetterSpacing(textEl.text, textEl.letterSpacing ?? 0, textEl.fontSize ?? 16, true);
+      const kashida = kashidaForLetterSpacing(rawText, textEl.letterSpacing ?? 0, textEl.fontSize ?? 16, true);
       // 阴影不再挂在「描边+填充」同一节点上：那样 Konva 会在描边后投一次阴影、填充后又投一次，
       // 第二次阴影会盖掉一部分轮廓（表现为轮廓时有时无）。改为独立的最底层阴影剪影层，
       // 见下方 <Text fill={shadowColor}> 那一层；此处 textShadow 仅用于背景矩形。
@@ -843,11 +876,41 @@ function ElementNode({
         : {};
       const outlineStrokeWidth = toKonvaOutlineStrokeWidth(textEl.outlineWidth);
       // 有效字体栈：含维吾尔文且所选字体不覆盖时整段回退到统一补字字体（跨浏览器一致连字）
-      const effFamily = buildFontFamilyStack(textEl.fontFamily, textEl.text, getFontMeta(textEl.fontFamily)?.coverage);
+      const effFamily = buildFontFamilyStack(textEl.fontFamily, rawText, getFontMeta(textEl.fontFamily)?.coverage);
+      const fontStyleRaw = textEl.fontStyle ?? '';
+      // 溢出策略 shrink（T8 续）：与 DOM 渲染层（SchemaRenderer）/ 离屏导出（KonvaElement）同源测量
+      // （layoutText），保证「编辑器画布 == 预览 == 导出」shrink 决策完全一致。
+      const wantsShrink = (textEl.binding?.fit ?? DEFAULT_VARIABLE_FIT) === 'shrink';
+      const minRatio = textEl.binding?.minFontRatio ?? DEFAULT_MIN_FONT_RATIO;
+      const renderFontSize = wantsShrink
+        ?           fitShrinkFontSize({
+            text: rawText,
+            baseSize: textEl.fontSize ?? 16,
+            minRatio,
+            maxWidth: el.width,
+            maxHeight: el.height,
+            measure: (size) => {
+              const L = layoutText({
+                text: rawText,
+                fontSize: size,
+                fontFamily: effFamily,
+                bold: fontStyleRaw.includes('bold'),
+                italic: fontStyleRaw.includes('italic'),
+                letterSpacing: textEl.letterSpacing ?? 0,
+                lineHeight: textEl.lineHeight ?? 1,
+                width: el.width,
+                height: el.height,
+                wrap: mapWordBreakToKonvaWrap(textEl.wordBreak),
+              });
+              const w = L.lines.reduce((m, l) => Math.max(m, l.width), 0);
+              return { width: w, height: L.contentHeight };
+            },
+          })
+        : (textEl.fontSize ?? 16);
       // 三层（阴影剪影 / 轮廓 / 填充）共用的排版参数，必须逐层一致否则会错位
       const textLayerProps = {
         text: kashida.text,
-        fontSize: textEl.fontSize,
+        fontSize: renderFontSize,
         fontFamily: effFamily,
         align: toKonvaAlign(textEl.align, textEl.direction === 'rtl' ? 'rtl' : 'ltr'),
         width: el.width,
@@ -1107,19 +1170,51 @@ function ElementNode({
           shadowOpacity: 1,
         };
 
-        // 裁剪蒙版：形状遮罩（圆形/心形/星形等）作用于整个图片组（含边框与阴影），
+        // 裁剪蒙版：形状遮罩（圆形/心形/星形等）作用于图片「内容层」（内层 Group），
         // 坐标基于元素局部盒子（0,0 左上角 → w,h 右下角），与发布态 DOM clip-path 对齐。
+        // ⚠️ 阴影层不能放进被裁的 Group：否则矩形阴影被形状蒙版裁没（阴影全部落在形状
+        // 之外）。因此形状模式改用独立的「透明填充 + 阴影」Shape 投射（clipShapeFillSceneFunc），
+        // 其阴影沿形状轮廓扩散且不被裁；none 模式仍用图片节点自带阴影（矩形阴影）。
         const clipShape = normalizeImageClip(imgEl.clip).shape;
-        const clipFunc =
+        const shapeClip =
           clipShape !== 'none'
             ? (ctx: Konva.Context) => drawClipOnContext(ctx, clipShape, el.width, el.height)
             : undefined;
 
+        const contentNode = isTiled ? (
+          <Rect
+            width={el.width}
+            height={el.height}
+            fillPatternImage={cached}
+            fillPatternRepeat={objectFit}
+            fillPatternScaleX={tileScale}
+            fillPatternScaleY={tileScale}
+            cornerRadius={cornerRadius}
+            filters={filters.length ? filters : undefined}
+            brightness={brightness}
+            contrast={contrast}
+            blurRadius={blurRadius}
+            perfectDrawEnabled={false}
+            shadowForStrokeEnabled={false}
+          />
+        ) : (
+          <FilteredImage
+            image={cached}
+            {...computeImageLayout(cached, imgEl)}
+            cornerRadius={cornerRadius}
+            filters={filters.length ? filters : undefined}
+            brightness={brightness}
+            blurRadius={blurRadius}
+            contrast={contrast}
+            perfectDrawEnabled={false}
+            shadowForStrokeEnabled={false}
+          />
+        );
+
         return (
-          <Group key={el.id} {...groupProps} offsetX={el.width / 2} offsetY={el.height / 2} clipFunc={clipFunc}>
-            {hasShadow && (
-              // 阴影投射层：用与真实图片一致的像素内容（无滤镜、不缓存）投射阴影，
-              // 保证阴影强度/颜色与“形状”对象一致；透明 PNG 处天然透明，不会出现白底方块。
+          <Group key={el.id} {...groupProps} offsetX={el.width / 2} offsetY={el.height / 2}>
+            {/* 阴影：none 模式用图片节点自带矩形阴影；形状模式用透明填充 Shape 投射形状轮廓阴影 */}
+            {hasShadow && clipShape === 'none' && (
               isTiled ? (
                 <Rect
                   width={el.width}
@@ -1146,7 +1241,22 @@ function ElementNode({
                 />
               )
             )}
-            {hasBorder ? (
+            {hasShadow && clipShape !== 'none' && (
+              // 形状模式阴影投射层：与裁剪蒙版同一套形状函数画出的 Shape，填充为阴影色，
+              // 其阴影（shadowOffset/blur）沿该形状剪影投射；填充本体被「裁到同一形状的」内容层
+              // 完全覆盖（内容层在下方代码中绘制于其后），只留下一圈随形状轮廓的偏移阴影。
+              // 用阴影色作填充（而非 transparent）以保证 Konva 对所有形状都稳定投射阴影。
+              <Shape
+                listening={false}
+                perfectDrawEnabled={false}
+                shadowForStrokeEnabled={false}
+                sceneFunc={clipShapeFillSceneFunc(clipShape, el.width, el.height)}
+                fill={imgEl.shadowColor}
+                {...shadowProps}
+              />
+            )}
+            {/* 内容层：none + 有边框走圆角盒裁剪；其余走形状裁剪（none 无边框则不裁） */}
+            {hasBorder && clipShape === 'none' ? (
               // 边框盒式（border-box）：图片裁到内容盒（边框内侧），边框画在最上层，
               // 与发布态 DOM（box-sizing:border-box + overflow:hidden）完全一致——
               // 边框粗细/颜色精确等于设计值，不会“渲染后变粗”。
@@ -1162,66 +1272,37 @@ function ElementNode({
                   )
                 }
               >
-                {isTiled ? (
-                  <Rect
-                    width={el.width}
-                    height={el.height}
-                    fillPatternImage={cached}
-                    fillPatternRepeat={objectFit}
-                    fillPatternScaleX={tileScale}
-                    fillPatternScaleY={tileScale}
-                    cornerRadius={cornerRadius}
-                    filters={filters.length ? filters : undefined}
-                    brightness={brightness}
-                    contrast={contrast}
-                    blurRadius={blurRadius}
-                    perfectDrawEnabled={false}
-                    shadowForStrokeEnabled={false}
-                  />
-                ) : (
-                  <FilteredImage
-                    image={cached}
-                    {...computeImageLayout(cached, imgEl)}
-                    cornerRadius={cornerRadius}
-                    filters={filters.length ? filters : undefined}
-                    brightness={brightness}
-                    blurRadius={blurRadius}
-                    contrast={contrast}
-                    perfectDrawEnabled={false}
-                    shadowForStrokeEnabled={false}
-                  />
-                )}
+                {contentNode}
               </Group>
-            ) : isTiled ? (
-              <Rect
-                width={el.width}
-                height={el.height}
-                fillPatternImage={cached}
-                fillPatternRepeat={objectFit}
-                fillPatternScaleX={tileScale}
-                fillPatternScaleY={tileScale}
-                cornerRadius={cornerRadius}
-                filters={filters.length ? filters : undefined}
-                brightness={brightness}
-                contrast={contrast}
-                blurRadius={blurRadius}
-                perfectDrawEnabled={false}
-                shadowForStrokeEnabled={false}
-              />
             ) : (
-              <FilteredImage
-                image={cached}
-                {...computeImageLayout(cached, imgEl)}
-                cornerRadius={cornerRadius}
-                filters={filters.length ? filters : undefined}
-                brightness={brightness}
-                blurRadius={blurRadius}
-                contrast={contrast}
-                perfectDrawEnabled={false}
-                shadowForStrokeEnabled={false}
-              />
+              <Group clipFunc={shapeClip}>{contentNode}</Group>
             )}
-            {hasBorder && (
+            {hasBorder && clipShape !== 'none' && (
+              // ★ 裁剪形状模式：边框必须沿形状轮廓描边。
+              // 矩形边框会被形状 clipFunc 裁掉（如心形只在上下极值处与盒子相切，
+              // 整圈矩形边框几乎全被裁掉 → 看起来「没有边框」）。这里按 core 的统一
+              // 真值 clipBorderStrokes 得到「中线内缩量 + 线宽」，用 sceneFunc 描出
+              // 与裁剪蒙版同一个函数生成的形状路径，边框因此严丝合缝贴合形状轮廓，
+              // 线宽 / 颜色 / 线型与方形裁剪模式完全一致。
+              clipBorderStrokes(borderWidth, imgEl.borderStyle).map((s, i) => (
+                <Shape
+                  key={`b${i}`}
+                  listening={false}
+                  perfectDrawEnabled={false}
+                  shadowForStrokeEnabled={false}
+                  sceneFunc={clipBorderSceneFunc(
+                    clipShape,
+                    el.width,
+                    el.height,
+                    s.inset,
+                    s.width,
+                    borderColor,
+                    borderDashArray(imgEl.borderStyle),
+                  )}
+                />
+              ))
+            )}
+            {hasBorder && clipShape === 'none' && (
               imgEl.borderStyle === 'double' ? (
                 <>
                   <Rect
@@ -1621,8 +1702,11 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
   const clearSelection = useEditorStore((s) => s.clearSelection);
   const updateElement = useEditorStore((s) => s.updateElement);
   const pushHistory = useEditorStore((s) => s.pushHistory);
+  const setElementsPositions = useEditorStore((s) => s.setElementsPositions);
   /** 取色器模式：隐藏选择框/辅助线/变换器，并屏蔽画布交互（见 utils/eyedropper.ts） */
   const colorPickMode = useEditorStore((s) => s.colorPickMode);
+  // 变量编辑模式：为绑定变量的元素叠加虚线描边 + {{key}} 徽章（方案 §1.3）
+  const variableMode = useEditorStore((s) => s.variableMode);
 
   const trRef = useRef<Konva.Transformer>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -2020,6 +2104,11 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
     const stage = stageRef.current;
     const setStageRef = useEditorStore.getState().setStageRef;
     setStageRef(stage);
+    // dev-only 测试探针：暴露主 Stage 供 Playwright「shrink 实机像素验证」脚本读取
+    // Konva 文本节点的 fontSize / clientRect，与 DOM 预览(导出)做几何一致性比对。
+    if (import.meta.env.DEV) {
+      (window as unknown as { __konvaStage?: unknown }).__konvaStage = stage;
+    }
     return () => {
       if (useEditorStore.getState().stageRef === stage) {
         setStageRef(null);
@@ -2049,6 +2138,73 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
   const handleDragEndClear = useCallback(() => {
     setGuides([]);
   }, []);
+
+  /* ── 多选拖拽：把一组选中对象作为整体一起平移 ──
+   * 现状（缺陷）：每个 ElementNode 各自 draggable，拖拽时 Konva 只移动鼠标直接命中的那个
+   * 节点，其余已选中对象保持静止 —— 多选移动会变成「只挪一个」。
+   * 修复：dragStart 快照所有选中对象的起点坐标 + 拖拽元素的起点中心；dragMove 每帧按
+   * 「拖拽节点相对起点的位移 delta」反向写回所有选中对象的绝对坐标（setElementsPositions，
+   * 不 pushHistory），实现整体一致平移、相对位置不变；dragEnd 落最终坐标并清理。
+   * pushHistory 仅在 dragStart 触发一次，整组移动可被一次 Undo 还原。 */
+  const groupDragStart = useRef<{
+    ids: string[];
+    start: Map<string, { x: number; y: number }>;
+    draggedId: string;
+    startCenter: { x: number; y: number };
+  } | null>(null);
+
+  const handleElementDragStart = useCallback(
+    (id: string) => {
+      const st = useEditorStore.getState();
+      const page = st.project.pages[st.activePage];
+      const el = page.elements.find((e) => e.id === id);
+      if (!el) return;
+      pushHistory();
+      // 多选中拖拽其一 → 整组移动；否则只移动自身。
+      const ids =
+        st.selectedIds.length > 1 && st.selectedIds.includes(id) ? st.selectedIds : [id];
+      const start = new Map<string, { x: number; y: number }>();
+      ids.forEach((i) => {
+        const e2 = page.elements.find((e) => e.id === i);
+        if (e2) start.set(i, { x: e2.x, y: e2.y });
+      });
+      const startCenter = { x: el.x + el.width / 2, y: el.y + el.height / 2 };
+      groupDragStart.current = { ids, start, draggedId: id, startCenter };
+    },
+    [pushHistory],
+  );
+
+  const applyGroupDelta = useCallback(
+    (id: string, e: Konva.KonvaEventObject<DragEvent>) => {
+      const g = groupDragStart.current;
+      if (!g || g.draggedId !== id) return;
+      const node = e.target as Konva.Node;
+      const dx = node.x() - g.startCenter.x;
+      const dy = node.y() - g.startCenter.y;
+      if (dx === 0 && dy === 0) return;
+      const positions: Record<string, { x: number; y: number }> = {};
+      g.ids.forEach((i) => {
+        const s = g.start.get(i);
+        if (s) positions[i] = { x: s.x + dx, y: s.y + dy };
+      });
+      setElementsPositions(positions);
+    },
+    [setElementsPositions],
+  );
+
+  const handleElementDragMove = useCallback(
+    (id: string, e: Konva.KonvaEventObject<DragEvent>) => applyGroupDelta(id, e),
+    [applyGroupDelta],
+  );
+
+  const handleElementDragEnd = useCallback(
+    (id: string, e: Konva.KonvaEventObject<DragEvent>) => {
+      applyGroupDelta(id, e);
+      groupDragStart.current = null;
+      setGuides([]);
+    },
+    [applyGroupDelta],
+  );
 
   /* ── 点击空白：启动框选（或清空选择） ── */
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
@@ -2144,8 +2300,10 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
     const id = editingIdRef.current;
     if (!id) return; // 幂等守卫：blur 与点击空白/mousedown 路径可能先后触发，只提交一次
     editingIdRef.current = null;
+    // 提交时把呈现形式码位归一化回基本字母，避免「لا 断成 ﻟ ﺍ」类旧数据继续残留
+    const cleanText = normalizeArabicPresentationForms(editValue);
     pushHistory();
-    updateElement(id, { text: editValue } as Partial<Element>);
+    updateElement(id, { text: cleanText } as Partial<Element>);
     setEditingId(null);
   }, [editValue, pushHistory, updateElement]);
 
@@ -2230,7 +2388,9 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
                       updateElement(el.id, patch);
                       setGuides([]);
                     }}
-                    onDragStart={() => pushHistory()}
+                    onElementDragStart={handleElementDragStart}
+                    onElementDragMove={handleElementDragMove}
+                    onElementDragEnd={handleElementDragEnd}
                     onTransformStart={() => pushHistory()}
                     onDoubleClick={el.type === 'text' && !el.locked && selectedIds.length <= 1 ? () => startTextEdit(el.id) : undefined}
                     onMouseEnter={handleElementMouseEnter}
@@ -2239,6 +2399,9 @@ export default function EditorCanvas({ onPreview, onSave, onSettings, isSaving }
                     fontEpoch={fontEpoch}
                   />
                 ))}
+
+              {/* 变量标记（方案 §1.3）：仅 variableMode 开启时绘制，不参与命中测试 */}
+              {!colorPickMode && variableMode && <VariableOverlay elements={page.elements} />}
 
               {/* 多选时：每个选中对象单独显示边界框，便于区分 */}
               {!colorPickMode && selectedIds.length > 1 &&

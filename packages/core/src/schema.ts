@@ -137,6 +137,62 @@ export interface AnimationConfig {
   animation?: SingleAnimationConfig | SingleAnimationConfig[];
 }
 
+/** 变量值超长时的适配策略（D3） */
+export type VariableFitMode = 'clip' | 'shrink' | 'wrap';
+
+/**
+ * 批量请柬个性化变量绑定（规范 §7 模板变量模块 / 方案 §5.1）。
+ *
+ * 编辑器里把元素标记为「变量」后，批量生成时个性化引擎会按 `key` 从名单记录取值，
+ * 替换该元素的内容（文本元素替换 `text`，图片元素替换 `src`）。
+ *
+ * **D4 反转（允许任意 key + 显式映射）**：`key` **不强制等于**名单字段 key。
+ * 取值时先查映射 `srcKey = mapping?.[key] ?? key`（`mapping` 即 `BatchRenderProject.variableMapping`，
+ * 见方案 §2.1 / §5.3）；未映射则走恒等（key 同名）。
+ * 命名规范 `^[a-z][a-z0-9_]*$`：标准字段取 `GUEST_FIELD_DEFS` 的 key，
+ * 自定义字段（如场次 `ext_session`、日期 `ext_date`）必须以 `ext_` 前缀区分。
+ *
+ * 取值链（严格有序）：映射后字段值 → `fallback` → 称谓性别推断(仅 guest_title) → 空（→ D2 隐藏）。
+ */
+export interface ElementBinding {
+  /** 稳定变量 key（如 guest_name / guest_title / unit / table_no / ext_session） */
+  key: string;
+  /**
+   * 设计态样例值（编辑器画布 / 模板选择预览 / 缩略图用）。
+   * 缺省回落 `GuestFieldDef.example`。
+   * ★ 存在的意义：绑定后若无样例，设计态元素会显示空白，用户无法判断排版是否被破坏。
+   */
+  sample?: string;
+  /**
+   * 运行态兜底值：名单该字段为空（null/''）时使用。
+   * 与 `sample` 语义分离——前者只影响设计态观感，后者决定真实产物。
+   */
+  fallback?: string;
+  /**
+   * 值超长时的适配策略，缺省按 'shrink' 处理（D3 推荐）。
+   * - clip   ：直接裁剪（overflow hidden）
+   * - shrink ：自动缩小字号至放得下，下限 `minFontRatio`
+   * - wrap   ：换行（需元素高度与行高支持）
+   */
+  fit?: VariableFitMode;
+  /** shrink 模式的字号下限比例（相对元素原字号），缺省 0.6。缩到下限仍放不下才裁剪 */
+  minFontRatio?: number;
+  /**
+   * 人类可读变量名（如「新人姓名」），仅用于展示与默认候选；
+   * 实际取值仍走 `key`（ASCII slug），实现「命名」与「字段绑定」解耦（C 方案）。
+   */
+  name?: string;
+  /** 是否由「C 方案」编辑器预标记（区别于 D 方案生成期画布点选），用于体检区分来源 */
+  generated?: boolean;
+  /** 是否必填变量：未映射时健康体检判为硬阻断（替代旧的 critical: key==='guest_name'） */
+  required?: boolean;
+}
+
+/** `fit` 缺省值：缩字号（方案 D3 推荐） */
+export const DEFAULT_VARIABLE_FIT: VariableFitMode = 'shrink';
+/** `minFontRatio` 缺省值：原字号的 60% */
+export const DEFAULT_MIN_FONT_RATIO = 0.6;
+
 /** 所有元素共有的基础属性 */
 export interface BaseElement {
   id: string;
@@ -166,10 +222,15 @@ export interface BaseElement {
   visible: boolean;
   /** 是否锁定（不可选中/拖拽） */
   locked: boolean;
-  /** 元素备注名，便于图层列表中识别 */
+  /** 图层名（元素在图层列表/组件设置中的标识） */
   name?: string;
   /** 表单绑定键：一键制作向导按此键将表单值注入该元素（文本写 text / 图片写 src / 图集写 images） */
   bind?: string;
+  /**
+   * 批量请柬变量绑定：标记该元素为个性化变量。
+   * 与 `bind`（表单向导）用途不同，互不干扰；缺省即非变量元素，个性化时原样保留。
+   */
+  binding?: ElementBinding;
   /** 动画配置（可选） */
   animation?: AnimationConfig;
   /** 边框宽度 */
@@ -992,6 +1053,51 @@ export function buildClipSvgPath(shape: ImageClipShape, w: number, h: number): s
       return heartPathScaled(w, h);
     default:
       return '';
+  }
+}
+
+/**
+ * 边框沿「裁剪形状轮廓」的描边中线内缩量与线宽。
+ *
+ * 图片对象的边框在无裁剪形状时是矩形盒式（border-box）：边框占据盒子最外圈
+ * `borderWidth` 宽度。一旦指定了裁剪形状（圆形/心形/星形…），矩形边框就被形状
+ * 蒙版裁掉、只剩零星的残留线段 —— 因此边框必须改为**沿形状轮廓描边**。
+ *
+ * 语义与矩形边框逐项对齐（Konva 侧 Rect 的实现即来自这里）：
+ *  - 单线：中线内缩 `bw/2`、线宽 `bw` → 描边恰好覆盖内缩 0 ~ bw 的一圈，
+ *    外缘与形状轮廓重合、内缘与内容区相接，不越界也不留缝；
+ *  - double 双线：两条各 `max(1, bw/3)` 的描边，中线分别内缩 `bw/6` 与 `5bw/6`
+ *    → 覆盖 0 ~ bw/3 与 2bw/3 ~ bw 两圈（与矩形双线边框同宽同距）。
+ *
+ * 返回值按绘制顺序排列，调用方对每一项以「中线内缩量」平移后描出形状路径。
+ */
+export function clipBorderStrokes(borderWidth: number, style?: string): { inset: number; width: number }[] {
+  const bw = borderWidth;
+  if (!(bw > 0)) return [];
+  if (style === 'double') {
+    // 与矩形 double 边框一致：两条 1/3 宽的描边，外侧贴边、内侧贴内容区
+    const width = Math.max(1, bw / 3);
+    return [
+      { inset: bw / 6, width },
+      { inset: bw - bw / 6, width },
+    ];
+  }
+  return [{ inset: bw / 2, width: bw }];
+}
+
+/**
+ * 边框线型 → dash 数组（Konva `dash` 与 SVG `stroke-dasharray` 共用同一真值）。
+ * 与矩形边框的 dash 取值完全一致，保证「方形裁剪」与「形状裁剪」两种模式线型统一。
+ */
+export function borderDashArray(style?: string): number[] | undefined {
+  switch (style) {
+    case 'dashed':
+      return [6, 4];
+    case 'dotted':
+      return [2, 3];
+    default:
+      // double 由两条实线描边实现，不需要 dash
+      return undefined;
   }
 }
 

@@ -13,6 +13,7 @@
     "@dnd-kit/core": "^6.1.0",
     "@h5design/core": "workspace:*",
     "@h5design/editor": "workspace:*",
+    "@h5design/invitation-mapping": "workspace:*",
     "@h5design/render": "workspace:*",
     "@h5design/ui": "workspace:*",
     "@types/qrcode": "^1.5.6",

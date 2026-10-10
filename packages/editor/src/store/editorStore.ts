@@ -58,6 +58,16 @@ interface EditorState {
    */
   colorPickMode: boolean;
   setColorPickMode: (on: boolean) => void;
+  /**
+   * 变量编辑模式（批量请柬 · 方案 §1.3）。
+   * 开启后画布为所有已绑定变量的元素叠加「虚线描边 + {{key}} 徽章」，
+   * 便于一眼识别哪些位置会在批量生成时被替换。
+   *
+   * ★ 仅编辑态辅助显示：关闭时不绘制；导出/预览走 `personalizeSchema` 后的 schema，
+   *   渲染层对 `binding` 零感知，不会误绘标记。
+   */
+  variableMode: boolean;
+  setVariableMode: (on: boolean) => void;
 
   /* history */
   past: Project[];
@@ -101,6 +111,12 @@ interface EditorState {
   addElement: (type: ElementType, overrides?: Partial<Element>) => void;
   addElementData: (el: Element) => void;
   updateElement: (id: string, patch: Partial<Element>) => void;
+  /**
+   * 批量按「绝对坐标」设置一组元素的位置（不 pushHistory）。
+   * 用于多选拖拽：每帧把拖拽元素相对起点的位移 delta 应用到所有选中元素，
+   * 实现整体平移且保持相对位置不变。落库由调用方在手势结束时统一处理（或本就逐帧实时）。
+   */
+  setElementsPositions: (positions: Record<string, { x: number; y: number }>) => void;
   removeElement: (id: string) => void;
   duplicateElement: (id: string) => void;
   bringToFront: (id: string) => void;
@@ -143,6 +159,8 @@ interface EditorState {
   renamePage: (index: number, name: string) => void;
   reorderPages: (from: number, to: number) => void;
   setPageBackground: (color: string) => void;
+  /** 实时预览：拖拽取色过程中持续改背景色，但不写历史；历史由 onCommit（手势结束）统一落一次 */
+  setPageBackgroundLive: (color: string) => void;
   setPageHeight: (height: number) => void;
   setProjectWidth: (width: number) => void;
   setPageLongPage: (longPage: boolean) => void;
@@ -175,6 +193,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   colorPickMode: false,
   setColorPickMode: (on) => set({ colorPickMode: on }),
+
+  variableMode: false,
+  setVariableMode: (on) => set({ variableMode: on }),
 
   past: [],
   future: [],
@@ -326,6 +347,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         project: { ...state.project, pages },
         isDirty: true,
       };
+    }),
+
+  setElementsPositions: (positions) =>
+    set((state) => {
+      if (!positions || Object.keys(positions).length === 0) return {};
+      const ids = new Set(Object.keys(positions));
+      const pages = state.project.pages.map((p, i) =>
+        i === state.activePage
+          ? {
+              ...p,
+              elements: p.elements.map((e) => {
+                const pos = positions[e.id];
+                return pos ? ({ ...e, x: pos.x, y: pos.y } as Element) : e;
+              }),
+            }
+          : p,
+      );
+      return { project: { ...state.project, pages }, isDirty: true };
     }),
 
   removeElement: (id) => {
@@ -849,6 +888,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   setPageBackground: (color) => {
     get().pushHistory();
+    set((state) => {
+      const pages = state.project.pages.map((p, i) =>
+        i === state.activePage ? { ...p, background: color } : p,
+      );
+      return { project: { ...state.project, pages }, isDirty: true };
+    });
+  },
+  setPageBackgroundLive: (color) => {
     set((state) => {
       const pages = state.project.pages.map((p, i) =>
         i === state.activePage ? { ...p, background: color } : p,

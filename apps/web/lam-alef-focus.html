@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>Focus: suspicious lam-alef fonts</title>
+<style>
+  html, body { margin: 0; padding: 10px; background: #fff; color: #000; }
+  .row { margin: 6px 0; border-bottom: 1px dashed #999; padding-bottom: 4px; }
+  .name { font-size: 12px; font-family: monospace; }
+  .sample { font-size: 44px; white-space: nowrap; direction: rtl; line-height: 1.3; }
+</style>
+</head>
+<body>
+<div id="status">loading…</div>
+<div id="grid"></div>
+<script type="module">
+const cat = await (await fetch('/api/fonts')).json();
+const byFamily = new Map(cat.map((f) => [f.family, f]));
+const FOCUS = [
+  'NotoNaskhArabic-Regular',
+  'UKIJNsqZ',
+  'UKIJ_MacEkran',
+  'UKIJ_MacEkranBold',
+  'narmAC-Regular',
+  'narmMC-Regular',
+  'zanjirAC-Regular',
+  'zanjirMC-Regular',
+];
+async function register(meta) {
+  const f = meta.files;
+  const src = f.woff2 ? `url("${f.woff2}") format("woff2")`
+    : f.woff ? `url("${f.woff}") format("woff")`
+    : f.ttf ? `url("${f.ttf}") format("truetype")`
+    : f.otf ? `url("${f.otf}") format("opentype")` : null;
+  if (!src) return false;
+  const ff = new FontFace(meta.family, src);
+  document.fonts.add(ff);
+  try { await ff.load(); return true; } catch (e) { return false; }
+}
+const status = [];
+for (const fam of FOCUS) {
+  const meta = byFamily.get(fam);
+  const ok = meta ? await register(meta) : false;
+  status.push(`${fam}: ${ok ? 'loaded' : 'LOAD-FAIL'}`);
+}
+await document.fonts.ready;
+document.getElementById('status').textContent = status.join(' | ');
+
+const grid = document.getElementById('grid');
+for (const fam of FOCUS) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML =
+    `<div class="name">${fam}</div>` +
+    `<div class="sample" style="font-family:'${fam}'">بالا لا غۇلا</div>` +
+    `<div class="sample" style="font-family:'${fam}'">ل‌ا (ZWNJ) لـا (tatweel)</div>`;
+  grid.appendChild(row);
+}
+window.__READY__ = true;
+</script>
+</body>
+</html>

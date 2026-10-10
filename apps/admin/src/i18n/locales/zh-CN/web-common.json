@@ -818,5 +818,28 @@
         "finalPending": "待终审"
       }
     }
+  },
+  "invitationMapping": {
+    "title": "字段配对",
+    "modeVariable": "变量视图",
+    "modeElement": "画布点选",
+    "mapToList": "映射到名单列",
+    "unmapped": "未映射",
+    "noMappingAtAll": "尚未建立任何映射，可跳过生成统一版式",
+    "requiredUnmapped": "必填变量未映射，请先建立映射",
+    "noUsableColumn": "名单无可用列，无法映射",
+    "willBeEmpty": "将留空或隐藏，共 {{count}} 张",
+    "noVarsHint": "该模板无预置变量，可在「画布点选」中直接指认元素映射到名单字段",
+    "orphanedHint": "有 {{count}} 处绑定指向不存在的元素（已忽略）",
+    "supersededHint": "有 {{count}} 处元素已被其它变量覆盖",
+    "clearAll": "清空全部重新选择",
+    "cancel": "取消",
+    "skipUnified": "跳过",
+    "save": "保存配对",
+    "saving": "保存中…",
+    "element": "元素",
+    "field": "字段",
+    "noPreview": "无预览",
+    "noElements": "无可选元素"
   }
 }

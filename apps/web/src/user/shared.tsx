@@ -342,6 +342,10 @@ export const USER_CENTER_NAV: NavItem[] = [
   // 资源中心（文档 §2.2）：我的图库 → 我的作品
   { to: '/user/gallery', labelKey: 'common:userCenter.menu.gallery', group: '资源中心', icon: I(<><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></>) },
   { to: '/user/works', labelKey: 'common:userCenter.menu.works', group: '资源中心', icon: I(<><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></>) },
+  // 请柬事务中心（§17）：分组更名「批量请柬」→「请柬事务中心」；菜单顺序 模板字段设计 → 诚邀名单制作 → 请柬批量生成
+  { to: '/user/invitations/fields', labelKey: 'common:userCenter.menu.fieldDesign', group: '请柬事务中心', icon: I(<><path d="M3 7h18M3 12h18M3 17h18" /><circle cx="7" cy="7" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="17" cy="17" r="1.4" /></>) },
+  { to: '/user/invitations/lists', labelKey: 'common:userCenter.menu.guestLists', group: '请柬事务中心', icon: I(<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M17 11h6M20 8v6" /></>) },
+  { to: '/user/invitations/jobs', labelKey: 'common:userCenter.menu.invitationJobs', group: '请柬事务中心', icon: I(<><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M8 12h8M8 16h5" /><path d="M9 8h6" /></>) },
   { to: '/user/reviews', labelKey: 'common:userCenter.menu.reviews', group: '评价与反馈', icon: I(<><path d="M12 2 9.2 8.6 2 9.3l5.5 4.8L5.8 21 12 17l6.2 4-1.7-6.9L22 9.3l-7.2-.7Z" /></>) },
   { to: '/user/feedback', labelKey: 'common:userCenter.menu.feedback', group: '评价与反馈', icon: I(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M9 13h6M9 17h6" /></>) },
   { to: '/user/notices', labelKey: 'common:userCenter.menu.notices', group: '消息中心', icon: I(<><path d="M3 11l18-5v12L3 14v-3Z" /><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" /></>) },

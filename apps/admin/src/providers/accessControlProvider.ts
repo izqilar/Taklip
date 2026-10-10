@@ -56,6 +56,8 @@ function canSeeByRole(resource: string | undefined, role: string | undefined, st
     resource === 'admin/finance' ||
     resource === 'admin/fonts' ||
     resource === 'admin/templates' ||
+    // 占位符管理：v2 占位符真相源，运营端独占写，仅总台 ADMIN 可访问
+    resource === 'admin/placeholders' ||
     // 入驻审批台：用户资格升级（USER → 服务商 / 代理商）由总台 ADMIN 独家裁定
     resource === 'admin/qualifications' ||
     resource === 'admin/roles' ||

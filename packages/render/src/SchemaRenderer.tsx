@@ -8,7 +8,7 @@
  *
  * 迁移自 apps/web/src/components/Preview/DOMRenderer.tsx（DOMRenderer）。
  */
-import { useState, useRef, useEffect, useLayoutEffect, useMemo, type CSSProperties, type ReactNode, type SyntheticEvent } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo, useSyncExternalStore, type CSSProperties, type ReactNode, type SyntheticEvent } from 'react';
 import type {
   Element,
   Page,
@@ -31,7 +31,7 @@ import type {
   LikeElement,
   WidgetElement,
 } from '@h5design/core';
-import { cornerRadiusToCss, normalizeCornerRadius, buildClipSvgPath, normalizeImageClip, resolveShadow, resolveShadowColor, hasRealShadow, subscribeFontLoad, resolveFillColor, resolveStrokeColor, lineStyleToDash, lineStyleToCssBorderStyle, flipCssTransform, getFillType, domFillStyle, svgFill, svgGradientGeometry, getFontMeta, buildFontFamilyStack, type SvgFillDef } from '@h5design/core';
+import { cornerRadiusToCss, normalizeCornerRadius, buildClipSvgPath, normalizeImageClip, clipBorderStrokes, borderDashArray, resolveShadow, resolveShadowColor, resolveDropShadow, hasRealShadow, subscribeFontLoad, subscribeImageFill, getImageFillEpoch, resolveFillColor, resolveStrokeColor, lineStyleToDash, lineStyleToCssBorderStyle, flipCssTransform, getFillType, domFillStyle, svgFill, svgGradientGeometry, getFontMeta, buildFontFamilyStack, normalizeArabicPresentationForms, getImageFill, ensureImageFillLoaded, normalizeFillCrop, normalizeFit, imageFillGeometry, croppedImageSize, imageFillDataUrl, fitShrinkFontSize, DEFAULT_MIN_FONT_RATIO, DEFAULT_VARIABLE_FIT, type SvgFillDef, type ImageFillGeometry } from '@h5design/core';
 import { clearTextMeasureCache } from './lib/textLayout';
 import { safeLink, safeMedia, safeBackgroundImage } from './lib/sanitize';
 import {
@@ -113,6 +113,11 @@ function ImageElementView({
     w: el.naturalWidth || el.width,
     h: el.naturalHeight || el.height,
   });
+  // 与编辑器 Konva 图片加载器保持一致：默认带 crossOrigin 加载，失败则降级为不带 crossOrigin 重试。
+  // 原因：发布页/缩略图与图片资源常跨源（如 :5173 页面拉取 :3000 的 /uploads），若接口未返回
+  // CORS 头，带 crossOrigin 的 <img> 会被浏览器拦截 → 卡片显示缺失/错位，而编辑器（有降级）正常。
+  const [useCors, setUseCors] = useState(true);
+  const [imgErrored, setImgErrored] = useState(false);
 
   // 元素数据变化时重置 fallback，避免旧 natural 残留
   useEffect(() => {
@@ -121,6 +126,12 @@ function ImageElementView({
       h: el.naturalHeight || el.height,
     });
   }, [el.src, el.naturalWidth, el.naturalHeight, el.width, el.height]);
+
+  // 切换图片源时复位 CORS 重试状态
+  useEffect(() => {
+    setUseCors(true);
+    setImgErrored(false);
+  }, [el.src]);
 
   const hasBorder = (el.borderWidth || 0) > 0;
   const filterParts: string[] = [];
@@ -131,6 +142,15 @@ function ImageElementView({
   const cornerRadiusSum = cr.topLeft + cr.topRight + cr.bottomRight + cr.bottomLeft;
   const clipShape = normalizeImageClip(el.clip).shape;
   const clipPath = clipShape !== 'none' ? `path("${buildClipSvgPath(clipShape, el.width, el.height)}")` : undefined;
+  // ★ 边框必须随裁剪形状自适应：一旦指定裁剪形状（圆形/椭圆/三角形/六边形/星形/心形），
+  // 矩形 CSS 边框会被形状蒙版裁掉（心形只在上下极值处与盒子相切 → 整圈边框几乎全被裁掉，
+  // 表现为「没有边框」）。因此形状模式下改用「沿形状轮廓描边的独立 SVG 覆盖层」，
+  // 描边中线内缩量与线宽取自 core 的 clipBorderStrokes（与编辑器 Konva 同一真值）。
+  const useShapeMask = clipShape !== 'none';
+  const shapeBorderStrokes = hasBorder && useShapeMask
+    ? clipBorderStrokes(el.borderWidth || 0, el.borderStyle)
+    : [];
+  const shapeBorderDash = borderDashArray(el.borderStyle);
 
   const placeholderStyle: CSSProperties = {
     ...commonStyle,
@@ -187,22 +207,27 @@ function ImageElementView({
     if (iw && ih) setNatural({ w: iw, h: ih });
   };
 
-  // 平铺模式：直接用背景图
-  if (isTiled) {
-    return (
-      <div key={el.id} {...dataAttrs} style={wrapperStyle}>
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            backgroundImage: `url(${imgSrc})`,
-            backgroundRepeat: objectFit as 'repeat-x' | 'repeat-y',
-            backgroundSize: objectFit === 'repeat-x' ? 'auto 100%' : '100% auto',
-          }}
-        />
-      </div>
-    );
-  }
+  // 带 crossOrigin 加载失败时降级为不带 crossOrigin 重试；两次均失败才标记错误回退占位。
+  const handleError = () => {
+    if (useCors) {
+      setUseCors(false);
+    } else {
+      setImgErrored(true);
+    }
+  };
+
+  // 平铺模式的内容体：直接用背景图（与普通模式在末尾统一组装成 contentNode）
+  const tiledContent = (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        backgroundImage: `url(${imgSrc})`,
+        backgroundRepeat: objectFit as 'repeat-x' | 'repeat-y',
+        backgroundSize: objectFit === 'repeat-x' ? 'auto 100%' : '100% auto',
+      }}
+    />
+  );
 
   // 按编辑态 computeImageLayout 的语义计算：源图裁剪区 + 显示窗口
   const naturalW = natural.w || el.width;
@@ -258,6 +283,15 @@ function ImageElementView({
     top: 0,
     width: naturalW * scale,
     height: naturalH * scale,
+    // ★ 铁律：必须显式解除 max-width/max-height 上限。
+    // 宿主全局 reset（web 端 `@tailwind base` 的 preflight）会给所有 img 加
+    // `max-width: 100%; height: auto`（特异性 0-0-1，普通声明）。裁剪场景下本 <img> 的宽度
+    // 需要「大于元素框」（width = naturalW*scale ≥ 框宽/crop.width），再靠负 margin 把源图
+    // 裁剪窗口对齐到框内；一旦被 `max-width:100%` 压回框宽，图片内容会被横向压缩、
+    // 框内右侧出现留白（编辑器走 Konva 画布不受 CSS 影响 → 只在预览/发布/缩略图暴露）。
+    // 内联声明可覆盖该规则，两端因此对齐。
+    maxWidth: 'none',
+    maxHeight: 'none',
     marginLeft: -cropX * scale,
     marginTop: -cropY * scale,
     // 关键：必须用 fill 让 <img> 内容缩放到我们手工算出的框（naturalW*scale × naturalH*scale），
@@ -266,18 +300,114 @@ function ImageElementView({
     objectFit: 'fill',
   };
 
+  if (imgErrored) {
+    // 两次加载（带/不带 crossOrigin）均失败：回退占位，避免卡片出现破图图标。
+    return (
+      <div key={el.id} {...dataAttrs} style={placeholderStyle}>
+        Image
+      </div>
+    );
+  }
+
+  const contentNode = isTiled ? (
+    tiledContent
+  ) : (
+    <div style={frameStyle}>
+      <img
+        key={useCors ? 'cors' : 'nocors'}
+        src={imgSrc}
+        alt={el.name ?? ''}
+        crossOrigin={useCors ? 'anonymous' : undefined}
+        decoding="sync"
+        onLoad={handleLoad}
+        onError={handleError}
+        style={imgStyle}
+      />
+    </div>
+  );
+
+  if (useShapeMask) {
+    // 形状裁剪模式：内层承载 clip-path 裁出形状轮廓；边框另起一层独立 SVG 覆盖层
+    // （不被 clip-path 裁剪，描边外缘完整可见，路径与裁剪蒙版同源 buildClipSvgPath）。
+    //
+    // ★ 阴影：矩形 box-shadow 会被同元素的 clip-path 整圈裁掉（阴影落在形状之外），
+    // 所以形状模式改用 `filter: drop-shadow(...)`（真值 resolveDropShadow）—— drop-shadow
+    // 跟随被裁后的 alpha 剪影，因此阴影沿形状轮廓投射，与「边框沿形状描边」表现一致。
+    //
+    // ⚠️ 关键：drop-shadow 必须放在**外层 wrapper**（该层无 clip-path），内层 div 只负责
+    // clip-path + 亮度/对比度/模糊滤镜。原因：CSS 的渲染顺序是 filter → clip-path，
+    // 若 drop-shadow 与 clip-path 同元素，drop-shadow 会先算出、再被 clip-path 整圈裁掉
+    // → 阴影消失。移到无 clip-path 的外层后，drop-shadow 跟随内层「已被裁成形状」的 alpha
+    // 剪影投射，且自身不被裁，阴影完整可见。边框 SVG 也不在内层，故描边清晰无阴影。
+    const innerShadowFilter = resolveDropShadow(el);
+    return (
+      <div key={el.id} {...dataAttrs} style={{ ...commonStyle, boxShadow: undefined }}>
+        {/* 阴影层：drop-shadow 跟随内层形状剪影；本层无 clip-path，故阴影不被裁 */}
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: '100%',
+            height: '100%',
+            filter: innerShadowFilter || undefined,
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: '100%',
+              height: '100%',
+              clipPath,
+              overflow: 'hidden',
+              // 亮度/对比度/模糊滤镜作用于被裁后的图片（filter 先于 clip-path，观感与编辑器一致）
+              filter: filterParts.length ? filterParts.join(' ') : undefined,
+            }}
+          >
+            {contentNode}
+          </div>
+        </div>
+        {shapeBorderStrokes.length > 0 && (
+          <svg
+            width={el.width}
+            height={el.height}
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              overflow: 'visible',
+              pointerEvents: 'none',
+            }}
+          >
+            {shapeBorderStrokes.map((s, i) => (
+              <path
+                key={i}
+                // 与 Konva 的 clipBorderSceneFunc 完全同构：先按 inset 内缩盒子，
+                // 再用同一套归一化形状函数生成路径，最后平移回原位。
+                d={buildClipSvgPath(
+                  clipShape,
+                  Math.max(0.01, el.width - s.inset * 2),
+                  Math.max(0.01, el.height - s.inset * 2),
+                )}
+                transform={`translate(${s.inset} ${s.inset})`}
+                fill="none"
+                stroke={el.borderColor || '#000000'}
+                strokeWidth={s.width}
+                strokeDasharray={shapeBorderDash ? shapeBorderDash.join(' ') : undefined}
+              />
+            ))}
+          </svg>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div key={el.id} {...dataAttrs} style={wrapperStyle}>
-      <div style={frameStyle}>
-        <img
-          src={imgSrc}
-          alt={el.name ?? ''}
-          crossOrigin="anonymous"
-          decoding="sync"
-          onLoad={handleLoad}
-          style={imgStyle}
-        />
-      </div>
+      {contentNode}
     </div>
   );
 }
@@ -347,14 +477,50 @@ function TextElementView({
   const hasBg = !!el.backgroundColor && el.backgroundColor !== 'transparent';
 
   const fontStyleRaw = el.fontStyle ?? '';
-  // 有效字体栈：含维吾尔文且所选字体不覆盖时整段回退到统一补字字体（跨浏览器一致连字）
-  const effFamily = buildFontFamilyStack(el.fontFamily, el.text, getFontMeta(el.fontFamily)?.coverage);
+  // 有效字体栈：含维吾尔文且所选字体不覆盖时整段回退到统一补字字体（跨浏览器一致连字）。
+  // 先用呈现形式归一化：老式输入法/文档复制会把字母写成呈现形式码位（U+FB50–FDFF/U+FE70–FEFF），
+  // 这些码位不在 uyghur 判定字符集内，未归一化会漏判维吾尔文、且整形器不对它们重新连写。
+  const effFamily = buildFontFamilyStack(el.fontFamily, normalizeArabicPresentationForms(el.text ?? ''), getFontMeta(el.fontFamily)?.coverage);
+
+  // 溢出策略 shrink（T8）：变量值超框时自动缩小字号至放得下，下限 minFontRatio。
+  // 复用 layoutText 作为测量真值，保证「预览 == 导出」同一套算法与字体度量。
+  const baseSize = Number.isFinite(el.fontSize) ? (el.fontSize as number) : 16;
+  // 与编辑器画布 / 离屏导出 / 批量个性化同源：绑定元素 `fit` 缺省按 'shrink'（D3 推荐），
+  // 避免「设计态 EditorCanvas 默认 shrink、模板预览 SchemaRenderer 严格非 shrink」两端不一致。
+  const wantsShrink = (el.binding?.fit ?? DEFAULT_VARIABLE_FIT) === 'shrink';
+  const minRatio = el.binding?.minFontRatio ?? DEFAULT_MIN_FONT_RATIO;
+  const renderFontSize = wantsShrink
+    ? fitShrinkFontSize({
+        text: el.text ?? '',
+        baseSize,
+        minRatio,
+        maxWidth: el.width,
+        maxHeight: el.height,
+        measure: (size) => {
+          const L = layoutText({
+            text: el.text ?? '',
+            fontSize: size,
+            fontFamily: effFamily,
+            bold: fontStyleRaw.includes('bold'),
+            italic: fontStyleRaw.includes('italic'),
+            letterSpacing: el.letterSpacing ?? 0,
+            lineHeight: el.lineHeight ?? 1,
+            width: el.width,
+            height: el.height,
+            wrap: mapWordBreakToKonvaWrap(el.wordBreak),
+          });
+          const w = L.lines.reduce((m, l) => Math.max(m, l.width), 0);
+          return { width: w, height: L.contentHeight };
+        },
+      })
+    : baseSize;
+
   const layout = (() => {
     // fontEpoch 仅用于在字体加载后触发重算（依赖显式列出以满足 exhaustive-deps 语义）
     void fontEpoch;
     return layoutText({
       text: el.text ?? '',
-      fontSize: el.fontSize || 16,
+      fontSize: renderFontSize,
       fontFamily: effFamily,
       bold: fontStyleRaw.includes('bold'),
       italic: fontStyleRaw.includes('italic'),
@@ -366,20 +532,41 @@ function TextElementView({
     });
   })();
 
-  const { lineHeightPx } = layout;
-  const blockTop = resolveVerticalOffset(layout.contentHeight, el.height, el.verticalAlign);
+  /**
+   * 字号统一出口（NaN 防御）。
+   *
+   * schema 可能缺失 fontSize / lineHeight（历史数据、第三方导入、测试 fixture）。缺字段时
+   * 旧的逐处 `el.fontSize` 会把 `NaN` 直接写进 CSS 的 top / height / padding，React 告警
+   * （`NaN is an invalid value for the css style property top`）且元素整体丢失定位，
+   * 表现为「列表缩略图 / 预览渲染不正确、与编辑器不一致」。此处收敛为一次取值，全组件复用。
+   */
+  const fontSize = renderFontSize;
+  const lineHeightPx = Number.isFinite(layout.lineHeightPx) ? layout.lineHeightPx : fontSize;
+  const blockTopRaw = resolveVerticalOffset(layout.contentHeight, el.height, el.verticalAlign);
+  const blockTop = Number.isFinite(blockTopRaw) ? blockTopRaw : 0;
 
   // —— 文本垂直自校准：让 DOM 字形 ink 落点与 Konva（canvas textBaseline='middle'）完全一致 ——
   // CSS `line-height` 与 canvas `textBaseline='middle'` 使用不同的字体度量居中字形，
   // 导致预览/导出相对编辑器整体下移几个像素（随字号/字体变化）。这里运行时实测 DOM ink，
   // 反推需要的 translateY 修正量，逐像素对齐三端。详见 lib/textLayout.ts#measureFontMetrics。
   const metrics = useMemo(
-    () => measureFontMetrics(el.fontSize || 16, effFamily, fontStyleRaw.includes('bold'), fontStyleRaw.includes('italic')),
+    () => measureFontMetrics(renderFontSize, effFamily, fontStyleRaw.includes('bold'), fontStyleRaw.includes('italic')),
     [el.fontSize, el.fontFamily, fontStyleRaw],
   );
   const firstWrapperRef = useRef<HTMLDivElement>(null);
   const firstFillRef = useRef<HTMLSpanElement>(null);
   const [textShift, setTextShift] = useState(0);
+  /**
+   * 校准轮次守卫（防自激）。
+   *
+   * 本 effect 依赖自身产物 `textShift`，靠「减去上一轮修正量」实现一轮收敛。这在大尺寸
+   * （编辑器 / 预览 / 导出，scale≈1）下成立；但在**缩略图**这类极小缩放（scale≈0.1）场景，
+   * 行盒实测高度只有 2~3px，`getBoundingClientRect()` 的亚像素精度不足以支撑 0.02 阈值判定，
+   * `corr` 会在阈值两侧反复抖动 → `setTextShift` 自我触发 → React 抛
+   * 「Maximum update depth exceeded」并**打断该缩略图的渲染**（表现为模板列表缩略图渲染不正确）。
+   * 这里限制连续修正轮次；一旦观测到收敛即清零，允许后续字体加载 / 尺寸变化重新校准。
+   */
+  const shiftRounds = useRef(0);
   useLayoutEffect(() => {
     const w = firstWrapperRef.current;
     const f = firstFillRef.current;
@@ -406,7 +593,14 @@ function TextElementView({
     // （_fixTextRendering 默认 false 的分支），故该行基线 = lineHeightPx/2 + middleToBaseline。
     const canvasBaselineLocal = lineHeightPx / 2 + metrics.middleToBaseline;
     const corr = canvasBaselineLocal - domBaselineLocal;
-    if (Math.abs(corr - textShift) > 0.02) setTextShift(corr);
+    if (!Number.isFinite(corr)) return; // 测量异常：保持现状，不写入非有限数
+    if (Math.abs(corr - textShift) > 0.02) {
+      if (shiftRounds.current >= 3) return; // 连续 3 轮仍未收敛 → 判定为小缩放下的测量抖动，停止自激
+      shiftRounds.current += 1;
+      setTextShift(corr);
+    } else {
+      shiftRounds.current = 0; // 已收敛，允许后续（字体加载 / 尺寸变化）重新校准
+    }
   }, [metrics, lineHeightPx, scale, fontEpoch, textShift]);
 
   // 书写方向：rtl 让阿拉伯文等从右向左排版（与编辑器 Konva 画布靠 canvas bidi 对齐）
@@ -448,11 +642,13 @@ function TextElementView({
     // 而非 CSS 默认的“内容盒（ascent+descent）”居中——二者差
     // (ascent+descent - unitsPerEm)/2，会在大字号下累积成数像素下偏，
     // 表现为“预览/导出比编辑器整体下移”。修正后三端（编辑器/预览/导出）垂直对齐。
-    top: (lineHeightPx - el.fontSize) / 2,
-    height: el.fontSize,
+    // NaN 守卫：字体度量/布局参数异常时 lineHeightPx 可能非有限数，直接写进 CSS 会让整行丢失定位
+    // （React 会告警 `NaN is an invalid value for the css style property top`，元素错位）。
+    top: (lineHeightPx - fontSize) / 2,
+    height: fontSize,
     lineHeight: 1,
     whiteSpace: 'pre',
-    fontSize: el.fontSize,
+    fontSize,
     fontFamily: effFamily,
     fontStyle: fontStyleRaw.includes('italic') ? 'italic' : 'normal',
     fontWeight: fontStyleRaw.includes('bold') ? 'bold' : 'normal',
@@ -466,17 +662,64 @@ function TextElementView({
   // 与 Konva（渐变作用于整个文本节点、而非逐行）完全等价。
   const fillType = getFillType(el);
   const domFill = domFillStyle(el);
-  const textPaintStyle: CSSProperties | undefined =
-    fillType !== 'solid' && domFill.backgroundImage
-      ? {
-          color: 'transparent',
-          backgroundImage: domFill.backgroundImage,
-          backgroundSize: domFill.backgroundSize ?? `${el.width}px ${el.height}px`,
-          backgroundRepeat: domFill.backgroundRepeat ?? 'no-repeat',
-          backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-        }
-      : undefined;
+
+  // 文本图片填充的绘制几何（cover/contain 居中缩放、平铺原始像素）。
+  // 必须显式算成 px 尺寸，因为逐行背景是「钉」在元素框原点的：
+  // 若直接给 CSS 关键字 cover/contain，浏览器是按「单行 span 盒（3em 高）」缩放，
+  // 而非元素整框 → 与 Konva（图案居中于整框、字形裁出）错位（#87）。
+  let textImageGeo: ImageFillGeometry | null = null;
+  if (fillType === 'image') {
+    const imgF = el.imageFill;
+    const href = imgF?.href;
+    if (href) {
+      const base = getImageFill(href);
+      if (base) {
+        const cropped = croppedImageSize(base, normalizeFillCrop(imgF.crop));
+        textImageGeo = imageFillGeometry({ width: el.width, height: el.height }, cropped, normalizeFit(imgF.fit));
+      } else {
+        // 图片未加载：触发加载（幂等），下次重渲染（如 schema 变更）即可算出居中几何
+        ensureImageFillLoaded(href);
+      }
+    }
+  }
+
+  const textPaintStyle: CSSProperties | undefined = (() => {
+    if (fillType === 'image') {
+      const href = el.imageFill?.href;
+      // ★ 图片未就绪（getImageFill 未命中）时必须回落**单色**，不能回落 `cover` 关键字 + 原图：
+      //  ① 定位区错位：逐行背景的定位区是「行 span 的 padding 盒（行宽 × 3em）」，
+      //     而非文本元素框；`cover` / `contain` 关键字会按行盒缩放，
+      //     与 Konva（图案按**元素框**= 文本对象自身 width/height 居中）完全不同 → 设计态与预览态不一致；
+      //  ② 裁剪丢失：原图未裁剪 → 「渲染未按设计裁剪范围呈现」；
+      //  ③ 镂空：color:transparent + background-clip:text 在背景不可用时连字形也是透明的 → 预览看似「不显示图片」。
+      // 回落单色与 Konva 的 konvaFillProps（图片未就绪 → 回落 fill 单色）行为一致；
+      // 图片加载完成后由 AnimatedPage 的 useImageFillEpoch 触发重渲染，切换为按元素框的显式 px 几何。
+      if (!href || !textImageGeo) return undefined;
+      const bgImage = domFill.backgroundImage;
+      if (!bgImage) return undefined;
+      // 尺寸与位置都显式按 px 给出：drawW/drawH = 按**文本元素框**算出的图片绘制尺寸（裁剪区已计入），
+      // 平铺轴用 repeat，绘制原点由下方逐行 background-position 补回元素框原点 —— 与 Konva 图案等价。
+      return {
+        color: 'transparent',
+        backgroundImage: bgImage,
+        backgroundSize: `${textImageGeo.drawW}px ${textImageGeo.drawH}px`,
+        backgroundRepeat: textImageGeo.repeat,
+        backgroundClip: 'text',
+        WebkitBackgroundClip: 'text',
+      };
+    }
+    if (fillType !== 'solid' && domFill.backgroundImage) {
+      return {
+        color: 'transparent',
+        backgroundImage: domFill.backgroundImage,
+        backgroundSize: domFill.backgroundSize ?? `${el.width}px ${el.height}px`,
+        backgroundRepeat: domFill.backgroundRepeat ?? 'no-repeat',
+        backgroundClip: 'text',
+        WebkitBackgroundClip: 'text',
+      };
+    }
+    return undefined;
+  })();
   const solidTextColor = resolveFillColor(el) ?? el.fill;
 
   return (
@@ -526,7 +769,7 @@ function TextElementView({
               ...glyphStyle,
               // 基线修正直接落在字形盒的 top 上：用 transform 会把行盒提升为合成层，
               // Chrome 会把合成层的绘制偏移吸附（snap）到整设备像素，反而引入 ±1px 抖动。
-              top: (lineHeightPx - el.fontSize) / 2 + textShift,
+              top: (lineHeightPx - fontSize) / 2 + textShift,
             };
             const glyph = stretched
               ? {
@@ -586,13 +829,15 @@ function TextElementView({
                           // （不受 padding 影响），故三端垂直对齐不变；背景仍按元素框原点
                           // 补偿（padding 盒顶 = em 盒顶 − 1em），保证跨行渐变连续。
                           boxSizing: 'border-box',
-                          top: (glyphBase.top as number) - el.fontSize,
-                          height: el.fontSize * 3,
-                          paddingTop: el.fontSize,
-                          paddingBottom: el.fontSize,
+                          top: (glyphBase.top as number) - fontSize,
+                          height: fontSize * 3,
+                          paddingTop: fontSize,
+                          paddingBottom: fontSize,
                           // ⚠️ Chromium 在 background-clip:text + 小数 background-position 下
                           // 栅格化字形遮罩会出现 1 设备像素的发丝裂缝。取整对齐整数像素消除。
-                          backgroundPosition: `${-Math.round(lineLeft)}px ${-Math.round(lineTop + (glyphBase.top as number) - el.fontSize)}px`,
+                          // 图片填充需叠加 textImageGeo.drawX/drawY（cover/contain 居中偏移），
+                          // 把逐行背景精确对齐到元素整框（与 Konva 图案居中于整框一致，#87）。
+                          backgroundPosition: `${Math.round(-lineLeft + (textImageGeo?.drawX ?? 0))}px ${Math.round(-(lineTop + (glyphBase.top as number) - fontSize) + (textImageGeo?.drawY ?? 0))}px`,
                         }
                       : { ...glyph, color: solidTextColor }
                   }
@@ -616,9 +861,37 @@ function TextElementView({
  */
 function SvgFillDefs({ def, width, height }: { def: SvgFillDef; width: number; height: number }) {
   if (def.kind === 'image') {
-    const tileW = def.fit === 'repeat' ? def.imgW || width : width;
-    const tileH = def.fit === 'repeat' ? def.imgH || height : height;
-    const par = def.fit === 'contain' ? 'xMidYMid meet' : 'xMidYMid slice';
+    const fit = def.fit ?? 'cover';
+    const iw = def.imgW || width;
+    const ih = def.imgH || height;
+    let tileW = width;
+    let tileH = height;
+    let imgDrawW = width;
+    let imgDrawH = height;
+    let par = 'xMidYMid slice';
+    if (fit === 'contain') {
+      par = 'xMidYMid meet';
+    } else if (fit === 'repeat-x') {
+      // 横向平铺：瓦片 = 裁剪区原始宽 × 元素高（仅一行，纵向不重复）
+      tileW = iw;
+      tileH = height;
+      imgDrawW = iw;
+      imgDrawH = ih;
+      par = 'none';
+    } else if (fit === 'repeat-y') {
+      // 纵向平铺：瓦片 = 元素宽 × 裁剪区原始高（仅一列，横向不重复）
+      tileW = width;
+      tileH = ih;
+      imgDrawW = iw;
+      imgDrawH = ih;
+      par = 'none';
+    } else if (fit === 'repeat') {
+      tileW = iw;
+      tileH = ih;
+      imgDrawW = iw;
+      imgDrawH = ih;
+      par = 'none';
+    }
     return (
       <defs>
         <pattern id={def.id} patternUnits="userSpaceOnUse" width={tileW} height={tileH}>
@@ -626,8 +899,8 @@ function SvgFillDefs({ def, width, height }: { def: SvgFillDef; width: number; h
             href={def.href}
             x={0}
             y={0}
-            width={tileW}
-            height={tileH}
+            width={imgDrawW}
+            height={imgDrawH}
             preserveAspectRatio={par}
             opacity={def.opacity ?? 1}
           />
@@ -1141,8 +1414,24 @@ interface AnimatedPageProps {
 }
 
 /** 带动画的页面渲染器（animated=false 时只做静态渲染，不播放入场动画） */
+/**
+ * 订阅「图片填充」加载纪元 —— 图片填充的几何**取决于图片原始尺寸**：
+ *  - `crop` 需要按源图像素算出裁剪区尺寸；
+ *  - `cover` / `contain` 的缩放比需要裁剪区宽高比与元素框宽高比。
+ *
+ * 图片未加载时 `getImageFill()` 返回 null，只能回落（Konva 回落单色；DOM 见 textPaintStyle）。
+ * 若不订阅加载事件，图片到位后**本页不会重渲染** → 预览 / 发布 / 导出会永久停留在回落态：
+ * 形状的裁剪被忽略（用未裁剪的原图），文本更是残留「未裁剪 + 按行盒缩放」的错误几何。
+ * 编辑器侧早已用同一订阅（EditorCanvas 的 useSyncExternalStore），此处补齐 DOM 三端。
+ */
+function useImageFillEpoch(): number {
+  return useSyncExternalStore(subscribeImageFill, getImageFillEpoch, getImageFillEpoch);
+}
+
 function AnimatedPage({ page, width, height, animated = true, animationPlayer = noopPlayer, scale = 1 }: AnimatedPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // 图片填充加载完成 → 重渲染本页，让 crop / cover / contain 几何切换为「按元素框 + 裁剪区」的真值
+  useImageFillEpoch();
 
   useEffect(() => {
     if (!animated) return;

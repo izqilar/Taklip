@@ -118,6 +118,8 @@ export function registerEditorServices(): void {
           const up = await api.uploadAsset(file, {
             width: picked.width ?? undefined,
             height: picked.height ?? undefined,
+            // 回带源图库图 id：副本可追溯为 asset.derivedFrom，使图库原图被标记「使用中」且受删除保护
+            derivedFrom: picked.id,
           });
           url = up.url;
           galleryPublicUrlCache.set(picked.id, url);
@@ -132,6 +134,22 @@ export function registerEditorServices(): void {
         if (import.meta.env.DEV) console.error('[openAssetPicker] failed:', err);
         return null;
       }
+    },
+
+    // ── 批量请柬（决策 D4：批量生成面板在编辑器内）──
+    // 注入后 EditorApp 顶栏才出现「批量生成」按钮；未注入的宿主自动隐藏该入口。
+    listGuestLists: (params) => api.listGuestLists(params),
+    listGuestRecords: (listId, page, size) => api.listGuestRecords(listId, page, size),
+    createBatchProject: (payload) => api.createBatchProject(payload),
+    getBatchProject: (projectId) => api.getBatchProject(projectId),
+    getGuestSelection: (projectId) => api.getGuestSelection(projectId),
+    setGuestSelection: (payload) => api.setGuestSelection(payload),
+    batchGenerate: (payload) => api.batchGenerate(payload),
+
+    // ── 占位符注册表（编辑器只绑定、不创建；只读端点）──
+    listPlaceholders: async () => {
+      const r = await api.listPlaceholders();
+      return (r.items ?? []) as any[];
     },
   });
 

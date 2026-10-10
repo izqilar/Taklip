@@ -121,6 +121,45 @@ export class ExportService {
     };
   }
 
+  /**
+   * 批量请柬专用：为「内存中已个性化的 schema」颁发渲染凭证。
+   *
+   * 与 `prepare()` 的区别：个性化副本是**临时产物**（不入作品库），
+   * 故这里直接吃 schema，跳过「按 projectId 读库」；字体授权与水印策略由调用方
+   * 按批次性质（赠样带水印 / 付费去水印）显式指定，复用同一条 puppeteer 渲染管线。
+   */
+  async prepareSchema(
+    schema: Project,
+    userId: string,
+    opts: { watermark?: boolean; scale?: number } = {},
+  ): Promise<{ token: string; pageCount: number; width: number; height: number }> {
+    if (!schema || typeof schema !== 'object' || !Array.isArray(schema.pages)) {
+      throw new BadRequestException('请柬数据为空，无法渲染');
+    }
+    const families = collectFontFamilies(schema);
+    const renderFonts = resolveRenderFonts(families);
+
+    const token = randomBytes(16).toString('hex');
+    this.cleanupTokens();
+    this.tokens.set(token, {
+      payload: {
+        project: schema,
+        watermark: opts.watermark ?? true,
+        fonts: renderFonts,
+      },
+      userId,
+      scale: opts.scale ?? 1,
+      expiresAt: Date.now() + TOKEN_TTL_MS,
+    });
+
+    return {
+      token,
+      pageCount: schema.pages?.length ?? 1,
+      width: schema.width ?? 375,
+      height: schema.height ?? 667,
+    };
+  }
+
   /** 渲染页回调：凭 token 换取 payload（token 具备短期有效性，天然限流） */
   getPayload(token: string): RenderPayload | null {
     this.cleanupTokens();
