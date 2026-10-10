@@ -20,6 +20,12 @@ export interface PerResult {
   status: PerStatus;
   url: string | null;
   error: string | null;
+  /**
+   * 已勾选但剩余渲染额度耗尽、尚未渲染（B5）。
+   * 既不是成功也不是失败 —— UI 需区别于红色失败态，提示「待解锁 / 需购买人次」。
+   * 后端恒返回布尔值；已渲染行与失败行恒为 false。
+   */
+  paywalled?: boolean;
 }
 
 export interface ProjectResults {

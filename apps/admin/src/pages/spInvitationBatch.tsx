@@ -53,6 +53,11 @@ interface PerResult {
   status: PerStatus;
   url: string | null;
   error: string | null;
+  /**
+   * 已勾选但剩余渲染额度耗尽、尚未渲染（B5）。
+   * 既不是成功也不是失败 —— 状态列显示为「待解锁」，区别于红色「失败」。
+   */
+  paywalled?: boolean;
 }
 interface ProjectResults {
   projectId: string;
@@ -620,6 +625,13 @@ export function SPInvitationBatch() {
           return (
             <Tooltip title={row.error ?? '渲染失败'}>
               <Tag color="error">失败</Tag>
+            </Tooltip>
+          );
+        // B5：已勾选但剩余额度耗尽、尚未渲染 —— 既非成功也非失败，用琥珀色区分
+        if (row.paywalled)
+          return (
+            <Tooltip title="已勾选但剩余渲染额度不足，需购买渲染人次后重新生成">
+              <Tag color="warning">待解锁</Tag>
             </Tooltip>
           );
         return <Tag>待渲染</Tag>;

@@ -48,6 +48,7 @@ const C = {
   ok: '#1a7f37',
   fail: '#cf1322',
   running: '#2563eb',
+  warn: '#b45309',
   err: '#dc2626',
   errBg: '#fef2f2',
 };
@@ -281,6 +282,8 @@ export default function UserInvitationCenter() {
   const statusText = (r: PerResult) => {
     if (r.status === 'ok') return { label: '成功', color: C.ok };
     if (r.status === 'failed') return { label: '失败', color: C.fail };
+    // B5：已勾选但剩余渲染额度耗尽、尚未渲染 —— 既非成功也非失败，用琥珀色区别于红色失败态
+    if (r.paywalled) return { label: '待解锁', color: C.warn };
     return runningJobId ? { label: '生成中', color: C.running } : { label: '待生成', color: C.ink4 };
   };
 
