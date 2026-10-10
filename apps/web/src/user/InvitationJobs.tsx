@@ -68,16 +68,40 @@ export default function InvitationJobs() {
     }
   }, []);
 
-  const loadResults = useCallback(async (pid: string) => {
+  /**
+   * 拉取并同步项目配额（可渲染总数 / 剩余），供「购买数量」右侧标签实时显示。
+   * freeSampleCap 由 totalRenderable - purchasedHeadcount 反推（等价于服务端 FREE_SAMPLE_CAP）。
+   * 失败静默：配额同步失败不应影响主流程。
+   */
+  const refreshQuota = useCallback(async (pid: string) => {
     try {
-      const r = await api.projectResults(pid);
-      setResults(r.results ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoadingResults(false);
+      const v = await api.getBatchProject(pid);
+      setQuota({
+        freeSampleCap: v.totalRenderable - v.purchasedHeadcount,
+        purchasedHeadcount: v.purchasedHeadcount,
+        totalRenderable: v.totalRenderable,
+        remaining: v.remaining,
+      });
+    } catch {
+      /* 静默：配额同步失败不影响结果列表 */
     }
   }, []);
+
+  const loadResults = useCallback(
+    async (pid: string) => {
+      try {
+        const r = await api.projectResults(pid);
+        setResults(r.results ?? []);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setLoadingResults(false);
+      }
+      // 结果变动（生成 / 删除 / 轮询）同步刷新配额，保证标签随库存变动实时更新
+      void refreshQuota(pid);
+    },
+    [refreshQuota],
+  );
 
   // 轮询：有运行中的 job 时刷新逐人状态，job 终态后停止
   useEffect(() => {
@@ -129,6 +153,8 @@ export default function InvitationJobs() {
     // 名单变更 → 字段配对需重做
     setFieldPaired(false);
     setPersonOpen(false);
+    // 选完名单立即同步配额，使右侧「可渲染 / 剩余」标签即刻显示数值（无需先打开购买弹窗）
+    void refreshQuota(p.projectId);
   };
 
   const startGenerate = useCallback(
@@ -137,12 +163,16 @@ export default function InvitationJobs() {
       setGenerating(true);
       try {
         // 首渲/续渲前确保勾选已落库（重渲无需重设）
+        // 后端返回「已锁定 ids ∪ 本次提交 ids」的并集，以响应体为准回写本地勾选（后端契约 note 3）
         if (!payload.targetRecordIds && picked && !payload.mode) {
-          await api.setGuestSelection({
+          const saved = await api.setGuestSelection({
             projectId: payload.projectId,
             listId: picked.listId,
             selectedRecordIds: picked.selectedRecordIds,
           });
+          if (saved?.selectedRecordIds?.length) {
+            setPicked((prev) => (prev ? { ...prev, selectedRecordIds: saved.selectedRecordIds } : prev));
+          }
         }
         const res = await api.batchGenerate(payload);
         setRunningJobId(res.jobId);
@@ -408,6 +438,18 @@ export default function InvitationJobs() {
             ? `（需解锁 ${Math.max(1, picked.selectedRecordIds.length - quota.remaining)} 人）`
             : ''}
         </button>
+
+        {/* 「购买数量」右侧实时配额标签：可渲染总数 / 剩余数量（随购买或库存变动自动同步） */}
+        <span
+          className="inline-flex items-center rounded bg-[#e879b4]/10 px-2.5 py-1.5 text-sm text-[#a13c6e]"
+          title={t('common:guest.batch.quotaLabelTitle', {
+            defaultValue: '当前可渲染总量与剩余可渲染数量',
+          })}
+        >
+          {t('common:guest.batch.quotaLabel', { defaultValue: '可渲染：{{x}}，剩余：{{y}}' })
+            .replace('{{x}}', String(quota?.totalRenderable ?? '—'))
+            .replace('{{y}}', String(quota?.remaining ?? '—'))}
+        </span>
 
         <button
           onClick={handleGenerate}

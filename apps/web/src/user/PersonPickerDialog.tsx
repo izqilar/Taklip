@@ -156,10 +156,17 @@ export function PersonPickerDialog({ open, templateId, onClose, onConfirm, owner
     setSubmitting(true);
     try {
       // 持久化勾选（锁定后跳过，与编辑器一致）
+      // 后端返回「已锁定 ids ∪ 本次提交 ids」的并集，以响应体为准回写调用方（后端契约 note 3）
+      let finalIds = selected;
       if (!locked) {
-        await api.setGuestSelection({ projectId: batchProjectId, listId, selectedRecordIds: selected });
+        const saved = await api.setGuestSelection({
+          projectId: batchProjectId,
+          listId,
+          selectedRecordIds: selected,
+        });
+        if (saved?.selectedRecordIds?.length) finalIds = saved.selectedRecordIds;
       }
-      onConfirm({ projectId: batchProjectId, listId, selectedRecordIds: selected });
+      onConfirm({ projectId: batchProjectId, listId, selectedRecordIds: finalIds });
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

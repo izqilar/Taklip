@@ -1000,13 +1000,18 @@ export const api = {
   getGuestSelection: (projectId: string) =>
     request<GuestSelectionView>(`/api/invitations/projects/${projectId}/selection`),
 
-  /** 保存勾选子集（有序） */
+  /** 保存勾选子集（有序）。返回「已锁定 ids ∪ 本次提交 ids」的并集，调用方须以响应体为准回写本地勾选 */
   setGuestSelection: (payload: {
     projectId: string;
     listId: string;
     selectedRecordIds: string[];
   }) =>
-    request<{ count: number }>(`/api/invitations/projects/${payload.projectId}/selection`, {
+    request<{
+      projectId: string;
+      listId: string;
+      selectedRecordIds: string[];
+      count: number;
+    }>(`/api/invitations/projects/${payload.projectId}/selection`, {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
