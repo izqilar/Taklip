@@ -335,28 +335,25 @@ export class InvitationService implements OnModuleInit {
   /* ────────── §9.3 勾选子集 ────────── */
 
   /**
-   * 读取勾选子集。
-   * 无勾选行时回退「渲染快照的锁定 ids」（B3）：首渲后用户未显式改勾选也能看到
-   * 已锁定的全量人员，避免前端拿到空列表后误判为「无可渲染人员」。
+   * 读取勾选子集（对外契约：**恒等于「快照锁定 ids ∪ 勾选 ids」的去重并集**）。
+   *
+   * 之所以不直接回显 `selectedRecordIds` 原值：历史数据里可能存在「早于 B3 写入、
+   * 未包含全部锁定 ids」的勾选行；统一按并集推导，前端拿到的永远是服务端真值，
+   * 与 `projectResults` / `batchGenerate` 的取人口径一致（B3 单一真值）。
+   * 因此前端可以放心地「取回 → 编辑 → 原样回传」，不会把已锁定记录漏掉。
    */
   async getSelection(scope: OwnerScope, projectId: string) {
     const p = await this.mustGetProject(scope, projectId);
-    const sel = await this.prisma.guestListSelection.findUnique({ where: { projectId: p.id } });
-    const selIds = ((sel?.selectedRecordIds as unknown as string[]) ?? []).filter(Boolean);
-    if (selIds.length) {
-      return {
-        projectId: p.id,
-        listId: sel?.listId ?? p.listId,
-        selectedRecordIds: [...new Set(selIds.map(String))],
-        updatedAt: sel?.updatedAt ?? null,
-      };
-    }
-    const snap = await this.prisma.renderSnapshot.findUnique({ where: { projectId: p.id } });
-    const snapIds = ((snap?.recordIds as unknown as string[]) ?? []).filter(Boolean);
+    const [sel, snap] = await Promise.all([
+      this.prisma.guestListSelection.findUnique({ where: { projectId: p.id } }),
+      this.prisma.renderSnapshot.findUnique({ where: { projectId: p.id } }),
+    ]);
+    const selIds = ((sel?.selectedRecordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
+    const snapIds = ((snap?.recordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
     return {
       projectId: p.id,
       listId: sel?.listId ?? snap?.listId ?? p.listId,
-      selectedRecordIds: [...new Set(snapIds.map(String))],
+      selectedRecordIds: this.mergeLockedRecordIds(snapIds, selIds),
       updatedAt: sel?.updatedAt ?? null,
     };
   }
