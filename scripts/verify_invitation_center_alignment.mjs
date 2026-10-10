@@ -158,9 +158,9 @@ const CHECKS = [
   /* ───────────────────────── 模块三 · 请柬批量生成 ───────────────────────── */
   {
     id: 'C1',
-    title: '选择区三个按钮：模板选择 / 人员名单选择 / 批量生成',
-    web: { file: WEB.jobs, need: ['请柬模板选择', '人员名单选择', '批量生成'] },
-    admin: { file: ADMIN.jobs, need: ['请柬模板选择', '人员名单选择', '批量生成'] },
+    title: '选择区三个按钮：模板选择 / 宾客名单选择 / 批量生成',
+    web: { file: WEB.jobs, need: ['请柬模板选择', '宾客名单选择', '批量生成'] },
+    admin: { file: ADMIN.jobs, need: ['请柬模板选择', '宾客名单选择', '批量生成'] },
   },
   {
     id: 'C2',
@@ -206,25 +206,25 @@ const CHECKS = [
   },
   {
     id: 'C9',
-    title: '人员名单对话框：名单下拉 + 搜索 + 全选 / 反选 + 已选 N 人',
+    title: '宾客名单对话框：名单下拉 + 搜索 + 全选 / 反选 + 已选 N 人',
     web: { file: WEB.personPicker, need: ['全选', '反选', '已选', '搜索姓名/单位/桌号'] },
     admin: { file: ADMIN.personPicker, need: ['全选', '反选', '已选', '搜索姓名/单位/桌号'] },
   },
   {
     id: 'C10',
-    title: '人员名单对话框：人员表列取 GUEST_FIELD_DEFS.slice(0,5)',
+    title: '宾客名单对话框：人员表列取 GUEST_FIELD_DEFS.slice(0,5)',
     web: { file: WEB.personPicker, need: ['GUEST_FIELD_DEFS.slice(0, 5)'] },
     admin: { file: ADMIN.personPicker, need: ['GUEST_FIELD_DEFS.slice(0, 5)'] },
   },
   {
     id: 'C11',
-    title: '人员名单对话框：已锁定名单提示 + 禁用改动（locked）',
+    title: '宾客名单对话框：已锁定名单提示 + 禁用改动（locked）',
     web: { file: WEB.personPicker, need: ['locked', '已锁定名单'] },
     admin: { file: ADMIN.personPicker, need: ['locked', '已锁定名单'] },
   },
   {
     id: 'C12',
-    title: '人员名单对话框：取消 / 确认选择 底栏',
+    title: '宾客名单对话框：取消 / 确认选择 底栏',
     web: { file: WEB.personPicker, need: ['action.cancel', 'batch.confirm'] },
     admin: { file: ADMIN.personPicker, need: ['取消', '确认选择'] },
   },
