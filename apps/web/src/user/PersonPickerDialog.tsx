@@ -60,6 +60,8 @@ export function PersonPickerDialog({
   const [batchProjectId, setBatchProjectId] = useState('');
   const [locked, setLocked] = useState(false);
   const [remaining, setRemaining] = useState(3);
+  /** 已成功渲染的宾客：后端 RENDERED_RECORD_IMMUTABLE —— 从名单移除任意一条即 409，UI 上禁掉取消勾选 */
+  const [renderedIds, setRenderedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -117,6 +119,15 @@ export function PersonPickerDialog({
         const sel = await api.getGuestSelection(p.id);
         if (!alive || !sel) return;
         setSelected((sel.selectedRecordIds ?? []).filter(Boolean));
+
+        // 取回逐行结果：已成功渲染的宾客不可移除（后端移除即 409 RENDERED_RECORD_IMMUTABLE），
+        // 在 UI 上禁掉其取消勾选，避免用户点到必然报错的操作
+        try {
+          const rs = await api.projectResults(p.id);
+          setRenderedIds(new Set((rs.results ?? []).filter((r) => r.status === 'ok').map((r) => r.recordId)));
+        } catch {
+          /* 拉取失败时不禁用任何勾选，交由后端 409 提示兜底 */
+        }
       } catch (e) {
         if (alive) setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -147,9 +158,14 @@ export function PersonPickerDialog({
   // 冻结态（已首渲/已付费）也允许改勾选：后端 B3 会做「锁定 ids ∪ 本次提交 ids」并集，
   // 且 9583636 起新增/追加不受限（仅「移除/替换」超过 3 条才 409）。此处若在 locked 时
   // 直接 return，用户买完人次也勾不了人，跨名单追加彻底失效。
-  const toggle = useCallback((id: string) => {
-    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  }, []);
+  const toggle = useCallback(
+    (id: string) => {
+      // 已渲染宾客不可取消勾选（后端移除已生成记录会 409），只允许保持勾选
+      if (renderedIds.has(id)) return;
+      setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    },
+    [renderedIds],
+  );
 
   const selectAll = useCallback(() => {
     const ordered = filtered.map((r) => r.id);
@@ -161,10 +177,11 @@ export function PersonPickerDialog({
     setSelected((prev) => {
       const prevSet = new Set(prev);
       const next = filtered.filter((r) => !prevSet.has(r.id)).map((r) => r.id);
-      const keep = prev.filter((id) => !inView.has(id));
+      // 已渲染宾客即使在当前视图内也要保留，避免反选把它们移除而触发 409
+      const keep = prev.filter((id) => !inView.has(id) || renderedIds.has(id));
       return [...keep, ...next];
     });
-  }, [filtered]);
+  }, [filtered, renderedIds]);
 
   const confirm = useCallback(async () => {
     setError('');
@@ -269,6 +286,8 @@ export function PersonPickerDialog({
                       <input
                         type="checkbox"
                         checked={selectedSet.has(r.id)}
+                        disabled={renderedIds.has(r.id)}
+                        title={renderedIds.has(r.id) ? t('common:guest.batch.renderedImmutable', { defaultValue: '已生成的宾客不可从名单移除' }) : ''}
                         onClick={(e) => e.stopPropagation()}
                         onChange={() => toggle(r.id)}
                         className="h-4 w-4 accent-blue-500"
