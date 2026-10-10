@@ -111,10 +111,12 @@ export function PersonPickerDialog({
         setLocked(!!p.locked);
         setRemaining(p.remaining ?? 0);
 
+        // 保留服务端返回的全量勾选（含其他名单的宾客）：提交时必须带上它们，否则后端会
+        // 判定为「移除/替换已锁定记录」→ 超过 MINOR_EDIT 限额即 409（跨名单追加场景）。
+        // 仅当前名单的人员会渲染成行，其他名单的 id 原样保留在提交集合里。
         const sel = await api.getGuestSelection(p.id);
         if (!alive || !sel) return;
-        const valid = new Set((res?.records ?? []).map((r) => r.id));
-        setSelected((sel.selectedRecordIds ?? []).filter((id) => valid.has(id)));
+        setSelected((sel.selectedRecordIds ?? []).filter(Boolean));
       } catch (e) {
         if (alive) setError(e instanceof Error ? e.message : String(e));
       } finally {
