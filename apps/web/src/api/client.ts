@@ -985,6 +985,13 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  /** 购买渲染人次（提升批量请柬可渲染上限） */
+  purchaseInvitation: (payload: { projectId: string; headcount: number }) =>
+    request<BatchProjectView>('/api/invitations/purchase', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
   /** 读取项目状态与配额 */
   getBatchProject: (projectId: string) =>
     request<BatchProjectView>(`/api/invitations/projects/${projectId}`),

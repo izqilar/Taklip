@@ -47,6 +47,17 @@ export default function InvitationJobs() {
   // 分步向导：第③步「字段配对」是否已完成（保存映射或点击「跳过」）
   const [fieldPaired, setFieldPaired] = useState(false);
 
+  // 购买渲染人次弹窗与配额
+  const [buyOpen, setBuyOpen] = useState(false);
+  const [quota, setQuota] = useState<{
+    freeSampleCap: number;
+    purchasedHeadcount: number;
+    totalRenderable: number;
+    remaining: number;
+  } | null>(null);
+  const [buyHeadcount, setBuyHeadcount] = useState(1);
+  const [buyMsg, setBuyMsg] = useState('');
+
   const pollRef = useRef<number | null>(null);
   const projectId = picked?.projectId ?? '';
 
@@ -164,6 +175,63 @@ export default function InvitationJobs() {
     }
   };
 
+  /**
+   * 打开「购买渲染人次」弹窗：先拉取最新项目配额（totalRenderable - purchasedHeadcount 即为免费赠样额度），
+   * 计算默认补齐数量（当已选人数超过剩余可渲染数时，默认补齐差额），再弹出购买弹窗。
+   */
+  const openBuy = useCallback(async () => {
+    if (!picked) {
+      setError(t('common:guest.batch.needPersons', { defaultValue: '请先选择人员名单' }));
+      return;
+    }
+    try {
+      const v = await api.getBatchProject(picked.projectId);
+      const q = {
+        freeSampleCap: v.totalRenderable - v.purchasedHeadcount,
+        purchasedHeadcount: v.purchasedHeadcount,
+        totalRenderable: v.totalRenderable,
+        remaining: v.remaining,
+      };
+      setQuota(q);
+      const deficit =
+        q.remaining < picked.selectedRecordIds.length
+          ? Math.max(1, picked.selectedRecordIds.length - q.remaining)
+          : 1;
+      setBuyHeadcount(deficit);
+      setBuyMsg('');
+      setBuyOpen(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }, [picked]);
+
+  /** 确认购买：调用 POST /api/invitations/purchase，成功后用返回视图刷新配额并提示 */
+  const confirmBuy = useCallback(async () => {
+    if (!picked || !quota) return;
+    const n = Math.floor(Number(buyHeadcount));
+    if (!Number.isFinite(n) || n <= 0) {
+      setError(t('common:guest.batch.buyInvalid', { defaultValue: '请输入正整数购买数量' }));
+      return;
+    }
+    try {
+      const r = await api.purchaseInvitation({ projectId: picked.projectId, headcount: n });
+      setQuota({
+        freeSampleCap: r.totalRenderable - r.purchasedHeadcount,
+        purchasedHeadcount: r.purchasedHeadcount,
+        totalRenderable: r.totalRenderable,
+        remaining: r.remaining,
+      });
+      setBuyMsg(
+        t('common:guest.batch.buySuccess', {
+          defaultValue: '已成功购买 {{n}} 人次，请重新打开「人员名单选择」勾选更多人员',
+        }).replace('{{n}}', String(n)),
+      );
+      setBuyOpen(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }, [picked, quota, buyHeadcount]);
+
   /** 第④步「批量生成」：仅执行生成，前置步骤由按钮 disabled 与下方守卫双重保障 */
   const handleGenerate = () => {
     if (!template || !picked || !fieldPaired) {
@@ -274,6 +342,7 @@ export default function InvitationJobs() {
       </h2>
 
       {error && <div className="mb-3 rounded bg-red-50 px-3 py-2 text-xs text-red-600">{error}</div>}
+      {buyMsg && <div className="mb-3 rounded bg-green-50 px-3 py-2 text-xs text-green-700">{buyMsg}</div>}
 
       {/* 分步向导：① 选模板 → ② 选名单 → ③ 字段配对 → ④ 批量生成（严格顺序，禁止跳步） */}
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white p-4">
@@ -298,7 +367,7 @@ export default function InvitationJobs() {
             setPersonOpen(true);
           }}
           disabled={!template}
-          className="rounded border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
+          className="rounded bg-[#f97316] px-4 py-1.5 text-sm text-white hover:bg-[#ea6a0c] disabled:opacity-50"
         >
           ② {t('common:guest.batch.pickPersons', { defaultValue: '人员名单选择' })}
         </button>
@@ -317,10 +386,27 @@ export default function InvitationJobs() {
             void openFieldPair();
           }}
           disabled={!template || !picked}
-          className="rounded border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
+          className="rounded bg-[#5cb85c] px-4 py-1.5 text-sm text-white hover:bg-[#4ca24c] disabled:opacity-50"
         >
           ③ {t('common:guest.batch.fieldPair', { defaultValue: '字段配对' })}
           {fieldPaired ? `（${t('common:guest.batch.paired', { defaultValue: '已配对' })}）` : ''}
+        </button>
+
+        <button
+          onClick={() => {
+            if (picked) {
+              void openBuy();
+            } else {
+              setError(t('common:guest.batch.needPersons', { defaultValue: '请先选择人员名单' }));
+            }
+          }}
+          disabled={!picked}
+          className="rounded bg-[#e879b4] px-4 py-1.5 text-sm text-white hover:bg-[#d965a0] disabled:opacity-50"
+        >
+          {t('common:guest.batch.buyQuantity', { defaultValue: '购买数量' })}
+          {picked && quota && quota.remaining < picked.selectedRecordIds.length
+            ? `（需解锁 ${Math.max(1, picked.selectedRecordIds.length - quota.remaining)} 人）`
+            : ''}
         </button>
 
         <button
@@ -467,6 +553,59 @@ export default function InvitationJobs() {
         }}
         onPaired={() => setFieldPaired(true)}
       />
+
+      {buyOpen && quota && (
+        <div
+          className="fixed inset-0 z-[1300] flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setBuyOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-3 text-base font-semibold text-gray-800">
+              {t('common:guest.batch.buyQuantityTitle', { defaultValue: '购买渲染人次' })}
+            </h3>
+            <p className="mb-4 text-sm leading-relaxed text-gray-600">
+              {t('common:guest.batch.buyQuotaTip', {
+                defaultValue:
+                  '免费赠样 {{cap}} 人 + 已购 {{paid}} = 可渲染 {{total}} 人，剩余 {{rem}} 人',
+              })
+                .replace('{{cap}}', String(quota.freeSampleCap))
+                .replace('{{paid}}', String(quota.purchasedHeadcount))
+                .replace('{{total}}', String(quota.totalRenderable))
+                .replace('{{rem}}', String(quota.remaining))}
+            </p>
+            <label className="mb-1 block text-sm text-gray-700">
+              {t('common:guest.batch.buyHeadcountLabel', { defaultValue: '购买数量（正整数）' })}
+            </label>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={buyHeadcount}
+              onChange={(e) =>
+                setBuyHeadcount(Math.max(1, Math.floor(Number(e.target.value) || 1)))
+              }
+              className="mb-4 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setBuyOpen(false)}
+                className="rounded border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50"
+              >
+                {t('common:guest.batch.cancel', { defaultValue: '取消' })}
+              </button>
+              <button
+                onClick={confirmBuy}
+                className="rounded bg-[#e879b4] px-4 py-1.5 text-sm text-white hover:bg-[#d965a0]"
+              >
+                {t('common:guest.batch.confirmBuy', { defaultValue: '确认购买' })}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
