@@ -36,6 +36,12 @@ interface Props {
   templateId: string;
   onClose: () => void;
   onConfirm: (picked: PickedPersons) => void;
+  /**
+   * 既有批量项目 id（切换模板时由调用方置空）。
+   * 有值时透传给 `POST /invitations/projects` 强制复用该项目，避免换名单因
+   * (templateId, listId) 查重不命中而新建项目 —— 新建会让已购人次作废。
+   */
+  projectId?: string;
 }
 
 const C = {
@@ -71,7 +77,7 @@ const ghostBtn: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm }: Props) {
+export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, projectId }: Props) {
   const { q, subjBody } = useSubjectScope();
 
   const [lists, setLists] = useState<GuestListRow[]>([]);
@@ -123,6 +129,8 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm }:
         const p = await apiPost<BatchProjectView>(q('/invitations/projects'), {
           templateId,
           listId,
+          // 有既有项目时强制复用，换名单不再新建项目（新建会让已购人次作废）
+          ...(projectId ? { projectId } : {}),
           ...subjBody,
         });
         if (!alive) return;
@@ -132,8 +140,10 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm }:
 
         const sel = await apiGet<GuestSelectionView>(q(`/invitations/projects/${p.id}/selection`));
         if (!alive || !sel) return;
-        const valid = new Set((res?.records ?? []).map((r) => r.id));
-        setSelected((sel.selectedRecordIds ?? []).filter((id) => valid.has(id)));
+        // 保留服务端返回的全量勾选（含其他名单的宾客）：提交时必须一并带回，否则后端会
+        // 判定为「移除/替换已锁定记录」→ 超过 MINOR_EDIT 限额即 409 MINOR_EDIT_EXCEEDED。
+        // 只有当前名单的人员渲染成行，其他名单的 id 仍留在提交集合中。
+        setSelected((sel.selectedRecordIds ?? []).filter(Boolean));
       } catch (e) {
         if (alive) setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -144,7 +154,7 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm }:
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, listId, templateId]);
+  }, [open, listId, templateId, projectId]);
 
   /** 实际渲染的列：优先用名单字段定义（按所选模板结构）；缺失时按记录实际字段键推导，避免 ext_* 名单整列空白 */
   const cols = useMemo(() => {
@@ -163,22 +173,29 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm }:
 
   const selectedSet = useMemo(() => new Set(selected), [selected]);
 
+  /**
+   * 名单冻结后是否仍可调整勾选：
+   * 只要「剩余可渲染额度 > 0」就允许改名单/追加宾客（后端按并集落库，新增不计入
+   * MINOR_EDIT 限额）；额度耗尽才保持只读，提示先购买渲染人次。
+   */
+  const canEdit = !(locked && remaining <= 0);
+
   const toggle = useCallback(
     (id: string) => {
-      if (locked) return;
+      if (!canEdit) return;
       setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
     },
-    [locked],
+    [canEdit],
   );
 
   const selectAll = useCallback(() => {
-    if (locked) return;
+    if (!canEdit) return;
     const ordered = filtered.map((r) => r.id);
     setSelected((prev) => [...new Set([...prev, ...ordered])]);
-  }, [filtered, locked]);
+  }, [filtered, canEdit]);
 
   const invert = useCallback(() => {
-    if (locked) return;
+    if (!canEdit) return;
     const inView = new Set(filtered.map((r) => r.id));
     setSelected((prev) => {
       const prevSet = new Set(prev);
@@ -186,7 +203,7 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm }:
       const keep = prev.filter((id) => !inView.has(id));
       return [...keep, ...next];
     });
-  }, [filtered, locked]);
+  }, [filtered, canEdit]);
 
   const confirm = useCallback(async () => {
     setError('');
@@ -197,15 +214,15 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm }:
     }
     setSubmitting(true);
     try {
-      // 持久化勾选（锁定后跳过，与 web 端一致）
-      if (!locked) {
-        await apiPost(q(`/invitations/projects/${batchProjectId}/selection`), {
-          listId,
-          selectedRecordIds: selected,
-          ...subjBody,
-        });
-      }
-      onConfirm({ projectId: batchProjectId, listId, selectedRecordIds: selected });
+      // 冻结态同样必须写库：后端按「已锁定 ids ∪ 本次提交 ids」取并集并校验对称差，
+      // 跳过提交会让新追加的宾客进不了 selection（跨名单累加失效）。
+      // 后端会补回已锁定的旧记录，故以响应体的 selectedRecordIds 为准，不在本地自算。
+      const saved = await apiPost<{ selectedRecordIds?: string[] }>(
+        q(`/invitations/projects/${batchProjectId}/selection`),
+        { listId, selectedRecordIds: selected, ...subjBody },
+      );
+      const finalIds = saved?.selectedRecordIds?.length ? saved.selectedRecordIds : selected;
+      onConfirm({ projectId: batchProjectId, listId, selectedRecordIds: finalIds });
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -285,9 +302,9 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm }:
           <label style={{ fontSize: 14, color: C.ink2 }}>人员名单</label>
           <select
             value={listId}
-            disabled={locked || !lists.length}
+            disabled={!canEdit || !lists.length}
             onChange={(e) => setListId(e.target.value)}
-            style={{ ...inputStyle, minWidth: 180, background: locked ? '#f3f4f6' : '#fff' }}
+            style={{ ...inputStyle, minWidth: 180, background: canEdit ? '#fff' : '#f3f4f6' }}
           >
             {lists.map((l) => (
               <option key={l.id} value={l.id}>
@@ -301,10 +318,10 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm }:
             placeholder="搜索姓名/单位/桌号"
             style={{ ...inputStyle, flex: '1 1 160px', minWidth: 160 }}
           />
-          <button onClick={selectAll} disabled={locked} style={{ ...ghostBtn, opacity: locked ? 0.5 : 1 }}>
+          <button onClick={selectAll} disabled={!canEdit} style={{ ...ghostBtn, opacity: canEdit ? 1 : 0.5 }}>
             全选
           </button>
-          <button onClick={invert} disabled={locked} style={{ ...ghostBtn, opacity: locked ? 0.5 : 1 }}>
+          <button onClick={invert} disabled={!canEdit} style={{ ...ghostBtn, opacity: canEdit ? 1 : 0.5 }}>
             反选
           </button>
           <span style={{ fontSize: 14, color: C.ink3 }}>已选 {selected.length} 人</span>
@@ -312,7 +329,9 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm }:
 
         {locked && (
           <div style={{ background: C.warnBg, padding: '8px 20px', fontSize: 12, color: C.warnInk }}>
-            已锁定名单，修改不影响已生成请柬
+            {canEdit
+              ? `名单已锁定，已生成的宾客不会被移除；剩余 ${remaining} 人次，可继续追加宾客`
+              : '名单已锁定且剩余渲染额度为 0，请先购买渲染人次'}
           </div>
         )}
 
@@ -340,7 +359,7 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm }:
                       key={r.id}
                       onClick={() => toggle(r.id)}
                       style={{
-                        cursor: locked ? 'default' : 'pointer',
+                        cursor: canEdit ? 'pointer' : 'default',
                         borderBottom: `1px solid ${C.lineSoft}`,
                         background: on ? 'rgba(219,234,254,0.6)' : undefined,
                       }}
@@ -349,7 +368,7 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm }:
                         <input
                           type="checkbox"
                           checked={on}
-                          disabled={locked}
+                          disabled={!canEdit}
                           onClick={(e) => e.stopPropagation()}
                           onChange={() => toggle(r.id)}
                           style={{ width: 16, height: 16, accentColor: C.blue }}

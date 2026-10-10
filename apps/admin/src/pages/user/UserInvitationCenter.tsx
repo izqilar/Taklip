@@ -490,6 +490,8 @@ export default function UserInvitationCenter() {
         <UserPersonPickerDialog
           open={personOpen}
           templateId={template.id}
+          // 复用既有项目：换名单不新建项目，避免已购人次作废（换模板时 picked 置空 → 走新建）
+          projectId={picked?.projectId}
           onClose={() => setPersonOpen(false)}
           onConfirm={onPickPersons}
         />
