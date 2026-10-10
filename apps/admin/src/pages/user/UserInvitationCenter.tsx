@@ -165,13 +165,19 @@ export default function UserInvitationCenter() {
       setError('');
       setGenerating(true);
       try {
-        // 首渲/续渲前确保勾选已落库（重渲无需重设）
+        // 首渲/续渲前确保勾选已落库（重渲无需重设）。
+        // picked.selectedRecordIds 已是服务端并集（名单弹窗按响应体回写），原样提交
+        // removed = 0，不会被判为「移除已锁定记录」；仍用响应体回写一次，避免本地副本漂移。
         if (!payload.targetRecordIds && picked && !payload.mode) {
-          await apiPost(q(`/invitations/projects/${payload.projectId}/selection`), {
-            listId: picked.listId,
-            selectedRecordIds: picked.selectedRecordIds,
-            ...subjBody,
-          });
+          const saved = await apiPost<{ selectedRecordIds?: string[] }>(
+            q(`/invitations/projects/${payload.projectId}/selection`),
+            { listId: picked.listId, selectedRecordIds: picked.selectedRecordIds, ...subjBody },
+          );
+          if (saved?.selectedRecordIds?.length) {
+            setPicked((prev) =>
+              prev ? { ...prev, selectedRecordIds: saved.selectedRecordIds ?? prev.selectedRecordIds } : prev,
+            );
+          }
         }
         const res = await apiPost<{ jobId: string }>(q('/invitations/batch-generate'), {
           ...payload,

@@ -355,12 +355,17 @@ export function SPInvitationBatch() {
         pid = p.id;
         setProjectId(pid);
       }
-      await apiPost(`/invitations/projects/${pid}/selection`, {
-        listId: personListId,
-        selectedRecordIds: selected,
-        ownerType,
-        clientId: ownerType === 'CLIENT' ? clientId : undefined,
-      });
+      const saved = await apiPost<{ selectedRecordIds?: string[] }>(
+        `/invitations/projects/${pid}/selection`,
+        {
+          listId: personListId,
+          selectedRecordIds: selected,
+          ownerType,
+          clientId: ownerType === 'CLIENT' ? clientId : undefined,
+        },
+      );
+      // 后端按「已锁定 ids ∪ 本次提交 ids」返回并集，可能与提交值不同，以响应体为准回写
+      if (saved?.selectedRecordIds?.length) setSelected(saved.selectedRecordIds);
       setListId(personListId);
       // 名单变更 → 字段配对需重做
       setFieldPaired(false);
@@ -395,13 +400,30 @@ export function SPInvitationBatch() {
     }
     try {
       setGenBusy(true);
-      // 落盘勾选（幂等；锁定前可改，锁定后服务端忽略）
-      await apiPost(`/invitations/projects/${projectId}/selection`, {
-        listId,
-        selectedRecordIds: selected,
-        ownerType,
-        clientId: ownerType === 'CLIENT' ? clientId : undefined,
-      });
+      // 落盘勾选：先取服务端并集基线，与本地勾选合并后**全量**提交。
+      // 只提交本地勾选会让已锁定的旧记录被判为「被移除」，超过 MINOR_EDIT 限额即
+      // 409 MINOR_EDIT_EXCEEDED，直接阻断生成（锁定后服务端不再「忽略」而是校验）。
+      let toSubmit = selected;
+      try {
+        const base = await apiGet<{ selectedRecordIds?: string[] }>(
+          `/invitations/projects/${projectId}/selection?${scope}`,
+        );
+        if (base?.selectedRecordIds?.length) {
+          toSubmit = [...new Set([...base.selectedRecordIds, ...selected])];
+        }
+      } catch {
+        /* 取基线失败时退化为本地勾选，由服务端并集兜底 */
+      }
+      const saved = await apiPost<{ selectedRecordIds?: string[] }>(
+        `/invitations/projects/${projectId}/selection`,
+        {
+          listId,
+          selectedRecordIds: toSubmit,
+          ownerType,
+          clientId: ownerType === 'CLIENT' ? clientId : undefined,
+        },
+      );
+      if (saved?.selectedRecordIds?.length) setSelected(saved.selectedRecordIds);
       // 不传 mode → 服务端自动 FREE_SAMPLE（首渲）/ PAID（续渲）
       const r = await apiPost<{ jobId: string; projectId: string; total: number }>('/invitations/batch-generate', {
         projectId,
