@@ -37,6 +37,13 @@ import { zipStore } from '../common/minimal-zip';
 /** 免费赠样人次（C1：不占购额、不计入 N） */
 export const FREE_SAMPLE_CAP = 3;
 
+/**
+ * 冻结态（已锁名单 / 已付费渲染）单次允许的「少量修改」条数（B3）。
+ * 口径：新提交 ids 与已锁定 ids 的**对称差** ≤ 本值才放行（个别宾客微调），
+ * 超过则 409 MINOR_EDIT_EXCEEDED。零数据库迁移，仅服务端常量。
+ */
+export const MINOR_EDIT_LIMIT = 3;
+
 /** 渲染模式 */
 export type RenderMode = 'FREE_SAMPLE' | 'PAID' | 'RERENDER';
 
@@ -149,6 +156,77 @@ export class InvitationService implements OnModuleInit {
     return scope.ownerType === 'SELF' ? scope.userId : (scope.orgId ?? scope.userId);
   }
 
+  /**
+   * 名单可见性查询条件（与名单模块 `GuestListService.listWhere` 同口径，§13 隔离纪律）。
+   * 用于「跨名单勾选 / 跨名单渲染」时按记录所属名单反查归属（B3/B4），
+   * 防止把他人名单的宾客记录塞进自己的批量项目。
+   */
+  private visibleListWhere(scope: OwnerScope): Record<string, unknown> {
+    const base: Record<string, unknown> = { deletedAt: null };
+    if (scope.ownerType === 'SELF') return { ...base, ownerId: scope.userId, ownerType: 'SELF' };
+    return {
+      ...base,
+      ownerType: scope.ownerType,
+      orgId: scope.orgId,
+      ...(scope.ownerType === 'CLIENT' ? { clientId: scope.clientId } : { clientId: null }),
+    };
+  }
+
+  /**
+   * 宾客记录归属校验（B3/B4 跨名单累加的唯一安全闸门）。
+   *
+   * 与旧的「`where:{listId}` 一刀切」不同：只要记录所属名单在**当前作用域可见**，
+   * 就允许其进入本批量项目 —— 这是「换名单追加宾客」得以成立的前提；
+   * 但不存在 / 已软删 / 属于他作用域名单的记录一律 422（不暴露存在性细节）。
+   *
+   * 说明：只读校验，不随事务写锁；渲染事务内调用走独立连接，不与
+   * `pg_advisory_xact_lock` 争用（guestRecord / guestList 在该事务中不被修改）。
+   */
+  private async assertRecordsOwned(scope: OwnerScope, ids: string[]): Promise<void> {
+    if (!ids.length) return;
+    const rows = await this.prisma.guestRecord.findMany({
+      where: { id: { in: ids }, deletedAt: null },
+      select: { id: true, listId: true },
+    });
+    if (rows.length !== ids.length) {
+      throw new HttpException(
+        { code: 'INVALID_SELECTION', message: '勾选含不存在或已删除的宾客记录' },
+        422,
+      );
+    }
+    const listIds = [...new Set(rows.map((r) => r.listId))];
+    const visible = await this.prisma.guestList.findMany({
+      where: { id: { in: listIds }, ...this.visibleListWhere(scope) },
+      select: { id: true },
+    });
+    if (visible.length !== listIds.length) {
+      throw new HttpException(
+        { code: 'INVALID_SELECTION', message: '勾选含无权访问的宾客记录' },
+        422,
+      );
+    }
+  }
+
+  /**
+   * 项目「有效人员集合」（B3 多名单累加的唯一真值推导）：
+   * `快照锁定 ids（有序在前，永不丢失）` ∪ `勾选子集中的新增 ids（按其顺序追加）`。
+   *
+   * 不变量：快照 ids 恒在结果中 —— 已渲染的名单记录永久保留在任务列表，
+   * 新名单的宾客作为新增记录追加（不会被替换、也不会挤掉旧记录）。
+   * 快照本身保持不可变（FR-3），累加结果由「快照 + 勾选子集」推导，无需新增字段。
+   */
+  private mergeLockedRecordIds(snapshotIds: string[], selectedIds: string[]): string[] {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const id of [...snapshotIds, ...selectedIds]) {
+      const k = String(id);
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      out.push(k);
+    }
+    return out;
+  }
+
   async mustGetProject(scope: OwnerScope, projectId: string) {
     const p = await this.prisma.batchRenderProject.findFirst({
       where: { id: projectId, ...this.projectWhere(scope) },
@@ -244,46 +322,93 @@ export class InvitationService implements OnModuleInit {
 
   /* ────────── §9.3 勾选子集 ────────── */
 
+  /**
+   * 读取勾选子集。
+   * 无勾选行时回退「渲染快照的锁定 ids」（B3）：首渲后用户未显式改勾选也能看到
+   * 已锁定的全量人员，避免前端拿到空列表后误判为「无可渲染人员」。
+   */
   async getSelection(scope: OwnerScope, projectId: string) {
     const p = await this.mustGetProject(scope, projectId);
     const sel = await this.prisma.guestListSelection.findUnique({ where: { projectId: p.id } });
+    const selIds = ((sel?.selectedRecordIds as unknown as string[]) ?? []).filter(Boolean);
+    if (selIds.length) {
+      return {
+        projectId: p.id,
+        listId: sel?.listId ?? p.listId,
+        selectedRecordIds: [...new Set(selIds.map(String))],
+        updatedAt: sel?.updatedAt ?? null,
+      };
+    }
+    const snap = await this.prisma.renderSnapshot.findUnique({ where: { projectId: p.id } });
+    const snapIds = ((snap?.recordIds as unknown as string[]) ?? []).filter(Boolean);
     return {
       projectId: p.id,
-      listId: sel?.listId ?? p.listId,
-      selectedRecordIds: ((sel?.selectedRecordIds ?? []) as unknown as string[]) ?? [],
+      listId: sel?.listId ?? snap?.listId ?? p.listId,
+      selectedRecordIds: [...new Set(snapIds.map(String))],
       updatedAt: sel?.updatedAt ?? null,
     };
   }
 
-  /** upsert 勾选：元素必须属于该项目绑定的名单（否则 422 INVALID_SELECTION） */
+  /**
+   * upsert 勾选（B3：多名单累加 + 冻结态少量修改）。
+   *
+   * 口径：
+   *  1. 跨名单放开 —— 传入的 `selectedRecordIds` 可来自**任意本作用域可见名单**，
+   *     按记录归属校验所有权（不再按 `listId` 一刀切），故「选择其他宾客名单追加」可行；
+   *  2. 锁定记录永不被替换出列表 —— 存在快照时，其 `recordIds` 恒在最终结果中（并集）；
+   *  3. 冻结态（`renderSnapshot` 存在 或 `paidRendered > 0`）仅放行 ≤ MINOR_EDIT_LIMIT
+   *     条的对称差修改，超出 409 `MINOR_EDIT_EXCEEDED`；
+   *  4. `listId` 更新为本次传入值（仅作当前浏览上下文），ids 保留**全量**（含锁定部分）；
+   *  5. 追加**不因超出剩余额度而拒绝**（超额由生成切片 + `paywalled` 标记处理）。
+   */
   async setSelection(scope: OwnerScope, projectId: string, listId: string, ids: string[]) {
     const p = await this.mustGetProject(scope, projectId);
-    // 锁定后禁止更换名单（FR-2）：只能在同一份锁定名单内调整
-    if (p.state !== 'DRAFT' && listId !== p.listId) {
-      throw new HttpException({ code: 'LOCKED', message: '已锁定名单，不可更换批次' }, 409);
-    }
     if (!Array.isArray(ids)) throw err400('INVALID_SELECTION', '勾选数据格式不正确');
 
-    const uniq = [...new Set(ids.map((i) => String(i)))];
-    if (uniq.length) {
-      const owned = await this.prisma.guestRecord.findMany({
-        where: { listId, deletedAt: null, id: { in: uniq } },
-        select: { id: true },
-      });
-      if (owned.length !== uniq.length) {
+    // 传入名单必须在本作用域可见（复用名单模块隔离，越权 404）
+    await this.guestLists.listRecords(scope, listId, 1, 1);
+
+    const submitted = [...new Set(ids.map((i) => String(i)))].filter(Boolean);
+    // 跨名单所有权校验（B3/B4）：记录可来自任意可见名单，但不得越权 / 引用已删记录
+    await this.assertRecordsOwned(scope, submitted);
+
+    const snap = await this.prisma.renderSnapshot.findUnique({ where: { projectId: p.id } });
+    const lockedIds = ((snap?.recordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
+    const lockedSet = new Set(lockedIds);
+
+    // 冻结判定：已落快照 或 已发生付费渲染
+    const frozen = !!snap || p.paidRendered > 0;
+    if (frozen) {
+      const submittedSet = new Set(submitted);
+      const removed = lockedIds.filter((id) => !submittedSet.has(id));
+      const added = submitted.filter((id) => !lockedSet.has(id));
+      const diff = removed.length + added.length;
+      if (diff > MINOR_EDIT_LIMIT) {
         throw new HttpException(
-          { code: 'INVALID_SELECTION', message: '勾选含不属于该名单的记录' },
-          422,
+          {
+            code: 'MINOR_EDIT_EXCEEDED',
+            message: `名单已锁定，仅允许少量局部修改（单次最多 ${MINOR_EDIT_LIMIT} 条）`,
+          },
+          409,
         );
       }
     }
 
+    // 并集：锁定记录在前（顺序稳定），新增记录追加在后
+    const merged = this.mergeLockedRecordIds(lockedIds, submitted);
+
     const saved = await this.prisma.guestListSelection.upsert({
       where: { projectId: p.id },
-      create: { projectId: p.id, listId, selectedRecordIds: uniq as never },
-      update: { listId, selectedRecordIds: uniq as never },
+      create: { projectId: p.id, listId, selectedRecordIds: merged as never },
+      update: { listId, selectedRecordIds: merged as never },
     });
-    return { projectId: p.id, listId, selectedRecordIds: uniq, count: uniq.length, updatedAt: saved.updatedAt };
+    return {
+      projectId: p.id,
+      listId,
+      selectedRecordIds: merged,
+      count: merged.length,
+      updatedAt: saved.updatedAt,
+    };
   }
 
   /** 候选筛选辅助（§9.3）：按单位/桌号/性别过滤出 recordId 与姓名 */
@@ -370,16 +495,24 @@ export class InvitationService implements OnModuleInit {
       }
 
       if (snap) {
-        // 已锁定：人员集合（recordIds）恒等于首渲锁定名单（FR-3），
+        // 已锁定：人员集合 = 首渲锁定名单（FR-3，永不被替换出列表）
+        //         ∪ 后续勾选追加的跨名单记录（B3 多名单累加，追加在队尾），
         // 但「数据」回源实时名单 —— 使名单修改正确映射到重渲请柬（修复缺陷2）。
+        // B4：取数按**实际目标 ids**（不再 `where:{listId}`），跨名单记录才能被渲染。
         // 仅纳入未删除记录；免费用户重渲范围/水印在下方 RERENDER 分支约束。
-        recordIds = (snap.recordIds as unknown as string[]) ?? [];
+        const sel = await tx.guestListSelection.findUnique({ where: { projectId: p.id } });
+        const selected = ((sel?.selectedRecordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
+        const allIds = this.mergeLockedRecordIds(
+          ((snap.recordIds as unknown as string[]) ?? []).filter(Boolean).map(String),
+          selected,
+        );
         const liveRows = await tx.guestRecord.findMany({
-          where: { listId: fresh.listId, deletedAt: null, id: { in: recordIds } },
+          where: { deletedAt: null, id: { in: allIds } },
+          select: { id: true, data: true },
         });
         dataByRecordId = {};
         for (const r of liveRows) dataByRecordId[r.id] = (r.data ?? {}) as unknown as GuestData;
-        recordIds = recordIds.filter((id) => dataByRecordId[id]);
+        recordIds = allIds.filter((id) => dataByRecordId[id]);
       } else {
         const sel = await tx.guestListSelection.findUnique({ where: { projectId: p.id } });
         const subset = ((sel?.selectedRecordIds as unknown as string[]) ?? []).filter(Boolean);
@@ -389,8 +522,10 @@ export class InvitationService implements OnModuleInit {
         // C2 只决定"首渲先渲子集前 3 人"，C3 又要求"付费后可续渲同一锁定名单的其余人员"，
         // 若快照只存 3 人，续渲就永远取不到剩余人员 → 与 C3 冲突。
         // 因此快照记录整个子集（有序），首渲/续渲各取其中未渲部分。
+        // B4：跨名单勾选，取数按 ids 而非单一 listId。
         const rows = await tx.guestRecord.findMany({
-          where: { listId: fresh.listId, deletedAt: null, id: { in: subset } },
+          where: { deletedAt: null, id: { in: subset } },
+          select: { id: true, data: true },
         });
         dataByRecordId = {};
         for (const r of rows) dataByRecordId[r.id] = (r.data ?? {}) as unknown as GuestData;
@@ -399,14 +534,36 @@ export class InvitationService implements OnModuleInit {
         if (!recordIds.length) throw err400('EMPTY_SELECTION', '勾选人员无有效姓名，无法渲染');
       }
 
+      // 跨名单所有权校验（B4）：目标 ids 可分布在多个名单，但每个都必须归属本作用域可见名单
+      await this.assertRecordsOwned(scope, recordIds);
+
       // 已成功出图的人员集合（用于续渲去重与重渲刷新范围）
+      //
+      // B1（缺陷修复）：按**条目**统计成功项，而非「只有 SUCCESS job 才把整个
+      // targetRecordIds 计入」。旧口径下 PARTIAL job（部分成功）的整体成功项会被漏掉，
+      // 导致：免费赠样那 3 条在用户购买人次后不再出现在 `rendered` 中 →
+      // 付费用户整批重渲（`eligible.filter(id => rendered.has(id))`）得到空集 →
+      // 「预览 / 重新生成」对已出图记录不可用（原本免费渲染的名单记录变得不可操作）。
       const done = await tx.renderJob.findMany({
-        where: { projectId: p.id, status: 'SUCCESS' },
-        select: { targetRecordIds: true },
+        where: { projectId: p.id, status: { in: ['SUCCESS', 'PARTIAL'] } },
+        select: { targetRecordIds: true, resultUrls: true },
       });
       const rendered = new Set<string>();
       for (const d of done) {
-        for (const id of (d.targetRecordIds as unknown as string[]) ?? []) rendered.add(id);
+        const items =
+          (d.resultUrls as unknown as { recordId?: string; status?: string }[] | null) ?? [];
+        const okIds = items
+          .filter((it) => it && it.recordId && it.status !== 'failed')
+          .map((it) => String(it.recordId));
+        if (okIds.length) {
+          // 逐条口径：successItems 并集（已天然排除 failed 条目）
+          for (const id of okIds) rendered.add(id);
+        } else {
+          // 兼容历史 SUCCESS job（无逐条结果落库）：整批计入
+          for (const id of ((d.targetRecordIds as unknown as string[]) ?? []).map(String)) {
+            rendered.add(id);
+          }
+        }
       }
 
       // 重渲可渲范围 + 水印（安全约束）：免费用户仅前 3 条、且强制带水印，
@@ -562,15 +719,28 @@ export class InvitationService implements OnModuleInit {
         },
       });
       // 首渲失败 → 快照与锁定一并撤销，项目回 DRAFT（可重新来过）
-      const jobs = await this.prisma.renderJob.count({
-        where: { projectId: planned.projectId, status: 'SUCCESS' },
+      //
+      // B2（锁定不可被回滚击穿）：已购人次 / 已发生付费渲染 / 已有快照的项目，
+      // 其锁定与快照具**不可变语义** —— 一次渲染失败绝不能把已购名单洗回 DRAFT，
+      // 否则用户可用「失败重试」绕过名单锁定（FR-2）并让已购额度对应的名单蒸发。
+      // 仅「从未付费渲染、无快照、纯免费」的项目保留原 DRAFT 重置行为。
+      const hasPaidValue = p.purchasedHeadcount > 0 || p.paidRendered > 0;
+      const snap = await this.prisma.renderSnapshot.findUnique({
+        where: { projectId: planned.projectId },
+        select: { projectId: true },
       });
-      if (jobs === 0) {
-        await this.prisma.renderSnapshot.deleteMany({ where: { projectId: planned.projectId } });
-        await this.prisma.batchRenderProject.update({
-          where: { id: planned.projectId },
-          data: { state: 'DRAFT', lockedAt: null, freeRendered: 0, paidRendered: 0 },
+      const lockProtected = hasPaidValue || !!snap;
+      if (!lockProtected) {
+        const jobs = await this.prisma.renderJob.count({
+          where: { projectId: planned.projectId, status: 'SUCCESS' },
         });
+        if (jobs === 0) {
+          await this.prisma.renderSnapshot.deleteMany({ where: { projectId: planned.projectId } });
+          await this.prisma.batchRenderProject.update({
+            where: { id: planned.projectId },
+            data: { state: 'DRAFT', lockedAt: null, freeRendered: 0, paidRendered: 0 },
+          });
+        }
       }
     } catch {
       /* 回滚失败不覆盖原始错误 */
@@ -820,8 +990,10 @@ export class InvitationService implements OnModuleInit {
       });
 
       // 数据回源实时名单（与 batchGenerate 一致，修复缺陷2：名单修改能映射到续跑重渲）
+      // B4：按 ids 取数（跨名单累加后记录可能不属于 fresh.listId），不再按单一 listId 过滤
       const liveRows = await tx.guestRecord.findMany({
-        where: { listId: fresh.listId, deletedAt: null, id: { in: failedIds } },
+        where: { deletedAt: null, id: { in: failedIds } },
+        select: { id: true, data: true },
       });
       const dataByRecordId: Record<string, GuestData> = {};
       for (const r of liveRows) dataByRecordId[r.id] = (r.data ?? {}) as unknown as GuestData;
@@ -1024,7 +1196,12 @@ export class InvitationService implements OnModuleInit {
   async projectResults(scope: OwnerScope, projectId: string) {
     const p = await this.mustGetProject(scope, projectId);
     const snap = await this.prisma.renderSnapshot.findUnique({ where: { projectId: p.id } });
-    const recordIds = ((snap?.recordIds as unknown as string[]) ?? []).filter(Boolean);
+    const snapIds = ((snap?.recordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
+    // B3 多名单累加：锁定 ids（在前）∪ 勾选子集新增 ids（追加），与 batchGenerate 同口径，
+    // 保证「追加的跨名单宾客」也能出现在任务列表中。
+    const sel = await this.prisma.guestListSelection.findUnique({ where: { projectId: p.id } });
+    const selIds = ((sel?.selectedRecordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
+    const recordIds = this.mergeLockedRecordIds(snapIds, selIds);
     const renderedData = ((snap?.renderedData as unknown as Record<string, GuestData>) ?? {}) as Record<string, GuestData>;
 
     const jobs = await this.prisma.renderJob.findMany({
@@ -1045,16 +1222,46 @@ export class InvitationService implements OnModuleInit {
       }
     }
 
+    // 快照未覆盖（后续追加的跨名单宾客）的姓名回源实时名单，避免任务表出现无名行
+    const needName = recordIds.filter((id) => {
+      const hit = byId.get(id);
+      return !hit?.name && !renderedData[id]?.guest_name;
+    });
+    const nameById: Record<string, string> = {};
+    if (needName.length) {
+      const recs = await this.prisma.guestRecord.findMany({
+        where: { id: { in: needName }, deletedAt: null },
+        select: { id: true, data: true },
+      });
+      for (const r of recs) {
+        const d = (r.data ?? {}) as unknown as GuestData;
+        if (d.guest_name) nameById[r.id] = d.guest_name;
+      }
+    }
+
     const order = new Map(recordIds.map((id, i) => [id, i]));
+    // B5：剩余额度槽位（与 projectView.remaining 同口径），按行序依次分配：
+    //  - 已渲染（有 ok 结果）的行：不占槽（其名额在生成时已扣）；
+    //  - 失败行：不占槽（生成收尾已回退配额，可续跑/重渲）；
+    //  - 未渲染行：槽位充足则占 1 槽（可生成），否则标记 `paywalled: true`（超额，需购买人次）。
+    let slots = this.projectView(p).remaining;
     const rows = recordIds.map((id) => {
       const hit = byId.get(id);
-      const name = hit?.name ?? renderedData[id]?.guest_name ?? null;
+      const name = hit?.name ?? renderedData[id]?.guest_name ?? nameById[id] ?? null;
+      const renderedOk = !!hit && hit.status !== 'failed';
+      const failedRow = hit?.status === 'failed';
+      let paywalled = false;
+      if (!renderedOk && !failedRow) {
+        if (slots > 0) slots -= 1;
+        else paywalled = true;
+      }
       return {
         recordId: id,
         name,
         status: hit?.status ?? 'pending',
         url: hit?.url ?? null,
         error: hit?.error ?? null,
+        paywalled,
       };
     });
     rows.sort((a, b) => (order.get(a.recordId) ?? 0) - (order.get(b.recordId) ?? 0));
