@@ -23,7 +23,7 @@ import { UserPersonPickerDialog, type PickedPersons } from './UserPersonPickerDi
  * 运营端（用户视角）· 请柬批量生成（§18 二次优化）
  *
  * 唯一基准 = web 端 `apps/web/src/user/InvitationJobs.tsx`，逐模块对齐（布局 / 字段 / 按钮 / 列表 / 交互）：
- *   1. 选择区：「请柬模板选择」→ 模板预览弹窗；「人员名单选择」→ 人员选择弹窗；
+ *   1. 选择区：「请柬模板选择」→ 模板预览弹窗；「宾客名单选择」→ 宾客选择弹窗；
  *      「批量生成」→ setGuestSelection + POST /invitations/batch-generate（首渲 FREE_SAMPLE / 续渲 PAID）；
  *   2. 任务进度区：按**人员逐条**展示 任务(姓名) / 状态 / 进度 / 操作(预览 · 重新生成)；
  *   3. 工具条：全选 / 删除选择 / 打包下载 + 每行复选框（仅成功图可勾）。
@@ -201,7 +201,7 @@ export default function UserInvitationCenter() {
    */
   const openFieldPair = async () => {
     if (!picked) {
-      setError('请先选择人员名单');
+      setError('请先选择宾客名单');
       return;
     }
     try {
@@ -340,7 +340,7 @@ export default function UserInvitationCenter() {
             opacity: template ? 1 : 0.5,
           }}
         >
-          ② 人员名单选择
+          ② 宾客名单选择
         </button>
         <span style={{ fontSize: 14, color: C.ink2 }}>
           {picked ? `已选 ${picked.selectedRecordIds.length} 人` : '未选择人员'}
@@ -422,7 +422,7 @@ export default function UserInvitationCenter() {
 
         {!projectId ? (
           <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 14, color: C.ink4 }}>
-            请先选择模板与人员名单，再点击「批量生成」
+            请先选择模板与宾客名单，再点击「批量生成」
           </div>
         ) : loadingResults && !results.length ? (
           <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 14, color: C.ink4 }}>…</div>

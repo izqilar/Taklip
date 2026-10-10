@@ -8,13 +8,14 @@ import {
   type GuestListRow,
   type GuestRow,
   type GuestSelectionView,
+  type ProjectResults,
 } from './invitationShared';
 
 /**
- * 「选择批量生成人员」弹窗（用户视角）
+ * 「宾客名单选择」弹窗（用户视角）
  *
  * 唯一基准 = web 端 `apps/web/src/user/PersonPickerDialog.tsx`（§18.3）：
- *  - 顶部：人员名单下拉（名称（人数））+ 搜索姓名/单位/桌号 + 全选 / 反选 + 「已选 N 人」；
+ *  - 顶部：宾客名单下拉（名称（人数））+ 搜索姓名/单位/桌号 + 全选 / 反选 + 「已选 N 人」；
  *  - 锁定名单时下拉禁用并显示琥珀色提示「已锁定名单，修改不影响已生成请柬」；
  *  - 人员表：勾选列 + 前 5 个标准字段（姓名/称谓/性别/单位/桌号），点行即选，选中行淡蓝底；
  *  - 底栏：左「免费赠样 3 人；剩余可生成 N」，右「取消 / 确认选择」。
@@ -87,6 +88,8 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, p
   const [batchProjectId, setBatchProjectId] = useState('');
   const [locked, setLocked] = useState(false);
   const [remaining, setRemaining] = useState(3);
+  /** 已成功渲染的宾客：后端 RENDERED_RECORD_IMMUTABLE —— 从名单移除任意一条即 409，UI 上禁掉取消勾选 */
+  const [renderedIds, setRenderedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -145,6 +148,15 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, p
         // 新增不限量，移除已生成记录一律拒绝）。只有当前名单的人员渲染成行，
         // 其他名单的 id 仍留在提交集合中。
         setSelected((sel.selectedRecordIds ?? []).filter(Boolean));
+
+        // 取回逐行结果：已成功渲染的宾客不可移除（后端移除即 409 RENDERED_RECORD_IMMUTABLE），
+        // 在 UI 上禁掉其取消勾选，避免用户点到必然报错的操作
+        try {
+          const rs = await apiGet<ProjectResults>(q(`/invitations/projects/${p.id}/results`));
+          setRenderedIds(new Set((rs.results ?? []).filter((r) => r.status === 'ok').map((r) => r.recordId)));
+        } catch {
+          /* 拉取失败时不禁用任何勾选，交由后端 409 提示兜底 */
+        }
       } catch (e) {
         if (alive) setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -184,9 +196,11 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, p
   const toggle = useCallback(
     (id: string) => {
       if (!canEdit) return;
+      // 已渲染宾客不可取消勾选（后端移除已生成记录会 409），只允许保持勾选
+      if (renderedIds.has(id)) return;
       setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
     },
-    [canEdit],
+    [canEdit, renderedIds],
   );
 
   const selectAll = useCallback(() => {
@@ -201,10 +215,11 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, p
     setSelected((prev) => {
       const prevSet = new Set(prev);
       const next = filtered.filter((r) => !prevSet.has(r.id)).map((r) => r.id);
-      const keep = prev.filter((id) => !inView.has(id));
+      // 已渲染宾客即使在当前视图内也要保留，避免反选把它们移除而触发 409
+      const keep = prev.filter((id) => !inView.has(id) || renderedIds.has(id));
       return [...keep, ...next];
     });
-  }, [filtered, canEdit]);
+  }, [filtered, canEdit, renderedIds]);
 
   const confirm = useCallback(async () => {
     setError('');
@@ -280,7 +295,7 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, p
             padding: '12px 20px',
           }}
         >
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: C.ink1 }}>选择批量生成人员</h3>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: C.ink1 }}>宾客名单选择</h3>
           <button
             onClick={onClose}
             style={{ border: 'none', background: 'none', padding: 4, color: C.ink3, cursor: 'pointer', fontSize: 14 }}
@@ -300,7 +315,7 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, p
             padding: '12px 20px',
           }}
         >
-          <label style={{ fontSize: 14, color: C.ink2 }}>人员名单</label>
+          <label style={{ fontSize: 14, color: C.ink2 }}>宾客名单</label>
           <select
             value={listId}
             disabled={!canEdit || !lists.length}
@@ -369,7 +384,8 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, p
                         <input
                           type="checkbox"
                           checked={on}
-                          disabled={!canEdit}
+                          disabled={!canEdit || renderedIds.has(r.id)}
+                          title={renderedIds.has(r.id) ? '已生成的宾客不可从名单移除' : ''}
                           onClick={(e) => e.stopPropagation()}
                           onChange={() => toggle(r.id)}
                           style={{ width: 16, height: 16, accentColor: C.blue }}
