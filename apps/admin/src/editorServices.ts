@@ -235,7 +235,16 @@ export function registerEditorServices(kind: 'template' | 'work' = 'template'): 
         total: number;
         records: { id: string; seq: number; data: Record<string, string | null> }[];
       }>(`/guest-lists/${listId}/records?page=${page}&size=${size}`),
-    createBatchProject: (payload) =>
+    // projectId：传值则强制复用既有项目（换名单不再新建，避免已购人次作废）。
+    // 编辑器内核 services 接口未声明该字段，此处按「可选字段」放宽实现签名，
+    // 与 packages/editor/src/services.ts 保持赋值兼容，无需改动共享包。
+    createBatchProject: (payload: {
+      templateId: string;
+      listId: string;
+      ownerType?: string;
+      clientId?: string;
+      projectId?: string;
+    }) =>
       authedFetch<{ id: string; state: string; remaining: number; locked: boolean }>(
         '/invitations/projects',
         { method: 'POST', body: JSON.stringify(payload) },
@@ -256,8 +265,21 @@ export function registerEditorServices(kind: 'template' | 'work' = 'template'): 
       authedFetch<{ projectId: string; listId: string; selectedRecordIds: string[] }>(
         `/invitations/projects/${projectId}/selection`,
       ),
-    setGuestSelection: (payload) =>
-      authedFetch<{ count: number }>(`/invitations/projects/${payload.projectId}/selection`, {
+    // 后端实际返回「已锁定 ids ∪ 本次提交 ids」的并集（可能与提交值不同），
+    // 此处按真实响应放宽返回类型，调用方须以响应体的 selectedRecordIds 为准回写本地勾选。
+    // 说明：编辑器内核 services 接口仍声明为 Promise<{count:number}>，要让它处调用点也能
+    // 读到该字段，需同步 packages/editor/src/services.ts（共享包，超出本次 admin 范围）。
+    setGuestSelection: (payload: {
+      projectId: string;
+      listId: string;
+      selectedRecordIds: string[];
+    }) =>
+      authedFetch<{
+        projectId: string;
+        listId: string;
+        selectedRecordIds: string[];
+        count: number;
+      }>(`/invitations/projects/${payload.projectId}/selection`, {
         method: 'POST',
         body: JSON.stringify(payload),
       }),
