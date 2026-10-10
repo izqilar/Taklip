@@ -1,5 +1,5 @@
 /**
- * PersonPickerDialog — 「人员名单选择」弹窗（§18.3）。
+ * PersonPickerDialog — 「宾客名单选择」弹窗（§18.3）。
  *
  * UI 与交互完全复刻编辑器 BatchGenerateDialog（名单下拉 + 搜索 + 全选/反选 + 已选 N 人
  * + 人员表 + 锁定提示 + 配额提示），但**不跳转编辑器**：
@@ -216,7 +216,7 @@ export function PersonPickerDialog({
       <div className="flex max-h-[80vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
           <h3 className="text-base font-semibold text-gray-800">
-            {t('common:guest.batch.title', { defaultValue: '选择批量生成人员' })}
+            {t('common:guest.batch.title', { defaultValue: '宾客名单选择' })}
           </h3>
           <button onClick={onClose} className="rounded p-1 text-gray-500 hover:bg-gray-100">
             ✕
@@ -224,7 +224,7 @@ export function PersonPickerDialog({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 border-b border-gray-100 px-5 py-3">
-          <label className="text-sm text-gray-700">{t('common:guest.batch.list', { defaultValue: '人员名单' })}</label>
+          <label className="text-sm text-gray-700">{t('common:guest.batch.list', { defaultValue: '宾客名单' })}</label>
           <select
             value={listId}
             disabled={!lists.length}

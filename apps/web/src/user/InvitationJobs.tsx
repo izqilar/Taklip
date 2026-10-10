@@ -3,7 +3,7 @@
  *
  * 全程在用户端闭环，不跳转编辑器：
  *  1. 「请柬模板选择」按钮 → InvitationTemplatePicker 实时预览弹窗，返回 {id,title,schema}；
- *  2. 「人员名单选择」按钮 → PersonPickerDialog（复刻编辑器批量生成 UI），返回 {projectId,listId,selectedRecordIds}；
+ *  2. 「宾客名单选择」按钮 → PersonPickerDialog（复刻编辑器批量生成 UI），返回 {projectId,listId,selectedRecordIds}；
  *  3. 「批量生成」→ setGuestSelection + POST /api/invitations/batch-generate（首渲 FREE_SAMPLE / 续渲 PAID）；
  *  4. 下方任务进度区按**人员逐条**展示：任务(姓名)/状态/进度/操作(预览·重新生成)；
  *  5. 工具条：全选 / 删除选择 / 打包下载 + 每行复选框（§18.4）。
@@ -191,7 +191,7 @@ export default function InvitationJobs() {
    */
   const openFieldPair = async () => {
     if (!picked) {
-      setError(t('common:guest.batch.needPersons', { defaultValue: '请先选择人员名单' }));
+      setError(t('common:guest.batch.needPersons', { defaultValue: '请先选择宾客名单' }));
       return;
     }
     try {
@@ -211,7 +211,7 @@ export default function InvitationJobs() {
    */
   const openBuy = useCallback(async () => {
     if (!picked) {
-      setError(t('common:guest.batch.needPersons', { defaultValue: '请先选择人员名单' }));
+      setError(t('common:guest.batch.needPersons', { defaultValue: '请先选择宾客名单' }));
       return;
     }
     try {
@@ -259,7 +259,7 @@ export default function InvitationJobs() {
       await loadResults(picked.projectId);
       setBuyMsg(
         t('common:guest.batch.buySuccess', {
-          defaultValue: '已成功购买 {{n}} 人次，请重新打开「人员名单选择」勾选更多人员',
+          defaultValue: '已成功购买 {{n}} 人次。已勾选但显示「待解锁」的宾客，再点一次「批量生成」即可继续渲染（已出图的人不会重复渲染、不重复扣额度）；若要加入新的人员，请重新打开「宾客名单选择」追加。',
         }).replace('{{n}}', String(n)),
       );
       setBuyOpen(false);
@@ -376,6 +376,9 @@ export default function InvitationJobs() {
 
   const statusText = (r: ProjectResultRow) => {
     if (r.status === 'ok') return { label: t('common:guest.batch.ok', { defaultValue: '成功' }), color: '#1a7f37' };
+    // 需求 5：超出剩余可渲染额度的行 —— 既非成功也非失败，用锁定标记与失败红明确区分；
+    // 该标记同时是「购买渲染人次」的入口（点击弹出购买弹窗）。
+    if (r.paywalled) return { label: '🔒 待解锁', color: '#a13c6e' };
     if (r.status === 'failed') return { label: t('common:guest.batch.failed', { defaultValue: '失败' }), color: '#cf1322' };
     return runningJobId
       ? { label: t('common:guest.batch.running', { defaultValue: '生成中' }), color: '#2563eb' }
@@ -416,7 +419,7 @@ export default function InvitationJobs() {
           disabled={!template}
           className="rounded bg-[#f97316] px-4 py-1.5 text-sm text-white hover:bg-[#ea6a0c] disabled:opacity-50"
         >
-          ② {t('common:guest.batch.pickPersons', { defaultValue: '人员名单选择' })}
+          ② {t('common:guest.batch.pickPersons', { defaultValue: '宾客名单选择' })}
         </button>
         <span className="text-sm text-gray-600">
           {picked
@@ -444,7 +447,7 @@ export default function InvitationJobs() {
             if (picked) {
               void openBuy();
             } else {
-              setError(t('common:guest.batch.needPersons', { defaultValue: '请先选择人员名单' }));
+              setError(t('common:guest.batch.needPersons', { defaultValue: '请先选择宾客名单' }));
             }
           }}
           disabled={!picked}
@@ -501,7 +504,7 @@ export default function InvitationJobs() {
 
         {!projectId ? (
           <div className="py-12 text-center text-sm text-gray-400">
-            {t('common:guest.batch.emptyHint', { defaultValue: '请先选择模板与人员名单，再点击「批量生成」' })}
+            {t('common:guest.batch.emptyHint', { defaultValue: '请先选择模板与宾客名单，再点击「批量生成」' })}
           </div>
         ) : loadingResults && !results.length ? (
           <div className="py-12 text-center text-sm text-gray-400">…</div>
@@ -526,15 +529,33 @@ export default function InvitationJobs() {
                       <input
                         type="checkbox"
                         checked={checked.has(r.recordId)}
-                        disabled={r.status !== 'ok'}
+                        disabled={r.status !== 'ok' || !!r.paywalled}
                         onChange={() => toggleCheck(r.recordId)}
                         className="h-4 w-4 accent-blue-500"
-                        title={r.status !== 'ok' ? t('common:guest.batch.onlyOkCheck', { defaultValue: '仅成功图可勾选打包/删除' }) : ''}
+                        title={
+                          r.paywalled
+                            ? t('common:guest.batch.lockedRowTip', { defaultValue: '超出可渲染额度，点击购买渲染人次' })
+                            : r.status !== 'ok'
+                              ? t('common:guest.batch.onlyOkCheck', { defaultValue: '仅成功图可勾选打包/删除' })
+                              : ''
+                        }
                       />
                     </td>
                     <td className="px-3 py-2 text-gray-800">{r.name ?? r.recordId}</td>
                     <td className="px-3 py-2" style={{ color: st.color }}>
-                      {st.label}
+                      {r.paywalled ? (
+                        <button
+                          type="button"
+                          onClick={() => void openBuy()}
+                          title={t('common:guest.batch.lockedRowTip', { defaultValue: '超出可渲染额度，点击购买渲染人次' })}
+                          className="cursor-pointer text-left hover:underline"
+                          style={{ color: st.color }}
+                        >
+                          {st.label}
+                        </button>
+                      ) : (
+                        st.label
+                      )}
                       {r.error ? <div className="text-[11px] text-red-500">{r.error}</div> : null}
                     </td>
                     <td className="px-3 py-2 text-gray-600">

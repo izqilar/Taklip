@@ -592,8 +592,8 @@
     "noWorks": "暂无可用作品（请先创建一个含页面的作品）",
     "pickTemplateEmpty": "请选择左侧作品预览",
     "batch": {
-      "title": "选择批量生成人员",
-      "list": "人员名单",
+      "title": "宾客名单选择",
+      "list": "宾客名单",
       "search": "搜索姓名/单位/桌号",
       "selectAll": "全选",
       "invert": "反选",
@@ -605,10 +605,10 @@
       "confirm": "确认选择",
       "generating": "生成中…",
       "generate": "批量生成",
-      "needPersons": "请先选择人员名单",
+      "needPersons": "请先选择宾客名单",
       "pickTemplate": "请柬模板选择",
       "template": "模板",
-      "pickPersons": "人员名单选择",
+      "pickPersons": "宾客名单选择",
       "persons": "已选",
       "personsUnit": "人",
       "noTemplate": "未选择模板",
@@ -630,7 +630,7 @@
       "preview": "预览",
       "regenerate": "重新生成",
       "onlyOkCheck": "仅成功图可勾选打包/删除",
-      "emptyHint": "请先选择模板与人员名单，再点击「批量生成」",
+      "emptyHint": "请先选择模板与宾客名单，再点击「批量生成」",
       "noTasks": "暂无生成任务",
       "confirmDelete": "确定删除选中的生成记录？此操作不退配额"
     }
