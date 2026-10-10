@@ -38,11 +38,11 @@ import { zipStore } from '../common/minimal-zip';
 export const FREE_SAMPLE_CAP = 3;
 
 /**
- * 冻结态（已锁名单 / 已付费渲染）单次允许的「少量修改」条数（B3）。
- * 口径：新提交 ids 与已锁定 ids 的**对称差** ≤ 本值才放行（个别宾客微调），
- * 超过则 409 MINOR_EDIT_EXCEEDED。零数据库迁移，仅服务端常量。
+ * 已生成（已锁定）记录的移除闸门提示（增删分离口径）：
+ * `setSelection` 对「快照 recordIds 中的 id 被移除」一律 409 `RENDERED_RECORD_IMMUTABLE`，
+ * 不看数量；新增与「移除未渲染记录」不限量。此处不再保留 MINOR_EDIT 对称差常量。
  */
-export const MINOR_EDIT_LIMIT = 3;
+export const SELECTION_LOCK_CODE = 'RENDERED_RECORD_IMMUTABLE';
 
 /** 渲染模式 */
 export type RenderMode = 'FREE_SAMPLE' | 'PAID' | 'RERENDER';
@@ -365,8 +365,14 @@ export class InvitationService implements OnModuleInit {
    *  1. 跨名单放开 —— 传入的 `selectedRecordIds` 可来自**任意本作用域可见名单**，
    *     按记录归属校验所有权（不再按 `listId` 一刀切），故「选择其他宾客名单追加」可行；
    *  2. 锁定记录永不被替换出列表 —— 存在快照时，其 `recordIds` 恒在最终结果中（并集）；
-   *  3. 冻结态（`renderSnapshot` 存在 或 `paidRendered > 0`）仅放行 ≤ MINOR_EDIT_LIMIT
-   *     条的对称差修改，超出 409 `MINOR_EDIT_EXCEEDED`；
+   *  3. 名单锁定裁决（增删分离，不看数量、不区分免费/付费）：
+   *     - **新增**（当前并集里没有的 id）：一律放行、不限量 —— 「只要剩余可渲染数量 > 0
+   *       就能继续选择其他宾客名单追加」是硬要求，任何新增侧闸门都会破坏它；
+   *     - **移除已锁定记录**（快照 `renderSnapshot.recordIds` 中的 id 未出现在本次提交中）：
+   *       **直接 409 `RENDERED_RECORD_IMMUTABLE`，不看数量** —— 快照是 `projectResults`
+   *       的展示基线，一旦允许移除，已生成请柬的行会从任务列表消失，用户再也看不到、
+   *       也预览/重生成不了，直接违背「购买后免费渲染的记录不能变为不可用」；
+   *     - **移除未渲染记录**（只在勾选子集里、不在快照里的 id 被取消勾选）：放行，无限制；
    *  4. `listId` 更新为本次传入值（仅作当前浏览上下文），ids 保留**全量**（含锁定部分）；
    *  5. 追加**不因超出剩余额度而拒绝**（超额由生成切片 + `paywalled` 标记处理）。
    */
@@ -384,18 +390,17 @@ export class InvitationService implements OnModuleInit {
     const snap = await this.prisma.renderSnapshot.findUnique({ where: { projectId: p.id } });
     const lockedIds = ((snap?.recordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
 
-    // 冻结判定：已落快照 或 已发生付费渲染
-    const frozen = !!snap || p.paidRendered > 0;
-    if (frozen) {
+    // 名单锁定（增删分离，最终裁决）：
+    // 唯一硬闸门 = 「已生成/已锁定记录被移除」。新增与「移除未渲染记录」均不限量。
+    // 不区分免费/付费、不区分有无快照：无快照时 lockedIds 为空，闸门天然不触发。
+    if (lockedIds.length) {
       const submittedSet = new Set(submitted);
-      const removed = lockedIds.filter((id) => !submittedSet.has(id));
-      // 口径：仅「移除/替换已锁定记录」计入限额，新增/追加不计入（支持整份名单追加）
-      const diff = removed.length;
-      if (diff > MINOR_EDIT_LIMIT) {
+      const removedLocked = lockedIds.filter((id) => !submittedSet.has(id));
+      if (removedLocked.length > 0) {
         throw new HttpException(
           {
-            code: 'MINOR_EDIT_EXCEEDED',
-            message: `名单已锁定，不可整体替换或移除超过 ${MINOR_EDIT_LIMIT} 条宾客`,
+            code: SELECTION_LOCK_CODE,
+            message: '已生成的宾客不可从名单中移除（如需调整请新建批量任务）',
           },
           409,
         );
