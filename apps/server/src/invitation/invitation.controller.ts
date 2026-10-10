@@ -61,7 +61,15 @@ export class InvitationController {
   async createProject(
     @Req() req: AuthedRequest,
     @Body()
-    body: { templateId?: string; listId?: string; ownerType?: string; clientId?: string; subject?: string },
+    body: {
+      templateId?: string;
+      listId?: string;
+      /** 可选：显式复用既有项目（换名单/追加名单场景，避免新建项目导致已购人次作废） */
+      projectId?: string;
+      ownerType?: string;
+      clientId?: string;
+      subject?: string;
+    },
   ) {
     if (!body?.templateId || !body?.listId) {
       throw new BadRequestException({ code: 'INVALID_PARAMS', message: 'templateId 与 listId 必填' });
@@ -70,6 +78,7 @@ export class InvitationController {
       this.scope(req, body.ownerType, body.clientId, body.subject),
       body.templateId,
       body.listId,
+      body.projectId,
     );
   }
 

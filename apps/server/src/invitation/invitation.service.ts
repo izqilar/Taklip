@@ -250,8 +250,20 @@ export class InvitationService implements OnModuleInit {
     return work;
   }
 
-  /** 创建/复用项目（绑定模板 + 名单，此时尚未锁定，state=DRAFT） */
-  async createProject(scope: OwnerScope, templateId: string, listId: string) {
+  /**
+   * 创建/复用项目（绑定模板 + 名单，此时尚未锁定，state=DRAFT）
+   *
+   * `reuseProjectId`（可选，纯增量）：显式传入既有项目 id 时**强制复用**该项目，
+   * 跳过「(templateId, listId) 命中才复用」的查重 —— 用于「换名单 / 追加名单」
+   * 场景：同一个批量任务换一份名单继续累加，绝不能新建项目，否则已购人次作废。
+   * 归属仍走 `mustGetProject`（作用域隔离，越权 404）；模板不一致时复用不成立，
+   * 回退常规路径（同模板同名单则复用、否则新建），不抛错、不改变既有行为。
+   */
+  async createProject(scope: OwnerScope, templateId: string, listId: string, reuseProjectId?: string) {
+    if (reuseProjectId) {
+      const exist = await this.mustGetProject(scope, reuseProjectId);
+      if (exist.templateId === templateId) return this.projectView(exist);
+    }
     // 名单必须在本作用域内可见（复用名单模块的隔离，避免重复实现）
     await this.guestLists.listRecords(scope, listId, 1, 1);
     // 作品归属校验（§16.6）：防越权拿他人模板批量生成
