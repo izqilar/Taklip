@@ -76,6 +76,7 @@ export default function UserInvitationCenter() {
   const [loadingResults, setLoadingResults] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
+  const [emptyBatch, setEmptyBatch] = useState('');
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [runningJobId, setRunningJobId] = useState<string | null>(null);
 
@@ -164,6 +165,7 @@ export default function UserInvitationCenter() {
   const startGenerate = useCallback(
     async (payload: { projectId: string; mode?: 'FREE_SAMPLE' | 'PAID' | 'RERENDER'; targetRecordIds?: string[] }) => {
       setError('');
+      setEmptyBatch('');
       setGenerating(true);
       try {
         // 首渲/续渲前确保勾选已落库（重渲无需重设）。
@@ -180,10 +182,18 @@ export default function UserInvitationCenter() {
             );
           }
         }
-        const res = await apiPost<{ jobId: string }>(q('/invitations/batch-generate'), {
-          ...payload,
-          ...subjBody,
-        });
+        const res = await apiPost<{ jobId: string | null; status?: string; message?: string }>(
+          q('/invitations/batch-generate'),
+          { ...payload, ...subjBody },
+        );
+        // 空批次：锁定名单中已无待渲染人员 → 后端返回 jobId:null + status:NO_PENDING，
+        // 跳过当前批次、不抛 400、不中断任务
+        if (!res.jobId) {
+          setGenerating(false);
+          setEmptyBatch(res.message || '当前锁定名单已无待渲染人员，无需重新生成');
+          await loadResults(payload.projectId);
+          return;
+        }
         setRunningJobId(res.jobId);
         await loadResults(payload.projectId);
       } catch (e) {
@@ -294,6 +304,11 @@ export default function UserInvitationCenter() {
       {error && (
         <div style={{ marginBottom: 12, borderRadius: 4, background: C.errBg, padding: '8px 12px', fontSize: 12, color: C.err }}>
           {error}
+        </div>
+      )}
+      {emptyBatch && (
+        <div style={{ marginBottom: 12, borderRadius: 4, background: '#fffbeb', padding: '8px 12px', fontSize: 12, color: '#b45309' }}>
+          {emptyBatch}
         </div>
       )}
 

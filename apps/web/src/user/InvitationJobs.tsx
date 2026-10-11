@@ -32,6 +32,7 @@ export default function InvitationJobs() {
   const [loadingResults, setLoadingResults] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
+  const [emptyBatch, setEmptyBatch] = useState('');
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [runningJobId, setRunningJobId] = useState<string | null>(null);
 
@@ -159,8 +160,9 @@ export default function InvitationJobs() {
 
   const startGenerate = useCallback(
     async (payload: { projectId: string; mode?: 'FREE_SAMPLE' | 'PAID' | 'RERENDER'; targetRecordIds?: string[] }) => {
-      setError('');
-      setGenerating(true);
+    setError('');
+    setEmptyBatch('');
+    setGenerating(true);
       try {
         // 首渲/续渲前确保勾选已落库（重渲无需重设）
         // 后端返回「已锁定 ids ∪ 本次提交 ids」的并集，以响应体为准回写本地勾选（后端契约 note 3）
@@ -175,6 +177,17 @@ export default function InvitationJobs() {
           }
         }
         const res = await api.batchGenerate(payload);
+        // 空批次：锁定名单中已无待渲染人员（如免费用户已渲满赠样、或续渲时记录均已出图）。
+        // 后端返回 jobId:null + status:NO_PENDING，明确跳过当前批次，不抛 400、不中断任务。
+        if (!res.jobId) {
+          setGenerating(false);
+          setEmptyBatch(
+            res.message ??
+              t('common:guest.batch.nothingToRender', { defaultValue: '当前锁定名单已无待渲染人员，无需重新生成' }),
+          );
+          await loadResults(payload.projectId);
+          return;
+        }
         setRunningJobId(res.jobId);
         await loadResults(payload.projectId);
       } catch (e) {
@@ -392,6 +405,11 @@ export default function InvitationJobs() {
       </h2>
 
       {error && <div className="mb-3 rounded bg-red-50 px-3 py-2 text-xs text-red-600">{error}</div>}
+      {emptyBatch && (
+        <div className="mb-3 rounded bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          {emptyBatch}
+        </div>
+      )}
       {buyMsg && <div className="mb-3 rounded bg-green-50 px-3 py-2 text-xs text-green-700">{buyMsg}</div>}
 
       {/* 分步向导：① 选模板 → ② 选名单 → ③ 字段配对 → ④ 批量生成（严格顺序，禁止跳步） */}

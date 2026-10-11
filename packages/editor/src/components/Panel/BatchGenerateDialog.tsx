@@ -24,7 +24,7 @@ interface Props {
   projectId: string | null;
   onClose: () => void;
   /** 生成已受理回调（宿主可据此跳进度页） */
-  onSubmitted?: (info: { jobId: string; total: number }) => void;
+  onSubmitted?: (info: { jobId: string | null; total: number; status?: string; message?: string }) => void;
   /** SP 代客上下文（运营端注入；用户端不传，走 SELF 域） */
   ownerType?: string;
   clientId?: string;

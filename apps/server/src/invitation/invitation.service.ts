@@ -464,9 +464,8 @@ export class InvitationService implements OnModuleInit {
     let mode: RenderMode = input.mode ?? (p.state === 'DRAFT' ? 'FREE_SAMPLE' : 'PAID');
     // 注意：下方事务内可能把免费且已锁定的 PAID/FREE_SAMPLE 退化为 RERENDER，
     // 故此处用 let 以便回写（见 B5 分支）。
-
     // ——— 事务：咨询锁 + 校验 + 扣减 + 落快照 ———
-    const planned = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // pg_advisory_xact_lock 返回 void，$queryRaw 无法反序列化 → 用 $executeRaw
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${p.id}::text))`;
       // 每用户 1 RUNNING 闸门（T7）：以用户级咨询锁串行化所有渲染发起，
@@ -622,7 +621,11 @@ export class InvitationService implements OnModuleInit {
       // 水印决策（付费闸门 §13）：赠样带水印+低分辨率；付费/重渲(付费用户)去水印+2x
       const watermark = mode === 'FREE_SAMPLE' ? true : mode === 'RERENDER' ? rerenderWatermark : false;
 
-      if (!targets.length) throw err400('NOTHING_TO_RENDER', '锁定名单内已无待渲染人员');
+      // 锁定名单中已无待渲染人员：不抛 400 中断整个批量任务，返回明确空结果，
+      // 由调用方优雅跳过当前批次（如免费用户已渲满赠样、或续渲时记录均已出图）。
+      if (!targets.length) {
+        return { empty: true as const, projectId: p.id, mode, message: '锁定名单内已无待渲染人员' };
+      }
 
       // ——— 配额校验（C1 唯一口径）———
       const freeSampleCap = FREE_SAMPLE_CAP;
@@ -700,6 +703,32 @@ export class InvitationService implements OnModuleInit {
 
       return { jobId: job.id, projectId: p.id, mode, targets, dataByRecordId, watermark, listId: fresh.listId, templateId: fresh.templateId, mapping: (fresh.variableMapping ?? {}) as Record<string, string> };
     });
+
+    // 空批次：锁定名单中已无待渲染人员 —— 跳过渲染、不创建 job、不抛 400，
+    // 返回明确空结果（status=NO_PENDING），由调用方正常处理而非中断整个批量任务。
+    if ((result as { empty?: boolean }).empty) {
+      const r = result as { empty: true; projectId: string; mode: RenderMode; message?: string };
+      return {
+        jobId: null,
+        projectId: r.projectId,
+        mode: r.mode,
+        total: 0,
+        status: 'NO_PENDING',
+        message: r.message ?? '锁定名单内已无待渲染人员',
+      };
+    }
+
+    const planned = result as {
+      jobId: string;
+      projectId: string;
+      mode: RenderMode;
+      targets: string[];
+      dataByRecordId: Record<string, GuestData>;
+      watermark: boolean;
+      listId: string;
+      templateId: string;
+      mapping: Record<string, string>;
+    };
 
     // 事务外执行耗时渲染（不持锁），失败回滚额度与快照
     void this.runJob(planned, scope).catch(async (err) => {

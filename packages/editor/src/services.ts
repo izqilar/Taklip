@@ -141,12 +141,17 @@ export interface EditorServices {
     listId: string;
     selectedRecordIds: string[];
   }): Promise<{ count: number }>;
-  /** 发起批量渲染 */
+  /**
+   * 发起批量渲染。
+   * 返回 `jobId: null` 表示「锁定名单中已无待渲染人员」（如免费赠样已渲满、或续渲时记录均已出图），
+   * 调用方须据此优雅跳过当前批次（置提示、不中断任务），而不要把它当作错误。
+   * 这与服务端 batchGenerate 的 NO_PENDING 空批次语义一致。
+   */
   batchGenerate?(payload: {
     projectId: string;
     mode?: 'FREE_SAMPLE' | 'PAID' | 'RERENDER';
     targetRecordIds?: string[];
-  }): Promise<{ jobId: string; total: number }>;
+  }): Promise<{ jobId: string | null; total: number; status?: string; message?: string }>;
 
   /**
    * 拉取占位符注册表（只读，供编辑器绑定）。

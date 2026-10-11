@@ -605,6 +605,7 @@
       "confirm": "确认选择",
       "generating": "生成中…",
       "generate": "批量生成",
+      "nothingToRender": "当前锁定名单已无待渲染人员，无需重新生成",
       "needPersons": "请先选择宾客名单",
       "pickTemplate": "请柬模板选择",
       "template": "模板",

@@ -1036,10 +1036,13 @@ export const api = {
     mode?: 'FREE_SAMPLE' | 'PAID' | 'RERENDER';
     targetRecordIds?: string[];
   }) =>
-    request<{ jobId: string; total: number }>('/api/invitations/batch-generate', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }),
+    request<{ jobId: string | null; total: number; status?: string; message?: string }>(
+      '/api/invitations/batch-generate',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    ),
 
   /** 生成前变量匹配体检（D4 反转：含映射改指向） */
   getInvitationHealth: (projectId: string) =>
