@@ -5,14 +5,30 @@
  *  1. 「请柬模板选择」按钮 → InvitationTemplatePicker 实时预览弹窗，返回 {id,title,schema}；
  *  2. 「宾客名单选择」按钮 → PersonPickerDialog（复刻编辑器批量生成 UI），返回 {projectId,listId,selectedRecordIds}；
  *  3. 「批量生成」→ setGuestSelection + POST /api/invitations/batch-generate（首渲 FREE_SAMPLE / 续渲 PAID）；
- *  4. 下方任务进度区按**人员逐条**展示：任务(姓名)/状态/进度/操作(预览·重新生成)；
+ *  4. 下方任务进度区按**人员逐条**展示：任务(姓名)/状态/进度/操作(预览·生成)；
  *  5. 工具条：全选 / 删除选择 / 打包下载 + 每行复选框（§18.4）。
  *
  * 数据源：聚合端点 GET /api/invitations/projects/:id/results（跨 job、按锁定快照顺序）。
+ *
+ * 本轮改造（缺陷修复 + 优化 + 双选项卡）：
+ *  - 缺陷一：行 checkbox 仅超额锁定(paywalled)不可选；④ 批量生成在勾选子集时按 targetRecordIds 渲；
+ *  - 优化1：表头首列内嵌全选 checkbox；
+ *  - 优化2：任务队列可点开编辑弹窗（字段回填 + 编辑闸门）；
+ *  - 优化3：行内操作统一为「生成」文案；
+ *  - 优化4：新增「宾客信息」列；
+ *  - 优化5：新增「次数」列；
+ *  - 三：任务进度区改造为「当前任务 / 历史任务」双选项卡。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, getToken, ApiError, type ProjectResultRow, type BindingHealth } from '@/api/client';
+import {
+  api,
+  getToken,
+  ApiError,
+  type ProjectResultRow,
+  type BindingHealth,
+  RERENDER_LIMIT,
+} from '@/api/client';
 import {
   VariableMappingDialog,
   type ProjectElement,
@@ -21,6 +37,19 @@ import {
 } from '@h5design/invitation-mapping';
 import { InvitationTemplatePicker, type PickedTemplate } from './InvitationTemplatePicker';
 import { PersonPickerDialog, type PickedPersons } from './PersonPickerDialog';
+import { getGuestFieldDef, personalizeSchema, normalizeSchema, type GuestData, type Project } from '@h5design/core';
+import { SchemaRenderer } from '@h5design/render';
+
+/** 宾客名单字段设计（GET /api/guest-lists/field-design 返回，用于编辑弹窗渲染表单） */
+interface FieldDesign {
+  key: string;
+  label: string;
+  type?: string;
+  options?: Array<string | { label: string; value: string }>;
+}
+
+/** 逐人预览手机框宽度（设计稿基准宽 375，按 schema 实际宽度等比缩放） */
+const PREVIEW_FRAME_W = 343;
 
 export default function InvitationJobs() {
   const { t } = useTranslation(['common']);
@@ -29,6 +58,7 @@ export default function InvitationJobs() {
   const [picked, setPicked] = useState<PickedPersons | null>(null); // {projectId, listId, selectedRecordIds}
 
   const [results, setResults] = useState<ProjectResultRow[]>([]);
+  const [rerenderLimit, setRerenderLimit] = useState(RERENDER_LIMIT);
   const [loadingResults, setLoadingResults] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
@@ -38,7 +68,19 @@ export default function InvitationJobs() {
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [personOpen, setPersonOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // ── 逐人预览弹窗（模板 schema × 名单记录实时个性化渲染，替代原死代码 previewUrl 全屏浮层）──
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  /** 项目 elements 快照的 previewSchema（服务端已注入 elementBindings，可直接个性化） */
+  const [previewSchema, setPreviewSchema] = useState<Project | null>(null);
+  /** 变量映射（元素 binding.key → 名单字段），来自生成前体检 */
+  const [previewMapping, setPreviewMapping] = useState<Record<string, string>>({});
+  /** 预览页数据：勾选子集（无勾选则名单全量）映射后的记录 */
+  const [previewPages, setPreviewPages] = useState<Array<{ recordId: string; name: string; data: GuestData }>>([]);
+  const [previewPage, setPreviewPage] = useState(0);
+  // ── 批量生成前「永久绑定」确认弹窗 ──
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // 生成前体检（D4 反转：含映射改指向）
   const [health, setHealth] = useState<BindingHealth | null>(null);
@@ -58,6 +100,23 @@ export default function InvitationJobs() {
   } | null>(null);
   const [buyHeadcount, setBuyHeadcount] = useState(1);
   const [buyMsg, setBuyMsg] = useState('');
+
+  // ── 编辑闸门（后端 projectResults 顶层 editedRecordIds / editLimit）──
+  const [editedRecordIds, setEditedRecordIds] = useState<string[]>([]);
+  const [editLimit, setEditLimit] = useState(0);
+  // ── 全局剩余可渲染额度（来自 projectResults / getBatchProject 顶层 remaining）──
+  // 超限重渲与否的唯一真值：>0 → 弹「消耗次数」确认框；=0 → 弹「次数已用完，请购买」。
+  const [availableCounts, setAvailableCounts] = useState(0);
+  const [regenDialog, setRegenDialog] = useState<{ kind: 'consume'; recordId: string } | { kind: 'exhausted' } | null>(null);
+
+  // ── 编辑弹窗（单条宾客字段修改）──
+  const [editOpen, setEditOpen] = useState(false);
+  const [editRecord, setEditRecord] = useState<ProjectResultRow | null>(null);
+  const [fieldDesign, setFieldDesign] = useState<FieldDesign[] | null>(null);
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [editInitial, setEditInitial] = useState<Record<string, string>>({});
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
 
   const pollRef = useRef<number | null>(null);
   const projectId = picked?.projectId ?? '';
@@ -83,6 +142,8 @@ export default function InvitationJobs() {
         totalRenderable: v.totalRenderable,
         remaining: v.remaining,
       });
+      // 改为全局剩余额度：同一份 remaining 同时驱动「购买数量」标签与超限重渲弹窗口径
+      setAvailableCounts(v.remaining ?? 0);
     } catch {
       /* 静默：配额同步失败不影响结果列表 */
     }
@@ -93,6 +154,11 @@ export default function InvitationJobs() {
       try {
         const r = await api.projectResults(pid);
         setResults(r.results ?? []);
+        setRerenderLimit(r.rerenderLimit ?? RERENDER_LIMIT);
+        // 编辑闸门：以 projectResults 顶层 editedRecordIds / editLimit 为准
+        setEditedRecordIds(r.editedRecordIds ?? []);
+        setEditLimit(r.editLimit ?? 0);
+        setAvailableCounts(r.remaining ?? 0);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -133,11 +199,26 @@ export default function InvitationJobs() {
     else {
       setResults([]);
       setChecked(new Set());
+      setEditedRecordIds([]);
+      setEditLimit(0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   useEffect(() => () => stopPoll(), [stopPoll]);
+
+  // 逐人预览 / 永久绑定确认弹窗：ESC 可关
+  useEffect(() => {
+    if (!previewOpen && !confirmOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setPreviewOpen(false);
+        setConfirmOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [previewOpen, confirmOpen]);
 
   const onPickTemplate = (p: PickedTemplate) => {
     setTemplate(p);
@@ -166,6 +247,7 @@ export default function InvitationJobs() {
       try {
         // 首渲/续渲前确保勾选已落库（重渲无需重设）
         // 后端返回「已锁定 ids ∪ 本次提交 ids」的并集，以响应体为准回写本地勾选（后端契约 note 3）
+        // 传 targetRecordIds（子集渲染）时不走该分支（由 !payload.targetRecordIds 守卫）
         if (!payload.targetRecordIds && picked && !payload.mode) {
           const saved = await api.setGuestSelection({
             projectId: payload.projectId,
@@ -177,13 +259,13 @@ export default function InvitationJobs() {
           }
         }
         const res = await api.batchGenerate(payload);
-        // 空批次：锁定名单中已无待渲染人员（如免费用户已渲满赠样、或续渲时记录均已出图）。
+        // 空批次：锁定名单中已无待渲染人员（续渲时记录均已出图、或额度已用尽无待渲染项）。
         // 后端返回 jobId:null + status:NO_PENDING，明确跳过当前批次，不抛 400、不中断任务。
         if (!res.jobId) {
           setGenerating(false);
           setEmptyBatch(
             res.message ??
-              t('common:guest.batch.nothingToRender', { defaultValue: '当前锁定名单已无待渲染人员，无需重新生成' }),
+              t('common:guest.batch.nothingToRender', { defaultValue: '锁定名单内已无待渲染人员' }),
           );
           await loadResults(payload.projectId);
           return;
@@ -219,10 +301,10 @@ export default function InvitationJobs() {
   };
 
   /**
-   * 打开「购买渲染人次」弹窗：先拉取最新项目配额（totalRenderable - purchasedHeadcount 即为免费赠样额度），
+   * 打开「购买渲染人次」弹窗：先拉取最新项目配额（单一收费模式，可渲染上限由 purchasedHeadcount 决定），
    * 计算默认补齐数量（当已选人数超过剩余可渲染数时，默认补齐差额），再弹出购买弹窗。
    */
-  const openBuy = useCallback(async () => {
+  const openBuy = useCallback(async (defaultNeed?: number) => {
     if (!picked) {
       setError(t('common:guest.batch.needPersons', { defaultValue: '请先选择宾客名单' }));
       return;
@@ -235,6 +317,7 @@ export default function InvitationJobs() {
         totalRenderable: v.totalRenderable,
         remaining: v.remaining,
       });
+      setAvailableCounts(v.remaining ?? 0);
       // 权威缺口 = 逐行 paywalled 行数（B5）；结果行缺失时回退「勾选数 − 剩余额度」
       let need = 0;
       try {
@@ -244,7 +327,9 @@ export default function InvitationJobs() {
         /* 拉取逐行结果失败不阻断购买弹窗，回退本地估算 */
       }
       if (need <= 0) need = Math.max(0, picked.selectedRecordIds.length - v.remaining);
-      setBuyHeadcount(need > 0 ? need : 1);
+      // defaultNeed：调用方（如「批量生成前次数不足」）已按勾选子集算准缺口时优先采用，
+      // 否则沿用逐行 paywalled 推算（openBuy 原有口径，其余调用方行为不变）
+      setBuyHeadcount(defaultNeed && defaultNeed > 0 ? defaultNeed : need > 0 ? need : 1);
       setBuyMsg('');
       setBuyOpen(true);
     } catch (e) {
@@ -281,18 +366,51 @@ export default function InvitationJobs() {
     }
   }, [picked, quota, buyHeadcount, loadResults]);
 
-  /** 第④步「批量生成」：仅执行生成，前置步骤由按钮 disabled 与下方守卫双重保障 */
+  /**
+   * 第④步「批量生成」：仅执行生成，前置步骤（模板/名单/配对）由按钮 disabled 与下方守卫保障。
+   * 缺陷一修复 + 本次优化：向导完成后按钮常亮可点；有勾选则按 targetRecordIds 子集渲染，
+   * 未勾选则提示「你没有选择任何记录」而不再整批兜底生成。
+   */
   const handleGenerate = () => {
     if (!template || !picked || !fieldPaired) {
       setError(t('common:guest.batch.completePrevStep', { defaultValue: '请先完成前一步操作' }));
       return;
     }
-    void startGenerate({ projectId: picked.projectId });
+    if (generating) return; // 防重复提交（按钮已不再置灰，此处幂等兜底）
+    if (checked.size === 0) {
+      setError(t('common:guest.batch.noRecordSelected', { defaultValue: '你没有选择任何记录' }));
+      return;
+    }
+    // ── 渲染次数判断（服务端单一收费模式，无免费赠样）──
+    // 逐行真值 = results（recordId 对齐）：
+    //   未渲染 / 失败 → 需 1 人次；已渲但重渲满 5 次 → 需 1 人次重置；已渲且重渲未满 → 不消耗。
+    const need = [...checked].reduce((n, id) => {
+      const r = results.find((x) => x.recordId === id);
+      if (!r || r.status !== 'ok') return n + 1;
+      if ((r.rerenders ?? 0) >= RERENDER_LIMIT) return n + 1;
+      return n;
+    }, 0);
+    const remaining = quota?.remaining ?? 0;
+    if (remaining < need) {
+      // 次数不足 → 引导购买（不开工、不弹确认）
+      const shortfall = Math.max(1, need - remaining);
+      setBuyHeadcount(shortfall);
+      setError(`渲染次数不足，还需 ${shortfall} 人次，请先购买`);
+      void openBuy(shortfall);
+      return;
+    }
+    // 次数足够 → 先弹「永久绑定」确认，用户确认后才真正开工
+    setConfirmOpen(true);
   };
 
-  const onRegenerate = (recordId: string) => {
+  const onRegenerate = (r: ProjectResultRow) => {
     if (!picked) return;
-    void startGenerate({ projectId: picked.projectId, mode: 'RERENDER', targetRecordIds: [recordId] });
+    const used = r.rerenders ?? 0;
+    if (used >= rerenderLimit) {
+      setRegenDialog(availableCounts > 0 ? { kind: 'consume', recordId: r.recordId } : { kind: 'exhausted' });
+      return;
+    }
+    void startGenerate({ projectId: picked.projectId, mode: 'RERENDER', targetRecordIds: [r.recordId] });
   };
 
   /** 断点续跑（T6）：找到最近一个 PARTIAL/FAILED 的任务，仅重渲其失败/缺失项 */
@@ -317,6 +435,46 @@ export default function InvitationJobs() {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setResuming(false);
+    }
+  };
+
+  /**
+   * 打开「逐人预览」弹窗：点击后异步准备数据（loading 态）——
+   *  1. previewSchema = 项目 elements 快照（服务端已注入 elementBindings，直接可个性化）；
+   *  2. mapping = 生成前体检返回的 variableMapping（元素 binding.key → 名单字段）；
+   *  3. 名单记录按「勾选子集（无勾选则本次名单全量）」过滤，映射为逐人预览页。
+   * 渲染侧每页只对当前索引 personalizeSchema（勿一次性全量），animated=false 避免翻页重播入场动画。
+   */
+  const openPreviewDialog = async () => {
+    if (!template || !picked || !fieldPaired) {
+      setError(t('common:guest.batch.completePrevStep', { defaultValue: '请先完成前一步操作' }));
+      return;
+    }
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+    setPreviewPage(0);
+    try {
+      const [els, h, rec] = await Promise.all([
+        api.getProjectElements(picked.projectId),
+        api.getInvitationHealth(picked.projectId),
+        api.listGuestRecords(picked.listId, 1, 500),
+      ]);
+      const selectedSet = checked.size ? checked : new Set(picked.selectedRecordIds);
+      const pages = (rec.records ?? [])
+        .filter((r) => selectedSet.has(r.id))
+        .map((r) => ({
+          recordId: r.id,
+          name: r.data?.guest_name ?? '',
+          data: (r.data ?? {}) as GuestData,
+        }));
+      setPreviewSchema((els.previewSchema ?? null) as Project | null);
+      setPreviewMapping(h.mapping ?? {});
+      setPreviewPages(pages);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setPreviewOpen(false);
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -371,7 +529,10 @@ export default function InvitationJobs() {
       else next.add(id);
       return next;
     });
-  const allChecked = results.length > 0 && checked.size === results.length;
+
+  // 缺陷一修复：仅「超额锁定」行不可选，其余 pending/ok/failed 始终可选
+  const selectableCount = results.filter((r) => !r.paywalled).length;
+  const allChecked = results.length > 0 && selectableCount > 0 && checked.size === selectableCount;
   const failedCount = results.filter((r) => r.status === 'failed').length;
   /**
    * 还需购买解锁的人数。唯一真值是后端逐行 `paywalled`（B5）：已渲染行不占额度槽（名额生成时已扣）、
@@ -384,8 +545,99 @@ export default function InvitationJobs() {
     if (!picked || !quota) return 0;
     return Math.max(0, picked.selectedRecordIds.length - quota.remaining);
   }, [results, picked, quota]);
+
+  /**
+   * 逐人预览：仅对当前页索引做个性化（schema × mapping × 当前记录），翻页时按依赖重算。
+   * previewSchema 为归一化前的原始快照，normalizeSchema 兜底补全 width/height 等缺字段。
+   */
+  const personalized = useMemo(() => {
+    const p = previewPages[previewPage];
+    if (!p || !previewSchema) return null;
+    return personalizeSchema(
+      normalizeSchema(previewSchema),
+      { id: p.recordId, data: p.data },
+      previewMapping,
+    );
+  }, [previewSchema, previewMapping, previewPages, previewPage]);
+
+  /** 缺陷一修复：全选 = 选所有「非超额锁定」行（原仅选 ok 行） */
   const toggleAll = () =>
-    setChecked(allChecked ? new Set() : new Set(results.filter((r) => r.status === 'ok').map((r) => r.recordId)));
+    setChecked(allChecked ? new Set() : new Set(results.filter((r) => !r.paywalled).map((r) => r.recordId)));
+
+  /** 编辑闸门：已达上限则禁止保存并提示 */
+  const editBlocked = editLimit > 0 && editedRecordIds.length >= editLimit;
+
+  /**
+   * 宾客名单字段列：每个字段独立一列（替代原先合并的「宾客信息」单列）。
+   * schema 取首行即可 —— 后端对每行返回完全相同的 {key,label} 定义，仅 value 不同。
+   */
+  const fieldCols = results[0]?.fields ?? [];
+
+  /**
+   * 打开编辑弹窗：字段严格取自当前所选宾客名单的 columnDefs（后端 projectResults 行 row.fields，
+   * 注释「编辑弹窗展示/回填用」），不再调用 /api/guest-lists/field-design —— 该端点返回 owner 级设计，
+   * 会回落 GUEST_FIELD_DEFS.slice(0,5)（系统默认 5 字段），与所选名单实际字段不符
+   * （典型如婚礼名单仅含 丈夫姓名/妻子姓名）。用 getGuestFieldDef 补 type/options 以还原 select 渲染。
+   */
+  const openEdit = (r: ProjectResultRow) => {
+    setEditRecord(r);
+    setEditError('');
+    setEditSaving(false);
+    // 字段定义 = 当前名单字段（row.fields 已含 key/label/value）；enum 字段还原为 select
+    const fd: FieldDesign[] = (r.fields ?? []).map((f) => {
+      const def = getGuestFieldDef(f.key);
+      return {
+        key: f.key,
+        label: f.label,
+        type: def?.type === 'enum' ? 'select' : undefined,
+        options: (def?.values ?? def?.enum ?? []) as Array<string | { label: string; value: string }>,
+      };
+    });
+    setFieldDesign(fd.length > 0 ? fd : null);
+    // 回填：row.fields.value 优先，row.data 兜底（历史数据 value 可能为空）
+    const initial: Record<string, string> = {};
+    for (const f of r.fields ?? []) {
+      const v =
+        f.value != null && f.value !== ''
+          ? f.value
+          : r.data?.[f.key] != null
+            ? String(r.data[f.key])
+            : '';
+      initial[f.key] = v;
+    }
+    setEditInitial(initial);
+    setEditForm({ ...initial });
+    setEditOpen(true);
+  };
+
+  /** 保存编辑：仅提交被改动字段（editForm 与 initial 的差异） */
+  const saveEdit = async () => {
+    if (!editRecord || !picked) return;
+    if (editBlocked) return; // 闸门：已达上限禁止保存
+    const changed: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(editForm)) {
+      if (editInitial[k] !== v) changed[k] = v;
+    }
+    if (!Object.keys(changed).length) {
+      setEditOpen(false);
+      return;
+    }
+    setEditSaving(true);
+    setEditError('');
+    try {
+      await api.editInvitationRecord(picked.projectId, editRecord.recordId, changed);
+      setEditOpen(false);
+      setEditForm({});
+      setEditInitial({});
+      // 成功后刷新结果（同步 editedRecordIds / editLimit 闸门状态）
+      await loadResults(picked.projectId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setEditError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   const statusText = (r: ProjectResultRow) => {
     if (r.status === 'ok') return { label: t('common:guest.batch.ok', { defaultValue: '成功' }), color: '#1a7f37' };
@@ -412,7 +664,7 @@ export default function InvitationJobs() {
       )}
       {buyMsg && <div className="mb-3 rounded bg-green-50 px-3 py-2 text-xs text-green-700">{buyMsg}</div>}
 
-      {/* 分步向导：① 选模板 → ② 选名单 → ③ 字段配对 → ④ 批量生成（严格顺序，禁止跳步） */}
+      {/* 分步向导：①②③ 依次设定「模板 / 名单 / 字段配对」参数 → 在下方「执行任务队列」勾选要生成的记录 → ④ 批量生成所选 */}
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white p-4">
         <button
           onClick={() => setPickerOpen(true)}
@@ -460,6 +712,24 @@ export default function InvitationJobs() {
           {fieldPaired ? `（${t('common:guest.batch.paired', { defaultValue: '已配对' })}）` : ''}
         </button>
 
+        {/* 预览：按勾选子集（无勾选则名单全量）逐人个性化渲染，确认效果后再批量生成 */}
+        <button
+          onClick={() => void openPreviewDialog()}
+          disabled={!template || !picked || !fieldPaired}
+          className="rounded border border-blue-600 bg-white px-5 py-1.5 text-sm text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+        >
+          {t('common:guest.batch.preview', { defaultValue: '预览' })}
+        </button>
+
+        <button
+          onClick={handleGenerate}
+          // 优化：向导完成即常亮可点，不再因「未勾选 / 生成中 / 队列状态」置灰
+          disabled={!template || !picked || !fieldPaired}
+          className="rounded bg-blue-600 px-5 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          {generating ? t('common:guest.batch.generating', { defaultValue: '生成中…' }) : `④ ${t('common:guest.batch.generate', { defaultValue: '批量生成所选' })}`}
+        </button>
+
         <button
           onClick={() => {
             if (picked) {
@@ -469,7 +739,7 @@ export default function InvitationJobs() {
             }
           }}
           disabled={!picked}
-          className="rounded bg-[#e879b4] px-4 py-1.5 text-sm text-white hover:bg-[#d965a0] disabled:opacity-50"
+          className="ml-auto rounded bg-[#e879b4] px-4 py-1.5 text-sm text-white hover:bg-[#d965a0] disabled:opacity-50"
         >
           {t('common:guest.batch.buyQuantity', { defaultValue: '购买数量' })}
           {unlockCount > 0 ? `（需解锁 ${unlockCount} 人）` : ''}
@@ -482,18 +752,17 @@ export default function InvitationJobs() {
             defaultValue: '当前可渲染总量与剩余可渲染数量',
           })}
         >
-          {t('common:guest.batch.quotaLabel', { defaultValue: '可渲染：{{x}}，剩余：{{y}}' })
+          {/* 生成总数 = 可渲染总量；已使用 = 生成总数 − 剩余；剩余 = 全局剩余可渲染额度 */}
+          {t('common:guest.batch.quotaLabel', {
+            defaultValue: '生成总数：{{x}}，已使用：{{z}}，剩余：{{y}}',
+          })
             .replace('{{x}}', String(quota?.totalRenderable ?? '—'))
+            .replace(
+              '{{z}}',
+              String(quota ? Math.max(0, quota.totalRenderable - quota.remaining) : '—'),
+            )
             .replace('{{y}}', String(quota?.remaining ?? '—'))}
         </span>
-
-        <button
-          onClick={handleGenerate}
-          disabled={!template || !picked || !fieldPaired || generating}
-          className="ml-auto rounded bg-blue-600 px-5 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {generating ? t('common:guest.batch.generating', { defaultValue: '生成中…' }) : `④ ${t('common:guest.batch.generate', { defaultValue: '批量生成' })}`}
-        </button>
       </div>
 
       {/* 任务进度区 */}
@@ -502,111 +771,194 @@ export default function InvitationJobs() {
           <span className="text-sm font-medium text-gray-700">
             {t('common:guest.batch.taskProgress', { defaultValue: '任务进度' })}
           </span>
-          <div className="ml-auto flex gap-2">
-            {failedCount > 0 && (
-              <button onClick={onResumeFailed} disabled={resuming || generating} className="rounded border border-blue-300 px-3 py-1 text-xs text-blue-600 hover:bg-blue-50 disabled:opacity-50">
-                {resuming ? t('common:guest.batch.resuming', { defaultValue: '续跑中…' }) : t('common:guest.batch.resumeFailed', { defaultValue: '续跑失败项', count: failedCount })}
+          {/* 工具条（全选 / 删除选择 / 打包下载） */}
+          {(
+            <div className="ml-auto flex gap-2">
+              {failedCount > 0 && (
+                <button onClick={onResumeFailed} disabled={resuming || generating} className="rounded border border-blue-300 px-3 py-1 text-xs text-blue-600 hover:bg-blue-50 disabled:opacity-50">
+                  {resuming ? t('common:guest.batch.resuming', { defaultValue: '续跑中…' }) : t('common:guest.batch.resumeFailed', { defaultValue: '续跑失败项', count: failedCount })}
+                </button>
+              )}
+              <button onClick={toggleAll} disabled={!results.length} className="rounded border border-gray-300 px-3 py-1 text-xs hover:bg-gray-50 disabled:opacity-50">
+                {t('common:guest.batch.selectAllRows', { defaultValue: '全选' })}
               </button>
-            )}
-            <button onClick={toggleAll} disabled={!results.length} className="rounded border border-gray-300 px-3 py-1 text-xs hover:bg-gray-50 disabled:opacity-50">
-              {t('common:guest.batch.selectAllRows', { defaultValue: '全选' })}
-            </button>
-            <button onClick={doDelete} disabled={!checked.size} className="rounded border border-gray-300 px-3 py-1 text-xs hover:bg-gray-50 disabled:opacity-50">
-              {t('common:guest.batch.deleteSelected', { defaultValue: '删除选择' })}
-            </button>
-            <button onClick={doPack} disabled={!results.length} className="rounded border border-gray-300 px-3 py-1 text-xs hover:bg-gray-50 disabled:opacity-50">
-              {t('common:guest.batch.packDownload', { defaultValue: '打包下载' })}
-            </button>
-          </div>
+              <button onClick={doDelete} disabled={!checked.size} className="rounded border border-gray-300 px-3 py-1 text-xs hover:bg-gray-50 disabled:opacity-50">
+                {t('common:guest.batch.deleteSelected', { defaultValue: '删除选择' })}
+              </button>
+              <button onClick={doPack} disabled={!results.length} className="rounded border border-gray-300 px-3 py-1 text-xs hover:bg-gray-50 disabled:opacity-50">
+                {t('common:guest.batch.packDownload', { defaultValue: '打包下载' })}
+              </button>
+            </div>
+          )}
         </div>
 
         {!projectId ? (
           <div className="py-12 text-center text-sm text-gray-400">
-            {t('common:guest.batch.emptyHint', { defaultValue: '请先选择模板与宾客名单，再点击「批量生成」' })}
+            {t('common:guest.batch.emptyHint', { defaultValue: '请先依次完成 ①模板选择 → ②宾客名单选择 → ③字段配对，然后在「执行任务队列」勾选要生成的记录，再点击「④ 批量生成所选」' })}
           </div>
-        ) : loadingResults && !results.length ? (
-          <div className="py-12 text-center text-sm text-gray-400">…</div>
         ) : (
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-left text-gray-600">
-                <th className="w-10 px-3 py-2" />
-                <th className="px-3 py-2 font-medium">{t('common:guest.batch.colTask', { defaultValue: '任务' })}</th>
-                <th className="w-28 px-3 py-2 font-medium">{t('common:guest.batch.colStatus', { defaultValue: '状态' })}</th>
-                <th className="w-28 px-3 py-2 font-medium">{t('common:guest.batch.colProgress', { defaultValue: '进度' })}</th>
-                <th className="w-40 px-3 py-2 font-medium">{t('common:guest.batch.colOp', { defaultValue: '操作' })}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.map((r) => {
-                const st = statusText(r);
-                const canRegenerate = r.status === 'ok' || r.status === 'failed';
-                return (
-                  <tr key={r.recordId} className="border-b border-gray-100">
-                    <td className="px-3 py-2">
-                      <input
-                        type="checkbox"
-                        checked={checked.has(r.recordId)}
-                        disabled={r.status !== 'ok' || !!r.paywalled}
-                        onChange={() => toggleCheck(r.recordId)}
-                        className="h-4 w-4 accent-blue-500"
-                        title={
-                          r.paywalled
-                            ? t('common:guest.batch.lockedRowTip', { defaultValue: '超出可渲染额度，点击购买渲染人次' })
-                            : r.status !== 'ok'
-                              ? t('common:guest.batch.onlyOkCheck', { defaultValue: '仅成功图可勾选打包/删除' })
+          /* ── 当前任务：保留表头全选 checkbox、任务队列点击编辑、宾客信息、次数、操作列 ── */
+          loadingResults && !results.length ? (
+            <div className="py-12 text-center text-sm text-gray-400">…</div>
+          ) : (
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-gray-50 text-left text-gray-600">
+                  {/* 优化1：首列内嵌全选 checkbox（已并入首列，不新增列） */}
+                  <th className="w-10 px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={allChecked}
+                      onChange={toggleAll}
+                      disabled={!results.length}
+                      className="h-4 w-4 accent-blue-500"
+                      title={t('common:guest.batch.selectAllRows', { defaultValue: '全选' })}
+                    />
+                  </th>
+                  {/* 优化2：列头 "任务" → "任务队列" */}
+                  <th className="px-3 py-2 font-medium">{t('common:guest.batch.colTask', { defaultValue: '任务队列' })}</th>
+                  {/* 优化4：宾客信息按名单字段拆分为多列（表头=字段标签，单元格=字段值） */}
+                  {fieldCols.length ? (
+                    fieldCols.map((f) => (
+                      <th key={f.key} className="px-3 py-2 font-medium">
+                        {f.label}
+                      </th>
+                    ))
+                  ) : (
+                    <th className="px-3 py-2 font-medium">
+                      {t('common:guest.batch.colGuest', { defaultValue: '宾客信息' })}
+                    </th>
+                  )}
+                  <th className="w-28 px-3 py-2 font-medium">{t('common:guest.batch.colStatus', { defaultValue: '状态' })}</th>
+                  <th className="w-40 px-3 py-2 font-medium">{t('common:guest.batch.colOp', { defaultValue: '操作' })}</th>
+                  {/* 优化5：次数列 */}
+                  <th className="w-24 px-3 py-2 font-medium">{t('common:guest.batch.colRerender', { defaultValue: '次数' })}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((r) => {
+                  const st = statusText(r);
+                  const isPending = r.status === 'pending';
+                  // 「已达重渲上限 + 全局无额度」的行不被 paywalled 置灰：此时点击只会弹
+                  // 「你的生成次数已用完，请购买次数」（仅「关闭」、不发起任何请求）——符合用户
+                  // 「用弹窗引导而非置灰」的口径。
+                  // ⚠️ 例外必须收窄到 availableCounts === 0：若 remaining > 0，同一次点击会落在
+                  // 「消耗次数警告」的「继续」上，从全局额度扣 1 并直接出图 —— 等于绕过
+                  // 「待解锁」行需先购买人次的设计。
+                  const atLimit = (r.rerenders ?? 0) >= rerenderLimit;
+                  const canRegenerate =
+                    (r.status === 'ok' || r.status === 'failed' || isPending) &&
+                    (!r.paywalled || (atLimit && availableCounts === 0));
+                  return (
+                    <tr key={r.recordId} className="border-b border-gray-100">
+                      <td className="px-3 py-2">
+                        <input
+                          type="checkbox"
+                          checked={checked.has(r.recordId)}
+                          // 缺陷一修复：仅超额锁定行不可选，其余始终可选
+                          disabled={!!r.paywalled}
+                          onChange={() => toggleCheck(r.recordId)}
+                          className="h-4 w-4 accent-blue-500"
+                          title={
+                            r.paywalled
+                              ? t('common:guest.batch.lockedRowTip', { defaultValue: '超出可渲染额度，点击购买渲染人次' })
                               : ''
-                        }
-                      />
-                    </td>
-                    <td className="px-3 py-2 text-gray-800">{r.name ?? r.recordId}</td>
-                    <td className="px-3 py-2" style={{ color: st.color }}>
-                      {r.paywalled ? (
+                          }
+                        />
+                      </td>
+                      {/* 优化2：任务队列可点击打开编辑弹窗 */}
+                      <td className="px-3 py-2">
                         <button
                           type="button"
-                          onClick={() => void openBuy()}
-                          title={t('common:guest.batch.lockedRowTip', { defaultValue: '超出可渲染额度，点击购买渲染人次' })}
-                          className="cursor-pointer text-left hover:underline"
-                          style={{ color: st.color }}
+                          onClick={() => {
+                            if (!editedRecordIds.includes(r.recordId)) void openEdit(r);
+                          }}
+                          disabled={editedRecordIds.includes(r.recordId)}
+                          className={
+                            editedRecordIds.includes(r.recordId)
+                              ? 'cursor-not-allowed text-gray-400'
+                              : 'text-left text-blue-600 hover:underline'
+                          }
+                          title={
+                            editedRecordIds.includes(r.recordId)
+                              ? t('common:guest.batch.editLockedTip', {
+                                  defaultValue: '该记录已修改，已锁定，不可再次修改',
+                                })
+                              : t('common:guest.batch.editRecordTip', { defaultValue: '点击编辑宾客字段' })
+                          }
                         >
-                          {st.label}
+                          {r.taskName ?? r.name ?? r.recordId}
+                          {editedRecordIds.includes(r.recordId) ? ' 🔒' : ''}
                         </button>
+                      </td>
+                      {/* 优化4：宾客信息 —— 每字段一列，仅展示值（标签已由表头承担） */}
+                      {fieldCols.length ? (
+                        fieldCols.map((f) => (
+                          <td key={f.key} className="px-3 py-2 text-gray-600">
+                            {r.fields?.find((x) => x.key === f.key)?.value ?? ''}
+                          </td>
+                        ))
                       ) : (
-                        st.label
+                        <td className="px-3 py-2 text-gray-600">-</td>
                       )}
-                      {r.error ? <div className="text-[11px] text-red-500">{r.error}</div> : null}
-                    </td>
-                    <td className="px-3 py-2 text-gray-600">
-                      {r.url ? t('common:guest.batch.generated', { defaultValue: '已生成' }) : t('common:guest.batch.notGenerated', { defaultValue: '待生成' })}
-                    </td>
-                    <td className="px-3 py-2">
-                      <button
-                        onClick={() => r.url && openPreview(r.url)}
-                        disabled={!r.url}
-                        className="mr-3 text-blue-600 hover:underline disabled:text-gray-300"
-                      >
-                        {t('common:guest.batch.preview', { defaultValue: '预览' })}
-                      </button>
-                      <button
-                        onClick={() => onRegenerate(r.recordId)}
-                        disabled={!canRegenerate || generating}
-                        className="text-[#c81e42] hover:underline disabled:text-gray-300"
-                      >
-                        {t('common:guest.batch.regenerate', { defaultValue: '重新生成' })}
-                      </button>
+                      <td className="px-3 py-2" style={{ color: st.color }}>
+                        {r.paywalled ? (
+                          <button
+                            type="button"
+                            onClick={() => void openBuy()}
+                            title={t('common:guest.batch.lockedRowTip', { defaultValue: '超出可渲染额度，点击购买渲染人次' })}
+                            className="cursor-pointer text-left hover:underline"
+                            style={{ color: st.color }}
+                          >
+                            {st.label}
+                          </button>
+                        ) : (
+                          st.label
+                        )}
+                        {r.error ? <div className="text-[11px] text-red-500">{r.error}</div> : null}
+                      </td>
+                      <td className="px-3 py-2">
+                        <button
+                          onClick={() => r.url && openPreview(r.url)}
+                          disabled={!r.url}
+                          className="mr-3 text-blue-600 hover:underline disabled:text-gray-300"
+                        >
+                          {t('common:guest.batch.preview', { defaultValue: '预览' })}
+                        </button>
+                        {/* 优化3：行内操作统一为「生成」文案（去掉「重新生成」分支） */}
+                        <button
+                          onClick={() => onRegenerate(r)}
+                          disabled={!canRegenerate || generating}
+                          title=""
+                          className="text-[#c81e42] hover:underline disabled:text-gray-300"
+                        >
+                          {t('common:guest.batch.singleGenerate', { defaultValue: '生成' })}
+                        </button>
+                        {/* 重渲 X/5 提示（保留） */}
+                        {r.rerenders ? (
+                          <span className="ml-2 text-[11px] text-gray-400">
+                            {t('common:guest.batch.rerenderCount', { defaultValue: `重渲 ${r.rerenders}/${rerenderLimit}` })}
+                          </span>
+                        ) : null}
+                      </td>
+                      {/* 优化5：次数列 */}
+                      <td className="px-3 py-2 text-gray-500">
+                        {`${(r.rerenders ?? 0)}/${rerenderLimit - (r.rerenders ?? 0)}`}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!results.length && (
+                  <tr>
+                    {/* 列数 = 勾选 + 任务队列 + 宾客字段列 + 状态 + 操作 + 次数 = 5 + fieldCols.length */}
+                    <td colSpan={5 + fieldCols.length} className="py-10 text-center text-gray-400">
+                      {t('common:guest.batch.noTasks', { defaultValue: '暂无生成任务' })}
                     </td>
                   </tr>
-                );
-              })}
-              {!results.length && (
-                <tr>
-                  <td colSpan={5} className="py-10 text-center text-gray-400">
-                    {t('common:guest.batch.noTasks', { defaultValue: '暂无生成任务' })}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          )
         )}
       </div>
 
@@ -619,12 +971,6 @@ export default function InvitationJobs() {
           onClose={() => setPersonOpen(false)}
           onConfirm={onPickPersons}
         />
-      )}
-
-      {previewUrl && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/70 p-4" onClick={() => setPreviewUrl(null)}>
-          <img src={previewUrl} alt="preview" className="max-h-[90vh] max-w-[90vw] rounded shadow-lg" />
-        </div>
       )}
 
       {/* 生成前变量匹配体检对话框（D4 反转：含映射改指向，§2.5） */}
@@ -665,10 +1011,8 @@ export default function InvitationJobs() {
             </h3>
             <p className="mb-4 text-sm leading-relaxed text-gray-600">
               {t('common:guest.batch.buyQuotaTip', {
-                defaultValue:
-                  '免费赠样 {{cap}} 人 + 已购 {{paid}} = 可渲染 {{total}} 人，剩余 {{rem}} 人',
+                defaultValue: '已购 {{paid}} 人次，可渲染 {{total}} 人，剩余 {{rem}} 人',
               })
-                .replace('{{cap}}', String(quota.freeSampleCap))
                 .replace('{{paid}}', String(quota.purchasedHeadcount))
                 .replace('{{total}}', String(quota.totalRenderable))
                 .replace('{{rem}}', String(quota.remaining))}
@@ -698,6 +1042,275 @@ export default function InvitationJobs() {
                 className="rounded bg-[#e879b4] px-4 py-1.5 text-sm text-white hover:bg-[#d965a0]"
               >
                 {t('common:guest.batch.confirmBuy', { defaultValue: '确认购买' })}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 编辑宾客记录弹窗（优化2）：字段回填 + 编辑闸门 */}
+      {editOpen && editRecord && (
+        <div
+          className="fixed inset-0 z-[1300] flex items-center justify-center bg-black/70 p-4"
+          onClick={() => !editSaving && setEditOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-1 text-base font-semibold text-gray-800">
+              {t('common:guest.batch.editRecordTitle', { defaultValue: '编辑宾客记录' })}
+            </h3>
+            <p className="mb-3 truncate text-xs text-gray-500">
+              {editRecord.taskName ?? editRecord.name ?? editRecord.recordId}
+            </p>
+            <div className="max-h-[50vh] space-y-3 overflow-y-auto">
+              {fieldDesign && fieldDesign.length > 0 ? (
+                fieldDesign.map((fd) => {
+                  const opts = (fd.options ?? []).map((o) =>
+                    typeof o === 'string' ? { label: o, value: o } : { label: o.label, value: o.value },
+                  );
+                  const isSelect = fd.type === 'select' || opts.length > 0;
+                  return (
+                    <div key={fd.key}>
+                      <label className="mb-1 block text-sm text-gray-700">{fd.label}</label>
+                      {isSelect ? (
+                        <select
+                          value={editForm[fd.key] ?? ''}
+                          onChange={(e) => setEditForm((p) => ({ ...p, [fd.key]: e.target.value }))}
+                          className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                        >
+                          <option value="">{t('common:guest.batch.editEmptyOption', { defaultValue: '（不填）' })}</option>
+                          {opts.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          value={editForm[fd.key] ?? ''}
+                          onChange={(e) => setEditForm((p) => ({ ...p, [fd.key]: e.target.value }))}
+                          className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                        />
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-sm text-gray-400">
+                  {t('common:guest.batch.noFieldDesign', { defaultValue: '暂无字段设计，无法编辑' })}
+                </div>
+              )}
+            </div>
+
+            {editError && (
+              <div className="mt-3 rounded bg-red-50 px-3 py-2 text-xs text-red-600">{editError}</div>
+            )}
+            {editBlocked && (
+              <div className="mt-3 rounded bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                {t('common:guest.batch.editLimitReached', {
+                  defaultValue: '修改次数已达上限（{{n}}/{{limit}} 条，约 {{pct}}% 上限），不可再修改',
+                })
+                  .replace('{{n}}', String(editedRecordIds.length))
+                  .replace('{{limit}}', String(editLimit))
+                  .replace('{{pct}}', String(Math.round((editLimit / Math.max(1, results.length)) * 100)))}
+              </div>
+            )}
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => !editSaving && setEditOpen(false)}
+                className="rounded border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50"
+              >
+                {t('common:guest.batch.cancel', { defaultValue: '取消' })}
+              </button>
+              <button
+                onClick={saveEdit}
+                disabled={editBlocked || editSaving || !fieldDesign || fieldDesign.length === 0}
+                className="rounded bg-blue-600 px-4 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {editSaving ? t('common:guest.batch.saving', { defaultValue: '保存中…' }) : t('common:guest.batch.save', { defaultValue: '保存' })}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {regenDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-[360px] rounded-lg bg-white p-5 shadow-xl">
+            <p className="mb-4 text-sm text-gray-700">
+              {regenDialog.kind === 'consume'
+                ? t('common:guest.batch.rerenderConsumeWarn', { defaultValue: '该记录已达到生成上限，如果希望再生成一次，则会消耗生成次数。是否继续？' })
+                : t('common:guest.batch.rerenderExhausted', { defaultValue: '你的生成次数已用完，请购买次数' })}
+            </p>
+            <div className="flex justify-end gap-2">
+              {regenDialog.kind === 'consume' ? (
+                <>
+                  <button
+                    className="rounded border border-gray-300 px-3 py-1 text-sm text-gray-600 hover:bg-gray-50"
+                    onClick={() => setRegenDialog(null)}
+                  >
+                    {t('common:guest.batch.rerenderCancel', { defaultValue: '取消' })}
+                  </button>
+                  <button
+                    className="rounded bg-[#c81e42] px-3 py-1 text-sm text-white hover:opacity-90"
+                    onClick={() => {
+                      const rid = regenDialog.recordId;
+                      setRegenDialog(null);
+                      if (picked) void startGenerate({ projectId: picked.projectId, mode: 'RERENDER', targetRecordIds: [rid] });
+                    }}
+                  >
+                    {t('common:guest.batch.rerenderContinue', { defaultValue: '继续' })}
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="rounded bg-[#c81e42] px-3 py-1 text-sm text-white hover:opacity-90"
+                  onClick={() => setRegenDialog(null)}
+                >
+                  {t('common:guest.batch.rerenderClose', { defaultValue: '关闭' })}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 逐人预览弹窗：手机框 + 上一页/下一页 + 第X/总N页 + 关闭（ESC 可关） */}
+      {previewOpen && (
+        <div
+          className="fixed inset-0 z-[1350] flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setPreviewOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-gray-800">
+                {t('common:guest.batch.previewTitle', { defaultValue: '逐人预览' })}
+              </h3>
+              {previewPages[previewPage]?.name ? (
+                <span className="text-xs text-gray-400">{previewPages[previewPage].name}</span>
+              ) : null}
+            </div>
+
+            {previewLoading ? (
+              <div className="py-16 text-center text-sm text-gray-400">
+                {t('common:guest.batch.previewLoading', { defaultValue: '加载中…' })}
+              </div>
+            ) : previewPages.length === 0 ? (
+              <div className="py-16 text-center text-sm text-gray-400">
+                {t('common:guest.batch.previewEmpty', { defaultValue: '没有可预览的记录' })}
+              </div>
+            ) : (
+              <>
+                {/* 手机框：宽固定 PREVIEW_FRAME_W，高按 schema 设计稿尺寸等比缩放，仅渲染当前页 */}
+                <div
+                  className="mx-auto rounded-[28px] bg-gray-900 p-2 shadow-lg"
+                  style={{ width: PREVIEW_FRAME_W + 16 }}
+                >
+                  <div
+                    className="relative overflow-hidden rounded-[20px] bg-white"
+                    style={{
+                      width: PREVIEW_FRAME_W,
+                      height: personalized ? (personalized.height || 667) * (PREVIEW_FRAME_W / (personalized.width || 375)) : 0,
+                    }}
+                  >
+                    {personalized && (
+                      <SchemaRenderer
+                        key={previewPages[previewPage]?.recordId ?? 'preview'}
+                        project={personalized}
+                        scale={PREVIEW_FRAME_W / (personalized.width || 375)}
+                        animated={false}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* 底部控制条：上一页 / 第X/总N页 / 下一页 / 关闭 */}
+                <div className="mt-4 flex items-center justify-between">
+                  <button
+                    onClick={() => setPreviewPage((p) => Math.max(0, p - 1))}
+                    disabled={previewPage <= 0}
+                    className="rounded border border-gray-300 px-3 py-1 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    {t('common:guest.batch.previewPrev', { defaultValue: '上一页' })}
+                  </button>
+                  <span className="text-sm text-gray-500">
+                    {t('common:guest.batch.previewPageIndicator', {
+                      defaultValue: '第 {{cur}} / {{total}} 页',
+                    })
+                      .replace('{{cur}}', String(previewPage + 1))
+                      .replace('{{total}}', String(previewPages.length))}
+                  </span>
+                  <button
+                    onClick={() => setPreviewPage((p) => Math.min(previewPages.length - 1, p + 1))}
+                    disabled={previewPage >= previewPages.length - 1}
+                    className="rounded border border-gray-300 px-3 py-1 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    {t('common:guest.batch.previewNext', { defaultValue: '下一页' })}
+                  </button>
+                  <button
+                    onClick={() => setPreviewOpen(false)}
+                    className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+                  >
+                    {t('common:guest.batch.close', { defaultValue: '关闭' })}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 批量生成前「永久绑定」确认弹窗：首次批量生成后请柬作品与名单永久绑定，无法撤回配对 */}
+      {confirmOpen && (
+        <div
+          className="fixed inset-0 z-[1360] flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setConfirmOpen(false)}
+        >
+          <div
+            className="w-[360px] rounded-lg bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-2 flex items-center gap-2">
+              <svg className="h-5 w-5 flex-none text-amber-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path
+                  fillRule="evenodd"
+                  d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <h3 className="text-base font-semibold text-gray-800">
+                {t('common:guest.batch.bindConfirmTitle', {
+                  defaultValue: '本操作永久性绑定请柬和名单，是否继续？',
+                })}
+              </h3>
+            </div>
+            <p className="mb-4 text-sm leading-relaxed text-gray-600">
+              {t('common:guest.batch.bindConfirmDesc', {
+                defaultValue: '首次批量生成后，本次选定的请柬作品与名单将永久绑定，无法撤回配对。',
+              })}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmOpen(false)}
+                className="rounded border border-gray-300 px-4 py-1.5 text-sm hover:bg-gray-50"
+              >
+                {t('common:guest.batch.cancel', { defaultValue: '取消' })}
+              </button>
+              <button
+                onClick={() => {
+                  setConfirmOpen(false);
+                  if (picked) void startGenerate({ projectId: picked.projectId, targetRecordIds: [...checked] });
+                }}
+                className="rounded bg-[#c81e42] px-4 py-1.5 text-sm text-white hover:opacity-90"
+              >
+                {t('common:guest.batch.confirm', { defaultValue: '确认' })}
               </button>
             </div>
           </div>
