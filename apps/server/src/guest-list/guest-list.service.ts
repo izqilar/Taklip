@@ -89,11 +89,18 @@ export class GuestListService {
    * - `SERVICE_PROVIDER`：orgId = 自身 id；可通过 `clientId` 进入代客(CLIENT)域
    * - SP 员工（USER + staff{PROVIDER} 成员关系）：orgId 取雇佣组织
    */
-  resolveScope(user: JwtUser, ownerType?: string, clientId?: string): OwnerScope {
+  resolveScope(user: JwtUser, ownerType?: string, clientId?: string, subject?: string): OwnerScope {
     const role = user.role as string;
     let orgId: string | null = null;
-    if (role === 'SERVICE_PROVIDER') orgId = user.id;
-    else if (Array.isArray(user.staff)) {
+    // ★ ADMIN 监督某服务商（subject=被视察 SP id）+ 组织/客户归属：必须以被视察 SP 身份作用域化。
+    //   必须放在 staff 判断之前——ADMIN 的 user.staff 常为 []（Array.isArray 为真），
+    //   若排在其后用 else if，会被 L97 的 staff 分支短路，orgId 恒为 null → 仍抛 FORBIDDEN_OWNER_TYPE 400。
+    if (role === 'ADMIN' && subject && (ownerType === 'ORG' || ownerType === 'CLIENT')) {
+      // 作用域锁定在 subject SP，不弱化隔离
+      orgId = subject;
+    } else if (role === 'SERVICE_PROVIDER') {
+      orgId = user.id;
+    } else if (Array.isArray(user.staff)) {
       const m = user.staff.find((s) => s.orgType === 'PROVIDER' && s.accountStatus === 'ACTIVE');
       if (m) orgId = m.orgId;
     }

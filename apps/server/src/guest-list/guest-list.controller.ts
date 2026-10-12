@@ -49,7 +49,7 @@ export class GuestListController {
   /** 归属作用域解析：SP 可带 ?ownerType=CLIENT|ORG&clientId=xxx 进入组织/客户域；
    *  ADMIN 监督窗口携带 subject 时把 userId 改写为被视察用户，使其 SELF 作用域等价该用户登录。 */
   private scope(req: AuthedRequest, ownerType?: string, clientId?: string, subject?: string) {
-    return this.svc.resolveScope(this.effUser(req, subject), ownerType, clientId);
+    return this.svc.resolveScope(this.effUser(req, subject), ownerType, clientId, subject);
   }
 
   /** 作用域主体：ADMIN 持 subject 时等价于该用户自己登录（模板等按用户维度归属的接口用） */

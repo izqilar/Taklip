@@ -37,6 +37,9 @@ import { zipStore } from '../common/minimal-zip';
 /** 免费赠样人次（C1：不占购额、不计入 N） */
 export const FREE_SAMPLE_CAP = 3;
 
+/** 每条记录重渲染次数上限（用户诉求：在不更换模板、不大改名单前提下，至少支持每条记录重渲染 5 次） */
+export const RERENDER_LIMIT = 5;
+
 /**
  * 已生成（已锁定）记录的移除闸门提示（增删分离口径）：
  * `setSelection` 对「快照 recordIds 中的 id 被移除」一律 409 `RENDERED_RECORD_IMMUTABLE`，
@@ -137,8 +140,13 @@ export class InvitationService implements OnModuleInit {
   /* ────────── 项目 ────────── */
 
   /** 归属解析委托给名单模块（单一真值源），保证两模块角色判定不分叉 */
-  resolveScope(user: Parameters<GuestListService['resolveScope']>[0], ownerType?: string, clientId?: string) {
-    return this.guestLists.resolveScope(user, ownerType, clientId);
+  resolveScope(
+    user: Parameters<GuestListService['resolveScope']>[0],
+    ownerType?: string,
+    clientId?: string,
+    subject?: string,
+  ) {
+    return this.guestLists.resolveScope(user, ownerType, clientId, subject);
   }
 
   /** 按作用域构造项目查询条件（隔离唯一入口） */
@@ -227,6 +235,31 @@ export class InvitationService implements OnModuleInit {
     return out;
   }
 
+  /**
+   * 解析 BatchRenderProject.editedRecordIds（JSON 数组），缺省/非法时回落空数组。
+   * 用于「修改上限 = 总记录数 × 10%」闸门判定（projectResults / editGuestRecordForProject 共用）。
+   */
+  private parseEditedRecordIds(raw: unknown): string[] {
+    const arr = (raw as unknown as string[] | null | undefined) ?? [];
+    return Array.isArray(arr) ? arr.map((x) => String(x)).filter(Boolean) : [];
+  }
+
+  /**
+   * 将 Date 格式化为「cmv」前缀 + 紧凑时间戳串：'cmv' + YYYYMMDDHHmmss
+   * （年4 + 月2 + 日2 + 时2 + 分2 + 秒2，各段 padStart(2, '0')）。
+   * 用于派生基于时间戳的任务名（批量请柬「当前/历史任务」标识），不写入模型字段。
+   */
+  private formatTaskTs(d: Date): string {
+    const pad = (n: number): string => String(n).padStart(2, '0');
+    const y = d.getFullYear();
+    const mo = pad(d.getMonth() + 1);
+    const da = pad(d.getDate());
+    const h = pad(d.getHours());
+    const mi = pad(d.getMinutes());
+    const s = pad(d.getSeconds());
+    return `cmv${y}${mo}${da}${h}${mi}${s}`;
+  }
+
   async mustGetProject(scope: OwnerScope, projectId: string) {
     const p = await this.prisma.batchRenderProject.findFirst({
       where: { id: projectId, ...this.projectWhere(scope) },
@@ -297,6 +330,7 @@ export class InvitationService implements OnModuleInit {
     freeRendered: number;
     purchasedHeadcount: number;
     paidRendered: number;
+    purchasedRerender: number;
     lockedAt: Date | null;
     clientId: string | null;
   }) {
@@ -311,6 +345,7 @@ export class InvitationService implements OnModuleInit {
       freeRendered: p.freeRendered,
       paidRendered: p.paidRendered,
       purchasedHeadcount: p.purchasedHeadcount,
+      purchasedRerender: p.purchasedRerender,
       freeSampleCap: FREE_SAMPLE_CAP,
       totalRenderable,
       alreadyRendered,
@@ -567,8 +602,9 @@ export class InvitationService implements OnModuleInit {
         const okIds = items
           .filter((it) => it && it.recordId && it.status !== 'failed')
           .map((it) => String(it.recordId));
-        if (okIds.length) {
-          // 逐条口径：successItems 并集（已天然排除 failed 条目）
+        if (items.length) {
+          // 逐条口径：successItems 并集（已天然排除 failed 条目）；
+          // items 存在但全 failed 时 okIds 为空 → 不计入「已渲」，避免失败记录被误判为已出图。
           for (const id of okIds) rendered.add(id);
         } else {
           // 兼容历史 SUCCESS job（无逐条结果落库）：整批计入
@@ -577,6 +613,10 @@ export class InvitationService implements OnModuleInit {
           }
         }
       }
+
+      // 重渲染次数计数（RERENDER 上限闸门，仅读历史 SUCCESS/PARTIAL job）：
+      // 用于「重新生成」/显式 RERENDER 时拦截超过 RERENDER_LIMIT 次的记录。
+      const rerenderCounts = (p.renderCounts as unknown as Record<string, number>) ?? {};
 
       // 重渲可渲范围 + 水印（安全约束）：免费用户仅前 3 条、且强制带水印，
       // 杜绝「改名单→RERENDER」绕过前 3 条/去水印闸门拿到专属图。
@@ -597,12 +637,37 @@ export class InvitationService implements OnModuleInit {
           if (bad.length) {
             throw err400('INVALID_SELECTION', '目标人员不在可重渲范围内（免费用户仅限前 3 条）'); // FR-2
           }
-          targets = req;
+          // 重渲上限闸门：记录的「重渲染」次数不得超过 RERENDER_LIMIT 次。
+          // 超出 RERENDER_LIMIT 后是否还能继续生成，取决于项目**全局剩余可渲染额度**
+          // （与 projectView.remaining 同口径），而非已废弃的 purchasedRerender 计数：
+          // 每超出一次消耗 1 个全局额度（见下方事务内的 paidRendered 扣减）。
+          //
+          // ⚠️ 这里**刻意不**加 `rendered.has(id)` 前置条件（即不要求「该记录已有成功出图 job」）：
+          // 本闸门只跑在「显式 targetRecordIds 的 RERENDER」分支，且额外要求 `availRemaining <= 0`，
+          // 因此去掉该前置条件只会把行为收窄到一格 ——「记录已用满 5 次计数 AND 全局已无剩余额度」——
+          // 不影响 `availRemaining > 0` 的场景，也不影响首渲路径（FREE_SAMPLE / PAID）。
+          // 反之若保留该前置条件：「清理历史 → 行回到 pending 但 renderCounts 持久化为 5」的记录
+          // 不在 rendered 集合中 → 绕过闸门进入 targets → 事务内记账遇到 used>=5 && rem<=0
+          // 只是 continue（不消耗额度、rc 卡在 5），job 却照建并真实出图 → 直连 API 可无限白嫖。
+          const availRemaining = FREE_SAMPLE_CAP + fresh.purchasedHeadcount - (fresh.freeRendered + fresh.paidRendered);
+          const exceeded = req.filter((id) => (rerenderCounts[id] ?? 0) >= RERENDER_LIMIT && availRemaining <= 0);
+          const ok = req.filter((id) => !exceeded.includes(id));
+          if (!ok.length) {
+            // 无全局额度 → 提示购买次数（不得谎称命中了每条 5 次上限）；
+            // 有额度仍为空集才可能是真正的单条上限场景。
+            const message =
+              availRemaining <= 0
+                ? '生成次数已用完，请购买次数'
+                : `该记录重渲染次数已达上限（${RERENDER_LIMIT} 次）`;
+            return { empty: true as const, projectId: p.id, mode, message };
+          }
+          targets = ok;
         } else {
-          // 免费用户：重渲范围已限制在前 3 条（eligible），直接全量重渲其赠样
-          //（清空历史后也能重做，仍带水印）；付费用户：仅重渲已成功出图者，
-          // 避免把尚未付费的 N+1.. 渲出，绕过付费闸门。
-          targets = fresh.purchasedHeadcount <= 0 ? eligible : eligible.filter((id) => rendered.has(id));
+          // 普通「批量生成」按钮（无显式目标）语义 = 续渲锁定名单内**尚未出图**的人员，
+          // 已出图者不重复渲染（与「购买人次」成功提示「已出图的人不会重复渲染」一致），
+          // 也避免免费用户每次点击都整批重渲赠样。全部已出图 → 空集 →
+          // 下方空批次闸门（L626）返回 NO_PENDING：不抛 400、不建 job、前端显示琥珀提示。
+          targets = eligible.filter((id) => !rendered.has(id));
         }
       } else if (input.targetRecordIds?.length) {
         const allow = new Set(recordIds);
@@ -679,11 +744,37 @@ export class InvitationService implements OnModuleInit {
       const nextState =
         fresh.state === 'DRAFT' ? 'LOCKED' : paidCap > 0 ? 'PAID' : fresh.state;
 
+      // item3：持久化重渲染计数（不随历史清理归零）—— 必须与额度扣减**同一事务**落库。
+      // 达到单条上限（RERENDER_LIMIT 次）后再次生成：消耗 1 个**全局剩余可渲染额度**
+      // （等价 paidRendered += 1，使 projectView.remaining 减 1），并把该记录的计数重置为
+      // 新周期的第 1 次 —— 即「消耗 1 次后再次可重复生成 5 次」。额度不足（rem <= 0）时该条跳过，
+      // 保证硬约束 freeRendered + paidRendered <= totalRenderable 恒成立。
+      //
+      // ⚠️ 刻意放在事务内：`pg_advisory_xact_lock(hashtext(projectId))` 在**提交/回滚时即释放**，
+      // 事务外的 update 不持锁，两个并发请求会互相覆盖（lost update）。rc 也必须用事务内读到的
+      // `rerenderCounts` 而非事务前快照 p.renderCounts，否则同样存在覆盖窗口。
+      const rc: Record<string, number> = { ...rerenderCounts };
+      // 用事务内**扣减后**的 freeUsed/paidUsed（而非 fresh.*）：rem 须反映本批次自身已占用的额度。
+      let rem = FREE_SAMPLE_CAP + fresh.purchasedHeadcount - (freeUsed + paidUsed);
+      let consumed = 0;
+      for (const id of targets) {
+        const used = rc[id] ?? 0;
+        if (used >= RERENDER_LIMIT) {
+          if (rem <= 0) continue; // 无额度则不计入（前端已拦截，此处为服务端权威兜底）
+          rem -= 1;
+          consumed += 1;
+          rc[id] = 1; // 重置周期：本次为该记录新一轮 5 次的第 1 次
+        } else {
+          rc[id] = used + 1;
+        }
+      }
+
       await tx.batchRenderProject.update({
         where: { id: p.id },
         data: {
           freeRendered: freeUsed,
-          paidRendered: paidUsed,
+          paidRendered: paidUsed + consumed,
+          renderCounts: rc as never,
           state: nextState,
           lockedAt: fresh.lockedAt ?? new Date(),
         },
@@ -701,6 +792,8 @@ export class InvitationService implements OnModuleInit {
         },
       });
 
+      // 额度扣减 + 重渲染计数已在**本事务内**一次性落库（见上方 update），
+      // 事务外不再做任何绝对写，杜绝并发 lost update。
       return { jobId: job.id, projectId: p.id, mode, targets, dataByRecordId, watermark, listId: fresh.listId, templateId: fresh.templateId, mapping: (fresh.variableMapping ?? {}) as Record<string, string> };
     });
 
@@ -745,45 +838,73 @@ export class InvitationService implements OnModuleInit {
   ) {
     const msg = err instanceof Error ? err.message : String(err);
     try {
-      await this.prisma.renderJob.update({
+      // 回退条数 = 本批目标数 − **实际出图条数**（而非整批 n）：
+      // runJob 是逐条隔离的，崩溃前可能已成功出图若干条（resultUrls 逐条落库），
+      // 整批回退会把成功条的名额也退掉 → 额度凭空多出来。
+      // 失败/未跑完的条才该退（与 runJob 尾部「仅成功条数占额」同口径）。
+      const job = await this.prisma.renderJob.findUnique({
         where: { id: planned.jobId },
-        data: { status: 'FAILED', error: msg.slice(0, 500) },
+        select: { resultUrls: true },
       });
-      const p = await this.prisma.batchRenderProject.findUnique({ where: { id: planned.projectId } });
-      if (!p) return;
-      const n = planned.targets.length;
-      await this.prisma.batchRenderProject.update({
-        where: { id: planned.projectId },
-        data: {
-          freeRendered:
-            planned.mode === 'FREE_SAMPLE' ? Math.max(0, p.freeRendered - n) : p.freeRendered,
-          paidRendered: planned.mode === 'PAID' ? Math.max(0, p.paidRendered - n) : p.paidRendered,
-        },
-      });
-      // 首渲失败 → 快照与锁定一并撤销，项目回 DRAFT（可重新来过）
-      //
-      // B2（锁定不可被回滚击穿）：已购人次 / 已发生付费渲染 / 已有快照的项目，
-      // 其锁定与快照具**不可变语义** —— 一次渲染失败绝不能把已购名单洗回 DRAFT，
-      // 否则用户可用「失败重试」绕过名单锁定（FR-2）并让已购额度对应的名单蒸发。
-      // 仅「从未付费渲染、无快照、纯免费」的项目保留原 DRAFT 重置行为。
-      const hasPaidValue = p.purchasedHeadcount > 0 || p.paidRendered > 0;
-      const snap = await this.prisma.renderSnapshot.findUnique({
-        where: { projectId: planned.projectId },
-        select: { projectId: true },
-      });
-      const lockProtected = hasPaidValue || !!snap;
-      if (!lockProtected) {
-        const jobs = await this.prisma.renderJob.count({
-          where: { projectId: planned.projectId, status: 'SUCCESS' },
+      const items =
+        (job?.resultUrls as unknown as { recordId?: string; status?: string }[] | null) ?? [];
+      const okIds = new Set(
+        items
+          .filter((it) => it && it.recordId && it.status === 'ok')
+          .map((it) => String(it.recordId)),
+      );
+      const okCount = planned.targets.filter((id) => okIds.has(id)).length;
+      const refund = Math.min(
+        planned.targets.length,
+        Math.max(0, planned.targets.length - okCount),
+      );
+
+      // 整段在**同一事务 + 项目级咨询锁**内完成：rollbackJob 与 batchGenerate/runJob
+      // 都会写 freeRendered/paidRendered 与 job 状态，拆成多条语句会因读到的
+      // 是事务前旧值而少退/多退（历史缺陷），也会与并发生成互相覆盖。
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${planned.projectId}::text))`;
+        await tx.renderJob.update({
+          where: { id: planned.jobId },
+          data: { status: 'FAILED', error: msg.slice(0, 500) },
         });
-        if (jobs === 0) {
-          await this.prisma.renderSnapshot.deleteMany({ where: { projectId: planned.projectId } });
-          await this.prisma.batchRenderProject.update({
-            where: { id: planned.projectId },
-            data: { state: 'DRAFT', lockedAt: null, freeRendered: 0, paidRendered: 0 },
+        const p = await tx.batchRenderProject.findUnique({ where: { id: planned.projectId } });
+        if (!p) return;
+        await tx.batchRenderProject.update({
+          where: { id: planned.projectId },
+          data: {
+            freeRendered:
+              planned.mode === 'FREE_SAMPLE' ? Math.max(0, p.freeRendered - refund) : p.freeRendered,
+            paidRendered:
+              planned.mode === 'PAID' ? Math.max(0, p.paidRendered - refund) : p.paidRendered,
+          },
+        });
+        // 首渲失败 → 快照与锁定一并撤销，项目回 DRAFT（可重新来过）
+        //
+        // B2（锁定不可被回滚击穿）：已购人次 / 已发生付费渲染 / 已有快照的项目，
+        // 其锁定与快照具**不可变语义** —— 一次渲染失败绝不能把已购名单洗回 DRAFT，
+        // 否则用户可用「失败重试」绕过名单锁定（FR-2）并让已购额度对应的名单蒸发。
+        // 仅「从未付费渲染、无快照、纯免费」的项目保留原 DRAFT 重置行为。
+        // 判据沿用**回退前**的 p（与既有语义完全一致）。
+        const hasPaidValue = p.purchasedHeadcount > 0 || p.paidRendered > 0;
+        const snap = await tx.renderSnapshot.findUnique({
+          where: { projectId: planned.projectId },
+          select: { projectId: true },
+        });
+        const lockProtected = hasPaidValue || !!snap;
+        if (!lockProtected) {
+          const jobs = await tx.renderJob.count({
+            where: { projectId: planned.projectId, status: 'SUCCESS' },
           });
+          if (jobs === 0) {
+            await tx.renderSnapshot.deleteMany({ where: { projectId: planned.projectId } });
+            await tx.batchRenderProject.update({
+              where: { id: planned.projectId },
+              data: { state: 'DRAFT', lockedAt: null, freeRendered: 0, paidRendered: 0 },
+            });
+          }
         }
-      }
+      });
     } catch {
       /* 回滚失败不覆盖原始错误 */
     }
@@ -1237,6 +1358,7 @@ export class InvitationService implements OnModuleInit {
    */
   async projectResults(scope: OwnerScope, projectId: string) {
     const p = await this.mustGetProject(scope, projectId);
+    const renderCountsMap = (p.renderCounts as unknown as Record<string, number>) ?? {};
     const snap = await this.prisma.renderSnapshot.findUnique({ where: { projectId: p.id } });
     const snapIds = ((snap?.recordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
     // B3 多名单累加：锁定 ids（在前）∪ 勾选子集新增 ids（追加），与 batchGenerate 同口径，
@@ -1250,7 +1372,7 @@ export class InvitationService implements OnModuleInit {
       where: { projectId: p.id },
       orderBy: { createdAt: 'asc' },
     });
-    const byId = new Map<string, { recordId: string; name: string | null; status: string; url: string | null; error: string | null }>();
+    const byId = new Map<string, { recordId: string; name: string | null; status: string; url: string | null; error: string | null; jobCreatedAt: Date }>();
     for (const job of jobs) {
       const list = ((job.resultUrls as unknown as { recordId: string; name: string; storageKey?: string; status?: string; error?: string }[]) ?? []);
       for (const it of list) {
@@ -1260,26 +1382,34 @@ export class InvitationService implements OnModuleInit {
           status: it.status ?? 'ok',
           url: it.status === 'failed' ? null : `/api/invitations/jobs/${job.id}/files/${it.recordId}`,
           error: it.error ?? null,
+          jobCreatedAt: job.createdAt,
         });
       }
     }
 
-    // 快照未覆盖（后续追加的跨名单宾客）的姓名回源实时名单，避免任务表出现无名行
-    const needName = recordIds.filter((id) => {
-      const hit = byId.get(id);
-      return !hit?.name && !renderedData[id]?.guest_name;
+    // 每条记录重渲染次数（item3：从持久字段读取，不随历史清理归零）
+
+    // 一次性拉取所有人员原始 data：既用于快照未覆盖时的姓名回源，
+    // 也供前端编辑弹窗回填（data）与字段展示（fields）。
+    const recs = await this.prisma.guestRecord.findMany({
+      where: { id: { in: recordIds }, deletedAt: null },
+      select: { id: true, data: true },
     });
+    const dataById: Record<string, any> = {};
     const nameById: Record<string, string> = {};
-    if (needName.length) {
-      const recs = await this.prisma.guestRecord.findMany({
-        where: { id: { in: needName }, deletedAt: null },
-        select: { id: true, data: true },
-      });
-      for (const r of recs) {
-        const d = (r.data ?? {}) as unknown as GuestData;
-        if (d.guest_name) nameById[r.id] = d.guest_name;
-      }
+    for (const r of recs) {
+      const d = (r.data ?? {}) as unknown as GuestData;
+      dataById[r.id] = r.data ?? {};
+      if (d.guest_name) nameById[r.id] = d.guest_name;
     }
+
+    // 字段设计：以所选名单的真实列定义为准（item5），columnDefs 非空直接用、否则从真实记录推导兜底。
+    const guestList = await this.prisma.guestList.findUnique({ where: { id: p.listId } });
+    const fieldDefs: GuestFieldDef[] = await this.resolveListColumnDefs(guestList, p.listId);
+
+    // 「修改上限 = 总记录数 × 10%」闸门依据（editGuestRecordForProject 复用同口径）。
+    const parsedEditedIds = this.parseEditedRecordIds(p.editedRecordIds);
+    const editLimit = Math.ceil(recordIds.length * 0.1);
 
     const order = new Map(recordIds.map((id, i) => [id, i]));
     // B5：剩余额度槽位（与 projectView.remaining 同口径），按行序依次分配：
@@ -1304,10 +1434,80 @@ export class InvitationService implements OnModuleInit {
         url: hit?.url ?? null,
         error: hit?.error ?? null,
         paywalled,
+        rerenders: renderCountsMap[id] ?? 0,
+        taskName: this.formatTaskTs(byId.get(id)?.jobCreatedAt ?? p.createdAt),
+        fields: fieldDefs.map((def) => ({
+          key: def.key,
+          label: def.label,
+          value: (dataById[id]?.[def.key] ?? '').toString(),
+        })),
+        data: (dataById[id] ?? {}) as Record<string, unknown>,
       };
     });
     rows.sort((a, b) => (order.get(a.recordId) ?? 0) - (order.get(b.recordId) ?? 0));
-    return { projectId: p.id, total: recordIds.length, results: rows };
+    return {
+      projectId: p.id,
+      total: recordIds.length,
+      rerenderLimit: RERENDER_LIMIT,
+      purchasedRerender: p.purchasedRerender,
+      remaining: this.projectView(p).remaining,
+      totalRenderable: FREE_SAMPLE_CAP + p.purchasedHeadcount,
+      editedRecordIds: parsedEditedIds,
+      editLimit,
+      results: rows,
+    };
+  }
+
+  /**
+   * 单独编辑某宾客记录（历史任务编辑弹窗的落库点）。
+   * 闸门：「修改上限 = 总记录数 × 10%」——已编辑集合长度达到上限且本次记录未编辑过则拒绝。
+   * 受作用域隔离（mustGetProject 越权 404）与记录归属（须属本项目 recordIds）约束。
+   */
+  async editGuestRecordForProject(
+    scope: OwnerScope,
+    projectId: string,
+    recordId: string,
+    incoming: Record<string, unknown>,
+  ) {
+    const p = await this.mustGetProject(scope, projectId);
+    // 复用 projectResults 同口径：锁定快照 ids ∪ 勾选子集 ids
+    const snap = await this.prisma.renderSnapshot.findUnique({ where: { projectId: p.id } });
+    const snapIds = ((snap?.recordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
+    const sel = await this.prisma.guestListSelection.findUnique({ where: { projectId: p.id } });
+    const selIds = ((sel?.selectedRecordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
+    const recordIds = this.mergeLockedRecordIds(snapIds, selIds);
+
+    if (!recordIds.includes(recordId)) throw new NotFoundException('宾客记录不属于该项目');
+
+    const editedIds = this.parseEditedRecordIds(p.editedRecordIds);
+    const limit = Math.ceil(recordIds.length * 0.1);
+    // 永久锁住：已修改过的记录不允许再次修改
+    if (editedIds.includes(recordId)) {
+      throw new BadRequestException('该记录已修改，已锁定，不可再次修改');
+    }
+    // 修改上限 = 总记录数 × 10%（不允许大批量修改）
+    if (editedIds.length >= limit) {
+      throw new BadRequestException(`修改次数已达上限（${limit} 条，占总记录数 10%），不可再修改`);
+    }
+
+    const existing = await this.prisma.guestRecord.findFirst({ where: { id: recordId, deletedAt: null } });
+    if (!existing) throw new NotFoundException('宾客记录不存在');
+
+    const base = (existing.data ?? {}) as Record<string, unknown>;
+    const merged = { ...base, ...(incoming ?? {}) } as Record<string, unknown>;
+    await this.prisma.guestRecord.update({
+      where: { id: recordId },
+      data: { data: merged as never },
+    });
+
+    if (!editedIds.includes(recordId)) {
+      editedIds.push(recordId);
+      await this.prisma.batchRenderProject.update({
+        where: { id: p.id },
+        data: { editedRecordIds: editedIds as never },
+      });
+    }
+    return { ok: true, editedCount: editedIds.length, editLimit: limit };
   }
 
   /**
@@ -1361,16 +1561,54 @@ export class InvitationService implements OnModuleInit {
       removed += list.length - kept.length;
       await this.prisma.renderJob.update({
         where: { id: job.id },
-        data: { resultUrls: kept as never, progress: kept.length },
+        // 全部条目被清除 → 该 job 不再计入「已渲」集合，置 CLEARED，
+        // 使对应记录恢复为可重新生成状态（修复「删除历史后批量生成报已无待渲染人员」）；
+        // 仅部分条目被清除 → 保留 SUCCESS/PARTIAL，其余已渲记录仍有效。
+        data: kept.length === 0
+          ? { resultUrls: kept as never, progress: 0, status: 'CLEARED' }
+          : { resultUrls: kept as never, progress: kept.length },
       });
     }
     return { removed, projectId };
+  }
+
+  /**
+   * 计算每条记录的「重渲染次数」（RERENDER 上限闸门依据）。
+   * 口径：按 createdAt 顺序扫描项目下全部 SUCCESS/PARTIAL job，对 `mode === 'RERENDER'`
+   * 且成功(ok)的 recordId，若其在更早的 job 中已成功出图过，则记为一次重渲染。
+   * 首渲（无论 FREE_SAMPLE/PAID，或免费用户续渲未出图的 RERENDER）不计入；
+   * 被 `deleteProjectResults` 置为 CLEARED 的 job 不在此范围，故「清理历史」会自然清零重渲计数。
+   */
+  private async computeRerenderCounts(projectId: string): Promise<Record<string, number>> {
+    const jobs = await this.prisma.renderJob.findMany({
+      where: { projectId, status: { in: ['SUCCESS', 'PARTIAL'] } },
+      orderBy: { createdAt: 'asc' },
+      select: { mode: true, resultUrls: true },
+    });
+    const previouslyRendered = new Set<string>();
+    const counts: Record<string, number> = {};
+    for (const job of jobs) {
+      const items = ((job.resultUrls as unknown as { recordId?: string; status?: string }[]) ?? [])
+        .filter((it) => it && it.recordId && it.status !== 'failed');
+      const mode = ((job.mode as RenderMode) ?? 'RERENDER') as RenderMode;
+      for (const it of items) {
+        const id = String(it.recordId);
+        if (mode === 'RERENDER' && previouslyRendered.has(id)) {
+          counts[id] = (counts[id] ?? 0) + 1;
+        }
+        previouslyRendered.add(id);
+      }
+    }
+    return counts;
   }
 
   async listJobs(scope: OwnerScope, projectId?: string) {
     const where: Record<string, unknown> = projectId
       ? { projectId }
       : { projectId: { in: (await this.prisma.batchRenderProject.findMany({ where: this.projectWhere(scope), select: { id: true } })).map((p) => p.id) } };
+    // 排除「已清理」(CLEARED) 的 job：它们代表被删除的生成历史，无结果可展示，
+    // 不应再出现在任务列表中（避免用户看到已清空的旧批次）。
+    where.status = { not: 'CLEARED' };
     const rows = await this.prisma.renderJob.findMany({ where, orderBy: { createdAt: 'desc' }, take: 50 });
     return rows.map((j) => ({
       id: j.id,
@@ -1390,16 +1628,23 @@ export class InvitationService implements OnModuleInit {
    * 写入已购人次 `N`（支付成功后由订单回调调用）。
    * 额度挂在 **项目 / clientId 维度**（D2），与 SP 自身会员权益解耦。
    */
-  async purchase(scope: OwnerScope, projectId: string, headcount: number) {
+  async purchase(scope: OwnerScope, projectId: string, headcount: number, kind: 'headcount' | 'rerender' = 'headcount') {
     const p = await this.mustGetProject(scope, projectId);
     const n = Math.floor(headcount);
-    if (!Number.isFinite(n) || n <= 0) throw err400('INVALID_HEADCOUNT', '购买人次必须为正整数');
-    if (n > 100000) throw err400('INVALID_HEADCOUNT', '单次购买人次过大');
+    if (!Number.isFinite(n) || n <= 0) throw err400('INVALID_HEADCOUNT', '购买数量必须为正整数');
+    if (n > 100000) throw err400('INVALID_HEADCOUNT', '单次购买数量过大');
 
     const updated = await this.prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${p.id}::text))`;
       const fresh = await tx.batchRenderProject.findUnique({ where: { id: p.id } });
       if (!fresh) throw err404();
+      if (kind === 'rerender') {
+        // 购买额外重渲染额度（免费 5 次之外）
+        return tx.batchRenderProject.update({
+          where: { id: p.id },
+          data: { purchasedRerender: fresh.purchasedRerender + n, state: 'PAID' },
+        });
+      }
       // 新上限不得低于已渲染人数（B12：只累加，不回退）
       const next = fresh.purchasedHeadcount + n;
       return tx.batchRenderProject.update({

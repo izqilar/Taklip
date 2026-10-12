@@ -51,7 +51,9 @@ export class InvitationController {
     // 复用名单模块的归属解析（单一真值），避免两套角色判定分叉。
     // ADMIN 监督窗口把 userId 改写为被视察对象，使其 SELF 作用域等价该用户登录。
     const effectiveUser = subject && req.user.role === 'ADMIN' ? { ...req.user, id: subject } : req.user;
-    return this.svc.resolveScope(effectiveUser, ownerType, clientId);
+    // ★ 必须透传 subject 给 resolveScope：guest-list 的 ADMIN+subject+ORG/CLIENT 分支依赖该参数
+    //   判定作用域，缺失则 ADMIN 监督窗口对组织/客户域仍抛 FORBIDDEN_OWNER_TYPE 400。
+    return this.svc.resolveScope(effectiveUser, ownerType, clientId, subject);
   }
 
   /* ────────── 项目 ────────── */
@@ -254,6 +256,23 @@ export class InvitationController {
     );
   }
 
+  /** 单独编辑某宾客记录（受「修改上限=总记录数×10%」闸门约束） */
+  @Post('projects/:id/records/:recordId/edit')
+  @Roles('USER', 'SERVICE_PROVIDER', 'ADMIN')
+  editGuestRecord(
+    @Req() req: AuthedRequest,
+    @Param('id') id: string,
+    @Param('recordId') recordId: string,
+    @Body() body: { data?: Record<string, unknown>; ownerType?: string; clientId?: string; subject?: string },
+  ) {
+    return this.svc.editGuestRecordForProject(
+      this.scope(req, body.ownerType, body.clientId, body.subject),
+      id,
+      recordId,
+      body.data ?? {},
+    );
+  }
+
   /** 候选筛选辅助（按单位 / 桌号 / 性别） */
   @Get('projects/:id/selections/candidates')
   @Roles('USER', 'SERVICE_PROVIDER', 'ADMIN')
@@ -373,13 +392,14 @@ export class InvitationController {
   @Roles('USER', 'SERVICE_PROVIDER', 'ADMIN')
   purchase(
     @Req() req: AuthedRequest,
-    @Body() body: { projectId?: string; headcount?: number; ownerType?: string; clientId?: string; subject?: string },
+    @Body() body: { projectId?: string; headcount?: number; kind?: 'headcount' | 'rerender'; ownerType?: string; clientId?: string; subject?: string },
   ) {
     if (!body?.projectId) throw new BadRequestException({ code: 'INVALID_PARAMS', message: 'projectId 必填' });
     return this.svc.purchase(
       this.scope(req, body.ownerType, body.clientId, body.subject),
       body.projectId,
       Number(body.headcount) || 0,
+      body.kind,
     );
   }
 }
