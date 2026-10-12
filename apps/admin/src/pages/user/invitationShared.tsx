@@ -261,7 +261,10 @@ export function useSpScope() {
       if (clientId) params.set('clientId', clientId);
       if (subject) params.set('subject', subject);
       const qs = params.toString();
-      return qs ? `${path}?${qs}` : path;
+      // ★ 若 path 已含 '?'（如 '/guest-lists/:id/records?page=1&size=200'、'/invitations/jobs?projectId='），
+      //   必须用 '&' 接续，否则双 '?' 会把 ownerType/clientId/subject 整体吞进上一个参数值里（如 size=200?ownerType=ORG），
+      //   导致 SP 视角与作用域监督窗口的名单记录拉取 / 续跑失败项静默失效。对齐 useSubjectScope.q 的既有合并口径。
+      return qs ? `${path}${path.includes('?') ? '&' : '?'}${qs}` : path;
     },
     [subject],
   );
