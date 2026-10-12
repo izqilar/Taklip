@@ -85,6 +85,16 @@ export interface BatchProjectView {
   purchasedRerender?: number;
   remaining?: number;
   locked?: boolean;
+  /** 所属宾客名单 id（「配对记录」选中其他项目时，按它拉逐人预览的记录源） */
+  listId?: string;
+  /** 模板名（GET /invitations/projects 列表项，「配对记录」行卡展示） */
+  templateTitle?: string;
+  /** 名单名（同上） */
+  listName?: string;
+  /** 配对数（同上） */
+  pairCount?: number;
+  /** 任务编号（cmv，同上） */
+  projectCode?: string;
 }
 
 export interface GuestSelectionView {
@@ -121,10 +131,13 @@ export function absAssetUrl(raw?: string | null): string {
 export class ApiError extends Error {
   status: number;
   code?: string;
-  constructor(message: string, status = 0, code?: string) {
+  /** 非 2xx 响应体原文（如 402 QUOTA_EXCEEDED 的 { remaining }），供上层重算缺购缺口 */
+  body?: unknown;
+  constructor(message: string, status = 0, code?: string, body?: unknown) {
     super(message);
     this.status = status;
     this.code = code;
+    this.body = body;
   }
 }
 
@@ -135,7 +148,7 @@ async function handle(res: Response): Promise<void> {
   }
   if (!res.ok) {
     const d = await res.json().catch(() => ({}));
-    throw new ApiError(d?.message || `HTTP ${res.status}`, res.status, d?.code);
+    throw new ApiError(d?.message || `HTTP ${res.status}`, res.status, d?.code, d);
   }
 }
 

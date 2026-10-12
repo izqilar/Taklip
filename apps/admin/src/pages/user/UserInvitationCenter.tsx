@@ -9,6 +9,7 @@ import {
   useSubjectScope,
   useSpScope,
   editInvitationRecord,
+  ApiError,
   type PerResult,
   type ProjectResults,
   type BatchProjectView,
@@ -30,17 +31,24 @@ import { UserInvitationTemplatePicker, type PickedTemplate } from './UserInvitat
 import { UserPersonPickerDialog, type PickedPersons } from './UserPersonPickerDialog';
 
 /**
- * 运营端（用户视角）· 请柬批量生成（§18 二次优化）
+ * 运营端（用户视角）· 请柬批量生成（§18 二次优化 + 配对记录改造）
  *
  * 唯一基准 = web 端 `apps/web/src/user/InvitationJobs.tsx`，逐模块对齐（布局 / 字段 / 按钮 / 列表 / 交互）：
- *   1. 选择区：「请柬模板选择」→ 模板预览弹窗；「宾客名单选择」→ 宾客选择弹窗；
- *      「批量生成」→ setGuestSelection + POST /invitations/batch-generate（首渲 FREE_SAMPLE / 续渲 PAID）；
- *   2. 任务进度区：按**人员逐条**展示 任务队列 / 宾客信息 / 状态 / 进度 / 操作(预览 · 生成) / 次数；
- *   3. 工具条：全选 / 删除选择 / 打包下载（仅「当前任务」页显示）+ 每行复选框（仅超额锁定的 paywalled 行不可勾）；
- *      任务队列列头新增全选 checkbox；任务队列单元格可点击打开编辑弹窗；双选项卡（当前任务 / 历史任务）。
+ *   1. 分步向导区：① 请柬模板选择 → ② 宾客名单选择 → ③ 字段配对（严格顺序，禁止跳步）；
+ *   2. 配对记录区：GET /invitations/projects（**必须走 q()**，服务商/监督视角才带得上作用域）
+ *      列出本项目域全部配对，radio 单选驱动下方任务队列；行卡 = 模板名 / 名单名 / 配对 N 条 /
+ *      任务编号 / 状态徽章（DRAFT 草稿 / LOCKED 已锁定 / PAID 已付费）；
+ *   3. 任务队列区头：实时配额标签 + 购买数量 + 预览 + 批量生成（项目级：先刷新配额再判缺口）；
+ *      表体按**人员逐条**展示 任务编号 / 宾客信息 / 状态 / 操作(预览 · 生成) / 次数；
+ *   4. 工具条：全选 / 删除选择 / 打包下载 + 每行复选框（仅超额锁定的 paywalled 行不可勾）；
+ *      任务编号单元格可点击打开编辑弹窗。
  *
- * 轮询完成语义（★防回归）：**不能**仅凭逐人 status 停止——免费赠样仅渲前 3 人、其余恒 pending；
+ * 轮询完成语义（★防回归）：**不能**仅凭逐人 status 停止（未渲染行恒 pending），
  * 必须以 **job 状态** SUCCESS/PARTIAL/FAILED 为终态信号。
+ *
+ * 配额新鲜度（★防回归）：loadResults 末尾必带 refreshQuota —— 修「剩余:13 却 402」的
+ * 轮询期配额陈旧；批量生成闸门先 await refreshQuota 拿新配额再判 need；
+ * 402/QUOTA_EXCEEDED 按错误体 remaining 重算缺口并引导购买。
  *
  * 作用域：用户视角 = ADMIN 监督窗口，`subject` 透传（服务端 subjectId 口径）。
  */
@@ -158,8 +166,12 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
   const [buyMsg, setBuyMsg] = useState('');
   const [buyError, setBuyError] = useState('');
 
+  // 配对记录：项目列表 + 当前选中项目（radio 单选，驱动下方任务队列与项目级生成操作）
+  const [projects, setProjects] = useState<BatchProjectView[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState('');
+
   const pollRef = useRef<number | null>(null);
-  const projectId = picked?.projectId ?? '';
+  const projectId = selectedProjectId || picked?.projectId || '';
 
   const stopPoll = useCallback(() => {
     if (pollRef.current !== null) {
@@ -167,6 +179,35 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
       pollRef.current = null;
     }
   }, []);
+
+  /**
+   * 拉取并同步项目配额（可渲染总数 / 剩余），供「购买数量」右侧标签实时显示。
+   * 返回 fresh view：批量生成闸门可拿最新 remaining 判缺口，避免轮询期间配额陈旧。
+   */
+  const refreshQuota = useCallback(
+    async (pid: string): Promise<BatchProjectView | null> => {
+      try {
+        const v = await apiGet<BatchProjectView>(q(`/invitations/projects/${pid}`));
+        setQuota({
+          id: v.id,
+          state: v.state,
+          freeSampleCap: v.freeSampleCap,
+          purchasedHeadcount: v.purchasedHeadcount,
+          totalRenderable: v.totalRenderable,
+          alreadyRendered: v.alreadyRendered,
+          purchasedRerender: v.purchasedRerender,
+          remaining: v.remaining,
+          locked: v.locked,
+        });
+        setAvailableCounts(v.remaining ?? 0);
+        return v;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+        return null;
+      }
+    },
+    [q],
+  );
 
   const loadResults = useCallback(
     async (pid: string) => {
@@ -182,33 +223,21 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
       } finally {
         setLoadingResults(false);
       }
+      // 结果变动（生成 / 删除 / 轮询）同步刷新配额，保证标签随库存变动实时更新
+      void refreshQuota(pid);
     },
-    [q],
+    [q, refreshQuota],
   );
 
-  /** 拉取并同步项目配额（可渲染总数 / 剩余），供「购买数量」右侧标签实时显示 */
-  const refreshQuota = useCallback(
-    async (pid: string) => {
-      try {
-        const v = await apiGet<BatchProjectView>(q(`/invitations/projects/${pid}`));
-        setQuota({
-          id: v.id,
-          state: v.state,
-          freeSampleCap: v.freeSampleCap,
-          purchasedHeadcount: v.purchasedHeadcount,
-          totalRenderable: v.totalRenderable,
-          alreadyRendered: v.alreadyRendered,
-          purchasedRerender: v.purchasedRerender,
-          remaining: v.remaining,
-          locked: v.locked,
-        });
-        setAvailableCounts(v.remaining ?? 0);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
-      }
-    },
-    [q],
-  );
+  /** 拉取「配对记录」项目列表（必须走 q()：服务商 / 监督视角才带得上作用域） */
+  const loadProjects = useCallback(async () => {
+    try {
+      const list = await apiGet<BatchProjectView[]>(q('/invitations/projects'));
+      setProjects(Array.isArray(list) ? list : []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }, [q]);
 
   // 编辑弹窗字段/初始值异步加载完成后回填 Form（与 destroyOnClose 配合，避免首帧 initialValues 滞后）
   useEffect(() => {
@@ -247,11 +276,18 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
     if (projectId) {
       void loadResults(projectId);
       void refreshQuota(projectId);
+      // 切换项目（含「配对记录」radio）→ 清空上一项目的勾选，防跨项目脏勾选
+      setChecked(new Set());
     } else {
       setResults([]);
       setChecked(new Set());
     }
   }, [projectId, loadResults, refreshQuota]);
+
+  // 挂载即拉「配对记录」（服务商 / 监督视角经 q() 拼 subject + ownerType + clientId）
+  useEffect(() => {
+    void loadProjects();
+  }, [loadProjects]);
 
   useEffect(() => () => stopPoll(), [stopPoll]);
 
@@ -259,17 +295,46 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
     setTemplate(p);
     // 模板变更 → 旧项目/勾选/配对失效，需重新走向导
     setPicked(null);
+    setSelectedProjectId('');
     setResults([]);
     setChecked(new Set());
     setFieldPaired(false);
     setPickerOpen(false);
+    // 重置选中并刷新「配对记录」列表
+    void loadProjects();
   };
 
   const onPickPersons = (p: PickedPersons) => {
     setPicked(p);
+    // 选中该项目 → 同步「配对记录」单选并刷新列表（新建项目即时出现）
+    setSelectedProjectId(p.projectId);
     // 名单变更 → 字段配对需重做
     setFieldPaired(false);
     setPersonOpen(false);
+    void loadProjects();
+  };
+
+  /** 勾选子集的渲染次数需求（逐行真值：未渲染 / 失败 / 重渲满上限 → 需 1 人次） */
+  const needForChecked = useCallback(
+    () =>
+      [...checked].reduce((n, id) => {
+        const r = results.find((x) => x.recordId === id);
+        if (!r || r.status !== 'ok') return n + 1;
+        if ((r.rerenders ?? 0) >= RERENDER_LIMIT) return n + 1;
+        return n;
+      }, 0),
+    [checked, results],
+  );
+
+  /**
+   * 402 / QUOTA_EXCEEDED 缺量识别：读错误体 remaining 重算还需购买人次。
+   * 返回 null 表示非配额错误（调用方走原错误提示）。
+   */
+  const quotaShortfall = (e: unknown, need: number): number | null => {
+    if (!(e instanceof ApiError) || (e.status !== 402 && e.code !== 'QUOTA_EXCEEDED')) return null;
+    const body = e.body as { remaining?: number } | null | undefined;
+    const remaining = typeof body?.remaining === 'number' ? body.remaining : 0;
+    return Math.max(1, need - remaining);
   };
 
   const startGenerate = useCallback(
@@ -309,6 +374,13 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
         await loadResults(payload.projectId);
       } catch (e) {
         setGenerating(false);
+        // 402/QUOTA_EXCEEDED：按错误体 remaining 重算缺口，引导购买（不再裸抛 message）
+        const shortfall = quotaShortfall(e, needForChecked());
+        if (shortfall != null) {
+          setError(`渲染次数不足，还需 ${shortfall} 人次，请先购买`);
+          void openBuy(shortfall);
+          return;
+        }
         setError(e instanceof Error ? e.message : String(e));
       }
     },
@@ -322,8 +394,8 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
    * 避免「remaining>0 但不足」时少算；不传则沿用原 paywalled 推算口径（其余调用方行为不变）。
    */
   const openBuy = (defaultNeed?: number) => {
-    if (!picked) {
-      setError('请先选择宾客名单');
+    if (!projectId) {
+      setError('请先选择宾客名单，或在「配对记录」中选择一条记录');
       return;
     }
     void refreshQuota(projectId).then(() => {
@@ -337,7 +409,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
 
   /** 确认购买：POST /api/invitations/purchase（subject 走 body），成功后用返回视图刷新配额并刷新行 */
   const confirmBuy = async () => {
-    if (!picked) return;
+    if (!projectId) return;
     const n = Math.floor(Number(buyHeadcount));
     if (!Number.isFinite(n) || n <= 0) {
       setBuyError('请输入大于 0 的正整数购买人次');
@@ -346,7 +418,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
     setBuyError('');
     try {
       const v = await apiPost<BatchProjectView>('/invitations/purchase', {
-        projectId: picked.projectId,
+        projectId,
         headcount: n,
         ...body(),
       });
@@ -391,8 +463,39 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
     }
   };
 
+  /**
+   * 第④步「批量生成」闸门（对齐 web 端 handleGenerate）：
+   * 先 await refreshQuota 拿**新配额**再判 need —— 修「剩余:13 却 402」的轮询期配额陈旧。
+   */
+  const handleGenerate = async () => {
+    if (!template || !picked || !fieldPaired) {
+      setError('请先完成前一步操作');
+      return;
+    }
+    if (generating) return; // 防重复提交（按钮已不再置灰，此处幂等兜底）
+    if (checked.size === 0) {
+      setError('你没有选择任何记录');
+      return;
+    }
+    // ── 渲染次数判断（单一收费模式，无免费赠样）──
+    // 逐行真值 = results（recordId 对齐）：
+    //   未渲染 / 失败 → 需 1 人次；已渲但重渲满 5 次 → 需 1 人次重置；已渲且重渲未满 → 不消耗。
+    const need = needForChecked();
+    const fresh = await refreshQuota(projectId);
+    const remaining = fresh?.remaining ?? quota?.remaining ?? 0;
+    if (remaining < need) {
+      // 次数不足 → 引导购买（不开工、不弹确认）
+      const shortfall = Math.max(1, need - remaining);
+      setError(`渲染次数不足，还需 ${shortfall} 人次，请先购买`);
+      void openBuy(shortfall);
+      return;
+    }
+    // 次数足够 → 先弹「永久绑定」确认，用户确认后才真正开工
+    setConfirmOpen(true);
+  };
+
   const onRegenerate = (r: PerResult) => {
-    if (!picked) return;
+    if (!projectId) return;
     const used = r.rerenders ?? 0;
     if (used >= rerenderLimit) {
       if (availableCounts > 0) {
@@ -402,7 +505,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
           okText: t('guest.batch.rerenderContinue', { defaultValue: '继续' }),
           cancelText: t('guest.batch.rerenderCancel', { defaultValue: '取消' }),
           onOk: () => {
-            if (picked) void startGenerate({ projectId: picked.projectId, mode: 'RERENDER', targetRecordIds: [r.recordId] });
+            void startGenerate({ projectId, mode: 'RERENDER', targetRecordIds: [r.recordId] });
           },
         });
       } else {
@@ -413,7 +516,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
       }
       return;
     }
-    void startGenerate({ projectId: picked.projectId, mode: 'RERENDER', targetRecordIds: [r.recordId] });
+    void startGenerate({ projectId, mode: 'RERENDER', targetRecordIds: [r.recordId] });
   };
 
   /**
@@ -421,11 +524,11 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
    * 对齐 web 端 InvitationJobs.onResumeFailed —— 复用本页已有 loadResults / runningJobId / setGenerating 轮询逻辑。
    */
   const onResumeFailed = async () => {
-    if (!picked) return;
+    if (!projectId) return;
     setResuming(true);
     try {
       const jobs = await apiGet<Array<{ id: string; status: string; createdAt?: string }>>(
-        q(`/invitations/jobs?projectId=${picked.projectId}`),
+        q(`/invitations/jobs?projectId=${projectId}`),
       );
       const cand = [...(jobs ?? [])]
         .filter((j) => j.status === 'PARTIAL' || j.status === 'FAILED')
@@ -437,9 +540,16 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
       const res = await apiPost<{ jobId: string }>(`/invitations/jobs/${cand.id}/resume`, body());
       setRunningJobId(res.jobId);
       setGenerating(true);
-      await loadResults(picked.projectId); // 复用已有的结果加载/轮询
+      await loadResults(projectId); // 复用已有的结果加载/轮询
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      // 402/QUOTA_EXCEEDED：续跑无额度 → 按失败行数重算缺口，引导购买
+      const shortfall = quotaShortfall(e, results.filter((r) => r.status === 'failed').length);
+      if (shortfall != null) {
+        setError(`渲染次数不足，还需 ${shortfall} 人次，请先购买`);
+        void openBuy(shortfall);
+      } else {
+        setError(e instanceof Error ? e.message : String(e));
+      }
     } finally {
       setResuming(false);
     }
@@ -467,24 +577,29 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
    * 打开「逐人预览」弹窗：点击后异步准备数据（loading 态）——
    *  1. previewSchema = 项目 elements 快照（服务端已注入 elementBindings，直接可个性化）；
    *  2. mapping = 生成前体检返回的 variableMapping（元素 binding.key → 名单字段）；
-   *  3. 名单记录按「勾选子集（无勾选则本次名单全量）」过滤，映射为逐人预览页。
+   *  3. 记录源双路：向导所选项目（picked.projectId===projectId）按「勾选子集（无勾选则本次
+   *     名单全量）」过滤；「配对记录」里选中的其他项目 → 该项目 listId 全量记录 × checked 过滤。
    * 渲染侧每页只对当前索引 personalizeSchema（勿一次性全量），animated=false 避免翻页重播入场动画。
    * 取数全部经 q() 拼作用域（subject/ownerType/clientId），与既有端点同口径。
    */
   const openPreviewDialog = async () => {
-    if (!picked) return;
+    if (!projectId) return;
     setPreviewOpen(true);
     setPreviewLoading(true);
     setPreviewPage(0);
     try {
+      const pickedForProject = picked && picked.projectId === projectId ? picked : null;
+      const listId = pickedForProject?.listId ?? projects.find((p) => p.id === projectId)?.listId;
       const [el, hz, rec] = await Promise.all([
-        apiGet<{ previewSchema?: unknown }>(q(`/invitations/projects/${picked.projectId}/elements`)),
-        apiGet<InvitationHealth>(q(`/invitations/projects/${picked.projectId}/health`)),
-        apiGet<{ records?: GuestRow[] }>(q(`/guest-lists/${picked.listId}/records?page=1&size=500`)),
+        apiGet<{ previewSchema?: unknown }>(q(`/invitations/projects/${projectId}/elements`)),
+        apiGet<InvitationHealth>(q(`/invitations/projects/${projectId}/health`)),
+        listId
+          ? apiGet<{ records?: GuestRow[] }>(q(`/guest-lists/${listId}/records?page=1&size=500`))
+          : Promise.resolve({ records: [] as GuestRow[] }),
       ]);
       setPreviewSchema(el.previewSchema ?? null);
       setPreviewMapping(hz.mapping ?? {});
-      const set = checked.size ? checked : new Set(picked.selectedRecordIds);
+      const set = checked.size ? checked : new Set(pickedForProject?.selectedRecordIds ?? []);
       const pages = (rec.records ?? [])
         .filter((r) => set.has(r.id))
         .map((r) => ({ recordId: r.id, name: r.data?.guest_name ?? '', data: r.data }));
@@ -649,7 +764,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
         </div>
       )}
 
-      {/* 分步向导：① 选模板 → ② 选名单 → ③ 字段配对 → ④ 批量生成（严格顺序，禁止跳步） */}
+      {/* 分步向导：① 选模板 → ② 选名单 → ③ 字段配对（严格顺序，禁止跳步）；预览 / 批量生成等操作在下方「任务队列」区头 */}
       <div
         style={{
           marginBottom: 16,
@@ -720,98 +835,75 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
           ③ 字段配对{fieldPaired ? '（已配对）' : ''}
         </button>
 
-        {/* 生成前逐人预览：模板 schema × 勾选名单记录实时个性化（对齐 web 端「预览」按钮） */}
-        <button
-          onClick={() => {
-            if (!template || !picked || !fieldPaired) {
-              setError('请先完成前一步操作');
-              return;
-            }
-            void openPreviewDialog();
-          }}
-          disabled={!template || !picked || !fieldPaired}
-          style={{
-            borderRadius: 4,
-            border: `1px solid ${C.blue}`,
-            background: '#fff',
-            color: C.blue,
-            padding: '6px 16px',
-            fontSize: 14,
-            cursor: !template || !picked || !fieldPaired ? 'not-allowed' : 'pointer',
-            opacity: !template || !picked || !fieldPaired ? 0.5 : 1,
-          }}
-        >
-          预览
-        </button>
-
-        <button
-          onClick={() => {
-            if (!template || !picked || !fieldPaired) {
-              setError('请先完成前一步操作');
-              return;
-            }
-            if (generating) return; // 防重复提交（按钮已不再置灰，此处幂等兜底）
-            if (checked.size === 0) {
-              setError('你没有选择任何记录');
-              return;
-            }
-            // ── 渲染次数判断（单一收费模式，无免费赠样）──
-            // 逐行真值 = results（recordId 对齐）：
-            //   未渲染 / 失败 → 需 1 人次；已渲但重渲满 5 次 → 需 1 人次重置；已渲且重渲未满 → 不消耗。
-            const need = [...checked].reduce((n, id) => {
-              const r = results.find((x) => x.recordId === id);
-              if (!r || r.status !== 'ok') return n + 1;
-              if ((r.rerenders ?? 0) >= RERENDER_LIMIT) return n + 1;
-              return n;
-            }, 0);
-            const remaining = quota?.remaining ?? 0;
-            if (remaining < need) {
-              // 次数不足 → 引导购买（不开工、不弹确认）
-              const shortfall = Math.max(1, need - remaining);
-              setError(`渲染次数不足，还需 ${shortfall} 人次，请先购买`);
-              void openBuy(shortfall);
-              return;
-            }
-            // 次数足够 → 先弹「永久绑定」确认，用户确认后才真正开工
-            setConfirmOpen(true);
-          }}
-          // 优化：向导完成即常亮可点，不再因「未勾选 / 生成中 / 队列状态」置灰
-          disabled={!picked || !canWrite || !fieldPaired}
-          style={{
-            borderRadius: 4,
-            border: 'none',
-            background: C.blue,
-            color: '#fff',
-            padding: '6px 20px',
-            fontSize: 14,
-            cursor: !picked || !canWrite || !fieldPaired ? 'not-allowed' : 'pointer',
-            opacity: !picked || !canWrite || !fieldPaired ? 0.5 : 1,
-          }}
-        >
-          {generating ? '生成中…' : '④ 批量生成所选'}
-        </button>
+        {/* 预览 / 批量生成 / 购买数量 / 配额标签已移至下方「任务队列」区头（项目级操作） */}
         {!canWrite && <span style={{ fontSize: 12, color: C.ink4 }}>监督态只读</span>}
-
-        <button
-          onClick={() => openBuy()}
-          disabled={!picked}
-          style={{
-            marginLeft: 'auto',
-            borderRadius: 4,
-            border: '1px solid #d1d5db',
-            background: '#fff',
-            padding: '6px 16px',
-            fontSize: 14,
-            cursor: !picked ? 'not-allowed' : 'pointer',
-            opacity: !picked ? 0.5 : 1,
-          }}
-        >
-          {t('guest.batch.buyQuantity', { defaultValue: '购买数量' })}
-        </button>
-        <span style={{ fontSize: 13, color: C.ink2, marginLeft: 12 }}>{quotaText}</span>
       </div>
 
-      {/* 任务进度区（双选项卡：当前任务 / 历史任务，§变量绑定 三） */}
+      {/* 配对记录区：本项目域全部配对（radio 单选），选中项驱动下方任务队列与项目级生成操作 */}
+      <div style={{ marginBottom: 16, borderRadius: 8, border: `1px solid ${C.line}`, background: '#fff' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: 12,
+            borderBottom: `1px solid ${C.lineSoft}`,
+            padding: '12px 16px',
+          }}
+        >
+          <span style={{ fontSize: 14, fontWeight: 500, color: '#374151' }}>配对记录</span>
+        </div>
+        {!projects.length ? (
+          <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 14, color: C.ink4 }}>
+            暂无配对记录，请先完成 ① 请柬模板选择 → ② 宾客名单选择
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, padding: 16 }}>
+            {projects.map((p) => {
+              const active = p.id === projectId;
+              const st =
+                p.state === 'PAID'
+                  ? { label: '已付费', color: C.ok }
+                  : p.state === 'LOCKED'
+                    ? { label: '已锁定', color: C.warn }
+                    : { label: '草稿', color: C.ink3 };
+              return (
+                <label
+                  key={p.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 8,
+                    width: 280,
+                    borderRadius: 8,
+                    border: `1px solid ${active ? C.blue : C.line}`,
+                    background: active ? '#eff6ff' : '#fff',
+                    padding: 12,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="pairing-project"
+                    checked={active}
+                    onChange={() => setSelectedProjectId(p.id)}
+                    style={{ marginTop: 3, width: 16, height: 16, accentColor: '#3b82f6' }}
+                  />
+                  <span style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, lineHeight: 1.5 }}>
+                    <span style={{ color: C.ink1, fontWeight: 500 }}>{p.templateTitle || '未命名模板'}</span>
+                    <span style={{ color: C.ink2 }}>{p.listName || '未命名名单'}</span>
+                    <span style={{ color: C.ink3 }}>{`配对 ${p.pairCount ?? 0} 条`}</span>
+                    <span style={{ color: C.ink3 }}>{`任务编号：${p.projectCode || '—'}`}</span>
+                    <span style={{ color: st.color }}>{st.label}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 任务队列区：区头 = 项目级操作（配额标签 / 购买数量 / 预览 / 批量生成）+ 工具条；表体按人逐条展示 */}
       <div style={{ borderRadius: 8, border: `1px solid ${C.line}`, background: '#fff' }}>
         <div
           style={{
@@ -823,7 +915,64 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
             padding: '12px 16px',
           }}
         >
-          <span style={{ fontSize: 14, fontWeight: 500, color: '#374151' }}>任务进度</span>
+          <span style={{ fontSize: 14, fontWeight: 500, color: '#374151' }}>任务队列</span>
+          {/* 项目级操作区：实时配额 + 购买数量 + 逐人预览 + 批量生成（「配对记录」选中项目后可用） */}
+          <span style={{ fontSize: 13, color: C.ink2 }}>{quotaText}</span>
+          <button
+            onClick={() => void openBuy()}
+            disabled={!projectId}
+            style={{
+              borderRadius: 4,
+              border: '1px solid #d1d5db',
+              background: '#fff',
+              padding: '6px 16px',
+              fontSize: 14,
+              cursor: !projectId ? 'not-allowed' : 'pointer',
+              opacity: !projectId ? 0.5 : 1,
+            }}
+          >
+            {t('guest.batch.buyQuantity', { defaultValue: '购买数量' })}
+          </button>
+          {/* 生成前逐人预览：模板 schema × 勾选名单记录实时个性化（对齐 web 端「预览」按钮） */}
+          <button
+            onClick={() => {
+              if (!template || !picked || !fieldPaired) {
+                setError('请先完成前一步操作');
+                return;
+              }
+              void openPreviewDialog();
+            }}
+            disabled={!template || !picked || !fieldPaired || !selectedProjectId}
+            style={{
+              borderRadius: 4,
+              border: `1px solid ${C.blue}`,
+              background: '#fff',
+              color: C.blue,
+              padding: '6px 16px',
+              fontSize: 14,
+              cursor: !template || !picked || !fieldPaired || !selectedProjectId ? 'not-allowed' : 'pointer',
+              opacity: !template || !picked || !fieldPaired || !selectedProjectId ? 0.5 : 1,
+            }}
+          >
+            预览
+          </button>
+          <button
+            onClick={() => void handleGenerate()}
+            // 优化：向导完成即常亮可点，不再因「未勾选 / 生成中 / 队列状态」置灰
+            disabled={!picked || !canWrite || !fieldPaired || !selectedProjectId}
+            style={{
+              borderRadius: 4,
+              border: 'none',
+              background: C.blue,
+              color: '#fff',
+              padding: '6px 20px',
+              fontSize: 14,
+              cursor: !picked || !canWrite || !fieldPaired || !selectedProjectId ? 'not-allowed' : 'pointer',
+              opacity: !picked || !canWrite || !fieldPaired || !selectedProjectId ? 0.5 : 1,
+            }}
+          >
+            {generating ? '生成中…' : '④ 批量生成所选'}
+          </button>
           {/* 工具栏（全选/删除选择/打包下载） */}
           {(
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
@@ -847,7 +996,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
 
         {!projectId ? (
           <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 14, color: C.ink4 }}>
-            请先依次完成 ①模板选择 → ②宾客名单选择 → ③字段配对，然后在「执行任务队列」勾选要生成的记录，再点击「④ 批量生成所选」
+            请先依次完成 ① 请柬模板选择 → ② 宾客名单选择 → ③ 字段配对，然后在「配对记录」中选择一条记录
           </div>
         ) : (
           loadingResults && !results.length ? (
@@ -866,7 +1015,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
                       style={{ width: 16, height: 16, accentColor: '#3b82f6' }}
                     />
                   </th>
-                  <th style={th}>任务队列</th>
+                  <th style={th}>任务编号</th>
                   {fieldCols.length ? (
                     fieldCols.map((f) => (
                       <th key={f.key} style={th}>
@@ -1203,7 +1352,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
           <button
             onClick={() => {
               setConfirmOpen(false);
-              if (picked) void startGenerate({ projectId: picked.projectId, targetRecordIds: [...checked] });
+              if (projectId) void startGenerate({ projectId, targetRecordIds: [...checked] });
             }}
             style={{
               borderRadius: 4,
