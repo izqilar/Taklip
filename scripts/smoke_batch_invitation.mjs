@@ -10,9 +10,9 @@
  *  3. 新建名单 + 批量写入 + 分页读取
  *  4. 非法字段被拒（空姓名 / 超长 / 手机号）
  *  5. 勾选子集（越界记录被拒）
- *  6. 首渲赠样：只渲勾选子集前 3 人 + 锁定
+ *  6. 收费-only：未购买直接渲染被拒 402，购买后按已购人次渲染
  *  7. 改 live 名单不影响输出（FR-3）
- *  8. 锁定后再渲染被阻断（B5）与购买后续渲（C3）
+ *  8. 配额用尽被阻（QUOTA_EXCEEDED）与重渲 5 次→购买次数重置规则（item3）
  *  9. 被锁定记录删除返回 IN_USE
  */
 
@@ -57,13 +57,23 @@ const api = async (path, opts = {}) => {
   return { status: res.status, json, text, buffer, headers: res.headers };
 };
 
+/** 轮询等待 job 到达终态（SUCCESS/PARTIAL/FAILED），最多 90s */
+const waitJob = async (jobId) => {
+  for (let i = 0; i < 90; i++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    const j = await api(`/api/invitations/jobs/${jobId}`);
+    if (j.json?.status === 'SUCCESS' || j.json?.status === 'FAILED' || j.json?.status === 'PARTIAL') return j.json;
+  }
+  return null;
+};
+
 const main = async () => {
   console.log('=== 批量请柬 API 冒烟 ===');
 
   // 0. 登录
   const login = await api('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ phone: PHONE, password: PASSWORD }),
+    body: JSON.stringify({ type: 'phone', account: PHONE, password: PASSWORD }),
   });
   token = login.json?.token || login.json?.accessToken || login.json?.data?.token || '';
   check('登录成功', !!token, JSON.stringify(login.json).slice(0, 160));
@@ -188,12 +198,34 @@ const main = async () => {
       JSON.stringify(emptyGen.json),
     );
 
-    // 12. 首渲赠样：只渲前 3 人（Nest POST 默认 201，故按 <300 判定受理成功）
+    // 12. 收费-only：未购买人次直接渲染 → 402 QUOTA_EXCEEDED（已移除免费赠样层）
+    const gen0 = await api('/api/invitations/batch-generate', {
+      method: 'POST',
+      body: JSON.stringify({ projectId }),
+    });
+    check(
+      '未购买渲染被拒 402 QUOTA_EXCEEDED（收费-only，无免费赠样）',
+      gen0.status === 402 && gen0.json?.code === 'QUOTA_EXCEEDED',
+      JSON.stringify(gen0.json),
+    );
+
+    // 13. 购买 1 人次（C3/C1）
+    const buy = await api('/api/invitations/purchase', {
+      method: 'POST',
+      body: JSON.stringify({ projectId, headcount: 1 }),
+    });
+    check(
+      '购买 1 人次成功（state=PAID, totalRenderable=1, remaining=1）',
+      buy.json?.state === 'PAID' && buy.json?.totalRenderable === 1 && buy.json?.remaining === 1,
+      JSON.stringify(buy.json),
+    );
+
+    // 14. 付费首渲：子集 5 人但只购 1 → 本批渲 1（Nest POST 默认 201，故按 <300 判定受理成功）
     const gen = await api('/api/invitations/batch-generate', {
       method: 'POST',
       body: JSON.stringify({ projectId }),
     });
-    check('首渲受理成功且 total=3（C2 前 3 人）', gen.status < 300 && gen.json?.total === 3, JSON.stringify(gen.json));
+    check('付费首渲受理且 total=1（受已购 1 限制）', gen.status < 300 && gen.json?.total === 1, JSON.stringify(gen.json));
 
     // 等任务完成（最多 90s）
     let job = null;
@@ -203,13 +235,17 @@ const main = async () => {
       job = j.json;
       if (job?.status === 'SUCCESS' || job?.status === 'FAILED') break;
     }
-    check('首渲任务完成（SUCCESS）', job?.status === 'SUCCESS', JSON.stringify({ status: job?.status, error: job?.error }));
+    check('付费首渲任务完成（SUCCESS）', job?.status === 'SUCCESS', JSON.stringify({ status: job?.status, error: job?.error }));
 
-    // 13. 锁定 + 只渲 3 人
+    // 15. 锁定 + 只渲 1 人 + 剩余 0
     const pv = await api(`/api/invitations/projects/${projectId}`);
-    check('首渲后 state=LOCKED 且 freeRendered=3', pv.json?.state === 'LOCKED' && pv.json?.freeRendered === 3, JSON.stringify(pv.json));
+    check(
+      '首渲后 state=PAID、paidRendered=1、remaining=0',
+      pv.json?.state === 'PAID' && pv.json?.paidRendered === 1 && pv.json?.remaining === 0,
+      JSON.stringify(pv.json),
+    );
 
-    // 14. 改 live 名单不影响输出（FR-3）：改掉第 1 个人姓名
+    // 16. 改 live 名单不影响输出（FR-3）：改掉第 1 个人姓名
     if (ids[0]) {
       await api(`/api/guest-lists/${listId}/records/${ids[0]}`, {
         method: 'PUT',
@@ -219,40 +255,11 @@ const main = async () => {
     const sel2 = await api(`/api/invitations/projects/${projectId}/selection`);
     check('锁定后 live 名单仍可改，勾选仍指向原 5 人（FR-3 输出不变）', sel2.json?.selectedRecordIds?.length === 5);
 
-    // 15. 被锁定记录删除 → IN_USE
+    // 17. 被锁定记录删除 → IN_USE
     const delLocked = await api(`/api/guest-lists/${listId}/records/${ids[0]}`, { method: 'DELETE' });
     check('删除已渲染记录 → 409 IN_USE', delLocked.status === 409 && delLocked.json?.code === 'IN_USE', JSON.stringify(delLocked.json));
 
-    // 16. 锁定未购再次渲染被阻断（B5）
-    const again = await api('/api/invitations/batch-generate', {
-      method: 'POST',
-      body: JSON.stringify({ projectId }),
-    });
-    check('锁定未购再次渲染被阻断 402（B5）', again.status === 402, JSON.stringify(again.json));
-
-    // 17. 购买 1 人次后续渲（C3/C1）：子集 5 人，已赠样渲 3，剩余 2 人但只买 1 → 本批渲 1
-    const buy = await api('/api/invitations/purchase', {
-      method: 'POST',
-      body: JSON.stringify({ projectId, headcount: 1 }),
-    });
-    check('购买 1 人次成功（state=PAID, totalRenderable=4）', buy.json?.state === 'PAID' && buy.json?.totalRenderable === 4, JSON.stringify(buy.json));
-
-    const gen2 = await api('/api/invitations/batch-generate', {
-      method: 'POST',
-      body: JSON.stringify({ projectId }),
-    });
-    check('付费续渲受理且 total=1（受已购 1 限制，C3）', gen2.status < 300 && gen2.json?.total === 1, JSON.stringify(gen2.json));
-
-    let job2 = null;
-    for (let i = 0; i < 90; i++) {
-      await new Promise((r) => setTimeout(r, 1000));
-      const j = await api(`/api/invitations/jobs/${gen2.json?.jobId}`);
-      job2 = j.json;
-      if (job2?.status === 'SUCCESS' || job2?.status === 'FAILED') break;
-    }
-    check('续渲任务完成', job2?.status === 'SUCCESS', JSON.stringify({ status: job2?.status, error: job2?.error }));
-
-    // 18. 配额用尽后再渲被拒（B10）：仍有 1 人未渲，但已购 1 已用完 → QUOTA_EXCEEDED
+    // 16. 配额用尽后再渲被拒（B10）：仍有 4 人未渲，但已购 1 已用完 → QUOTA_EXCEEDED
     const over = await api('/api/invitations/batch-generate', {
       method: 'POST',
       body: JSON.stringify({ projectId }),
@@ -263,33 +270,75 @@ const main = async () => {
       JSON.stringify(over.json),
     );
 
-    // 18b. 模板改版重渲同批人（C4）：不新增人员、不消耗配额
-    const before = await api(`/api/invitations/projects/${projectId}`);
-    const re = await api('/api/invitations/batch-generate', {
-      method: 'POST',
-      body: JSON.stringify({ projectId, mode: 'RERENDER' }),
-    });
-    check(
-      '模板改版重渲受理且人员集合=已渲染 4 人（C4 不新增）',
-      re.status < 300 && re.json?.total === 4,
-      JSON.stringify(re.json),
-    );
-    const after = await api(`/api/invitations/projects/${projectId}`);
-    check(
-      '重渲不消耗配额（alreadyRendered 不变，C4/B14）',
-      after.json?.alreadyRendered === before.json?.alreadyRendered,
-      `${before.json?.alreadyRendered} → ${after.json?.alreadyRendered}`,
-    );
+    // 17. 重渲循环规则（item3）：每条记录重渲满 5 次 → 第 6 次需消耗 1 次渲染额度并重置计数。
+    // 初始付费生成已记 renderCounts=1，故再重渲 4 次即达到单条 5 次上限（此过程不消耗额度）；
+    // 第 6 次在 remaining=0 时被拦截（提示购买次数）；购买 1 次后第 6 次受理：
+    // 消耗 1 个全局额度（paidRendered += 1）且该记录计数重置为新周期第 1 次。
+    const renderedId = (job?.results ?? []).find((r) => r.status !== 'failed')?.recordId;
+    if (renderedId) {
+      for (let i = 0; i < 4; i++) {
+        const rr = await api('/api/invitations/batch-generate', {
+          method: 'POST',
+          body: JSON.stringify({ projectId, mode: 'RERENDER', targetRecordIds: [renderedId] }),
+        });
+        const okAccept = rr.status < 300 && rr.json?.total === 1;
+        check(`第 ${i + 1} 次重渲受理（renderCounts → ${i + 2}，不消耗额度）`, okAccept, JSON.stringify(rr.json));
+        if (okAccept) {
+          const done = await waitJob(rr.json?.jobId);
+          check(`第 ${i + 1} 次重渲任务完成`, done?.status === 'SUCCESS', JSON.stringify({ status: done?.status, error: done?.error }));
+        }
+      }
+      const pvMid = await api(`/api/invitations/projects/${projectId}`);
+      check(
+        '前 4 次重渲不消耗配额（paidRendered 仍为 1，remaining 仍为 0）',
+        pvMid.json?.paidRendered === 1 && pvMid.json?.remaining === 0,
+        JSON.stringify(pvMid.json),
+      );
 
-    // 19. Zip 打包下载
+      // 第 6 次：renderCounts=5 且 remaining=0 → 拦截，提示购买次数
+      const blocked = await api('/api/invitations/batch-generate', {
+        method: 'POST',
+        body: JSON.stringify({ projectId, mode: 'RERENDER', targetRecordIds: [renderedId] }),
+      });
+      check(
+        '重渲满 5 次且无剩余额度 → NO_PENDING 拦截（提示购买次数）',
+        blocked.status < 300 && blocked.json?.status === 'NO_PENDING' && /购买次数/.test(blocked.json?.message ?? ''),
+        JSON.stringify(blocked.json),
+      );
+
+      // 购买 1 次 → 第 6 次重渲受理：消耗 1 额度、计数重置为 1
+      await api('/api/invitations/purchase', {
+        method: 'POST',
+        body: JSON.stringify({ projectId, headcount: 1 }),
+      });
+      const reset = await api('/api/invitations/batch-generate', {
+        method: 'POST',
+        body: JSON.stringify({ projectId, mode: 'RERENDER', targetRecordIds: [renderedId] }),
+      });
+      check(
+        '购买后第 6 次重渲受理（消耗 1 次额度，计数重置）',
+        reset.status < 300 && reset.json?.total === 1,
+        JSON.stringify(reset.json),
+      );
+      const pv2 = await api(`/api/invitations/projects/${projectId}`);
+      check(
+        '重置重渲消耗 1 额度（paidRendered=2, remaining=0）',
+        pv2.json?.paidRendered === 2 && pv2.json?.remaining === 0,
+        JSON.stringify(pv2.json),
+      );
+    } else {
+      console.log('  ⚠️ 首渲无成功记录，跳过重渲循环断言');
+    }
+
+    // 20. Zip 打包下载
     const zip = await api(`/api/invitations/jobs/${gen.json?.jobId}/download`);
     check('Zip 打包下载 200 且为 PK 头', zip.status === 200 && zip.buffer[0] === 0x50 && zip.buffer[1] === 0x4b);
 
-    // 20. 越权：另一用户访问该项目 → 404
+    // 21. 越权：另一用户访问该项目 → 404
     const other = await fetch(`${BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: '13900001002', password: PASSWORD }),
+      body: JSON.stringify({ type: 'phone', account: '13900001002', password: PASSWORD }),
     }).then((r) => r.json());
     const otherToken = other?.token || other?.accessToken || other?.data?.token;
     if (otherToken) {
@@ -298,14 +347,14 @@ const main = async () => {
       const cross = await api(`/api/invitations/projects/${projectId}`);
       check('跨用户访问项目 → 404（不暴露归属）', cross.status === 404, JSON.stringify(cross.json));
 
-      // 20b. §16.6：用他人作品 id 建批量项目 → 404（防越权拿他人模板批量出图）
+      // 21b. §16.6：用他人作品 id 建批量项目 → 404（防越权拿他人模板批量出图）
       const steal = await api('/api/invitations/projects', {
         method: 'POST',
         body: JSON.stringify({ templateId: workId, listId }),
       });
       check('用他人作品建批量项目 → 404（§16.6 作品归属校验）', steal.status === 404, JSON.stringify(steal.json));
 
-      // 20c. 连他人的名单 id 也读不到（名单隔离复用名单模块，越权不暴露归属）
+      // 21c. 连他人的名单 id 也读不到（名单隔离复用名单模块，越权不暴露归属）
       const stealList = await api(`/api/guest-lists/${listId}`);
       check('跨用户读取他人名单 → 404（名单隔离）', stealList.status === 404, JSON.stringify(stealList.json));
       token = saved;

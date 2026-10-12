@@ -24,18 +24,16 @@ import { zipStore } from '../common/minimal-zip';
 /**
  * 批量请柬 · 配额/锁定/渲染服务（规范 §5 / §8 / FR-1~FR-5）
  *
- * 配额唯一口径（C1）：
- *   freeSampleCap   = 3                      // 赠样，独立，不计入 N
- *   paidCap         = purchasedHeadcount (N) // 付费部分上限
- *   totalRenderable = freeSampleCap + paidCap
+ * 配额唯一口径（C1，收费-only）：
+ *   totalRenderable = purchasedHeadcount (N) // 单一收费模式：无免费赠样层
  *   alreadyRendered <= totalRenderable       // 硬约束
+ *
+ * 重渲规则（保持不变）：每条记录重渲染满 RERENDER_LIMIT(5) 次后，再次重渲需消耗
+ * 1 个全局剩余额度（paidRendered += 1）并将该记录计数重置为新周期第 1 次。
  *
  * 并发一致性（E4/B8）：所有「校验额度 + 扣减 + 落快照」都在事务内先取
  * `pg_advisory_xact_lock(hashtext(projectId))`，事务级锁随提交/回滚自动释放。
  */
-
-/** 免费赠样人次（C1：不占购额、不计入 N） */
-export const FREE_SAMPLE_CAP = 3;
 
 /** 每条记录重渲染次数上限（用户诉求：在不更换模板、不大改名单前提下，至少支持每条记录重渲染 5 次） */
 export const RERENDER_LIMIT = 5;
@@ -47,7 +45,12 @@ export const RERENDER_LIMIT = 5;
  */
 export const SELECTION_LOCK_CODE = 'RENDERED_RECORD_IMMUTABLE';
 
-/** 渲染模式 */
+/**
+ * 渲染模式。
+ * 注意：'FREE_SAMPLE' 仅为兼容读取历史 job 数据而保留的字面量 —— 收费-only 改造后
+ * 不再产生新的 FREE_SAMPLE 任务（batchGenerate 默认 PAID），存量 FREE_SAMPLE job
+ * 仅在续跑/回收等历史路径被读取，并一律按 PAID 口径扣费。
+ */
 export type RenderMode = 'FREE_SAMPLE' | 'PAID' | 'RERENDER';
 
 /** 私有资产根目录（与图库一致：uploads/ 之外，不被公开静态服务暴露） */
@@ -334,7 +337,10 @@ export class InvitationService implements OnModuleInit {
     lockedAt: Date | null;
     clientId: string | null;
   }) {
-    const totalRenderable = FREE_SAMPLE_CAP + p.purchasedHeadcount;
+    // 收费-only：可渲染总数 = 已购人次（无免费赠样层）。
+    // alreadyRendered 保留 freeRendered（历史「免费赠样」已用值）以保证存量项目
+    // 已用计数不因本次改造凭空清零（用户不会因重构白赚渲染次数）。
+    const totalRenderable = p.purchasedHeadcount;
     const alreadyRendered = p.freeRendered + p.paidRendered;
     return {
       id: p.id,
@@ -346,7 +352,7 @@ export class InvitationService implements OnModuleInit {
       paidRendered: p.paidRendered,
       purchasedHeadcount: p.purchasedHeadcount,
       purchasedRerender: p.purchasedRerender,
-      freeSampleCap: FREE_SAMPLE_CAP,
+      freeSampleCap: 0, // 已废弃：免费赠样层已移除，保留字段占位以不破坏前端类型
       totalRenderable,
       alreadyRendered,
       remaining: Math.max(0, totalRenderable - alreadyRendered),
@@ -496,9 +502,9 @@ export class InvitationService implements OnModuleInit {
     input: { projectId: string; mode?: RenderMode; targetRecordIds?: string[] },
   ) {
     const p = await this.mustGetProject(scope, input.projectId);
-    let mode: RenderMode = input.mode ?? (p.state === 'DRAFT' ? 'FREE_SAMPLE' : 'PAID');
-    // 注意：下方事务内可能把免费且已锁定的 PAID/FREE_SAMPLE 退化为 RERENDER，
-    // 故此处用 let 以便回写（见 B5 分支）。
+    // 收费-only：默认 PAID（不再有 DRAFT 首渲赠样）；RERENDER 为显式重渲。
+    // 历史遗留的显式 mode='FREE_SAMPLE' 输入按 PAID 口径扣费，杜绝直连接口白嫖。
+    const mode: RenderMode = input.mode ?? 'PAID';
     // ——— 事务：咨询锁 + 校验 + 扣减 + 落快照 ———
     const result = await this.prisma.$transaction(async (tx) => {
       // pg_advisory_xact_lock 返回 void，$queryRaw 无法反序列化 → 用 $executeRaw
@@ -532,21 +538,12 @@ export class InvitationService implements OnModuleInit {
 
       const snap = await tx.renderSnapshot.findUnique({ where: { projectId: p.id } });
 
-      // B5：已锁定且未购买：续渲(PAID)/误用(FREE_SAMPLE)均退化为「重渲赠样前 3 条（带水印）」，
-      // 既不让免费用户借重渲拿到去水印专属图，也允许其清空历史后重新生成赠样（修复缺陷3）。
-      // 付费用户(paidCap>0)不受影响，续渲仍走 PAID 渲染已购的 N+1..N+K；
-      // 显式 RERENDER 本就走 C4 不耗配额分支，不被此处改写。须在「目标人员」计算前完成，
-      // 否则会按 PAID 口径把全部锁定名单纳入 targets（绕过前 3 条限制）。
-      if (snap && fresh.purchasedHeadcount <= 0 && mode !== 'RERENDER') {
-        mode = 'RERENDER';
-      }
-
       if (snap) {
         // 已锁定：人员集合 = 首渲锁定名单（FR-3，永不被替换出列表）
         //         ∪ 后续勾选追加的跨名单记录（B3 多名单累加，追加在队尾），
         // 但「数据」回源实时名单 —— 使名单修改正确映射到重渲请柬（修复缺陷2）。
         // B4：取数按**实际目标 ids**（不再 `where:{listId}`），跨名单记录才能被渲染。
-        // 仅纳入未删除记录；免费用户重渲范围/水印在下方 RERENDER 分支约束。
+        // 仅纳入未删除记录；重渲范围/水印在下方 RERENDER 分支约束。
         const sel = await tx.guestListSelection.findUnique({ where: { projectId: p.id } });
         const selected = ((sel?.selectedRecordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
         const allIds = this.mergeLockedRecordIds(
@@ -618,12 +615,6 @@ export class InvitationService implements OnModuleInit {
       // 用于「重新生成」/显式 RERENDER 时拦截超过 RERENDER_LIMIT 次的记录。
       const rerenderCounts = (p.renderCounts as unknown as Record<string, number>) ?? {};
 
-      // 重渲可渲范围 + 水印（安全约束）：免费用户仅前 3 条、且强制带水印，
-      // 杜绝「改名单→RERENDER」绕过前 3 条/去水印闸门拿到专属图。
-      const rerenderWatermark = fresh.purchasedHeadcount <= 0;
-      const rerenderCap = fresh.purchasedHeadcount <= 0 ? FREE_SAMPLE_CAP : recordIds.length;
-      const eligible = recordIds.slice(0, rerenderCap);
-
       // 本次实际要渲染的人
       let targets: string[];
       if (mode === 'RERENDER') {
@@ -631,11 +622,11 @@ export class InvitationService implements OnModuleInit {
         // v1.4：允许携带 targetRecordIds 仅重渲锁定名单内的指定人（单条失败重做 / 整批刷新均可）；
         // 不传则退化为「重渲已成功出图的全员」（保持旧行为，避免把尚未付费的第 N+1 人渲出，绕过付费闸门）。
         if (input.targetRecordIds?.length) {
-          const allow = new Set(eligible);
+          const allow = new Set(recordIds);
           const req = input.targetRecordIds.map(String);
           const bad = req.filter((id) => !allow.has(id));
           if (bad.length) {
-            throw err400('INVALID_SELECTION', '目标人员不在可重渲范围内（免费用户仅限前 3 条）'); // FR-2
+            throw err400('INVALID_SELECTION', '目标人员不在可重渲范围内'); // FR-2
           }
           // 重渲上限闸门：记录的「重渲染」次数不得超过 RERENDER_LIMIT 次。
           // 超出 RERENDER_LIMIT 后是否还能继续生成，取决于项目**全局剩余可渲染额度**
@@ -645,11 +636,11 @@ export class InvitationService implements OnModuleInit {
           // ⚠️ 这里**刻意不**加 `rendered.has(id)` 前置条件（即不要求「该记录已有成功出图 job」）：
           // 本闸门只跑在「显式 targetRecordIds 的 RERENDER」分支，且额外要求 `availRemaining <= 0`，
           // 因此去掉该前置条件只会把行为收窄到一格 ——「记录已用满 5 次计数 AND 全局已无剩余额度」——
-          // 不影响 `availRemaining > 0` 的场景，也不影响首渲路径（FREE_SAMPLE / PAID）。
+          // 不影响 `availRemaining > 0` 的场景，也不影响首渲路径（PAID）。
           // 反之若保留该前置条件：「清理历史 → 行回到 pending 但 renderCounts 持久化为 5」的记录
           // 不在 rendered 集合中 → 绕过闸门进入 targets → 事务内记账遇到 used>=5 && rem<=0
           // 只是 continue（不消耗额度、rc 卡在 5），job 却照建并真实出图 → 直连 API 可无限白嫖。
-          const availRemaining = FREE_SAMPLE_CAP + fresh.purchasedHeadcount - (fresh.freeRendered + fresh.paidRendered);
+          const availRemaining = fresh.purchasedHeadcount - (fresh.freeRendered + fresh.paidRendered);
           const exceeded = req.filter((id) => (rerenderCounts[id] ?? 0) >= RERENDER_LIMIT && availRemaining <= 0);
           const ok = req.filter((id) => !exceeded.includes(id));
           if (!ok.length) {
@@ -664,10 +655,10 @@ export class InvitationService implements OnModuleInit {
           targets = ok;
         } else {
           // 普通「批量生成」按钮（无显式目标）语义 = 续渲锁定名单内**尚未出图**的人员，
-          // 已出图者不重复渲染（与「购买人次」成功提示「已出图的人不会重复渲染」一致），
-          // 也避免免费用户每次点击都整批重渲赠样。全部已出图 → 空集 →
-          // 下方空批次闸门（L626）返回 NO_PENDING：不抛 400、不建 job、前端显示琥珀提示。
-          targets = eligible.filter((id) => !rendered.has(id));
+          // 已出图者不重复渲染（与「购买人次」成功提示「已出图的人不会重复渲染」一致）。
+          // 全部已出图 → 空集 →
+          // 下方空批次闸门返回 NO_PENDING：不抛 400、不建 job、前端显示琥珀提示。
+          targets = recordIds.filter((id) => !rendered.has(id));
         }
       } else if (input.targetRecordIds?.length) {
         const allow = new Set(recordIds);
@@ -683,47 +674,36 @@ export class InvitationService implements OnModuleInit {
         targets = recordIds;
       }
 
-      // 水印决策（付费闸门 §13）：赠样带水印+低分辨率；付费/重渲(付费用户)去水印+2x
-      const watermark = mode === 'FREE_SAMPLE' ? true : mode === 'RERENDER' ? rerenderWatermark : false;
+      // 水印决策（收费-only）：PAID 无水印 + 2x；RERENDER 保留 purchasedHeadcount<=0
+      // 兜底（存量未购人次项目重渲仍带水印，防借 RERENDER 拿去水印专属图）。
+      const watermark = mode === 'RERENDER' ? fresh.purchasedHeadcount <= 0 : false;
 
       // 锁定名单中已无待渲染人员：不抛 400 中断整个批量任务，返回明确空结果，
-      // 由调用方优雅跳过当前批次（如免费用户已渲满赠样、或续渲时记录均已出图）。
+      // 由调用方优雅跳过当前批次（如续渲时记录均已出图）。
       if (!targets.length) {
         return { empty: true as const, projectId: p.id, mode, message: '锁定名单内已无待渲染人员' };
       }
 
-      // ——— 配额校验（C1 唯一口径）———
-      const freeSampleCap = FREE_SAMPLE_CAP;
+      // ——— 配额校验（C1 唯一口径，收费-only：totalRenderable = purchasedHeadcount）———
+      // 历史遗留的显式 mode='FREE_SAMPLE' 输入一律按 PAID 口径扣费，防直连接口白嫖；
+      // 仅 RERENDER 不消耗配额（C4/B14）。
       const paidCap = fresh.purchasedHeadcount;
-      let freeUsed = fresh.freeRendered;
+      // freeRendered 为历史遗留计数（旧「免费赠样」已用值）：不再新增，但仍计入已用口径
+      const freeUsed = fresh.freeRendered;
       let paidUsed = fresh.paidRendered;
 
-      // B5 分支已上移至快照读取之后、目标人员计算之前（见上方），此处不再重复。
-
-      if (mode === 'FREE_SAMPLE') {
-        const room = Math.max(0, freeSampleCap - freeUsed);
-        const batch = Math.min(room, targets.length);
-        if (batch <= 0) {
-          throw new HttpException(
-            { code: 'QUOTA_EXCEEDED', message: '免费赠样已用完，请购买人次', remaining: 0 },
-            402,
-          );
-        }
-        targets = targets.slice(0, batch);
-        freeUsed += batch;
-      } else if (mode === 'PAID') {
+      if (mode !== 'RERENDER') {
         const room = Math.max(0, paidCap - paidUsed);
         const batch = Math.min(room, targets.length);
         if (batch <= 0) {
           throw new HttpException(
-            { code: 'QUOTA_EXCEEDED', message: '已购人次已用完', remaining: 0 },
+            { code: 'QUOTA_EXCEEDED', message: '渲染次数不足，请购买次数', remaining: 0 },
             402,
           );
         }
         targets = targets.slice(0, batch);
         paidUsed += batch;
       }
-      // RERENDER 不消耗配额（C4/B14）
 
       // ——— 落库：首渲快照（不可变）+ 额度扣减 + 置 LOCKED ———
       if (!snap) {
@@ -755,7 +735,8 @@ export class InvitationService implements OnModuleInit {
       // `rerenderCounts` 而非事务前快照 p.renderCounts，否则同样存在覆盖窗口。
       const rc: Record<string, number> = { ...rerenderCounts };
       // 用事务内**扣减后**的 freeUsed/paidUsed（而非 fresh.*）：rem 须反映本批次自身已占用的额度。
-      let rem = FREE_SAMPLE_CAP + fresh.purchasedHeadcount - (freeUsed + paidUsed);
+      // 收费-only：rem 去掉免费赠样层（freeUsed 仅为历史遗留 freeRendered 值，不再新增）。
+      let rem = fresh.purchasedHeadcount - (freeUsed + paidUsed);
       let consumed = 0;
       for (const id of targets) {
         const used = rc[id] ?? 0;
@@ -772,7 +753,8 @@ export class InvitationService implements OnModuleInit {
       await tx.batchRenderProject.update({
         where: { id: p.id },
         data: {
-          freeRendered: freeUsed,
+          // 收费-only：不再写 freeRendered 增量（免费层已移除，freeRendered 仅存历史值）；
+          // 本批次占用与重渲周期重置的 consumed 统一计入 paidRendered。
           paidRendered: paidUsed + consumed,
           renderCounts: rc as never,
           state: nextState,
@@ -870,13 +852,13 @@ export class InvitationService implements OnModuleInit {
         });
         const p = await tx.batchRenderProject.findUnique({ where: { id: planned.projectId } });
         if (!p) return;
+        // 收费-only：回退统一按 paidRendered 单桶（freeRendered 为历史遗留值、不再回退）；
+        // RERENDER 本就不占配额，维持不回退。
         await tx.batchRenderProject.update({
           where: { id: planned.projectId },
           data: {
-            freeRendered:
-              planned.mode === 'FREE_SAMPLE' ? Math.max(0, p.freeRendered - refund) : p.freeRendered,
             paidRendered:
-              planned.mode === 'PAID' ? Math.max(0, p.paidRendered - refund) : p.paidRendered,
+              planned.mode === 'RERENDER' ? p.paidRendered : Math.max(0, p.paidRendered - refund),
           },
         });
         // 首渲失败 → 快照与锁定一并撤销，项目回 DRAFT（可重新来过）
@@ -884,7 +866,8 @@ export class InvitationService implements OnModuleInit {
         // B2（锁定不可被回滚击穿）：已购人次 / 已发生付费渲染 / 已有快照的项目，
         // 其锁定与快照具**不可变语义** —— 一次渲染失败绝不能把已购名单洗回 DRAFT，
         // 否则用户可用「失败重试」绕过名单锁定（FR-2）并让已购额度对应的名单蒸发。
-        // 仅「从未付费渲染、无快照、纯免费」的项目保留原 DRAFT 重置行为。
+        // 仅「从未付费渲染、无快照」的项目保留原 DRAFT 重置行为
+        // （收费-only 下新建项目不购买即无法建 job，该路径实际不可达，保留为防御性兜底）。
         // 判据沿用**回退前**的 p（与既有语义完全一致）。
         const hasPaidValue = p.purchasedHeadcount > 0 || p.paidRendered > 0;
         const snap = await tx.renderSnapshot.findUnique({
@@ -970,9 +953,9 @@ export class InvitationService implements OnModuleInit {
         try {
           const schema = personalizeSchema(effectiveBase, { id: rid, data }, mapping);
 
-          // 付费闸门（§13）：赠样带水印 + 低分辨率；付费/重渲去水印 + 2x
+          // 付费闸门（§13）：付费去水印 + 2x
           // 水印决策在 batchGenerate 内按模式 + 是否付费用户统一计算后随 planned 下传，
-          // 免费用户重渲强制带水印（安全约束，防止借 RERENDER 拿去水印专属图）。
+          // 存量未购人次项目重渲兜底带水印（安全约束，防止借 RERENDER 拿去水印专属图）。
           const watermark = planned.watermark;
           // 全局信号量（T7）：跨所有 job 限制同时进行的 puppeteer 渲染数，
           // 单条渲染（建会话 + 截图）整体占信号量，避免多 job 并发叠满打爆机器。
@@ -1034,17 +1017,17 @@ export class InvitationService implements OnModuleInit {
       data: { status: finalStatus, progress: urls.length, resultUrls: urls as never },
     });
 
-    // 配额（C1）：仅**成功条数**占用名额；失败条在收尾时回退对应桶，
-    // 避免占用赠样 / 付费名额（RERENDER 本就不占配额，无需回退）。
+    // 配额（C1，收费-only）：仅**成功条数**占用名额；失败条在收尾时回退 paidRendered
+    // 单桶，避免占用付费名额（freeRendered 为历史遗留、不再回退；
+    // RERENDER 本就不占配额，无需回退）。
     if (failed > 0 && planned.mode !== 'RERENDER') {
       const cur = await this.prisma.batchRenderProject.findUnique({ where: { id: planned.projectId } });
       if (cur) {
-        const bucket = planned.mode === 'FREE_SAMPLE' ? cur.freeRendered : cur.paidRendered;
-        const dec = Math.min(failed, bucket);
+        const dec = Math.min(failed, cur.paidRendered);
         if (dec > 0) {
           await this.prisma.batchRenderProject.update({
             where: { id: planned.projectId },
-            data: planned.mode === 'FREE_SAMPLE' ? { freeRendered: cur.freeRendered - dec } : { paidRendered: cur.paidRendered - dec },
+            data: { paidRendered: cur.paidRendered - dec },
           });
         }
       }
@@ -1111,22 +1094,14 @@ export class InvitationService implements OnModuleInit {
       const bad = failedIds.filter((id) => !allow.has(id));
       if (bad.length) throw err400('INVALID_SELECTION', '续跑目标不在锁定名单内，不可跨批次渲染');
 
-      // ——— 配额（C1 唯一口径），仅非 RERENDER 模式重新占用 ———
-      let freeUsed = fresh.freeRendered;
+      // ——— 配额（C1 唯一口径，收费-only），仅非 RERENDER 模式重新占用 ———
+      // 历史遗留的 mode='FREE_SAMPLE' job 续跑一律按 PAID 口径扣费，防直连接口白嫖。
       let paidUsed = fresh.paidRendered;
-      if (mode === 'FREE_SAMPLE') {
-        const room = Math.max(0, FREE_SAMPLE_CAP - freeUsed);
-        const batch = Math.min(room, failedIds.length);
-        if (batch <= 0) {
-          throw new HttpException({ code: 'QUOTA_EXCEEDED', message: '免费赠样已用完，请购买人次', remaining: 0 }, 402);
-        }
-        failedIds = failedIds.slice(0, batch);
-        freeUsed += batch;
-      } else if (mode === 'PAID') {
+      if (mode !== 'RERENDER') {
         const room = Math.max(0, fresh.purchasedHeadcount - paidUsed);
         const batch = Math.min(room, failedIds.length);
         if (batch <= 0) {
-          throw new HttpException({ code: 'QUOTA_EXCEEDED', message: '已购人次已用完', remaining: 0 }, 402);
+          throw new HttpException({ code: 'QUOTA_EXCEEDED', message: '渲染次数不足，请购买次数', remaining: 0 }, 402);
         }
         failedIds = failedIds.slice(0, batch);
         paidUsed += batch;
@@ -1137,7 +1112,7 @@ export class InvitationService implements OnModuleInit {
 
       await tx.batchRenderProject.update({
         where: { id: job.projectId },
-        data: { freeRendered: freeUsed, paidRendered: paidUsed },
+        data: { paidRendered: paidUsed },
       });
 
       const newJob = await tx.renderJob.create({
@@ -1160,8 +1135,8 @@ export class InvitationService implements OnModuleInit {
       });
       const dataByRecordId: Record<string, GuestData> = {};
       for (const r of liveRows) dataByRecordId[r.id] = (r.data ?? {}) as unknown as GuestData;
-      // 水印决策（付费闸门 §13）：赠样/免费重渲带水印；付费重渲去水印
-      const watermark = mode === 'FREE_SAMPLE' ? true : mode === 'RERENDER' ? fresh.purchasedHeadcount <= 0 : false;
+      // 水印决策（收费-only）：PAID 无水印；RERENDER 保留 purchasedHeadcount<=0 兜底
+      const watermark = mode === 'RERENDER' ? fresh.purchasedHeadcount <= 0 : false;
 
       return {
         jobId: newJob.id,
@@ -1216,17 +1191,11 @@ export class InvitationService implements OnModuleInit {
           await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${z.projectId}::text))`;
           const p = await tx.batchRenderProject.findUnique({ where: { id: z.projectId } });
           if (p && failedCount > 0 && mode !== 'RERENDER') {
-            if (mode === 'FREE_SAMPLE') {
-              await tx.batchRenderProject.update({
-                where: { id: z.projectId },
-                data: { freeRendered: Math.max(0, p.freeRendered - failedCount) },
-              });
-            } else {
-              await tx.batchRenderProject.update({
-                where: { id: z.projectId },
-                data: { paidRendered: Math.max(0, p.paidRendered - failedCount) },
-              });
-            }
+            // 收费-only：回退统一按 paidRendered 单桶（freeRendered 为历史遗留、不再回退）
+            await tx.batchRenderProject.update({
+              where: { id: z.projectId },
+              data: { paidRendered: Math.max(0, p.paidRendered - failedCount) },
+            });
           }
           await tx.renderJob.update({
             where: { id: z.id },
@@ -1451,7 +1420,7 @@ export class InvitationService implements OnModuleInit {
       rerenderLimit: RERENDER_LIMIT,
       purchasedRerender: p.purchasedRerender,
       remaining: this.projectView(p).remaining,
-      totalRenderable: FREE_SAMPLE_CAP + p.purchasedHeadcount,
+      totalRenderable: p.purchasedHeadcount,
       editedRecordIds: parsedEditedIds,
       editLimit,
       results: rows,
@@ -1774,6 +1743,12 @@ export class InvitationService implements OnModuleInit {
     const work = await this.mustGetOwnedTemplate(scope, p.templateId);
     const base = ((work as { draftSchema?: unknown; schema?: unknown } | null)?.draftSchema ??
       (work as { schema?: unknown } | null)?.schema) as unknown as Project | undefined;
+    // D 方案：与服务端导出（runJob）同款注入项目级「画布点选元素绑定」，
+    // 使客户端预览 schema 与服务端 personalizeSchema 前的 effectiveBase 逐像素一致。
+    const previewSchema = applyElementBindings(
+      base,
+      (p.elementBindings as unknown as ElementBindings | undefined) ?? {},
+    );
     const elements = (base?.pages ?? []).flatMap((pg, pi) =>
       (pg.elements ?? []).map((el) => ({
         id: el.id,
@@ -1783,7 +1758,7 @@ export class InvitationService implements OnModuleInit {
         bindingKey: el.binding?.key,
       })),
     );
-    return { projectId: p.id, templateId: p.templateId, previewSchema: base, elements };
+    return { projectId: p.id, templateId: p.templateId, previewSchema, elements };
   }
 
   /**
