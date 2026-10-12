@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Form, Input, Select } from 'antd';
 import { STATIC_URL, API_URL, authHeaders, downloadWithAuth } from '../../utility';
-import { getGuestFieldDef, type GuestFieldDef } from '@h5design/core';
+import { getGuestFieldDef, personalizeSchema, normalizeSchema, type GuestFieldDef, type GuestData, type Project } from '@h5design/core';
 import {
   apiDelete,
   apiGet,
@@ -12,10 +12,13 @@ import {
   type PerResult,
   type ProjectResults,
   type BatchProjectView,
+  type GuestRow,
   RERENDER_LIMIT,
 } from './invitationShared';
 import { t } from '../../i18n/t';
 import { VariableMappingDialog, type InvitationHealth, type ProjectElement, type ElementBindings } from '@h5design/invitation-mapping';
+import { SchemaRenderer } from '@h5design/render';
+import { ExclamationCircleFilled } from '@ant-design/icons';
 import {
   getInvitationHealth,
   getProjectElements,
@@ -61,6 +64,9 @@ const C = {
   errBg: '#fef2f2',
 };
 
+/** 逐人预览手机框宽度（设计稿基准宽 375，按 schema 实际宽度等比缩放） */
+const PREVIEW_FRAME_W = 343;
+
 interface JobRow {
   id: string;
   status: string;
@@ -102,6 +108,16 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
   const [health, setHealth] = useState<InvitationHealth | null>(null);
   const [mappingElements, setMappingElements] = useState<ProjectElement[]>([]);
   const [previewSchema, setPreviewSchema] = useState<unknown>(undefined);
+  // ── 逐人预览弹窗（生成前逐人核对：模板 schema × 名单记录实时个性化渲染）──
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  /** 变量映射（元素 binding.key → 名单字段），来自生成前体检 */
+  const [previewMapping, setPreviewMapping] = useState<Record<string, string>>({});
+  /** 预览页数据：勾选子集（无勾选则名单全量）映射后的记录 */
+  const [previewPages, setPreviewPages] = useState<Array<{ recordId: string; name: string; data: GuestData }>>([]);
+  const [previewPage, setPreviewPage] = useState(0);
+  // ── 批量生成前「永久绑定」确认弹窗 ──
+  const [confirmOpen, setConfirmOpen] = useState(false);
   // 分步向导：第③步「字段配对」是否完成
   const [fieldPaired, setFieldPaired] = useState(false);
 
@@ -302,15 +318,17 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
 
   /**
    * 打开「购买渲染人次」弹窗：先同步配额，再按已选超额(待解锁)人数预填购买人次。
+   * defaultNeed：调用方（如「批量生成前次数不足」）已按勾选子集算准缺口时优先采用，
+   * 避免「remaining>0 但不足」时少算；不传则沿用原 paywalled 推算口径（其余调用方行为不变）。
    */
-  const openBuy = () => {
+  const openBuy = (defaultNeed?: number) => {
     if (!picked) {
       setError('请先选择宾客名单');
       return;
     }
     void refreshQuota(projectId).then(() => {
       const paywalled = results.filter((r) => r.paywalled).length;
-      setBuyHeadcount(String(paywalled > 0 ? paywalled : 1));
+      setBuyHeadcount(defaultNeed && defaultNeed > 0 ? String(defaultNeed) : String(paywalled > 0 ? paywalled : 1));
       setBuyError('');
       setBuyMsg('');
       setBuyOpen(true);
@@ -446,6 +464,40 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
   const previewOne = (row: PerResult) => previewUrl(row.url);
 
   /**
+   * 打开「逐人预览」弹窗：点击后异步准备数据（loading 态）——
+   *  1. previewSchema = 项目 elements 快照（服务端已注入 elementBindings，直接可个性化）；
+   *  2. mapping = 生成前体检返回的 variableMapping（元素 binding.key → 名单字段）；
+   *  3. 名单记录按「勾选子集（无勾选则本次名单全量）」过滤，映射为逐人预览页。
+   * 渲染侧每页只对当前索引 personalizeSchema（勿一次性全量），animated=false 避免翻页重播入场动画。
+   * 取数全部经 q() 拼作用域（subject/ownerType/clientId），与既有端点同口径。
+   */
+  const openPreviewDialog = async () => {
+    if (!picked) return;
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+    setPreviewPage(0);
+    try {
+      const [el, hz, rec] = await Promise.all([
+        apiGet<{ previewSchema?: unknown }>(q(`/invitations/projects/${picked.projectId}/elements`)),
+        apiGet<InvitationHealth>(q(`/invitations/projects/${picked.projectId}/health`)),
+        apiGet<{ records?: GuestRow[] }>(q(`/guest-lists/${picked.listId}/records?page=1&size=500`)),
+      ]);
+      setPreviewSchema(el.previewSchema ?? null);
+      setPreviewMapping(hz.mapping ?? {});
+      const set = checked.size ? checked : new Set(picked.selectedRecordIds);
+      const pages = (rec.records ?? [])
+        .filter((r) => set.has(r.id))
+        .map((r) => ({ recordId: r.id, name: r.data?.guest_name ?? '', data: r.data }));
+      setPreviewPages(pages);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setPreviewOpen(false);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  /**
    * 打开「任务队列」编辑弹窗（§变量绑定 优化2）。
    * 取字段设计 + 用记录的 fields/data 回填 Form；只读（!canWrite）不打开。
    */
@@ -563,6 +615,20 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
     ? `生成总数：${quota.totalRenderable ?? '—'}，已使用：${used}，剩余：${quota.remaining ?? '—'}`
     : '生成总数：—，已使用：—，剩余：—';
 
+  /**
+   * 逐人预览：仅对当前页索引做个性化（schema × mapping × 当前记录），翻页时按依赖重算。
+   * previewSchema 为归一化前的原始快照，normalizeSchema 兜底补全 width/height 等缺字段。
+   */
+  const personalized = useMemo(() => {
+    const p = previewPages[previewPage];
+    if (!p || !previewSchema) return null;
+    return personalizeSchema(
+      normalizeSchema(previewSchema as Project | null),
+      { id: p.recordId, data: p.data },
+      previewMapping,
+    );
+  }, [previewSchema, previewMapping, previewPages, previewPage]);
+
   return (
     <div style={{ padding: 16 }}>
       <h2 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 600, color: C.ink1 }}>请柬批量生成</h2>
@@ -654,6 +720,30 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
           ③ 字段配对{fieldPaired ? '（已配对）' : ''}
         </button>
 
+        {/* 生成前逐人预览：模板 schema × 勾选名单记录实时个性化（对齐 web 端「预览」按钮） */}
+        <button
+          onClick={() => {
+            if (!template || !picked || !fieldPaired) {
+              setError('请先完成前一步操作');
+              return;
+            }
+            void openPreviewDialog();
+          }}
+          disabled={!template || !picked || !fieldPaired}
+          style={{
+            borderRadius: 4,
+            border: `1px solid ${C.blue}`,
+            background: '#fff',
+            color: C.blue,
+            padding: '6px 16px',
+            fontSize: 14,
+            cursor: !template || !picked || !fieldPaired ? 'not-allowed' : 'pointer',
+            opacity: !template || !picked || !fieldPaired ? 0.5 : 1,
+          }}
+        >
+          预览
+        </button>
+
         <button
           onClick={() => {
             if (!template || !picked || !fieldPaired) {
@@ -665,11 +755,25 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
               setError('你没有选择任何记录');
               return;
             }
-            // 缺陷一修复 + 本次优化：始终按勾选子集渲染；未勾选时上方已给出提示
-            void startGenerate({
-              projectId: picked.projectId,
-              targetRecordIds: [...checked],
-            });
+            // ── 渲染次数判断（单一收费模式，无免费赠样）──
+            // 逐行真值 = results（recordId 对齐）：
+            //   未渲染 / 失败 → 需 1 人次；已渲但重渲满 5 次 → 需 1 人次重置；已渲且重渲未满 → 不消耗。
+            const need = [...checked].reduce((n, id) => {
+              const r = results.find((x) => x.recordId === id);
+              if (!r || r.status !== 'ok') return n + 1;
+              if ((r.rerenders ?? 0) >= RERENDER_LIMIT) return n + 1;
+              return n;
+            }, 0);
+            const remaining = quota?.remaining ?? 0;
+            if (remaining < need) {
+              // 次数不足 → 引导购买（不开工、不弹确认）
+              const shortfall = Math.max(1, need - remaining);
+              setError(`渲染次数不足，还需 ${shortfall} 人次，请先购买`);
+              void openBuy(shortfall);
+              return;
+            }
+            // 次数足够 → 先弹「永久绑定」确认，用户确认后才真正开工
+            setConfirmOpen(true);
           }}
           // 优化：向导完成即常亮可点，不再因「未勾选 / 生成中 / 队列状态」置灰
           disabled={!picked || !canWrite || !fieldPaired}
@@ -689,7 +793,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
         {!canWrite && <span style={{ fontSize: 12, color: C.ink4 }}>监督态只读</span>}
 
         <button
-          onClick={openBuy}
+          onClick={() => openBuy()}
           disabled={!picked}
           style={{
             marginLeft: 'auto',
@@ -975,13 +1079,145 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
         cancelText="取消"
       >
         <div style={{ fontSize: 13, color: C.ink2, marginBottom: 12 }}>
-          {quota ? `免费赠样 ${quota.freeSampleCap ?? 0} 人 + 已购 ${quota.purchasedHeadcount ?? 0} = 可渲染 ${quota.totalRenderable ?? 0} 人，剩余 ${quota.remaining ?? 0} 人` : ''}
+          {quota ? `已购 ${quota.purchasedHeadcount ?? 0} 人次，可渲染 ${quota.totalRenderable ?? 0} 人，剩余 ${quota.remaining ?? 0} 人` : ''}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 14 }}>{t('guest.batch.buyHeadcount', { defaultValue: '购买人次' })}</span>
           <Input type="number" min={1} value={buyHeadcount} onChange={(e) => setBuyHeadcount(e.target.value)} style={{ width: 120 }} />
         </div>
         {buyError ? <div style={{ color: C.err, fontSize: 12, marginTop: 8 }}>{buyError}</div> : null}
+      </Modal>
+
+      {/* 逐人预览弹窗：手机框 + 上一页/下一页 + 第X/总N页 + 关闭（ESC 可关） */}
+      <Modal
+        open={previewOpen}
+        title="逐人预览"
+        onCancel={() => setPreviewOpen(false)}
+        footer={null}
+        width={400}
+        destroyOnClose
+      >
+        {previewPages[previewPage]?.name ? (
+          <div style={{ fontSize: 12, color: C.ink4, marginBottom: 8 }}>{previewPages[previewPage].name}</div>
+        ) : null}
+        {previewLoading ? (
+          <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 14, color: C.ink4 }}>加载中…</div>
+        ) : previewPages.length === 0 ? (
+          <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 14, color: C.ink4 }}>没有可预览的记录</div>
+        ) : (
+          <>
+            {/* 手机框：宽固定 PREVIEW_FRAME_W，高按 schema 设计稿尺寸等比缩放，仅渲染当前页 */}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <div style={{ width: PREVIEW_FRAME_W + 16, borderRadius: 28, background: '#111827', padding: 8 }}>
+                <div
+                  style={{
+                    position: 'relative',
+                    width: PREVIEW_FRAME_W,
+                    height: personalized
+                      ? (personalized.height || 667) * (PREVIEW_FRAME_W / (personalized.width || 375))
+                      : 0,
+                    overflow: 'hidden',
+                    borderRadius: 20,
+                    background: '#fff',
+                  }}
+                >
+                  {personalized && (
+                    <SchemaRenderer
+                      key={previewPages[previewPage]?.recordId ?? 'preview'}
+                      project={personalized}
+                      scale={PREVIEW_FRAME_W / (personalized.width || 375)}
+                      animated={false}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 底部控制条：上一页 / 第X/总N页 / 下一页 / 关闭 */}
+            <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <button
+                onClick={() => setPreviewPage((p) => Math.max(0, p - 1))}
+                disabled={previewPage <= 0}
+                style={previewNavBtn(previewPage <= 0)}
+              >
+                上一页
+              </button>
+              <span style={{ fontSize: 14, color: C.ink3 }}>{`第 ${previewPage + 1} / ${previewPages.length} 页`}</span>
+              <button
+                onClick={() => setPreviewPage((p) => Math.min(previewPages.length - 1, p + 1))}
+                disabled={previewPage >= previewPages.length - 1}
+                style={previewNavBtn(previewPage >= previewPages.length - 1)}
+              >
+                下一页
+              </button>
+              <button
+                onClick={() => setPreviewOpen(false)}
+                style={{
+                  borderRadius: 4,
+                  border: 'none',
+                  background: C.blue,
+                  color: '#fff',
+                  padding: '4px 16px',
+                  fontSize: 14,
+                  cursor: 'pointer',
+                }}
+              >
+                关闭
+              </button>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      {/* 批量生成前「永久绑定」确认弹窗：首次批量生成后请柬作品与名单永久绑定，无法撤回配对 */}
+      <Modal
+        open={confirmOpen}
+        title={null}
+        onCancel={() => setConfirmOpen(false)}
+        footer={null}
+        width={420}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+          <ExclamationCircleFilled style={{ color: C.warn, fontSize: 20, marginTop: 2 }} />
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: C.ink1 }}>
+            本操作永久性绑定请柬和名单，是否继续？
+          </h3>
+        </div>
+        <p style={{ margin: '0 0 16px', fontSize: 14, lineHeight: 1.6, color: C.ink2 }}>
+          首次批量生成后，本次选定的请柬作品与名单将永久绑定，无法撤回配对。
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button
+            onClick={() => setConfirmOpen(false)}
+            style={{
+              borderRadius: 4,
+              border: '1px solid #d1d5db',
+              background: '#fff',
+              padding: '6px 16px',
+              fontSize: 14,
+              cursor: 'pointer',
+            }}
+          >
+            取消
+          </button>
+          <button
+            onClick={() => {
+              setConfirmOpen(false);
+              if (picked) void startGenerate({ projectId: picked.projectId, targetRecordIds: [...checked] });
+            }}
+            style={{
+              borderRadius: 4,
+              border: 'none',
+              background: C.brand,
+              color: '#fff',
+              padding: '6px 16px',
+              fontSize: 14,
+              cursor: 'pointer',
+            }}
+          >
+            确认
+          </button>
+        </div>
       </Modal>
     </div>
   );
@@ -999,6 +1235,20 @@ function linkBtn(color: string, enabled: boolean): React.CSSProperties {
     fontSize: 14,
     color: enabled ? color : '#d1d5db',
     cursor: enabled ? 'pointer' : 'not-allowed',
+  };
+}
+
+/** 逐人预览弹窗底部「上一页 / 下一页」导航按钮样式 */
+function previewNavBtn(disabled: boolean): React.CSSProperties {
+  return {
+    borderRadius: 4,
+    border: '1px solid #d1d5db',
+    background: '#fff',
+    padding: '4px 12px',
+    fontSize: 14,
+    color: '#4b5563',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.5 : 1,
   };
 }
 
