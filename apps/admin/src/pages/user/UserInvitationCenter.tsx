@@ -464,12 +464,14 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
   };
 
   /**
-   * 第④步「批量生成」闸门（对齐 web 端 handleGenerate）：
-   * 先 await refreshQuota 拿**新配额**再判 need —— 修「剩余:13 却 402」的轮询期配额陈旧。
+   * 「批量生成」闸门（对齐 web 端 handleGenerate）：
+   * 单选选中配对记录**即是**激活条件（不再代管向导 ①②③ 的 template/picked/fieldPaired，
+   * 那是「新建配对」路径自有按钮的守卫）；先 await refreshQuota 拿**新配额**再判 need
+   * —— 修「剩余:13 却 402」的轮询期配额陈旧。
    */
   const handleGenerate = async () => {
-    if (!template || !picked || !fieldPaired) {
-      setError('请先完成前一步操作');
+    if (!projectId) {
+      setError('请先选择配对记录');
       return;
     }
     if (generating) return; // 防重复提交（按钮已不再置灰，此处幂等兜底）
@@ -933,16 +935,10 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
           >
             {t('guest.batch.buyQuantity', { defaultValue: '购买数量' })}
           </button>
-          {/* 生成前逐人预览：模板 schema × 勾选名单记录实时个性化（对齐 web 端「预览」按钮） */}
+          {/* 生成前逐人预览：模板 schema × 勾选名单记录实时个性化（对齐 web 端「预览」按钮；选中配对记录即激活） */}
           <button
-            onClick={() => {
-              if (!template || !picked || !fieldPaired) {
-                setError('请先完成前一步操作');
-                return;
-              }
-              void openPreviewDialog();
-            }}
-            disabled={!template || !picked || !fieldPaired || !selectedProjectId}
+            onClick={() => void openPreviewDialog()}
+            disabled={!selectedProjectId}
             style={{
               borderRadius: 4,
               border: `1px solid ${C.blue}`,
@@ -950,16 +946,16 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
               color: C.blue,
               padding: '6px 16px',
               fontSize: 14,
-              cursor: !template || !picked || !fieldPaired || !selectedProjectId ? 'not-allowed' : 'pointer',
-              opacity: !template || !picked || !fieldPaired || !selectedProjectId ? 0.5 : 1,
+              cursor: !selectedProjectId ? 'not-allowed' : 'pointer',
+              opacity: !selectedProjectId ? 0.5 : 1,
             }}
           >
             预览
           </button>
           <button
             onClick={() => void handleGenerate()}
-            // 优化：向导完成即常亮可点，不再因「未勾选 / 生成中 / 队列状态」置灰
-            disabled={!picked || !canWrite || !fieldPaired || !selectedProjectId}
+            // 单选选中配对记录即激活（保留监督只读闸门）；不再因「未勾选 / 生成中 / 队列状态」置灰
+            disabled={!selectedProjectId || !canWrite}
             style={{
               borderRadius: 4,
               border: 'none',
@@ -967,11 +963,11 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
               color: '#fff',
               padding: '6px 20px',
               fontSize: 14,
-              cursor: !picked || !canWrite || !fieldPaired || !selectedProjectId ? 'not-allowed' : 'pointer',
-              opacity: !picked || !canWrite || !fieldPaired || !selectedProjectId ? 0.5 : 1,
+              cursor: !selectedProjectId || !canWrite ? 'not-allowed' : 'pointer',
+              opacity: !selectedProjectId || !canWrite ? 0.5 : 1,
             }}
           >
-            {generating ? '生成中…' : '④ 批量生成所选'}
+            {generating ? '生成中…' : '批量生成'}
           </button>
           {/* 工具栏（全选/删除选择/打包下载） */}
           {(
@@ -996,7 +992,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
 
         {!projectId ? (
           <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 14, color: C.ink4 }}>
-            请先依次完成 ① 请柬模板选择 → ② 宾客名单选择 → ③ 字段配对，然后在「配对记录」中选择一条记录
+            请在「配对记录」中选择一条记录；如需新建配对，请先依次完成 ① 请柬模板选择 → ② 宾客名单选择 → ③ 字段配对
           </div>
         ) : (
           loadingResults && !results.length ? (
