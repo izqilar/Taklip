@@ -228,10 +228,13 @@ export default function InvitationJobs() {
 
   // 切换项目时拉一次结果
   useEffect(() => {
+    // 项目切换（radio 换选 / 向导换项目）即清勾选：A 的 recordIds 对 B 无意义，
+    // 残留会虚增 calcNeed（B 中无结果行按 +1 计）并可能把 A-id 当 targetRecordIds
+    // 发给 B，被服务端以「不在锁定名单」拒绝
+    setChecked(new Set());
     if (projectId) void loadResults(projectId);
     else {
       setResults([]);
-      setChecked(new Set());
       setEditedRecordIds([]);
       setEditLimit(0);
     }
@@ -375,6 +378,8 @@ export default function InvitationJobs() {
           return;
         }
         setRunningJobId(res.jobId);
+        // 项目 state 可能在生成事务内提交（DRAFT→LOCKED 等），刷新配对记录卡片徽章
+        void refreshProjects();
         await loadResults(payload.projectId);
       } catch (e) {
         setGenerating(false);
@@ -390,7 +395,7 @@ export default function InvitationJobs() {
         setError(e instanceof Error ? e.message : String(e));
       }
     },
-    [picked, loadResults, calcNeed, checked, openBuy],
+    [picked, loadResults, calcNeed, checked, openBuy, refreshProjects],
   );
 
   /**
@@ -436,11 +441,13 @@ export default function InvitationJobs() {
           defaultValue: '已成功购买 {{n}} 人次。已勾选但显示「待解锁」的宾客，再点一次「批量生成」即可继续渲染（已出图的人不会重复渲染、不重复扣额度）；若要加入新的人员，请重新打开「宾客名单选择」追加。',
         }).replace('{{n}}', String(n)),
       );
+      // 购买可能推进项目 state（DRAFT→PAID），刷新配对记录卡片徽章
+      void refreshProjects();
       setBuyOpen(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [projectId, quota, buyHeadcount, loadResults]);
+  }, [projectId, quota, buyHeadcount, loadResults, refreshProjects]);
 
   /**
    * 「批量生成」：仅执行生成，激活条件 = 选中配对记录（单选即激活，向导三条件是「新建配对」路径，
