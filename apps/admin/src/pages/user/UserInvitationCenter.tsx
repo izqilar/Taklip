@@ -314,16 +314,23 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
     void loadProjects();
   };
 
-  /** 勾选子集的渲染次数需求（逐行真值：未渲染 / 失败 / 重渲满上限 → 需 1 人次） */
+  /**
+   * 勾选子集的渲染次数需求 —— 与服务端扣费口径逐行对齐：
+   * PAID + 显式 targetRecordIds 分支（invitation.service.ts）原样接收 targets、不过滤已渲染行，
+   * 每行扣 1；重渲满上限行再 +1 重置。故：
+   *   - 每个勾选行 +1（无论 pending / failed / 已出图）；
+   *   - 重渲满上限（rerenders ≥ rerenderLimit）的勾选行 +2（行本身 1 + 周期重置 1，保守按有额度计）；
+   *   - 无结果行 +1（保持保守）。
+   */
   const needForChecked = useCallback(
     () =>
       [...checked].reduce((n, id) => {
         const r = results.find((x) => x.recordId === id);
-        if (!r || r.status !== 'ok') return n + 1;
-        if ((r.rerenders ?? 0) >= RERENDER_LIMIT) return n + 1;
-        return n;
+        if (!r) return n + 1;
+        if ((r.rerenders ?? 0) >= rerenderLimit) return n + 2;
+        return n + 1;
       }, 0),
-    [checked, results],
+    [checked, results, rerenderLimit],
   );
 
   /**
@@ -336,6 +343,33 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
     const remaining = typeof body?.remaining === 'number' ? body.remaining : 0;
     return Math.max(1, need - remaining);
   };
+
+  /**
+   * 打开「购买渲染人次」弹窗：先同步配额，再按已选超额(待解锁)人数预填购买人次。
+   * defaultNeed：调用方（如「批量生成前次数不足」）已按勾选子集算准缺口时优先采用，
+   * 避免「remaining>0 但不足」时少算；不传则沿用原 paywalled 推算口径（其余调用方行为不变）。
+   *
+   * ★ 必须 useCallback 且依赖含 projectId，并定义在 startGenerate 之前（其依赖数组渲染期求值）：
+   * startGenerate 的 402 catch 在「radio 选中配对记录」场景（picked 不变、回调不重建）里调到它，
+   * 若为每次渲染新建的普通函数，挂载时捕获的旧闭包仍带 !projectId 守卫 → 覆盖正确 402 提示
+   * 且不弹购买窗（H-D2）。
+   */
+  const openBuy = useCallback(
+    (defaultNeed?: number) => {
+      if (!projectId) {
+        setError('请先选择宾客名单，或在「配对记录」中选择一条记录');
+        return;
+      }
+      void refreshQuota(projectId).then(() => {
+        const paywalled = results.filter((r) => r.paywalled).length;
+        setBuyHeadcount(defaultNeed && defaultNeed > 0 ? String(defaultNeed) : String(paywalled > 0 ? paywalled : 1));
+        setBuyError('');
+        setBuyMsg('');
+        setBuyOpen(true);
+      });
+    },
+    [projectId, results, refreshQuota],
+  );
 
   const startGenerate = useCallback(
     async (payload: { projectId: string; mode?: 'FREE_SAMPLE' | 'PAID' | 'RERENDER'; targetRecordIds?: string[] }) => {
@@ -386,28 +420,12 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
         setError(e instanceof Error ? e.message : String(e));
       }
     },
+    // ★ H-D2 回归点：radio 选中配对记录时 picked 不变，若依赖不含 openBuy / needForChecked /
+    //   checked / projectId，回调不重建 → catch 调到挂载时的旧 openBuy（!projectId 守卫命中），
+    //   覆盖正确 402 提示且不弹购买窗。body/quotaShortfall 为渲染期派生值，交给 eslint-disable。
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [picked, loadResults, q],
+    [picked, loadResults, q, needForChecked, openBuy, checked, projectId],
   );
-
-  /**
-   * 打开「购买渲染人次」弹窗：先同步配额，再按已选超额(待解锁)人数预填购买人次。
-   * defaultNeed：调用方（如「批量生成前次数不足」）已按勾选子集算准缺口时优先采用，
-   * 避免「remaining>0 但不足」时少算；不传则沿用原 paywalled 推算口径（其余调用方行为不变）。
-   */
-  const openBuy = (defaultNeed?: number) => {
-    if (!projectId) {
-      setError('请先选择宾客名单，或在「配对记录」中选择一条记录');
-      return;
-    }
-    void refreshQuota(projectId).then(() => {
-      const paywalled = results.filter((r) => r.paywalled).length;
-      setBuyHeadcount(defaultNeed && defaultNeed > 0 ? String(defaultNeed) : String(paywalled > 0 ? paywalled : 1));
-      setBuyError('');
-      setBuyMsg('');
-      setBuyOpen(true);
-    });
-  };
 
   /** 确认购买：POST /api/invitations/purchase（subject 走 body），成功后用返回视图刷新配额并刷新行 */
   const confirmBuy = async () => {
