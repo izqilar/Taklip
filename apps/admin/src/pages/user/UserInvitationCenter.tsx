@@ -372,6 +372,8 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
         }
         setRunningJobId(res.jobId);
         await loadResults(payload.projectId);
+        // 首渲事务提交后项目 state DRAFT→LOCKED：刷新「配对记录」徽章
+        void loadProjects();
       } catch (e) {
         setGenerating(false);
         // 402/QUOTA_EXCEEDED：按错误体 remaining 重算缺口，引导购买（不再裸抛 message）
@@ -437,6 +439,8 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
       await loadResults(projectId);
       setBuyMsg('购买成功，已增加渲染人次');
       setBuyOpen(false);
+      // 购买后项目 state → PAID：刷新「配对记录」徽章
+      void loadProjects();
     } catch (e) {
       setBuyError(e instanceof Error ? e.message : String(e));
     }
