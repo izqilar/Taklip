@@ -331,18 +331,22 @@ export default function InvitationJobs() {
   );
 
   /**
-   * 逐行计算「本次渲染还需消耗的人次」（handleGenerate 与 402 恢复同口径）：
-   *   未渲染 / 失败 → 需 1 人次；已渲但重渲满 5 次 → 需 1 人次重置；已渲且重渲未满 → 不消耗。
+   * 逐行计算「本次渲染还需消耗的人次」（handleGenerate 与 402 恢复同口径）。
+   * 口径与服务端扣费对齐（invitation.service.ts：PAID + 显式 targetRecordIds 时
+   * targets 原样接收传入 ids、不过滤已渲染行，每行扣 1；重渲满 5 次行再 +1 周期重置）：
+   *   pending / failed / 已出图未满 5 次 → +1（服务端每行原样扣 1）
+   *   重渲满 5 次（rerenders ≥ rerenderLimit）→ +2（行 1 + 周期重置 1，保守按有额度计）
+   *   无结果行 → +1（保守）
    */
   const calcNeed = useCallback(
     (ids: string[]) =>
       ids.reduce((n, id) => {
         const r = results.find((x) => x.recordId === id);
         if (!r || r.status !== 'ok') return n + 1;
-        if ((r.rerenders ?? 0) >= RERENDER_LIMIT) return n + 1;
-        return n;
+        if ((r.rerenders ?? 0) >= rerenderLimit) return n + 2;
+        return n + 1;
       }, 0),
-    [results],
+    [results, rerenderLimit],
   );
 
   const startGenerate = useCallback(
