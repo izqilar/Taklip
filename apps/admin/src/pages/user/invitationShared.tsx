@@ -26,13 +26,33 @@ export interface PerResult {
    * 后端恒返回布尔值；已渲染行与失败行恒为 false。
    */
   paywalled?: boolean;
+  /** 该记录已被「重新生成」的次数（后端按历史 RERENDER job 推导，清理历史后归零） */
+  rerenders?: number;
+  /** 任务队列名（后端按生成任务分组回填，§变量绑定 优化2） */
+  taskName?: string;
+  /** 宾客信息字段（label/value 展示对，§变量绑定 优化4） */
+  fields?: { key: string; label: string; value: string }[];
+  /** 原始记录数据（编辑弹窗回填用，对应名单行 data，§变量绑定 优化2） */
+  data?: Record<string, unknown>;
 }
 
 export interface ProjectResults {
   projectId: string;
   total: number;
+  rerenderLimit?: number;
   results: PerResult[];
+  /** 已编辑记录 id 列表（§变量绑定 优化2 上限闸门） */
+  editedRecordIds?: string[];
+  /** 可编辑记录上限（§变量绑定 优化2 上限闸门） */
+  editLimit?: number;
+  /** 购买重渲额度（item3：服务端持久化，超出免费上限后消耗的购买次数） */
+  purchasedRerender?: number;
+  /** 全局剩余渲染额度（超出上限后的确认/耗尽弹窗以此为准） */
+  remaining?: number;
 }
+
+/** 每条记录重渲染次数上限（与后端 RERENDER_LIMIT 保持一致） */
+export const RERENDER_LIMIT = 5;
 
 export interface WorkItem {
   id: string;
@@ -57,8 +77,14 @@ export interface TemplateItem {
 
 export interface BatchProjectView {
   id: string;
-  locked?: boolean;
+  state?: 'DRAFT' | 'LOCKED' | 'PAID';
+  freeSampleCap?: number;
+  purchasedHeadcount?: number;
+  totalRenderable?: number;
+  alreadyRendered?: number;
+  purchasedRerender?: number;
   remaining?: number;
+  locked?: boolean;
 }
 
 export interface GuestSelectionView {
@@ -139,6 +165,21 @@ export async function apiDelete<T>(path: string, body?: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/**
+ * 编辑单条宾客记录的人次字段（§变量绑定 优化2）。
+ * POST /api/invitations/projects/:id/records/:recordId/edit
+ */
+export async function editInvitationRecord(
+  projectId: string,
+  recordId: string,
+  data: Record<string, string>,
+): Promise<{ recordId: string; ok: boolean }> {
+  return apiPost<{ recordId: string; ok: boolean }>(
+    `/invitations/projects/${projectId}/records/${recordId}/edit`,
+    data,
+  );
+}
+
 /** 带鉴权的私密图预览（private-assets 不公开暴露，<img src> 直链会 401） */
 export function AuthImage({ path, scope, alt }: { path: string; scope: string; alt?: string }) {
   const [src, setSrc] = useState<string | null>(null);
@@ -198,4 +239,48 @@ export function useSubjectScope() {
     [subject],
   );
   return { subject, canWrite, q, subjBody, scopeForImage };
+}
+
+/**
+ * 服务商（SP）作用域：在监督 `subject` 基础上叠加 ORG/CLIENT 归属（ownerType/clientId）。
+ *
+ * 与服务端 `guest-list` / `invitation` 控制器的 `scope(req, ownerType, clientId, subject)` 同口径：
+ *  - 真实 SP 登录（isOwnView，subject 空）：仅凭自身 JWT 身份即可用 `ownerType=ORG/CLIENT`；
+ *  - ADMIN 监督某 SP（subject 非空）：`effUser(req, subject)` 把 user 改写为被视察 SP
+ *    → `isSp=true` → `ownerType=ORG/CLIENT` 合法（原 SP 页硬编码 ownerType 不带 subject，
+ *    对 ADMIN 主体恒抛 `FORBIDDEN_OWNER_TYPE` 400，根因在此）。
+ *
+ * 用法：`scopeQuery('/guest-lists', ownerType, clientId)` 拼 query；`scopeBody` 拼 body。
+ */
+export function useSpScope() {
+  const { subject } = useSubjectScope();
+  const scopeQuery = useCallback(
+    (path: string, ownerType?: string, clientId?: string) => {
+      const params = new URLSearchParams();
+      if (ownerType) params.set('ownerType', ownerType);
+      if (clientId) params.set('clientId', clientId);
+      if (subject) params.set('subject', subject);
+      const qs = params.toString();
+      return qs ? `${path}?${qs}` : path;
+    },
+    [subject],
+  );
+  const scopeBody = useMemo(() => (subject ? { subject } : {}), [subject]);
+  /**
+   * 拼图用的 query 串（含 ownerType/clientId/subject，不含 path 前缀的 `?`）。
+   * `AuthImage` 组件用 `${STATIC_URL}${path}${scope}` 拼接私密图地址，故返回 `?...` 形式。
+   * 无任一参数时返回空串（用户视角不带 subject 时退化为 ''，与改造前一致）。
+   */
+  const scopeForImage = useCallback(
+    (ownerType?: string, clientId?: string) => {
+      const params = new URLSearchParams();
+      if (ownerType) params.set('ownerType', ownerType);
+      if (clientId) params.set('clientId', clientId);
+      if (subject) params.set('subject', subject);
+      const qs = params.toString();
+      return qs ? `?${qs}` : '';
+    },
+    [subject],
+  );
+  return { subject, scopeQuery, scopeBody, scopeForImage };
 }

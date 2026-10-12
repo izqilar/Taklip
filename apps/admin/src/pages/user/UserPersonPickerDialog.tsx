@@ -3,7 +3,7 @@ import { toColumnDefs, deriveColumnsFromRecords, type GuestFieldDef } from '@h5d
 import {
   apiGet,
   apiPost,
-  useSubjectScope,
+  useSpScope,
   type BatchProjectView,
   type GuestListRow,
   type GuestRow,
@@ -43,6 +43,10 @@ interface Props {
    * (templateId, listId) 查重不命中而新建项目 —— 新建会让已购人次作废。
    */
   projectId?: string;
+  /** ORG=自营样板 / CLIENT=代客；不传则走用户视角（仅 subject） */
+  ownerType?: 'ORG' | 'CLIENT';
+  /** CLIENT 时必带客户 id */
+  clientId?: string;
 }
 
 const C = {
@@ -78,8 +82,23 @@ const ghostBtn: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, projectId }: Props) {
-  const { q, subjBody } = useSubjectScope();
+export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, projectId, ownerType, clientId }: Props) {
+  // 服务商作用域：统一经 useSpScope 拼 subject + ownerType + clientId（修复 SP 页 400 根因）
+  const { scopeQuery, scopeBody } = useSpScope();
+  const clientIdForScope = ownerType === 'CLIENT' ? clientId : undefined;
+  const q = useCallback(
+    (p: string) => scopeQuery(p, ownerType, clientIdForScope),
+    [scopeQuery, ownerType, clientIdForScope],
+  );
+  const body = useCallback(
+    (extra?: Record<string, unknown>) => ({
+      ...scopeBody,
+      ...(ownerType ? { ownerType } : {}),
+      ...(clientIdForScope ? { clientId: clientIdForScope } : {}),
+      ...extra,
+    }),
+    [scopeBody, ownerType, clientIdForScope],
+  );
 
   const [lists, setLists] = useState<GuestListRow[]>([]);
   const [listId, setListId] = useState('');
@@ -136,7 +155,7 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, p
           listId,
           // 有既有项目时强制复用，换名单不再新建项目（新建会让已购人次作废）
           ...(projectId ? { projectId } : {}),
-          ...subjBody,
+          ...body(),
         });
         if (!alive) return;
         setBatchProjectId(p.id);
@@ -242,7 +261,7 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, p
       // 后端会补回已锁定的旧记录，故以响应体的 selectedRecordIds 为准，不在本地自算。
       const saved = await apiPost<{ selectedRecordIds?: string[] }>(
         q(`/invitations/projects/${batchProjectId}/selection`),
-        { listId, selectedRecordIds: selected, ...subjBody },
+        { listId, selectedRecordIds: selected, ...body() },
       );
       const finalIds = saved?.selectedRecordIds?.length ? saved.selectedRecordIds : selected;
       onConfirm({ projectId: batchProjectId, listId, selectedRecordIds: finalIds });
@@ -253,7 +272,7 @@ export function UserPersonPickerDialog({ open, templateId, onClose, onConfirm, p
       setSubmitting(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [batchProjectId, selected, listId, locked, onConfirm, onClose, q]);
+  }, [batchProjectId, selected, listId, locked, onConfirm, onClose, q, body]);
 
   if (!open) return null;
 

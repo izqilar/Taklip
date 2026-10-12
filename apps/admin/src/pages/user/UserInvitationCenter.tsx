@@ -1,13 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { STATIC_URL, authHeaders, downloadWithAuth } from '../../utility';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Modal, Form, Input, Select } from 'antd';
+import { STATIC_URL, API_URL, authHeaders, downloadWithAuth } from '../../utility';
+import { getGuestFieldDef, type GuestFieldDef } from '@h5design/core';
 import {
   apiDelete,
   apiGet,
   apiPost,
   useSubjectScope,
+  useSpScope,
+  editInvitationRecord,
   type PerResult,
   type ProjectResults,
+  type BatchProjectView,
+  RERENDER_LIMIT,
 } from './invitationShared';
+import { t } from '../../i18n/t';
 import { VariableMappingDialog, type InvitationHealth, type ProjectElement, type ElementBindings } from '@h5design/invitation-mapping';
 import {
   getInvitationHealth,
@@ -25,8 +32,9 @@ import { UserPersonPickerDialog, type PickedPersons } from './UserPersonPickerDi
  * 唯一基准 = web 端 `apps/web/src/user/InvitationJobs.tsx`，逐模块对齐（布局 / 字段 / 按钮 / 列表 / 交互）：
  *   1. 选择区：「请柬模板选择」→ 模板预览弹窗；「宾客名单选择」→ 宾客选择弹窗；
  *      「批量生成」→ setGuestSelection + POST /invitations/batch-generate（首渲 FREE_SAMPLE / 续渲 PAID）；
- *   2. 任务进度区：按**人员逐条**展示 任务(姓名) / 状态 / 进度 / 操作(预览 · 重新生成)；
- *   3. 工具条：全选 / 删除选择 / 打包下载 + 每行复选框（仅成功图可勾）。
+ *   2. 任务进度区：按**人员逐条**展示 任务队列 / 宾客信息 / 状态 / 进度 / 操作(预览 · 生成) / 次数；
+ *   3. 工具条：全选 / 删除选择 / 打包下载（仅「当前任务」页显示）+ 每行复选框（仅超额锁定的 paywalled 行不可勾）；
+ *      任务队列列头新增全选 checkbox；任务队列单元格可点击打开编辑弹窗；双选项卡（当前任务 / 历史任务）。
  *
  * 轮询完成语义（★防回归）：**不能**仅凭逐人 status 停止——免费赠样仅渲前 3 人、其余恒 pending；
  * 必须以 **job 状态** SUCCESS/PARTIAL/FAILED 为终态信号。
@@ -58,8 +66,36 @@ interface JobRow {
   status: string;
 }
 
-export default function UserInvitationCenter() {
-  const { q, subjBody, canWrite, scopeForImage, subject } = useSubjectScope();
+export interface UserInvitationCenterProps {
+  /** ORG=自营样板 / CLIENT=代客；不传则走用户视角（仅 subject） */
+  ownerType?: 'ORG' | 'CLIENT';
+  /** CLIENT 时必带客户 id */
+  clientId?: string;
+}
+
+export default function UserInvitationCenter({ ownerType, clientId }: UserInvitationCenterProps) {
+  // 用户视角监督口径：仅 subject + canWrite（向后兼容：用户视角路由不传 ownerType/clientId）
+  const { subject, canWrite } = useSubjectScope();
+  // 服务商作用域：统一经 useSpScope 拼 subject + ownerType + clientId（修复 SP 页 400 根因）
+  const { scopeQuery, scopeBody, scopeForImage } = useSpScope();
+  const clientIdForScope = ownerType === 'CLIENT' ? clientId : undefined;
+  const q = useCallback(
+    (p: string) => scopeQuery(p, ownerType, clientIdForScope),
+    [scopeQuery, ownerType, clientIdForScope],
+  );
+  const body = useCallback(
+    (extra?: Record<string, unknown>) => ({
+      ...scopeBody,
+      ...(ownerType ? { ownerType } : {}),
+      ...(clientIdForScope ? { clientId: clientIdForScope } : {}),
+      ...extra,
+    }),
+    [scopeBody, ownerType, clientIdForScope],
+  );
+  const imgScope = useMemo(
+    () => scopeForImage(ownerType, clientIdForScope),
+    [scopeForImage, ownerType, clientIdForScope],
+  );
 
   // 变量绑定对话框（S5）态
   const [healthOpen, setHealthOpen] = useState(false);
@@ -73,15 +109,38 @@ export default function UserInvitationCenter() {
   const [picked, setPicked] = useState<PickedPersons | null>(null);
 
   const [results, setResults] = useState<PerResult[]>([]);
+  const [rerenderLimit, setRerenderLimit] = useState(RERENDER_LIMIT);
   const [loadingResults, setLoadingResults] = useState(false);
   const [generating, setGenerating] = useState(false);
+  // 续跑失败项（T6）：防止重复点击
+  const [resuming, setResuming] = useState(false);
   const [error, setError] = useState('');
   const [emptyBatch, setEmptyBatch] = useState('');
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [runningJobId, setRunningJobId] = useState<string | null>(null);
 
+  // 编辑上限闸门（§变量绑定 优化2）
+  const [editedRecordIds, setEditedRecordIds] = useState<string[]>([]);
+  const [editLimit, setEditLimit] = useState<number>(0);
+  // 全局剩余渲染额度（超出上限后的确认/耗尽弹窗以此为准）
+  const [availableCounts, setAvailableCounts] = useState<number>(0);
+  // 任务队列编辑弹窗（§变量绑定 优化2）
+  const [editOpen, setEditOpen] = useState(false);
+  const [editRow, setEditRow] = useState<PerResult | null>(null);
+  const [editFields, setEditFields] = useState<GuestFieldDef[]>([]);
+  const [editFormValues, setEditFormValues] = useState<Record<string, string>>({});
+  const [editLoading, setEditLoading] = useState(false);
+  const [editForm] = Form.useForm<Record<string, string>>();
+
   const [pickerOpen, setPickerOpen] = useState(false);
   const [personOpen, setPersonOpen] = useState(false);
+
+  // 购买渲染人次弹窗与配额
+  const [quota, setQuota] = useState<BatchProjectView | null>(null);
+  const [buyOpen, setBuyOpen] = useState(false);
+  const [buyHeadcount, setBuyHeadcount] = useState('1');
+  const [buyMsg, setBuyMsg] = useState('');
+  const [buyError, setBuyError] = useState('');
 
   const pollRef = useRef<number | null>(null);
   const projectId = picked?.projectId ?? '';
@@ -98,6 +157,10 @@ export default function UserInvitationCenter() {
       try {
         const r = await apiGet<ProjectResults>(q(`/invitations/projects/${pid}/results`));
         setResults(r.results ?? []);
+        setRerenderLimit(r.rerenderLimit ?? RERENDER_LIMIT);
+        setEditedRecordIds(r.editedRecordIds ?? []);
+        setEditLimit(r.editLimit ?? 0);
+        setAvailableCounts(r.remaining ?? 0);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -106,6 +169,35 @@ export default function UserInvitationCenter() {
     },
     [q],
   );
+
+  /** 拉取并同步项目配额（可渲染总数 / 剩余），供「购买数量」右侧标签实时显示 */
+  const refreshQuota = useCallback(
+    async (pid: string) => {
+      try {
+        const v = await apiGet<BatchProjectView>(q(`/invitations/projects/${pid}`));
+        setQuota({
+          id: v.id,
+          state: v.state,
+          freeSampleCap: v.freeSampleCap,
+          purchasedHeadcount: v.purchasedHeadcount,
+          totalRenderable: v.totalRenderable,
+          alreadyRendered: v.alreadyRendered,
+          purchasedRerender: v.purchasedRerender,
+          remaining: v.remaining,
+          locked: v.locked,
+        });
+        setAvailableCounts(v.remaining ?? 0);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    },
+    [q],
+  );
+
+  // 编辑弹窗字段/初始值异步加载完成后回填 Form（与 destroyOnClose 配合，避免首帧 initialValues 滞后）
+  useEffect(() => {
+    if (editOpen && editRow) editForm.setFieldsValue(editFormValues);
+  }, [editOpen, editRow, editFormValues, editForm]);
 
   // 轮询：有运行中的 job 时刷新逐人状态；job 终态后停止
   useEffect(() => {
@@ -136,12 +228,14 @@ export default function UserInvitationCenter() {
 
   // 切换项目时拉一次结果
   useEffect(() => {
-    if (projectId) void loadResults(projectId);
-    else {
+    if (projectId) {
+      void loadResults(projectId);
+      void refreshQuota(projectId);
+    } else {
       setResults([]);
       setChecked(new Set());
     }
-  }, [projectId, loadResults]);
+  }, [projectId, loadResults, refreshQuota]);
 
   useEffect(() => () => stopPoll(), [stopPoll]);
 
@@ -166,6 +260,7 @@ export default function UserInvitationCenter() {
     async (payload: { projectId: string; mode?: 'FREE_SAMPLE' | 'PAID' | 'RERENDER'; targetRecordIds?: string[] }) => {
       setError('');
       setEmptyBatch('');
+      setBuyMsg('');
       setGenerating(true);
       try {
         // 首渲/续渲前确保勾选已落库（重渲无需重设）。
@@ -174,7 +269,7 @@ export default function UserInvitationCenter() {
         if (!payload.targetRecordIds && picked && !payload.mode) {
           const saved = await apiPost<{ selectedRecordIds?: string[] }>(
             q(`/invitations/projects/${payload.projectId}/selection`),
-            { listId: picked.listId, selectedRecordIds: picked.selectedRecordIds, ...subjBody },
+            { listId: picked.listId, selectedRecordIds: picked.selectedRecordIds, ...body() },
           );
           if (saved?.selectedRecordIds?.length) {
             setPicked((prev) =>
@@ -184,13 +279,13 @@ export default function UserInvitationCenter() {
         }
         const res = await apiPost<{ jobId: string | null; status?: string; message?: string }>(
           q('/invitations/batch-generate'),
-          { ...payload, ...subjBody },
+          { ...payload, ...body() },
         );
         // 空批次：锁定名单中已无待渲染人员 → 后端返回 jobId:null + status:NO_PENDING，
         // 跳过当前批次、不抛 400、不中断任务
         if (!res.jobId) {
           setGenerating(false);
-          setEmptyBatch(res.message || '当前锁定名单已无待渲染人员，无需重新生成');
+          setEmptyBatch(res.message || '锁定名单内已无待渲染人员');
           await loadResults(payload.projectId);
           return;
         }
@@ -204,6 +299,58 @@ export default function UserInvitationCenter() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [picked, loadResults, q],
   );
+
+  /**
+   * 打开「购买渲染人次」弹窗：先同步配额，再按已选超额(待解锁)人数预填购买人次。
+   */
+  const openBuy = () => {
+    if (!picked) {
+      setError('请先选择宾客名单');
+      return;
+    }
+    void refreshQuota(projectId).then(() => {
+      const paywalled = results.filter((r) => r.paywalled).length;
+      setBuyHeadcount(String(paywalled > 0 ? paywalled : 1));
+      setBuyError('');
+      setBuyMsg('');
+      setBuyOpen(true);
+    });
+  };
+
+  /** 确认购买：POST /api/invitations/purchase（subject 走 body），成功后用返回视图刷新配额并刷新行 */
+  const confirmBuy = async () => {
+    if (!picked) return;
+    const n = Math.floor(Number(buyHeadcount));
+    if (!Number.isFinite(n) || n <= 0) {
+      setBuyError('请输入大于 0 的正整数购买人次');
+      return;
+    }
+    setBuyError('');
+    try {
+      const v = await apiPost<BatchProjectView>('/invitations/purchase', {
+        projectId: picked.projectId,
+        headcount: n,
+        ...body(),
+      });
+      setQuota({
+        id: v.id,
+        state: v.state,
+        freeSampleCap: v.freeSampleCap,
+        purchasedHeadcount: v.purchasedHeadcount,
+        totalRenderable: v.totalRenderable,
+        alreadyRendered: v.alreadyRendered,
+        purchasedRerender: v.purchasedRerender,
+        remaining: v.remaining,
+        locked: v.locked,
+      });
+      setAvailableCounts(v.remaining ?? 0);
+      await loadResults(projectId);
+      setBuyMsg('购买成功，已增加渲染人次');
+      setBuyOpen(false);
+    } catch (e) {
+      setBuyError(e instanceof Error ? e.message : String(e));
+    }
+  };
 
   /**
    * 第③步「字段配对」入口：先体检 + 拉取可点选元素，弹出「字段配对」对话框。
@@ -226,16 +373,65 @@ export default function UserInvitationCenter() {
     }
   };
 
-  const onRegenerate = (recordId: string) => {
+  const onRegenerate = (r: PerResult) => {
     if (!picked) return;
-    void startGenerate({ projectId: picked.projectId, mode: 'RERENDER', targetRecordIds: [recordId] });
+    const used = r.rerenders ?? 0;
+    if (used >= rerenderLimit) {
+      if (availableCounts > 0) {
+        Modal.confirm({
+          title: t('guest.batch.rerenderConsumeWarnTitle', { defaultValue: '消耗次数警告' }),
+          content: t('guest.batch.rerenderConsumeWarn', { defaultValue: '该记录已达到生成上限，如果希望再生成一次，则会消耗生成次数。是否继续？' }),
+          okText: t('guest.batch.rerenderContinue', { defaultValue: '继续' }),
+          cancelText: t('guest.batch.rerenderCancel', { defaultValue: '取消' }),
+          onOk: () => {
+            if (picked) void startGenerate({ projectId: picked.projectId, mode: 'RERENDER', targetRecordIds: [r.recordId] });
+          },
+        });
+      } else {
+        Modal.info({
+          content: t('guest.batch.rerenderExhausted', { defaultValue: '你的生成次数已用完，请购买次数' }),
+          okText: t('guest.batch.rerenderClose', { defaultValue: '关闭' }),
+        });
+      }
+      return;
+    }
+    void startGenerate({ projectId: picked.projectId, mode: 'RERENDER', targetRecordIds: [r.recordId] });
   };
 
-  /** 逐人预览：private-assets 不公开暴露，须带鉴权 fetch → Blob → 新窗口 */
-  const previewOne = async (row: PerResult) => {
-    if (!row.url) return;
+  /**
+   * 断点续跑（T6）：找到最近一个 PARTIAL/FAILED 的任务，仅重渲其失败/缺失项。
+   * 对齐 web 端 InvitationJobs.onResumeFailed —— 复用本页已有 loadResults / runningJobId / setGenerating 轮询逻辑。
+   */
+  const onResumeFailed = async () => {
+    if (!picked) return;
+    setResuming(true);
     try {
-      const res = await fetch(`${STATIC_URL}${row.url}${scopeForImage}`, { headers: authHeaders() });
+      const jobs = await apiGet<Array<{ id: string; status: string; createdAt?: string }>>(
+        q(`/invitations/jobs?projectId=${picked.projectId}`),
+      );
+      const cand = [...(jobs ?? [])]
+        .filter((j) => j.status === 'PARTIAL' || j.status === 'FAILED')
+        .sort((a, b) => (a.createdAt && b.createdAt ? (a.createdAt < b.createdAt ? 1 : -1) : 0))[0];
+      if (!cand) {
+        setError('未找到可续跑的任务');
+        return;
+      }
+      const res = await apiPost<{ jobId: string }>(`/invitations/jobs/${cand.id}/resume`, body());
+      setRunningJobId(res.jobId);
+      setGenerating(true);
+      await loadResults(picked.projectId); // 复用已有的结果加载/轮询
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setResuming(false);
+    }
+  };
+
+  /** 带鉴权预览某张生成图（private-assets 不公开，fetch Blob → 新窗口） */
+  const previewUrl = async (url: string | null) => {
+    if (!url) return;
+    try {
+      const res = await fetch(`${STATIC_URL}${url}${imgScope}`, { headers: authHeaders() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const obj = URL.createObjectURL(blob);
@@ -246,18 +442,77 @@ export default function UserInvitationCenter() {
     }
   };
 
+  /** 逐人预览（当前任务） */
+  const previewOne = (row: PerResult) => previewUrl(row.url);
+
+  /**
+   * 打开「任务队列」编辑弹窗（§变量绑定 优化2）。
+   * 取字段设计 + 用记录的 fields/data 回填 Form；只读（!canWrite）不打开。
+   */
+  /**
+   * 打开编辑弹窗：字段严格取自当前所选宾客名单的 columnDefs（后端 results 行 row.fields），
+   * 不再调用 /api/guest-lists/field-design —— 该端点返回 owner 级设计，会回落 GUEST_FIELD_DEFS.slice(0,5)
+   * （系统默认 5 字段），与所选名单实际字段不符（典型如婚礼名单仅含 丈夫姓名/妻子姓名）。
+   * 用 getGuestFieldDef 补 type/values 以还原 select 渲染；回填 row.fields.value 优先、row.data 兜底。
+   */
+  const openEdit = (r: PerResult) => {
+    if (!canWrite) return;
+    setEditRow(r);
+    setEditOpen(true);
+    setEditLoading(false);
+    const fields: GuestFieldDef[] = (r.fields ?? []).map((f) => {
+      const def = getGuestFieldDef(f.key);
+      return {
+        key: f.key,
+        label: f.label,
+        type: def?.type ?? 'string',
+        required: def?.required ?? false,
+        maxLen: def?.maxLen,
+        values: def?.values ?? def?.enum,
+        example: def?.example ?? '',
+      } as GuestFieldDef;
+    });
+    setEditFields(fields);
+    const initial: Record<string, string> = {};
+    for (const f of fields) {
+      const fromFields = r.fields?.find((x) => x.key === f.key)?.value;
+      const fromData = r.data?.[f.key];
+      initial[f.key] =
+        fromFields != null && fromFields !== '' ? fromFields : fromData != null ? String(fromData) : '';
+    }
+    setEditFormValues(initial);
+  };
+
+  /** 保存编辑后的宾客字段（§变量绑定 优化2） */
+  const saveEdit = async () => {
+    if (!editRow || !canWrite) return;
+    if (editLimit > 0 && editedRecordIds.length >= editLimit) return;
+    setEditLoading(true);
+    try {
+      const values = editForm.getFieldsValue() as Record<string, string>;
+      const editedData: Record<string, string> = {};
+      for (const f of editFields) editedData[f.key] = values[f.key] ?? '';
+      await editInvitationRecord(projectId, editRow.recordId, editedData);
+      setEditOpen(false);
+      setEditedRecordIds((prev) =>
+        prev.includes(editRow.recordId) ? prev : [...prev, editRow.recordId],
+      );
+      await loadResults(projectId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   const doPack = async () => {
     if (!projectId) return;
     try {
       const ids = [...checked];
-      const qs = new URLSearchParams();
-      if (ids.length) qs.set('recordIds', ids.join(','));
-      if (subjBody.subject) qs.set('subject', subjBody.subject);
-      const suffix = qs.toString();
-      await downloadWithAuth(
-        `/api/invitations/projects/${projectId}/download${suffix ? `?${suffix}` : ''}`,
-        `invitations-${projectId}.zip`,
-      );
+      const base = scopeQuery(`/api/invitations/projects/${projectId}/download`, ownerType, clientIdForScope);
+      const sep = base.includes('?') ? '&' : '?';
+      const suffix = ids.length ? `${sep}recordIds=${ids.join(',')}` : '';
+      await downloadWithAuth(`${base}${suffix}`, `invitations-${projectId}.zip`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -269,7 +524,7 @@ export default function UserInvitationCenter() {
     try {
       await apiDelete(q(`/invitations/projects/${projectId}/results`), {
         recordIds: [...checked],
-        ...subjBody,
+        ...body(),
       });
       setChecked(new Set());
       await loadResults(projectId);
@@ -285,17 +540,28 @@ export default function UserInvitationCenter() {
       else next.add(id);
       return next;
     });
-  const okIds = results.filter((r) => r.status === 'ok').map((r) => r.recordId);
-  const allChecked = okIds.length > 0 && okIds.every((id) => checked.has(id));
-  const toggleAll = () => setChecked(allChecked ? new Set() : new Set(okIds));
+  // 缺陷一修复：仅超额锁定（paywalled）不可勾选；全选覆盖所有非 paywalled 行
+  // 「续跑失败项」按钮可见性：存在失败（failed）结果行时显示（对齐 web 端 failedCount 口径）
+  const failedCount = results.filter((r) => r.status === 'failed').length;
+  const selectableIds = results.filter((r) => !r.paywalled).map((r) => r.recordId);
+  const allChecked = selectableIds.length > 0 && selectableIds.every((id) => checked.has(id));
+  const toggleAll = () => setChecked(allChecked ? new Set() : new Set(selectableIds));
 
-  const statusText = (r: PerResult) => {
-    if (r.status === 'ok') return { label: '成功', color: C.ok };
+  const statusText = (r: { status: PerResult['status']; paywalled?: boolean }) => {    if (r.status === 'ok') return { label: '成功', color: C.ok };
     if (r.status === 'failed') return { label: '失败', color: C.fail };
     // B5：已勾选但剩余渲染额度耗尽、尚未渲染 —— 既非成功也非失败，用琥珀色区别于红色失败态
     if (r.paywalled) return { label: '待解锁', color: C.warn };
     return runningJobId ? { label: '生成中', color: C.running } : { label: '待生成', color: C.ink4 };
   };
+
+  /** 宾客信息按字段拆列：表头 schema 取首行 fields（各行列序一致），每格只渲染该字段的 value */
+  const fieldCols = results[0]?.fields ?? [];
+
+  // 「购买数量」右侧实时配额标签
+  const used = quota ? Math.max(0, (quota.totalRenderable ?? 0) - (quota.remaining ?? 0)) : 0;
+  const quotaText = quota
+    ? `生成总数：${quota.totalRenderable ?? '—'}，已使用：${used}，剩余：${quota.remaining ?? '—'}`
+    : '生成总数：—，已使用：—，剩余：—';
 
   return (
     <div style={{ padding: 16 }}>
@@ -309,6 +575,11 @@ export default function UserInvitationCenter() {
       {emptyBatch && (
         <div style={{ marginBottom: 12, borderRadius: 4, background: '#fffbeb', padding: '8px 12px', fontSize: 12, color: '#b45309' }}>
           {emptyBatch}
+        </div>
+      )}
+      {buyMsg && (
+        <div style={{ marginBottom: 12, borderRadius: 4, background: '#f0fdf4', padding: '8px 12px', fontSize: 12, color: '#15803d' }}>
+          {buyMsg}
         </div>
       )}
 
@@ -389,27 +660,54 @@ export default function UserInvitationCenter() {
               setError('请先完成前一步操作');
               return;
             }
-            if (picked) void startGenerate({ projectId: picked.projectId });
+            if (generating) return; // 防重复提交（按钮已不再置灰，此处幂等兜底）
+            if (checked.size === 0) {
+              setError('你没有选择任何记录');
+              return;
+            }
+            // 缺陷一修复 + 本次优化：始终按勾选子集渲染；未勾选时上方已给出提示
+            void startGenerate({
+              projectId: picked.projectId,
+              targetRecordIds: [...checked],
+            });
           }}
-          disabled={!picked || generating || !canWrite || !fieldPaired}
+          // 优化：向导完成即常亮可点，不再因「未勾选 / 生成中 / 队列状态」置灰
+          disabled={!picked || !canWrite || !fieldPaired}
           style={{
-            marginLeft: 'auto',
             borderRadius: 4,
             border: 'none',
             background: C.blue,
             color: '#fff',
             padding: '6px 20px',
             fontSize: 14,
-            cursor: !picked || generating || !canWrite || !fieldPaired ? 'not-allowed' : 'pointer',
-            opacity: !picked || generating || !canWrite || !fieldPaired ? 0.5 : 1,
+            cursor: !picked || !canWrite || !fieldPaired ? 'not-allowed' : 'pointer',
+            opacity: !picked || !canWrite || !fieldPaired ? 0.5 : 1,
           }}
         >
-          {generating ? '生成中…' : '④ 批量生成'}
+          {generating ? '生成中…' : '④ 批量生成所选'}
         </button>
         {!canWrite && <span style={{ fontSize: 12, color: C.ink4 }}>监督态只读</span>}
+
+        <button
+          onClick={openBuy}
+          disabled={!picked}
+          style={{
+            marginLeft: 'auto',
+            borderRadius: 4,
+            border: '1px solid #d1d5db',
+            background: '#fff',
+            padding: '6px 16px',
+            fontSize: 14,
+            cursor: !picked ? 'not-allowed' : 'pointer',
+            opacity: !picked ? 0.5 : 1,
+          }}
+        >
+          {t('guest.batch.buyQuantity', { defaultValue: '购买数量' })}
+        </button>
+        <span style={{ fontSize: 13, color: C.ink2, marginLeft: 12 }}>{quotaText}</span>
       </div>
 
-      {/* 任务进度区 */}
+      {/* 任务进度区（双选项卡：当前任务 / 历史任务，§变量绑定 三） */}
       <div style={{ borderRadius: 8, border: `1px solid ${C.line}`, background: '#fff' }}>
         <div
           style={{
@@ -422,87 +720,165 @@ export default function UserInvitationCenter() {
           }}
         >
           <span style={{ fontSize: 14, fontWeight: 500, color: '#374151' }}>任务进度</span>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-            <SmallBtn onClick={toggleAll} disabled={!results.length}>
-              全选
-            </SmallBtn>
-            <SmallBtn onClick={doDelete} disabled={!checked.size || !canWrite}>
-              删除选择
-            </SmallBtn>
-            <SmallBtn onClick={doPack} disabled={!results.length}>
-              打包下载
-            </SmallBtn>
-          </div>
+          {/* 工具栏（全选/删除选择/打包下载） */}
+          {(
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+              {failedCount > 0 && (
+                <SmallBtn onClick={onResumeFailed} disabled={resuming || generating}>
+                  续跑失败项
+                </SmallBtn>
+              )}
+              <SmallBtn onClick={toggleAll} disabled={!results.length}>
+                全选
+              </SmallBtn>
+              <SmallBtn onClick={doDelete} disabled={!checked.size || !canWrite}>
+                删除选择
+              </SmallBtn>
+              <SmallBtn onClick={doPack} disabled={!results.length}>
+                打包下载
+              </SmallBtn>
+            </div>
+          )}
         </div>
 
         {!projectId ? (
           <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 14, color: C.ink4 }}>
-            请先选择模板与宾客名单，再点击「批量生成」
+            请先依次完成 ①模板选择 → ②宾客名单选择 → ③字段配对，然后在「执行任务队列」勾选要生成的记录，再点击「④ 批量生成所选」
           </div>
-        ) : loadingResults && !results.length ? (
-          <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 14, color: C.ink4 }}>…</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-            <thead>
-              <tr>
-                <th style={{ ...th, width: 40 }} />
-                <th style={th}>任务</th>
-                <th style={{ ...th, width: 112 }}>状态</th>
-                <th style={{ ...th, width: 112 }}>进度</th>
-                <th style={{ ...th, width: 160 }}>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.map((r) => {
-                const st = statusText(r);
-                const canRegenerate = r.status === 'ok' || r.status === 'failed';
-                return (
-                  <tr key={r.recordId}>
-                    <td style={td}>
-                      <input
-                        type="checkbox"
-                        checked={checked.has(r.recordId)}
-                        disabled={r.status !== 'ok'}
-                        onChange={() => toggleCheck(r.recordId)}
-                        title={r.status !== 'ok' ? '仅成功图可勾选打包/删除' : ''}
-                        style={{ width: 16, height: 16, accentColor: '#3b82f6' }}
-                      />
-                    </td>
-                    <td style={{ ...td, color: C.ink1 }}>{r.name ?? r.recordId}</td>
-                    <td style={{ ...td, color: st.color }}>
-                      {st.label}
-                      {r.error ? <div style={{ fontSize: 11, color: '#ef4444' }}>{r.error}</div> : null}
-                    </td>
-                    <td style={{ ...td, color: C.ink3 }}>{r.url ? '已生成' : '待生成'}</td>
-                    <td style={td}>
-                      <button
-                        onClick={() => void previewOne(r)}
-                        disabled={!r.url}
-                        style={linkBtn(C.blue, !!r.url)}
-                      >
-                        预览
-                      </button>
-                      <button
-                        onClick={() => onRegenerate(r.recordId)}
-                        disabled={!canRegenerate || generating || !canWrite}
-                        style={linkBtn(C.brand, canRegenerate && !generating && canWrite)}
-                      >
-                        重新生成
-                      </button>
+          loadingResults && !results.length ? (
+            <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 14, color: C.ink4 }}>…</div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+              <thead>
+                <tr>
+                  <th style={{ ...th, width: 40 }}>
+                    {/* 优化1：首列全选 checkbox（受控 allChecked / toggleAll） */}
+                    <input
+                      type="checkbox"
+                      checked={allChecked}
+                      disabled={!selectableIds.length}
+                      onChange={toggleAll}
+                      style={{ width: 16, height: 16, accentColor: '#3b82f6' }}
+                    />
+                  </th>
+                  <th style={th}>任务队列</th>
+                  {fieldCols.length ? (
+                    fieldCols.map((f) => (
+                      <th key={f.key} style={th}>
+                        {f.label}
+                      </th>
+                    ))
+                  ) : (
+                    <th style={th}>宾客信息</th>
+                  )}
+                  <th style={{ ...th, width: 112 }}>状态</th>
+                  <th style={{ ...th, width: 160 }}>操作</th>
+                  <th style={{ ...th, width: 100 }}>次数</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((r) => {
+                  const st = statusText(r);
+                  const isPending = r.status === 'pending';
+                  // 「已达重渲上限 + 全局无额度」的行不被 paywalled 置灰：点击只弹「已用完」（仅「关闭」）。
+                  // ⚠️ 例外收窄到 availableCounts === 0：若 remaining > 0，点击会落在「消耗次数警告」的
+                  // 「继续」上，扣全局额度直接出图 —— 会绕过「待解锁」行需先购买人次的设计。
+                  const atLimit = (r.rerenders ?? 0) >= rerenderLimit;
+                  const canRegenerate =
+                    (r.status === 'ok' || r.status === 'failed' || isPending) &&
+                    (!r.paywalled || (atLimit && availableCounts === 0));
+                  const taskLabel = r.taskName ?? r.name ?? r.recordId;
+                  return (
+                    <tr key={r.recordId}>
+                      <td style={td}>
+                        {/* 缺陷一修复：仅超额锁定（paywalled）不可勾选 */}
+                        <input
+                          type="checkbox"
+                          checked={checked.has(r.recordId)}
+                          disabled={!!r.paywalled}
+                          onChange={() => toggleCheck(r.recordId)}
+                          title={r.paywalled ? '超出可渲染额度，需购买人次解锁' : ''}
+                          style={{ width: 16, height: 16, accentColor: '#3b82f6' }}
+                        />
+                      </td>
+                      <td style={{ ...td, color: C.ink1 }}>
+                        {/* 优化2：任务队列可点击打开编辑弹窗（只读态退化为纯文本） */}
+                        {canWrite ? (
+                          <button
+                            type="button"
+                            onClick={() => void openEdit(r)}
+                            style={{
+                              border: 'none',
+                              background: 'none',
+                              padding: 0,
+                              color: C.blue,
+                              cursor: 'pointer',
+                              fontSize: 14,
+                            }}
+                            title="点击编辑宾客信息"
+                          >
+                            {taskLabel}
+                          </button>
+                        ) : (
+                          taskLabel
+                        )}
+                      </td>
+                      {/* 优化4：宾客信息按字段拆列，每格只显示该字段的值 */}
+                      {fieldCols.length ? (
+                        fieldCols.map((f) => (
+                          <td key={f.key} style={{ ...td, color: C.ink2 }}>
+                            {r.fields?.find((x) => x.key === f.key)?.value ?? ''}
+                          </td>
+                        ))
+                      ) : (
+                        <td style={{ ...td, color: C.ink2 }}>—</td>
+                      )}
+                      <td style={{ ...td, color: st.color }}>
+                        {st.label}
+                        {r.error ? <div style={{ fontSize: 11, color: '#ef4444' }}>{r.error}</div> : null}
+                      </td>
+                      <td style={td}>
+                        <button
+                          onClick={() => void previewOne(r)}
+                          disabled={!r.url}
+                          style={linkBtn(C.blue, !!r.url)}
+                        >
+                          预览
+                        </button>
+                        {/* 优化3：统一文案为「生成」 */}
+                        <button
+                          onClick={() => onRegenerate(r)}
+                          disabled={!canRegenerate || generating || !canWrite}
+                          title=""
+                          style={linkBtn(C.brand, canRegenerate && !generating && canWrite)}
+                        >
+                          生成
+                        </button>
+                        {r.rerenders ? (
+                          <span style={{ marginLeft: 8, fontSize: 11, color: C.ink3 }}>
+                            重渲 {r.rerenders}/{rerenderLimit}
+                          </span>
+                        ) : null}
+                      </td>
+                      {/* 优化5：次数列 */}
+                      <td style={{ ...td, color: C.ink3 }}>
+                        {`${r.rerenders ?? 0}/${rerenderLimit - (r.rerenders ?? 0)}`}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!results.length && (
+                  <tr>
+                    <td colSpan={5 + fieldCols.length} style={{ ...td, textAlign: 'center', color: C.ink4, padding: 40 }}>
+                      暂无生成任务
                     </td>
                   </tr>
-                );
-              })}
-              {!results.length && (
-                <tr>
-                  <td colSpan={5} style={{ ...td, textAlign: 'center', color: C.ink4, padding: 40 }}>
-                    暂无生成任务
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        )}
+                )}
+              </tbody>
+            </table>
+          )
+      )}
       </div>
 
       <UserInvitationTemplatePicker
@@ -545,6 +921,68 @@ export default function UserInvitationCenter() {
         }}
         onPaired={() => setFieldPaired(true)}
       />
+
+      {/* 任务队列编辑弹窗（§变量绑定 优化2）：antd Modal + Form */}
+      <Modal
+        open={editOpen}
+        title="编辑宾客信息"
+        onCancel={() => setEditOpen(false)}
+        onOk={saveEdit}
+        okText="保存"
+        cancelText="取消"
+        confirmLoading={editLoading}
+        destroyOnClose
+        okButtonProps={{
+          disabled: !canWrite || (editLimit > 0 && editedRecordIds.length >= editLimit),
+        }}
+      >
+        {!canWrite ? (
+          <div style={{ color: C.ink4, fontSize: 13, marginBottom: 12 }}>监督态只读，不可编辑</div>
+        ) : null}
+        {editLimit > 0 && editedRecordIds.length >= editLimit ? (
+          <div style={{ color: C.warn, fontSize: 13, marginBottom: 12 }}>
+            {`修改次数已达上限（${Math.round((editedRecordIds.length / editLimit) * 100)}%），不可再修改`}
+          </div>
+        ) : null}
+        <Form form={editForm} layout="vertical" initialValues={editFormValues}>
+          {editFields.map((f) => (
+            <Form.Item
+              key={f.key}
+              name={f.key}
+              label={f.label}
+              rules={f.required ? [{ required: true, message: `请输入${f.label}` }] : []}
+            >
+              {f.type === 'enum' && f.values?.length ? (
+                <Select
+                  options={f.values.map((v) => ({ label: v, value: v }))}
+                  placeholder={`请选择${f.label}`}
+                />
+              ) : (
+                <Input maxLength={f.maxLen} placeholder={`请输入${f.label}`} />
+              )}
+            </Form.Item>
+          ))}
+        </Form>
+      </Modal>
+
+      {/* 购买渲染人次弹窗（对齐 web 端「购买数量」） */}
+      <Modal
+        open={buyOpen}
+        title={t('guest.batch.buyTitle', { defaultValue: '购买渲染人次' })}
+        onCancel={() => setBuyOpen(false)}
+        onOk={confirmBuy}
+        okText={t('guest.batch.confirmBuy', { defaultValue: '确认购买' })}
+        cancelText="取消"
+      >
+        <div style={{ fontSize: 13, color: C.ink2, marginBottom: 12 }}>
+          {quota ? `免费赠样 ${quota.freeSampleCap ?? 0} 人 + 已购 ${quota.purchasedHeadcount ?? 0} = 可渲染 ${quota.totalRenderable ?? 0} 人，剩余 ${quota.remaining ?? 0} 人` : ''}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 14 }}>{t('guest.batch.buyHeadcount', { defaultValue: '购买人次' })}</span>
+          <Input type="number" min={1} value={buyHeadcount} onChange={(e) => setBuyHeadcount(e.target.value)} style={{ width: 120 }} />
+        </div>
+        {buyError ? <div style={{ color: C.err, fontSize: 12, marginTop: 8 }}>{buyError}</div> : null}
+      </Modal>
     </div>
   );
 }
