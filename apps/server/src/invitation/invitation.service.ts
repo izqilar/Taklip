@@ -370,7 +370,43 @@ export class InvitationService implements OnModuleInit {
       where: this.projectWhere(scope),
       orderBy: { createdAt: 'desc' },
     });
-    return rows.map((r) => this.projectView(r));
+    if (!rows.length) return [];
+    // 「配对记录」区块 enrich：模板名 / 名单名 / 配对数 / cmv 任务编号。
+    // 批量查询建 map（禁 N+1）；仅 enrich 本列表端点，不污染 projectView 的其他复用方。
+    const [tpls, lists, snaps, sels] = await Promise.all([
+      this.prisma.project.findMany({
+        where: { id: { in: [...new Set(rows.map((r) => r.templateId))] } },
+        select: { id: true, title: true },
+      }),
+      this.prisma.guestList.findMany({
+        where: { id: { in: [...new Set(rows.map((r) => r.listId))] } },
+        select: { id: true, name: true },
+      }),
+      this.prisma.renderSnapshot.findMany({
+        where: { projectId: { in: rows.map((r) => r.id) } },
+        select: { projectId: true, recordIds: true },
+      }),
+      this.prisma.guestListSelection.findMany({
+        where: { projectId: { in: rows.map((r) => r.id) } },
+        select: { projectId: true, selectedRecordIds: true },
+      }),
+    ]);
+    const tplMap = new Map(tpls.map((t) => [t.id, t.title]));
+    const listMap = new Map(lists.map((l) => [l.id, l.name]));
+    const snapMap = new Map(snaps.map((s) => [s.projectId, s]));
+    const selMap = new Map(sels.map((s) => [s.projectId, s]));
+    return rows.map((r) => {
+      const snapIds = ((snapMap.get(r.id)?.recordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
+      const selIds = ((selMap.get(r.id)?.selectedRecordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
+      return {
+        ...this.projectView(r),
+        templateTitle: tplMap.get(r.templateId) ?? '',
+        listName: listMap.get(r.listId) ?? '',
+        // 配对数口径与 GET /projects/:id/selection 一致：快照锁定 ids ∪ 勾选 ids
+        pairCount: this.mergeLockedRecordIds(snapIds, selIds).length,
+        projectCode: this.formatTaskTs(r.createdAt),
+      };
+    });
   }
 
   /* ────────── §9.3 勾选子集 ────────── */
@@ -693,11 +729,13 @@ export class InvitationService implements OnModuleInit {
       let paidUsed = fresh.paidRendered;
 
       if (mode !== 'RERENDER') {
-        const room = Math.max(0, paidCap - paidUsed);
+        // 口径统一：room ≡ projectView.remaining（freeRendered 为历史已用，计入消耗）——
+        // 杜绝「展示有次数但接口 402 / 展示 0 却能生成」的校验≠展示分歧
+        const room = Math.max(0, paidCap - (freeUsed + paidUsed));
         const batch = Math.min(room, targets.length);
         if (batch <= 0) {
           throw new HttpException(
-            { code: 'QUOTA_EXCEEDED', message: '渲染次数不足，请购买次数', remaining: 0 },
+            { code: 'QUOTA_EXCEEDED', message: '渲染次数不足，请购买次数', remaining: room },
             402,
           );
         }
@@ -1098,10 +1136,11 @@ export class InvitationService implements OnModuleInit {
       // 历史遗留的 mode='FREE_SAMPLE' job 续跑一律按 PAID 口径扣费，防直连接口白嫖。
       let paidUsed = fresh.paidRendered;
       if (mode !== 'RERENDER') {
-        const room = Math.max(0, fresh.purchasedHeadcount - paidUsed);
+        // 口径统一（同 batchGenerate）：freeRendered 计入已用，room ≡ projectView.remaining
+        const room = Math.max(0, fresh.purchasedHeadcount - (fresh.freeRendered + paidUsed));
         const batch = Math.min(room, failedIds.length);
         if (batch <= 0) {
-          throw new HttpException({ code: 'QUOTA_EXCEEDED', message: '渲染次数不足，请购买次数', remaining: 0 }, 402);
+          throw new HttpException({ code: 'QUOTA_EXCEEDED', message: '渲染次数不足，请购买次数', remaining: room }, 402);
         }
         failedIds = failedIds.slice(0, batch);
         paidUsed += batch;
