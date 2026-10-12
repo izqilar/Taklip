@@ -24,11 +24,19 @@ const BASE_URL = ''; // 开发期走 vite proxy，生产期走 nginx 反代
 export class ApiError extends Error {
   statusCode: number;
   serverMessage?: string;
-  constructor(statusCode: number, message: string, serverMessage?: string) {
+  /**
+   * 服务端错误响应体（request() 非 2xx 时解析的 JSON 原样附上，如 402 额度不足的
+   * { code: 'QUOTA_EXCEEDED', remaining, need }）。供上层按状态码 + 错误体精确处理
+   * （典型：批量生成 402 时按 body.remaining 重算缺口引导购买）。
+   * 仅新增可选字段，不影响既有调用方行为。
+   */
+  body?: unknown;
+  constructor(statusCode: number, message: string, serverMessage?: string, body?: unknown) {
     super(message);
     this.name = 'ApiError';
     this.statusCode = statusCode;
     this.serverMessage = serverMessage;
+    this.body = body;
   }
 }
 
@@ -300,6 +308,18 @@ export interface BatchProjectView {
   alreadyRendered: number;
   remaining: number;
   locked: boolean;
+  /** 已购买的重渲染次数额度（item3 服务端新增，持久化） */
+  purchasedRerender?: number;
+  /** 所属宾客名单 id（projectView 恒返回；选中历史配对记录时据此拉名单记录做逐人预览） */
+  listId?: string;
+  /** 模板名（GET /invitations/projects 列表项新增，可选） */
+  templateTitle?: string;
+  /** 名单名（列表项新增，可选） */
+  listName?: string;
+  /** 配对数 = 渲染快照锁定 ∪ 勾选并集（列表项新增，可选） */
+  pairCount?: number;
+  /** cmv 任务编号（列表项新增，可选） */
+  projectCode?: string;
 }
 
 export interface GuestSelectionView {
@@ -332,13 +352,34 @@ export interface ProjectResultRow {
    * UI 上须区别于 status:'failed'：paywalled 既无图也不是失败，不应复用失败态红色样式。
    */
   paywalled?: boolean;
+  /** 该记录已被「重新生成」的次数（后端按历史 RERENDER job 推导，清理历史后归零） */
+  rerenders?: number;
+  /** 该记录对应的渲染任务名（'cmv'+时间戳），编辑弹窗回填与历史关联用（后端新增） */
+  taskName?: string;
+  /** 宾客字段名+值列表（编辑弹窗展示/回填用，后端新增） */
+  fields?: { key: string; label: string; value: string }[];
+  /** 原始 guestRecord.data（编辑弹窗表单初始值用，后端新增） */
+  data?: Record<string, unknown>;
 }
 
 export interface ProjectResultsView {
   projectId: string;
   total: number;
+  rerenderLimit?: number;
   results: ProjectResultRow[];
+  /** 已修改记录 id 列表（编辑闸门，后端新增） */
+  editedRecordIds?: string[];
+  /** 修改记录上限（= 总记录数 × 10%，后端新增） */
+  editLimit?: number;
+  /** 已购买的重渲染次数额度（item3 服务端新增，持久化，已废弃：前端改以 remaining 为准） */
+  purchasedRerender?: number;
+  /**
+   * 项目全局剩余可渲染额度（= freeSampleCap + purchasedHeadcount − 已渲染，
+   * 与 projectView.remaining 同口径）。超限重渲与否的唯一真值：>0 则允许消耗额度继续生成。
+   */
+  remaining?: number;
 }
+export const RERENDER_LIMIT = 5;
 
 /** 生成前变量匹配体检（D4 反转：含映射改指向，§2.5） */
 export interface BindingHealth {
@@ -483,8 +524,8 @@ async function request<T>(
   }
 
   const res = await fetch(url, {
-    headers,
     ...options,
+    headers,
   });
 
   // 访问令牌过期（401）：尝试用 refresh token 静默刷新后重试一次，避免用户被静默登出
@@ -525,8 +566,9 @@ async function request<T>(
     }
 
     // 结构化抛出：携带状态码与服务端消息，让上层（如登录页）按状态码给出精确文案，
-    // 而不是把所有失败都误报成「账号或密码错误」。
-    throw new ApiError(res.status, `API ${res.status}: ${text}`, serverMessage);
+    // 而不是把所有失败都误报成「账号或密码错误」。body 透出服务端错误体原文
+    // （如 402 额度不足的 remaining），供「批量生成次数不足」场景按同口径缺口引导购买。
+    throw new ApiError(res.status, `API ${res.status}: ${text}`, serverMessage, body);
   }
 
   if (res.status === 204) return undefined as T;
@@ -633,10 +675,45 @@ export const api = {
       body: JSON.stringify({ phone, password, nickname, ...(extra ?? {}) }),
     }),
 
-  login: (phone: string, password: string) =>
+  /**
+   * 多方式登录（D6 显式 type）：type = phone | email | userId | username；account 为对应标识值。
+   * 统一落点仍由服务端 ROLE_HOME 决定（home 字段），本端只做路由分发。
+   */
+  login: (type: string, account: string, password: string) =>
     request<AuthResponse>('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ phone, password }),
+      body: JSON.stringify({ type, account, password }),
+    }),
+
+  /** 忘记密码：提交任一登录标识，定位账户并发放重置凭证（D1 模拟送达会回带 devCode） */
+  forgotPassword: (identifier: string) =>
+    request<{ message: string; devChannel?: 'email' | 'sms' | 'none'; devCode?: string }>('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ identifier }),
+    }),
+
+  /** 重置密码：凭重置令牌（邮件链接令牌 或 SMS 验证码）设置新密码 */
+  resetPassword: (token: string, newPassword: string) =>
+    request<{ message: string }>('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    }),
+
+  /** 发起微信/QQ 扫码：返回 state 与二维码 URL（configured=false 表示服务端未配置开放平台资质） */
+  qrStart: (provider: 'wechat' | 'qq') =>
+    request<{ state: string; qrcodeUrl: string; configured: boolean }>(`/api/auth/${provider}/qr/start`, {
+      method: 'POST',
+    }),
+
+  /** 轮询扫码状态；done 时一次性返回令牌 */
+  qrStatus: (provider: 'wechat' | 'qq', state: string) =>
+    request<{ status: 'pending' | 'scanned' | 'done' | 'expired'; token?: AuthResponse }>(`/api/auth/${provider}/qr/status?state=${encodeURIComponent(state)}`),
+
+  /** 开发态模拟扫码（仅服务端非生产可用）：无开放平台资质时演练全流程 */
+  qrDevScan: (provider: 'wechat' | 'qq', state: string, openid?: string) =>
+    request<{ ok: boolean }>(`/api/auth/${provider}/qr/dev-scan`, {
+      method: 'POST',
+      body: JSON.stringify({ state, openid }),
     }),
 
   getMe: () =>
@@ -1010,6 +1087,9 @@ export const api = {
   getBatchProject: (projectId: string) =>
     request<BatchProjectView>(`/api/invitations/projects/${projectId}`),
 
+  /** 配对记录列表（projectView + templateTitle/listName/pairCount/projectCode，供 radio 选中操作对象） */
+  listInvitationProjects: () => request<BatchProjectView[]>('/api/invitations/projects'),
+
   /** 读取当前勾选子集 */
   getGuestSelection: (projectId: string) =>
     request<GuestSelectionView>(`/api/invitations/projects/${projectId}/selection`),
@@ -1089,6 +1169,17 @@ export const api = {
   /** 跨 job 聚合某项目的逐人渲染状态（按锁定快照顺序，§18.3） */
   projectResults: (projectId: string) =>
     request<ProjectResultsView>(`/api/invitations/projects/${projectId}/results`),
+
+  /** 编辑单条宾客记录字段（POST /api/invitations/projects/:id/records/:recordId/edit） */
+  editInvitationRecord: (projectId: string, recordId: string, data: Record<string, unknown>) =>
+    request<{ ok: boolean; editedCount: number; editLimit: number }>(
+      `/api/invitations/projects/${projectId}/records/${recordId}/edit`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data }),
+      },
+    ),
 
   /** 跨 job 按 ?recordIds= 子集（或不传=全部）打包 Zip（§18.4） */
   downloadProjectZip: (projectId: string, recordIds?: string[]) => {

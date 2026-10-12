@@ -1,23 +1,26 @@
 /**
- * InvitationJobs — 用户端「请柬批量生成」详情页（§18 二次优化）。
+ * InvitationJobs — 用户端「请柬批量生成」详情页（§18 二次优化 + 配对记录项目级化）。
  *
  * 全程在用户端闭环，不跳转编辑器：
  *  1. 「请柬模板选择」按钮 → InvitationTemplatePicker 实时预览弹窗，返回 {id,title,schema}；
  *  2. 「宾客名单选择」按钮 → PersonPickerDialog（复刻编辑器批量生成 UI），返回 {projectId,listId,selectedRecordIds}；
- *  3. 「批量生成」→ setGuestSelection + POST /api/invitations/batch-generate（首渲 FREE_SAMPLE / 续渲 PAID）；
- *  4. 下方任务进度区按**人员逐条**展示：任务(姓名)/状态/进度/操作(预览·生成)；
- *  5. 工具条：全选 / 删除选择 / 打包下载 + 每行复选框（§18.4）。
+ *  3. 「字段配对」→ 生成前体检 + 变量映射对话框，保存/跳过即标记第③步完成；
+ *  4. 「配对记录」区：GET /api/invitations/projects 列出全部配对项目，radio 互斥选中其一作为操作对象；
+ *  5. 「任务队列」区按**人员逐条**展示：任务编号/宾客字段/状态/操作(预览·生成)/次数；
+ *  6. 工具条：全选 / 删除选择 / 打包下载 + 每行复选框（§18.4）。
  *
  * 数据源：聚合端点 GET /api/invitations/projects/:id/results（跨 job、按锁定快照顺序）。
  *
  * 本轮改造（缺陷修复 + 优化 + 双选项卡）：
- *  - 缺陷一：行 checkbox 仅超额锁定(paywalled)不可选；④ 批量生成在勾选子集时按 targetRecordIds 渲；
+ *  - 缺陷一：行 checkbox 仅超额锁定(paywalled)不可选；批量生成在勾选子集时按 targetRecordIds 渲；
  *  - 优化1：表头首列内嵌全选 checkbox；
  *  - 优化2：任务队列可点开编辑弹窗（字段回填 + 编辑闸门）；
  *  - 优化3：行内操作统一为「生成」文案；
  *  - 优化4：新增「宾客信息」列；
  *  - 优化5：新增「次数」列；
  *  - 三：任务进度区改造为「当前任务 / 历史任务」双选项卡。
+ *  - 四：新增「配对记录」区，预览/批量生成/购买配额全部项目级化（以选中配对记录为准）；
+ *    批量生成前先刷新最新配额把关；batchGenerate 402 错误体透出 remaining，按同口径缺口引导购买。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +28,7 @@ import {
   api,
   getToken,
   ApiError,
+  type BatchProjectView,
   type ProjectResultRow,
   type BindingHealth,
   RERENDER_LIMIT,
@@ -51,11 +55,26 @@ interface FieldDesign {
 /** 逐人预览手机框宽度（设计稿基准宽 375，按 schema 实际宽度等比缩放） */
 const PREVIEW_FRAME_W = 343;
 
+/**
+ * 从错误对象还原服务端 402 额度不足体里的全局剩余额度。
+ * client.ts 的 request() 非 2xx 时把响应 JSON 附到 ApiError.body；
+ * 命中 402 或 body.code=QUOTA_EXCEEDED 时返回 body.remaining，否则返回 null（非该类错误）。
+ */
+function quotaRemainingFromError(e: unknown): number | null {
+  if (!(e instanceof ApiError)) return null;
+  const body = e.body as { code?: string; remaining?: number } | undefined;
+  if (e.statusCode !== 402 && body?.code !== 'QUOTA_EXCEEDED') return null;
+  return typeof body?.remaining === 'number' ? body.remaining : null;
+}
+
 export default function InvitationJobs() {
   const { t } = useTranslation(['common']);
 
   const [template, setTemplate] = useState<PickedTemplate | null>(null);
   const [picked, setPicked] = useState<PickedPersons | null>(null); // {projectId, listId, selectedRecordIds}
+  /** 配对记录列表（GET /invitations/projects）与当前选中项（radio 互斥） */
+  const [projects, setProjects] = useState<BatchProjectView[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState('');
 
   const [results, setResults] = useState<ProjectResultRow[]>([]);
   const [rerenderLimit, setRerenderLimit] = useState(RERENDER_LIMIT);
@@ -119,7 +138,8 @@ export default function InvitationJobs() {
   const [editError, setEditError] = useState('');
 
   const pollRef = useRef<number | null>(null);
-  const projectId = picked?.projectId ?? '';
+  // 操作对象 = 选中的配对记录；未选中时回退向导②刚创建/复用的项目
+  const projectId = selectedProjectId || (picked?.projectId ?? '');
 
   const stopPoll = useCallback(() => {
     if (pollRef.current !== null) {
@@ -132,6 +152,7 @@ export default function InvitationJobs() {
    * 拉取并同步项目配额（可渲染总数 / 剩余），供「购买数量」右侧标签实时显示。
    * freeSampleCap 由 totalRenderable - purchasedHeadcount 反推（等价于服务端 FREE_SAMPLE_CAP）。
    * 失败静默：配额同步失败不应影响主流程。
+   * 返回最新 projectView 供「批量生成」把关使用（拿不到时返回 undefined）。
    */
   const refreshQuota = useCallback(async (pid: string) => {
     try {
@@ -144,8 +165,20 @@ export default function InvitationJobs() {
       });
       // 改为全局剩余额度：同一份 remaining 同时驱动「购买数量」标签与超限重渲弹窗口径
       setAvailableCounts(v.remaining ?? 0);
+      return v;
     } catch {
       /* 静默：配额同步失败不影响结果列表 */
+      return undefined;
+    }
+  }, []);
+
+  /** 拉取「配对记录」列表（projectView + templateTitle/listName/pairCount/projectCode）；失败静默 */
+  const refreshProjects = useCallback(async () => {
+    try {
+      const list = await api.listInvitationProjects();
+      setProjects(list ?? []);
+    } catch {
+      /* 静默：配对记录列表失败不影响主流程 */
     }
   }, []);
 
@@ -205,6 +238,11 @@ export default function InvitationJobs() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
+  // 挂载时拉一次「配对记录」列表
+  useEffect(() => {
+    void refreshProjects();
+  }, [refreshProjects]);
+
   useEffect(() => () => stopPoll(), [stopPoll]);
 
   // 逐人预览 / 永久绑定确认弹窗：ESC 可关
@@ -224,10 +262,12 @@ export default function InvitationJobs() {
     setTemplate(p);
     // 模板变更 → 旧项目/勾选/配对失效，需重新走向导
     setPicked(null);
+    setSelectedProjectId('');
     setResults([]);
     setChecked(new Set());
     setFieldPaired(false);
     setPickerOpen(false);
+    void refreshProjects();
   };
 
   const onPickPersons = (p: PickedPersons) => {
@@ -235,9 +275,72 @@ export default function InvitationJobs() {
     // 名单变更 → 字段配对需重做
     setFieldPaired(false);
     setPersonOpen(false);
-    // 选完名单立即同步配额，使右侧「可渲染 / 剩余」标签即刻显示数值（无需先打开购买弹窗）
+    // 选中向导②创建/复用的项目作为当前配对记录，并刷新列表（新项目随即出现在列表里）
+    setSelectedProjectId(p.projectId);
+    // 选完名单立即同步配额，使「可渲染 / 剩余」标签即刻显示数值（无需先打开购买弹窗）
     void refreshQuota(p.projectId);
+    void refreshProjects();
   };
+
+  /**
+   * 打开「购买渲染人次」弹窗：先拉取最新项目配额（单一收费模式，可渲染上限由 purchasedHeadcount 决定），
+   * 计算默认补齐数量（当已选人数超过剩余可渲染数时，默认补齐差额），再弹出购买弹窗。
+   * 项目级化：以当前选中的配对记录（projectId）为准，不再依赖向导②的 picked。
+   */
+  const openBuy = useCallback(
+    async (defaultNeed?: number) => {
+      if (!projectId) {
+        setError(t('common:guest.batch.needPersons', { defaultValue: '请先选择宾客名单' }));
+        return;
+      }
+      try {
+        const v = await api.getBatchProject(projectId);
+        setQuota({
+          freeSampleCap: v.freeSampleCap,
+          purchasedHeadcount: v.purchasedHeadcount,
+          totalRenderable: v.totalRenderable,
+          remaining: v.remaining,
+        });
+        setAvailableCounts(v.remaining ?? 0);
+        // 权威缺口 = 逐行 paywalled 行数（B5）；结果行缺失时回退「配对数 − 剩余额度」
+        let need = 0;
+        try {
+          const res = await api.projectResults(projectId);
+          need = (res.results ?? []).filter((r) => r.paywalled === true).length;
+        } catch {
+          /* 拉取逐行结果失败不阻断购买弹窗，回退本地估算 */
+        }
+        if (need <= 0) {
+          const sel = projects.find((p) => p.id === projectId);
+          const total = sel?.pairCount ?? picked?.selectedRecordIds.length ?? 0;
+          need = Math.max(0, total - v.remaining);
+        }
+        // defaultNeed：调用方（如「批量生成前次数不足」）已按勾选子集算准缺口时优先采用，
+        // 否则沿用逐行 paywalled 推算（openBuy 原有口径，其余调用方行为不变）
+        setBuyHeadcount(defaultNeed && defaultNeed > 0 ? defaultNeed : need > 0 ? need : 1);
+        setBuyMsg('');
+        setBuyOpen(true);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    },
+    [projectId, projects, picked],
+  );
+
+  /**
+   * 逐行计算「本次渲染还需消耗的人次」（handleGenerate 与 402 恢复同口径）：
+   *   未渲染 / 失败 → 需 1 人次；已渲但重渲满 5 次 → 需 1 人次重置；已渲且重渲未满 → 不消耗。
+   */
+  const calcNeed = useCallback(
+    (ids: string[]) =>
+      ids.reduce((n, id) => {
+        const r = results.find((x) => x.recordId === id);
+        if (!r || r.status !== 'ok') return n + 1;
+        if ((r.rerenders ?? 0) >= RERENDER_LIMIT) return n + 1;
+        return n;
+      }, 0),
+    [results],
+  );
 
   const startGenerate = useCallback(
     async (payload: { projectId: string; mode?: 'FREE_SAMPLE' | 'PAID' | 'RERENDER'; targetRecordIds?: string[] }) => {
@@ -246,9 +349,10 @@ export default function InvitationJobs() {
     setGenerating(true);
       try {
         // 首渲/续渲前确保勾选已落库（重渲无需重设）
+        // 仅向导②刚选完（picked 与目标项目一致）时回写，避免把勾选跨项目写进历史配对记录
         // 后端返回「已锁定 ids ∪ 本次提交 ids」的并集，以响应体为准回写本地勾选（后端契约 note 3）
         // 传 targetRecordIds（子集渲染）时不走该分支（由 !payload.targetRecordIds 守卫）
-        if (!payload.targetRecordIds && picked && !payload.mode) {
+        if (!payload.targetRecordIds && picked && picked.projectId === payload.projectId && !payload.mode) {
           const saved = await api.setGuestSelection({
             projectId: payload.projectId,
             listId: picked.listId,
@@ -274,15 +378,24 @@ export default function InvitationJobs() {
         await loadResults(payload.projectId);
       } catch (e) {
         setGenerating(false);
+        // 402 额度不足：服务端错误体附带最新 remaining（client.ts 已把响应 JSON 透出到 ApiError.body）——
+        // 按 handleGenerate 同口径重算缺口并引导购买（原缺陷：只 setError 不读 body，用户没有下一步）。
+        const rem = quotaRemainingFromError(e);
+        if (rem !== null) {
+          const shortfall = Math.max(1, calcNeed(payload.targetRecordIds ?? [...checked]) - rem);
+          setError(`渲染次数不足，还需 ${shortfall} 人次，请先购买`);
+          void openBuy(shortfall);
+          return;
+        }
         setError(e instanceof Error ? e.message : String(e));
       }
     },
-    [picked, loadResults],
+    [picked, loadResults, calcNeed, checked, openBuy],
   );
 
   /**
    * 第③步「字段配对」入口：先生成前体检 + 拉取可点选元素，弹出「字段配对」对话框。
-   * 对话框保存/跳过 → onPaired 标记第③步完成，不再耦合生成（生成由第④步独立负责）。
+   * 对话框保存/跳过 → onPaired 标记第③步完成，不再耦合生成（生成由「批量生成」按钮独立负责）。
    */
   const openFieldPair = async () => {
     if (!picked) {
@@ -300,53 +413,16 @@ export default function InvitationJobs() {
     }
   };
 
-  /**
-   * 打开「购买渲染人次」弹窗：先拉取最新项目配额（单一收费模式，可渲染上限由 purchasedHeadcount 决定），
-   * 计算默认补齐数量（当已选人数超过剩余可渲染数时，默认补齐差额），再弹出购买弹窗。
-   */
-  const openBuy = useCallback(async (defaultNeed?: number) => {
-    if (!picked) {
-      setError(t('common:guest.batch.needPersons', { defaultValue: '请先选择宾客名单' }));
-      return;
-    }
-    try {
-      const v = await api.getBatchProject(picked.projectId);
-      setQuota({
-        freeSampleCap: v.freeSampleCap,
-        purchasedHeadcount: v.purchasedHeadcount,
-        totalRenderable: v.totalRenderable,
-        remaining: v.remaining,
-      });
-      setAvailableCounts(v.remaining ?? 0);
-      // 权威缺口 = 逐行 paywalled 行数（B5）；结果行缺失时回退「勾选数 − 剩余额度」
-      let need = 0;
-      try {
-        const res = await api.projectResults(picked.projectId);
-        need = (res.results ?? []).filter((r) => r.paywalled === true).length;
-      } catch {
-        /* 拉取逐行结果失败不阻断购买弹窗，回退本地估算 */
-      }
-      if (need <= 0) need = Math.max(0, picked.selectedRecordIds.length - v.remaining);
-      // defaultNeed：调用方（如「批量生成前次数不足」）已按勾选子集算准缺口时优先采用，
-      // 否则沿用逐行 paywalled 推算（openBuy 原有口径，其余调用方行为不变）
-      setBuyHeadcount(defaultNeed && defaultNeed > 0 ? defaultNeed : need > 0 ? need : 1);
-      setBuyMsg('');
-      setBuyOpen(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
-  }, [picked]);
-
   /** 确认购买：调用 POST /api/invitations/purchase，成功后用返回视图刷新配额并提示 */
   const confirmBuy = useCallback(async () => {
-    if (!picked || !quota) return;
+    if (!projectId || !quota) return;
     const n = Math.floor(Number(buyHeadcount));
     if (!Number.isFinite(n) || n <= 0) {
       setError(t('common:guest.batch.buyInvalid', { defaultValue: '请输入正整数购买数量' }));
       return;
     }
     try {
-      const r = await api.purchaseInvitation({ projectId: picked.projectId, headcount: n });
+      const r = await api.purchaseInvitation({ projectId, headcount: n });
       setQuota({
         freeSampleCap: r.freeSampleCap,
         purchasedHeadcount: r.purchasedHeadcount,
@@ -354,7 +430,7 @@ export default function InvitationJobs() {
         remaining: r.remaining,
       });
       // 刷新逐行结果：购买后槽位增加，paywalled 行会相应减少，「需解锁 N 人」提示随之更新
-      await loadResults(picked.projectId);
+      await loadResults(projectId);
       setBuyMsg(
         t('common:guest.batch.buySuccess', {
           defaultValue: '已成功购买 {{n}} 人次。已勾选但显示「待解锁」的宾客，再点一次「批量生成」即可继续渲染（已出图的人不会重复渲染、不重复扣额度）；若要加入新的人员，请重新打开「宾客名单选择」追加。',
@@ -364,15 +440,17 @@ export default function InvitationJobs() {
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [picked, quota, buyHeadcount, loadResults]);
+  }, [projectId, quota, buyHeadcount, loadResults]);
 
   /**
-   * 第④步「批量生成」：仅执行生成，前置步骤（模板/名单/配对）由按钮 disabled 与下方守卫保障。
+   * 「批量生成」：仅执行生成，前置步骤（模板/名单/配对/选中配对记录）由按钮 disabled 与下方守卫保障。
    * 缺陷一修复 + 本次优化：向导完成后按钮常亮可点；有勾选则按 targetRecordIds 子集渲染，
    * 未勾选则提示「你没有选择任何记录」而不再整批兜底生成。
+   * 项目级化：以选中的配对记录（projectId）为准；把关前先刷新最新配额，
+   * 不再用陈旧 state 误判（曾出现「已购但按钮仍引导购买」）。
    */
-  const handleGenerate = () => {
-    if (!template || !picked || !fieldPaired) {
+  const handleGenerate = async () => {
+    if (!template || !picked || !fieldPaired || !selectedProjectId) {
       setError(t('common:guest.batch.completePrevStep', { defaultValue: '请先完成前一步操作' }));
       return;
     }
@@ -382,15 +460,10 @@ export default function InvitationJobs() {
       return;
     }
     // ── 渲染次数判断（服务端单一收费模式，无免费赠样）──
-    // 逐行真值 = results（recordId 对齐）：
-    //   未渲染 / 失败 → 需 1 人次；已渲但重渲满 5 次 → 需 1 人次重置；已渲且重渲未满 → 不消耗。
-    const need = [...checked].reduce((n, id) => {
-      const r = results.find((x) => x.recordId === id);
-      if (!r || r.status !== 'ok') return n + 1;
-      if ((r.rerenders ?? 0) >= RERENDER_LIMIT) return n + 1;
-      return n;
-    }, 0);
-    const remaining = quota?.remaining ?? 0;
+    // 先拉最新配额（fresh view）再判断，need 逐行真值 = results（recordId 对齐，口径见 calcNeed）
+    const fresh = await refreshQuota(projectId);
+    const need = calcNeed([...checked]);
+    const remaining = fresh?.remaining ?? quota?.remaining ?? 0;
     if (remaining < need) {
       // 次数不足 → 引导购买（不开工、不弹确认）
       const shortfall = Math.max(1, need - remaining);
@@ -404,13 +477,13 @@ export default function InvitationJobs() {
   };
 
   const onRegenerate = (r: ProjectResultRow) => {
-    if (!picked) return;
+    if (!projectId) return;
     const used = r.rerenders ?? 0;
     if (used >= rerenderLimit) {
       setRegenDialog(availableCounts > 0 ? { kind: 'consume', recordId: r.recordId } : { kind: 'exhausted' });
       return;
     }
-    void startGenerate({ projectId: picked.projectId, mode: 'RERENDER', targetRecordIds: [r.recordId] });
+    void startGenerate({ projectId, mode: 'RERENDER', targetRecordIds: [r.recordId] });
   };
 
   /** 断点续跑（T6）：找到最近一个 PARTIAL/FAILED 的任务，仅重渲其失败/缺失项 */
@@ -432,6 +505,14 @@ export default function InvitationJobs() {
       setGenerating(true);
       await loadResults(projectId);
     } catch (e) {
+      // 402 额度不足：与批量生成同口径——按失败行数算缺口并引导购买
+      const rem = quotaRemainingFromError(e);
+      if (rem !== null) {
+        const shortfall = Math.max(1, Math.max(failedCount, 1) - rem);
+        setError(`渲染次数不足，还需 ${shortfall} 人次，请先购买`);
+        void openBuy(shortfall);
+        return;
+      }
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setResuming(false);
@@ -442,11 +523,12 @@ export default function InvitationJobs() {
    * 打开「逐人预览」弹窗：点击后异步准备数据（loading 态）——
    *  1. previewSchema = 项目 elements 快照（服务端已注入 elementBindings，直接可个性化）；
    *  2. mapping = 生成前体检返回的 variableMapping（元素 binding.key → 名单字段）；
-   *  3. 名单记录按「勾选子集（无勾选则本次名单全量）」过滤，映射为逐人预览页。
+   *  3. 记录源双路（项目级化）：向导②刚选完（picked 与当前项目一致）→ 勾选 ∪ picked.selectedRecordIds；
+   *     选中历史配对记录 → 该项目的 listId 全量，按 checked 过滤（无勾选则全量）。
    * 渲染侧每页只对当前索引 personalizeSchema（勿一次性全量），animated=false 避免翻页重播入场动画。
    */
   const openPreviewDialog = async () => {
-    if (!template || !picked || !fieldPaired) {
+    if (!projectId) {
       setError(t('common:guest.batch.completePrevStep', { defaultValue: '请先完成前一步操作' }));
       return;
     }
@@ -454,12 +536,24 @@ export default function InvitationJobs() {
     setPreviewLoading(true);
     setPreviewPage(0);
     try {
-      const [els, h, rec] = await Promise.all([
-        api.getProjectElements(picked.projectId),
-        api.getInvitationHealth(picked.projectId),
-        api.listGuestRecords(picked.listId, 1, 500),
+      const [els, h] = await Promise.all([
+        api.getProjectElements(projectId),
+        api.getInvitationHealth(projectId),
       ]);
-      const selectedSet = checked.size ? checked : new Set(picked.selectedRecordIds);
+      // 记录源双路：picked 与当前项目一致时沿用向导勾选口径，否则用选中项目的名单
+      const fromPicked = !!picked && picked.projectId === projectId;
+      const listId = fromPicked ? picked!.listId : (projects.find((p) => p.id === projectId)?.listId ?? '');
+      if (!listId) {
+        throw new Error(t('common:guest.batch.noListOnProject', { defaultValue: '该配对记录缺少名单信息，无法预览' }));
+      }
+      const rec = await api.listGuestRecords(listId, 1, 500);
+      const selectedSet = fromPicked
+        ? checked.size
+          ? checked
+          : new Set(picked!.selectedRecordIds)
+        : checked.size
+          ? checked
+          : new Set((rec.records ?? []).map((r) => r.id));
       const pages = (rec.records ?? [])
         .filter((r) => selectedSet.has(r.id))
         .map((r) => ({
@@ -542,9 +636,10 @@ export default function InvitationJobs() {
    */
   const unlockCount = useMemo(() => {
     if (results.length > 0) return results.filter((r) => r.paywalled === true).length;
-    if (!picked || !quota) return 0;
-    return Math.max(0, picked.selectedRecordIds.length - quota.remaining);
-  }, [results, picked, quota]);
+    if (!projectId || !quota) return 0;
+    const sel = projects.find((p) => p.id === projectId);
+    return Math.max(0, (sel?.pairCount ?? picked?.selectedRecordIds.length ?? 0) - quota.remaining);
+  }, [results, projectId, quota, projects, picked]);
 
   /**
    * 逐人预览：仅对当前页索引做个性化（schema × mapping × 当前记录），翻页时按依赖重算。
@@ -612,7 +707,7 @@ export default function InvitationJobs() {
 
   /** 保存编辑：仅提交被改动字段（editForm 与 initial 的差异） */
   const saveEdit = async () => {
-    if (!editRecord || !picked) return;
+    if (!editRecord || !projectId) return;
     if (editBlocked) return; // 闸门：已达上限禁止保存
     const changed: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(editForm)) {
@@ -625,12 +720,12 @@ export default function InvitationJobs() {
     setEditSaving(true);
     setEditError('');
     try {
-      await api.editInvitationRecord(picked.projectId, editRecord.recordId, changed);
+      await api.editInvitationRecord(projectId, editRecord.recordId, changed);
       setEditOpen(false);
       setEditForm({});
       setEditInitial({});
       // 成功后刷新结果（同步 editedRecordIds / editLimit 闸门状态）
-      await loadResults(picked.projectId);
+      await loadResults(projectId);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setEditError(e instanceof Error ? e.message : String(e));
@@ -664,7 +759,7 @@ export default function InvitationJobs() {
       )}
       {buyMsg && <div className="mb-3 rounded bg-green-50 px-3 py-2 text-xs text-green-700">{buyMsg}</div>}
 
-      {/* 分步向导：①②③ 依次设定「模板 / 名单 / 字段配对」参数 → 在下方「执行任务队列」勾选要生成的记录 → ④ 批量生成所选 */}
+      {/* 分步向导：①②③ 依次设定「模板 / 名单 / 字段配对」参数 → 在「配对记录」选中一条 → 在下方「任务队列」勾选记录 → 批量生成 */}
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white p-4">
         <button
           onClick={() => setPickerOpen(true)}
@@ -711,66 +806,114 @@ export default function InvitationJobs() {
           ③ {t('common:guest.batch.fieldPair', { defaultValue: '字段配对' })}
           {fieldPaired ? `（${t('common:guest.batch.paired', { defaultValue: '已配对' })}）` : ''}
         </button>
-
-        {/* 预览：按勾选子集（无勾选则名单全量）逐人个性化渲染，确认效果后再批量生成 */}
-        <button
-          onClick={() => void openPreviewDialog()}
-          disabled={!template || !picked || !fieldPaired}
-          className="rounded border border-blue-600 bg-white px-5 py-1.5 text-sm text-blue-600 hover:bg-blue-50 disabled:opacity-50"
-        >
-          {t('common:guest.batch.preview', { defaultValue: '预览' })}
-        </button>
-
-        <button
-          onClick={handleGenerate}
-          // 优化：向导完成即常亮可点，不再因「未勾选 / 生成中 / 队列状态」置灰
-          disabled={!template || !picked || !fieldPaired}
-          className="rounded bg-blue-600 px-5 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {generating ? t('common:guest.batch.generating', { defaultValue: '生成中…' }) : `④ ${t('common:guest.batch.generate', { defaultValue: '批量生成所选' })}`}
-        </button>
-
-        <button
-          onClick={() => {
-            if (picked) {
-              void openBuy();
-            } else {
-              setError(t('common:guest.batch.needPersons', { defaultValue: '请先选择宾客名单' }));
-            }
-          }}
-          disabled={!picked}
-          className="ml-auto rounded bg-[#e879b4] px-4 py-1.5 text-sm text-white hover:bg-[#d965a0] disabled:opacity-50"
-        >
-          {t('common:guest.batch.buyQuantity', { defaultValue: '购买数量' })}
-          {unlockCount > 0 ? `（需解锁 ${unlockCount} 人）` : ''}
-        </button>
-
-        {/* 「购买数量」右侧实时配额标签：可渲染总数 / 剩余数量（随购买或库存变动自动同步） */}
-        <span
-          className="inline-flex items-center rounded bg-[#e879b4]/10 px-2.5 py-1.5 text-sm text-[#a13c6e]"
-          title={t('common:guest.batch.quotaLabelTitle', {
-            defaultValue: '当前可渲染总量与剩余可渲染数量',
-          })}
-        >
-          {/* 生成总数 = 可渲染总量；已使用 = 生成总数 − 剩余；剩余 = 全局剩余可渲染额度 */}
-          {t('common:guest.batch.quotaLabel', {
-            defaultValue: '生成总数：{{x}}，已使用：{{z}}，剩余：{{y}}',
-          })
-            .replace('{{x}}', String(quota?.totalRenderable ?? '—'))
-            .replace(
-              '{{z}}',
-              String(quota ? Math.max(0, quota.totalRenderable - quota.remaining) : '—'),
-            )
-            .replace('{{y}}', String(quota?.remaining ?? '—'))}
-        </span>
       </div>
 
-      {/* 任务进度区 */}
+      {/* 配对记录区：radio 互斥选中一个配对项目，作为预览/生成/购买配额的操作对象 */}
+      <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4">
+        <div className="mb-3 text-sm font-medium text-gray-700">
+          {t('common:guest.batch.pairRecords', { defaultValue: '配对记录' })}
+        </div>
+        {projects.length === 0 ? (
+          <div className="py-8 text-center text-sm text-gray-400">
+            {t('common:guest.batch.pairRecordsEmpty', { defaultValue: '暂无配对记录，请先完成 ①②③ 创建' })}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {projects.map((p) => {
+              const selected = p.id === selectedProjectId;
+              const stateText =
+                p.state === 'PAID'
+                  ? t('common:guest.batch.statePaid', { defaultValue: '已付费' })
+                  : p.state === 'LOCKED'
+                    ? t('common:guest.batch.stateLocked', { defaultValue: '已锁定' })
+                    : t('common:guest.batch.stateDraft', { defaultValue: '草稿' });
+              const stateCls =
+                p.state === 'PAID' ? 'text-green-600' : p.state === 'LOCKED' ? 'text-amber-600' : 'text-gray-500';
+              return (
+                <label
+                  key={p.id}
+                  className={`flex cursor-pointer flex-wrap items-center gap-3 rounded-lg border px-4 py-3 text-sm ${
+                    selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="invitation-pair-record"
+                    checked={selected}
+                    onChange={() => setSelectedProjectId(p.id)}
+                    className="h-4 w-4 accent-blue-500"
+                  />
+                  <span className="font-medium text-gray-800">{p.templateTitle || '—'}</span>
+                  <span className="text-gray-600">{p.listName || '—'}</span>
+                  <span className="text-gray-500">
+                    {t('common:guest.batch.pairCount', { defaultValue: '配对 {{n}} 条' }).replace('{{n}}', String(p.pairCount ?? 0))}
+                  </span>
+                  {p.projectCode ? (
+                    <span className="text-gray-500">
+                      {t('common:guest.batch.taskNoLabel', { defaultValue: '任务编号' })}：{p.projectCode}
+                    </span>
+                  ) : null}
+                  <span className={`ml-auto ${stateCls}`}>{stateText}</span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 任务队列区 */}
       <div className="rounded-lg border border-gray-200 bg-white">
         <div className="flex flex-wrap items-center gap-3 border-b border-gray-100 px-4 py-3">
           <span className="text-sm font-medium text-gray-700">
-            {t('common:guest.batch.taskProgress', { defaultValue: '任务进度' })}
+            {t('common:guest.batch.taskQueue', { defaultValue: '任务队列' })}
           </span>
+          {/* 实时配额标签：可渲染总数 / 已使用 / 剩余（随购买或库存变动自动同步） */}
+          <span
+            className="inline-flex items-center rounded bg-[#e879b4]/10 px-2.5 py-1.5 text-sm text-[#a13c6e]"
+            title={t('common:guest.batch.quotaLabelTitle', {
+              defaultValue: '当前可渲染总量与剩余可渲染数量',
+            })}
+          >
+            {/* 生成总数 = 可渲染总量；已使用 = 生成总数 − 剩余；剩余 = 全局剩余可渲染额度 */}
+            {t('common:guest.batch.quotaLabel', {
+              defaultValue: '生成总数：{{x}}，已使用：{{z}}，剩余：{{y}}',
+            })
+              .replace('{{x}}', String(quota?.totalRenderable ?? '—'))
+              .replace(
+                '{{z}}',
+                String(quota ? Math.max(0, quota.totalRenderable - quota.remaining) : '—'),
+              )
+              .replace('{{y}}', String(quota?.remaining ?? '—'))}
+          </span>
+
+          {/* 购买数量：直接调 openBuy()，严防把 onClick 的 MouseEvent 当 defaultNeed 传进去 */}
+          <button
+            onClick={() => void openBuy()}
+            disabled={!projectId}
+            className="rounded bg-[#e879b4] px-4 py-1.5 text-sm text-white hover:bg-[#d965a0] disabled:opacity-50"
+          >
+            {t('common:guest.batch.buyQuantity', { defaultValue: '购买数量' })}
+            {unlockCount > 0 ? `（需解锁 ${unlockCount} 人）` : ''}
+          </button>
+
+          {/* 预览：按勾选子集（无勾选则名单全量）逐人个性化渲染，确认效果后再批量生成 */}
+          <button
+            onClick={() => void openPreviewDialog()}
+            disabled={!template || !picked || !fieldPaired || !selectedProjectId}
+            className="rounded border border-blue-600 bg-white px-5 py-1.5 text-sm text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+          >
+            {t('common:guest.batch.preview', { defaultValue: '预览' })}
+          </button>
+
+          <button
+            onClick={() => void handleGenerate()}
+            // 优化：向导完成即常亮可点，不再因「未勾选 / 生成中 / 队列状态」置灰
+            disabled={!template || !picked || !fieldPaired || !selectedProjectId}
+            className="rounded bg-blue-600 px-5 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {generating ? t('common:guest.batch.generating', { defaultValue: '生成中…' }) : t('common:guest.batch.generate', { defaultValue: '批量生成' })}
+          </button>
+
           {/* 工具条（全选 / 删除选择 / 打包下载） */}
           {(
             <div className="ml-auto flex gap-2">
@@ -794,7 +937,7 @@ export default function InvitationJobs() {
 
         {!projectId ? (
           <div className="py-12 text-center text-sm text-gray-400">
-            {t('common:guest.batch.emptyHint', { defaultValue: '请先依次完成 ①模板选择 → ②宾客名单选择 → ③字段配对，然后在「执行任务队列」勾选要生成的记录，再点击「④ 批量生成所选」' })}
+            {t('common:guest.batch.emptyHintGuide', { defaultValue: '请先依次完成 ①模板选择 → ②宾客名单选择 → ③字段配对，然后在「配对记录」中选择一条记录' })}
           </div>
         ) : (
           /* ── 当前任务：保留表头全选 checkbox、任务队列点击编辑、宾客信息、次数、操作列 ── */
@@ -815,8 +958,8 @@ export default function InvitationJobs() {
                       title={t('common:guest.batch.selectAllRows', { defaultValue: '全选' })}
                     />
                   </th>
-                  {/* 优化2：列头 "任务" → "任务队列" */}
-                  <th className="px-3 py-2 font-medium">{t('common:guest.batch.colTask', { defaultValue: '任务队列' })}</th>
+                  {/* 优化2：列头 "任务队列" → "任务编号"（与配对记录区的任务编号呼应） */}
+                  <th className="px-3 py-2 font-medium">{t('common:guest.batch.colTaskNo', { defaultValue: '任务编号' })}</th>
                   {/* 优化4：宾客信息按名单字段拆分为多列（表头=字段标签，单元格=字段值） */}
                   {fieldCols.length ? (
                     fieldCols.map((f) => (
@@ -1160,7 +1303,7 @@ export default function InvitationJobs() {
                     onClick={() => {
                       const rid = regenDialog.recordId;
                       setRegenDialog(null);
-                      if (picked) void startGenerate({ projectId: picked.projectId, mode: 'RERENDER', targetRecordIds: [rid] });
+                      if (projectId) void startGenerate({ projectId, mode: 'RERENDER', targetRecordIds: [rid] });
                     }}
                   >
                     {t('common:guest.batch.rerenderContinue', { defaultValue: '继续' })}
@@ -1306,7 +1449,7 @@ export default function InvitationJobs() {
               <button
                 onClick={() => {
                   setConfirmOpen(false);
-                  if (picked) void startGenerate({ projectId: picked.projectId, targetRecordIds: [...checked] });
+                  if (projectId) void startGenerate({ projectId, targetRecordIds: [...checked] });
                 }}
                 className="rounded bg-[#c81e42] px-4 py-1.5 text-sm text-white hover:opacity-90"
               >
