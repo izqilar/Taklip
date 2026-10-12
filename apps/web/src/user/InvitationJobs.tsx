@@ -443,15 +443,16 @@ export default function InvitationJobs() {
   }, [projectId, quota, buyHeadcount, loadResults]);
 
   /**
-   * 「批量生成」：仅执行生成，前置步骤（模板/名单/配对/选中配对记录）由按钮 disabled 与下方守卫保障。
-   * 缺陷一修复 + 本次优化：向导完成后按钮常亮可点；有勾选则按 targetRecordIds 子集渲染，
+   * 「批量生成」：仅执行生成，激活条件 = 选中配对记录（单选即激活，向导三条件是「新建配对」路径，
+   * 由向导按钮自身守卫，不再代管生产按钮）。
+   * 缺陷一修复 + 本次优化：有勾选则按 targetRecordIds 子集渲染，
    * 未勾选则提示「你没有选择任何记录」而不再整批兜底生成。
    * 项目级化：以选中的配对记录（projectId）为准；把关前先刷新最新配额，
    * 不再用陈旧 state 误判（曾出现「已购但按钮仍引导购买」）。
    */
   const handleGenerate = async () => {
-    if (!template || !picked || !fieldPaired || !selectedProjectId) {
-      setError(t('common:guest.batch.completePrevStep', { defaultValue: '请先完成前一步操作' }));
+    if (!projectId) {
+      setError(t('common:guest.batch.noPairSelected', { defaultValue: '请先选择配对记录' }));
       return;
     }
     if (generating) return; // 防重复提交（按钮已不再置灰，此处幂等兜底）
@@ -899,7 +900,7 @@ export default function InvitationJobs() {
           {/* 预览：按勾选子集（无勾选则名单全量）逐人个性化渲染，确认效果后再批量生成 */}
           <button
             onClick={() => void openPreviewDialog()}
-            disabled={!template || !picked || !fieldPaired || !selectedProjectId}
+            disabled={!selectedProjectId}
             className="rounded border border-blue-600 bg-white px-5 py-1.5 text-sm text-blue-600 hover:bg-blue-50 disabled:opacity-50"
           >
             {t('common:guest.batch.preview', { defaultValue: '预览' })}
@@ -907,8 +908,8 @@ export default function InvitationJobs() {
 
           <button
             onClick={() => void handleGenerate()}
-            // 优化：向导完成即常亮可点，不再因「未勾选 / 生成中 / 队列状态」置灰
-            disabled={!template || !picked || !fieldPaired || !selectedProjectId}
+            // 优化：选中配对记录即可点，不再因「未勾选 / 生成中 / 队列状态」置灰
+            disabled={!selectedProjectId}
             className="rounded bg-blue-600 px-5 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {generating ? t('common:guest.batch.generating', { defaultValue: '生成中…' }) : t('common:guest.batch.generate', { defaultValue: '批量生成' })}
@@ -937,7 +938,7 @@ export default function InvitationJobs() {
 
         {!projectId ? (
           <div className="py-12 text-center text-sm text-gray-400">
-            {t('common:guest.batch.emptyHintGuide', { defaultValue: '请先依次完成 ①模板选择 → ②宾客名单选择 → ③字段配对，然后在「配对记录」中选择一条记录' })}
+            {t('common:guest.batch.emptyHintGuide', { defaultValue: '请在「配对记录」中选择一条记录；如需新建配对，请先依次完成 ①模板选择 → ②宾客名单选择 → ③字段配对' })}
           </div>
         ) : (
           /* ── 当前任务：保留表头全选 checkbox、任务队列点击编辑、宾客信息、次数、操作列 ── */
