@@ -1,0 +1,202 @@
+{
+  "web": {
+    "seeded": {
+      "a": {
+        "status": 201,
+        "id": "cmurw406x001r3afr7tt9nt4o"
+      },
+      "b": {
+        "status": 201,
+        "id": "cmurw4081001u3afrac3drpnq"
+      },
+      "copy": {
+        "status": 201,
+        "id": "cmurw40b5001w3afr53xkbh9x"
+      }
+    },
+    "tagCount": 2,
+    "usedCard": {
+      "label": "已使用",
+      "title": "已被 1 个作品使用",
+      "cardText": "已使用41×31 · 566 B",
+      "color": "rgb(210, 72, 48)",
+      "background": "rgba(210, 72, 48, 0.12)",
+      "borderRadius": "10px",
+      "fontSize": "11px",
+      "fontWeight": "600",
+      "padding": "1px 8px",
+      "height": 18,
+      "dotSize": 6,
+      "dotColor": "rgb(210, 72, 48)",
+      "belowImage": true
+    },
+    "unusedCard": {
+      "label": "未使用",
+      "title": "尚未被任何作品使用",
+      "cardText": "未使用40×30 · 566 B",
+      "color": "rgb(140, 140, 140)",
+      "background": "rgba(0, 0, 0, 0.05)",
+      "borderRadius": "10px",
+      "fontSize": "11px",
+      "fontWeight": "600",
+      "padding": "1px 8px",
+      "height": 18,
+      "dotSize": 6,
+      "dotColor": "rgb(140, 140, 140)",
+      "belowImage": true
+    },
+    "filenameHidden": true,
+    "allTagsBelowImage": true,
+    "tags": [
+      {
+        "label": "已使用",
+        "title": "已被 1 个作品使用",
+        "cardText": "已使用41×31 · 566 B",
+        "color": "rgb(210, 72, 48)",
+        "background": "rgba(210, 72, 48, 0.12)",
+        "borderRadius": "10px",
+        "fontSize": "11px",
+        "fontWeight": "600",
+        "padding": "1px 8px",
+        "height": 18,
+        "dotSize": 6,
+        "dotColor": "rgb(210, 72, 48)",
+        "belowImage": true
+      },
+      {
+        "label": "未使用",
+        "title": "尚未被任何作品使用",
+        "cardText": "未使用40×30 · 566 B",
+        "color": "rgb(140, 140, 140)",
+        "background": "rgba(0, 0, 0, 0.05)",
+        "borderRadius": "10px",
+        "fontSize": "11px",
+        "fontWeight": "600",
+        "padding": "1px 8px",
+        "height": 18,
+        "dotSize": 6,
+        "dotColor": "rgb(140, 140, 140)",
+        "belowImage": true
+      }
+    ],
+    "pass": true,
+    "cleanup": {
+      "copy": 200,
+      "b": 200,
+      "a": 200
+    }
+  },
+  "admin": {
+    "seeded": {
+      "a": {
+        "status": 201,
+        "id": "cmurw440l001z3afr5ts2cmi2"
+      },
+      "b": {
+        "status": 201,
+        "id": "cmurw442r00223afrgifsuhn9"
+      },
+      "copy": {
+        "status": 201,
+        "id": "cmurw445m00243afrvmrkw144"
+      }
+    },
+    "tagCount": 2,
+    "usedCard": {
+      "label": "已使用",
+      "title": "已被 1 个作品使用",
+      "cardText": "已使用41×31 · 566 B",
+      "color": "rgb(210, 72, 48)",
+      "background": "rgba(210, 72, 48, 0.12)",
+      "borderRadius": "10px",
+      "fontSize": "11px",
+      "fontWeight": "600",
+      "padding": "1px 8px",
+      "height": 18,
+      "dotSize": 6,
+      "dotColor": "rgb(210, 72, 48)",
+      "belowImage": true
+    },
+    "unusedCard": {
+      "label": "未使用",
+      "title": "尚未被任何作品使用",
+      "cardText": "未使用40×30 · 566 B",
+      "color": "rgb(140, 140, 140)",
+      "background": "rgba(0, 0, 0, 0.05)",
+      "borderRadius": "10px",
+      "fontSize": "11px",
+      "fontWeight": "600",
+      "padding": "1px 8px",
+      "height": 18,
+      "dotSize": 6,
+      "dotColor": "rgb(140, 140, 140)",
+      "belowImage": true
+    },
+    "filenameHidden": true,
+    "allTagsBelowImage": true,
+    "tags": [
+      {
+        "label": "已使用",
+        "title": "已被 1 个作品使用",
+        "cardText": "已使用41×31 · 566 B",
+        "color": "rgb(210, 72, 48)",
+        "background": "rgba(210, 72, 48, 0.12)",
+        "borderRadius": "10px",
+        "fontSize": "11px",
+        "fontWeight": "600",
+        "padding": "1px 8px",
+        "height": 18,
+        "dotSize": 6,
+        "dotColor": "rgb(210, 72, 48)",
+        "belowImage": true
+      },
+      {
+        "label": "未使用",
+        "title": "尚未被任何作品使用",
+        "cardText": "未使用40×30 · 566 B",
+        "color": "rgb(140, 140, 140)",
+        "background": "rgba(0, 0, 0, 0.05)",
+        "borderRadius": "10px",
+        "fontSize": "11px",
+        "fontWeight": "600",
+        "padding": "1px 8px",
+        "height": 18,
+        "dotSize": 6,
+        "dotColor": "rgb(140, 140, 140)",
+        "belowImage": true
+      }
+    ],
+    "pass": true,
+    "cleanup": {
+      "copy": 200,
+      "b": 200,
+      "a": 200
+    }
+  },
+  "errors": [],
+  "crossEnd": {
+    "usedStyleEqual": true,
+    "unusedStyleEqual": true,
+    "webUsed": {
+      "color": "rgb(210, 72, 48)",
+      "background": "rgba(210, 72, 48, 0.12)",
+      "borderRadius": "10px",
+      "fontSize": "11px",
+      "fontWeight": "600",
+      "padding": "1px 8px",
+      "height": 18,
+      "dotSize": 6
+    },
+    "adminUsed": {
+      "color": "rgb(210, 72, 48)",
+      "background": "rgba(210, 72, 48, 0.12)",
+      "borderRadius": "10px",
+      "fontSize": "11px",
+      "fontWeight": "600",
+      "padding": "1px 8px",
+      "height": 18,
+      "dotSize": 6
+    }
+  },
+  "pass": true
+}

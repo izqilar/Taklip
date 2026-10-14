@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, HttpException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Project } from '@h5design/core';
 import { createProject, sanitizeSchema, effectiveSchema } from '@h5design/core';
@@ -6,6 +6,25 @@ import { createProject, sanitizeSchema, effectiveSchema } from '@h5design/core';
 @Injectable()
 export class ProjectService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * 模板样式冻结闸门（批量生成绑定）：某 Project.id 被任一 state !== 'DRAFT' 的
+   * BatchRenderProject 以 templateId 引用 → 该作品已进入批量生成期。
+   * 渲染时实时读 draftSchema ?? schema（RenderSnapshot 不存 schema），
+   * 绑定后改模板样式会污染后续重渲/续渲，故一律 409 PROJECT_FROZEN 拦截。
+   * message 可按场景覆写（如删除场景）。
+   */
+  private async assertTemplateNotFrozen(
+    projectId: string,
+    message = '该作品已进入批量生成期，不可修改（如需调整请新建批量任务）',
+  ) {
+    const ref = await this.prisma.batchRenderProject.findFirst({
+      where: { templateId: projectId, state: { not: 'DRAFT' } },
+    });
+    if (ref) {
+      throw new HttpException({ code: 'PROJECT_FROZEN', message }, 409);
+    }
+  }
 
   async create(userId: string, dto: { title?: string; schema?: Project }) {
     const schema = dto.schema ?? createProject(dto.title);
@@ -70,6 +89,8 @@ export class ProjectService {
     dto: { schema?: Project; title?: string; snapshot?: boolean },
   ) {
     await this.findOne(id, userId);
+    // 冻结闸门：draftSchema 即渲染源，批量生成期内一律禁写草稿
+    await this.assertTemplateNotFrozen(id);
     const data: { draftSchema?: object; title?: string } = {};
     // 草稿闸口（双闸口之一）：写入草稿前统一消毒，防御 web 内核未消毒或越权直写。
     if (dto.schema !== undefined) data.draftSchema = sanitizeSchema(dto.schema as unknown as Project) as object;
@@ -101,6 +122,8 @@ export class ProjectService {
     dto: { title?: string; cover?: string; status?: string; schema?: Project; snapshot?: boolean },
   ) {
     await this.findOne(id, userId);
+    // 冻结闸门：仅 schema 变更触发（只改 title/cover/status 不拦）
+    if (dto.schema !== undefined) await this.assertTemplateNotFrozen(id);
     const updated = await this.prisma.project.update({
       where: { id },
       data: {
@@ -148,6 +171,8 @@ export class ProjectService {
    *  前端历史弹窗读取返回 schema 重新装载编辑器后，再显式保存/发布才会生效。 */
   async rollback(projectId: string, userId: string, versionId: string) {
     await this.findOne(projectId, userId);
+    // 冻结闸门：回滚写 draftSchema，等同改模板样式
+    await this.assertTemplateNotFrozen(projectId);
     const version = await this.prisma.projectVersion.findFirst({
       where: { id: versionId, projectId },
     });
@@ -167,6 +192,8 @@ export class ProjectService {
 
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
+    // 冻结闸门：删作品会导致批量任务 job FAILED / 健康检查 404
+    await this.assertTemplateNotFrozen(id, '该作品已进入批量生成期，不可删除');
     return this.prisma.project.delete({ where: { id } });
   }
 }

@@ -1,5 +1,6 @@
 import { PrismaClient } from './prisma-client';
 import * as bcrypt from 'bcrypt';
+import { seedGuestTemplates } from './seed-guest-templates';
 
 const prisma = new PrismaClient();
 
@@ -104,7 +105,10 @@ async function main() {
     });
   }
 
-  console.log('✅ Seed 完成：dev_user_001 / dev_provider_001 / dev_admin_001 / dev_user_004 已就绪；占位符注册表 legacy 字段已登记');
+  // 系统默认诚邀名单模板（婚礼 / 通用），幂等 upsert by id（ownerType=SYSTEM, isSystem=true）
+  await seedGuestTemplates(prisma);
+
+  console.log('✅ Seed 完成：dev_user_001 / dev_provider_001 / dev_admin_001 / dev_user_004 已就绪；占位符注册表 legacy 字段已登记；系统默认模板已播种');
 }
 
 main()

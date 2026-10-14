@@ -81,7 +81,8 @@
     "expandServicesFailed": "хизмат қўшиш амалга ошмади",
     "approveServiceRolesFailed": "хизмат текшириши амалга ошмади",
     "tooManyRequests": "操作过于频繁，请稍后再试",
-    "loginServerError": "登录失败，请稍后重试"
+    "loginServerError": "登录失败，请稍后重试",
+    "resetTokenInvalid": "重置凭证无效或已过期"
   },
   "submitReviewFailed": "Failed to submit qualification review, please retry",
   "applyProviderFailed": "Failed to join as provider, please try again",

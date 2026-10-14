@@ -32,6 +32,7 @@ import {
   DeleteOutlined,
   ProfileOutlined,
   UnorderedListOutlined,
+  GroupOutlined,
 } from '@ant-design/icons';
 import type { LayerKey } from './permGroups';
 
@@ -162,7 +163,7 @@ export const GROUP_LABEL: Record<MenuGroupKey, string> = {
   orderfulfill: '订单履约',
   servicecontent: '服务与内容',
   // ── 批量请柬（服务商代客/自营：名单管理 + 生成任务）──
-  invitation: '请柬营销',
+  invitation: '请柬事务中心',
   qualification: '资质中心',
   teamsetting: '工作台设置',
   // ── 代理商视角四组（v2）──
@@ -511,28 +512,27 @@ export const resources: ResourceProps[] = [
     list: '/sp/works',
     meta: META('作品管理', 'provider', { group: 'servicecontent', icon: <FileImageOutlined /> }),
   },
-  // ── 批量请柬（§16.4 触发 B：SP 侧栏「请柬营销」分组）──
-  // 主路径仍是「客户管理 → 客户详情 → 请柬名单」（触发 A，代客上下文）；
-  // 此处为辅路径，覆盖服务商自营样板（ownerType=ORG，clientId 可空）。
-  {
-    name: 'sp/invitations/lists',
-    list: '/sp/invitations/lists',
-    meta: META('请柬名单', 'provider', { group: 'invitation', icon: <TeamOutlined /> }),
-  },
-  {
-    name: 'sp/invitations/jobs',
-    list: '/sp/invitations/jobs',
-    meta: META('生成任务', 'provider', { group: 'invitation', icon: <FileImageOutlined /> }),
-  },
-  {
-    name: 'sp/invitations/generate',
-    list: '/sp/invitations/generate',
-    meta: META('批量生成', 'provider', { group: 'invitation', icon: <FileImageOutlined /> }),
-  },
+  // ── 请柬事务中心（§16.4 触发 B：服务商侧栏，组名与 web 端 USER_CENTER_NAV 分组同名；
+  //     顺序对齐 web：模板字段设计 → 宾客名单制作 → 请柬批量生成 → 营销分组）──
   {
     name: 'sp/invitations/fields',
     list: '/sp/invitations/fields',
     meta: META('模板字段设计', 'provider', { group: 'invitation', icon: <ProfileOutlined /> }),
+  },
+  {
+    name: 'sp/invitations/lists',
+    list: '/sp/invitations/lists',
+    meta: META('宾客名单制作', 'provider', { group: 'invitation', icon: <TeamOutlined /> }),
+  },
+  {
+    name: 'sp/invitations/generate',
+    list: '/sp/invitations/generate',
+    meta: META('请柬批量生成', 'provider', { group: 'invitation', icon: <FileImageOutlined /> }),
+  },
+  {
+    name: 'sp/invitations/groups',
+    list: '/sp/invitations/groups',
+    meta: META('营销分组', 'provider', { group: 'invitation', icon: <GroupOutlined /> }),
   },
   {
     name: 'sp/templates',

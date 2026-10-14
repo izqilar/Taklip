@@ -402,4 +402,25 @@ export class InvitationController {
       body.kind,
     );
   }
+
+  /**
+   * 解锁单条已达重渲上限的记录（小锁 / 「生成」按钮 → 确认解锁）：
+   * 消耗 1 个全局剩余额度，把该记录重渲计数重置为 0（恢复满额 5 次机会），
+   * **不创建渲染 job、不出图**（用户修正：解锁 ≠ 立即重渲）。
+   * 与 RERENDER 超限路径（扣 1 币 + rc=1 + 顺带渲染）语义不同，见 service.unlockRecord。
+   */
+  @Post('projects/:id/unlock-record')
+  @Roles('USER', 'SERVICE_PROVIDER', 'ADMIN')
+  unlockRecord(
+    @Req() req: AuthedRequest,
+    @Param('id') id: string,
+    @Body() body: { recordId?: string; ownerType?: string; clientId?: string; subject?: string },
+  ) {
+    if (!body?.recordId) throw new BadRequestException({ code: 'INVALID_PARAMS', message: 'recordId 必填' });
+    return this.svc.unlockRecord(
+      this.scope(req, body.ownerType, body.clientId, body.subject),
+      id,
+      body.recordId,
+    );
+  }
 }

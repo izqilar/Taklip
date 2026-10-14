@@ -308,6 +308,8 @@ export interface BatchProjectView {
   alreadyRendered: number;
   remaining: number;
   locked: boolean;
+  /** 是否已永久绑定（首渲快照存在 = 不可仅用 state 判定，purchase 会将 state 置 PAID 但未绑定）；弹窗一次性与任务编号置灰以此为准 */
+  bound?: boolean;
   /** 已购买的重渲染次数额度（item3 服务端新增，持久化） */
   purchasedRerender?: number;
   /** 所属宾客名单 id（projectView 恒返回；选中历史配对记录时据此拉名单记录做逐人预览） */
@@ -1081,6 +1083,17 @@ export const api = {
     request<BatchProjectView>('/api/invitations/purchase', {
       method: 'POST',
       body: JSON.stringify(payload),
+    }),
+
+  /**
+   * 解锁单条已达重渲上限的记录（小锁 / 行内「生成」→ 确认解锁）：
+   * 消耗 1 个请柬币，把该记录渲染次数重置为满额 5 次，不触发渲染。
+   * 402 QUOTA_EXCEEDED（body.remaining=0）→ 前端引导购买；409 NOT_AT_LIMIT → 无需解锁。
+   */
+  unlockInvitationRecord: (payload: { projectId: string; recordId: string }) =>
+    request<BatchProjectView>(`/api/invitations/projects/${payload.projectId}/unlock-record`, {
+      method: 'POST',
+      body: JSON.stringify({ recordId: payload.recordId }),
     }),
 
   /** 读取项目状态与配额 */

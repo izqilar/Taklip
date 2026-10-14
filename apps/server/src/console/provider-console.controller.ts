@@ -4,6 +4,7 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  HttpException,
   NotFoundException,
   Param,
   Post,
@@ -706,6 +707,16 @@ export class ProviderConsoleController {
     const uid = subjectId(req, subject);
     const cur = await this.prisma.project.findFirst({ where: { id, userId: uid } });
     if (!cur) throw new NotFoundException('作品不存在或无权操作');
+    // 冻结闸门：draftSchema 即渲染源，批量生成期内一律禁写草稿
+    const frozen = await this.prisma.batchRenderProject.findFirst({
+      where: { templateId: id, state: { not: 'DRAFT' } },
+    });
+    if (frozen) {
+      throw new HttpException(
+        { code: 'PROJECT_FROZEN', message: '该作品已进入批量生成期，不可修改（如需调整请新建批量任务）' },
+        409,
+      );
+    }
     if (!body || !body.schema || typeof body.schema !== 'object') {
       throw new BadRequestException('草稿 schema 必填');
     }
@@ -764,6 +775,16 @@ export class ProviderConsoleController {
     const uid = subjectId(req, subject);
     const cur = await this.prisma.project.findFirst({ where: { id, userId: uid } });
     if (!cur) throw new NotFoundException('作品不存在或无权操作');
+    // 冻结闸门：删作品会导致批量任务 job FAILED / 健康检查 404
+    const frozen = await this.prisma.batchRenderProject.findFirst({
+      where: { templateId: id, state: { not: 'DRAFT' } },
+    });
+    if (frozen) {
+      throw new HttpException(
+        { code: 'PROJECT_FROZEN', message: '该作品已进入批量生成期，不可删除' },
+        409,
+      );
+    }
     await this.prisma.project.delete({ where: { id } });
     return { ok: true };
   }

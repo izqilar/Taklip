@@ -135,6 +135,7 @@ exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   phone: 'phone',
   wxOpenid: 'wxOpenid',
+  qqOpenid: 'qqOpenid',
   password: 'password',
   nickname: 'nickname',
   avatar: 'avatar',
@@ -160,6 +161,9 @@ exports.Prisma.UserScalarFieldEnum = {
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   regionId: 'regionId',
+  resetTokenHash: 'resetTokenHash',
+  resetTokenExpiry: 'resetTokenExpiry',
+  resetTokenUsed: 'resetTokenUsed',
   agentId: 'agentId',
   regionPath: 'regionPath',
   status: 'status',
@@ -611,6 +615,143 @@ exports.Prisma.PlatformFeeConfigScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.GuestListScalarFieldEnum = {
+  id: 'id',
+  ownerId: 'ownerId',
+  ownerType: 'ownerType',
+  orgId: 'orgId',
+  clientId: 'clientId',
+  name: 'name',
+  columnDefs: 'columnDefs',
+  deletedAt: 'deletedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.GuestRecordScalarFieldEnum = {
+  id: 'id',
+  listId: 'listId',
+  seq: 'seq',
+  data: 'data',
+  deletedAt: 'deletedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.BatchRenderProjectScalarFieldEnum = {
+  id: 'id',
+  ownerId: 'ownerId',
+  ownerType: 'ownerType',
+  orgId: 'orgId',
+  clientId: 'clientId',
+  listId: 'listId',
+  templateId: 'templateId',
+  state: 'state',
+  freeRendered: 'freeRendered',
+  purchasedHeadcount: 'purchasedHeadcount',
+  paidRendered: 'paidRendered',
+  lockedAt: 'lockedAt',
+  variableMapping: 'variableMapping',
+  elementBindings: 'elementBindings',
+  editedRecordIds: 'editedRecordIds',
+  renderCounts: 'renderCounts',
+  purchasedRerender: 'purchasedRerender',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.RenderSnapshotScalarFieldEnum = {
+  projectId: 'projectId',
+  listId: 'listId',
+  recordIds: 'recordIds',
+  renderedData: 'renderedData',
+  templateId: 'templateId',
+  templateVersion: 'templateVersion',
+  lockedAt: 'lockedAt',
+  variableMapping: 'variableMapping'
+};
+
+exports.Prisma.GuestListSelectionScalarFieldEnum = {
+  projectId: 'projectId',
+  listId: 'listId',
+  selectedRecordIds: 'selectedRecordIds',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.RenderJobScalarFieldEnum = {
+  id: 'id',
+  projectId: 'projectId',
+  status: 'status',
+  mode: 'mode',
+  targetRecordIds: 'targetRecordIds',
+  progress: 'progress',
+  total: 'total',
+  resultUrls: 'resultUrls',
+  error: 'error',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.GuestListFieldDesignScalarFieldEnum = {
+  id: 'id',
+  ownerType: 'ownerType',
+  ownerId: 'ownerId',
+  fields: 'fields',
+  version: 'version',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.GuestTemplateScalarFieldEnum = {
+  id: 'id',
+  ownerType: 'ownerType',
+  ownerId: 'ownerId',
+  name: 'name',
+  fields: 'fields',
+  isSystem: 'isSystem',
+  seq: 'seq',
+  version: 'version',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PlaceholderRegistryScalarFieldEnum = {
+  id: 'id',
+  key: 'key',
+  type: 'type',
+  label: 'label',
+  hint: 'hint',
+  defaultValue: 'defaultValue',
+  scope: 'scope',
+  requiredDef: 'requiredDef',
+  status: 'status',
+  legacy: 'legacy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.MarketingGroupScalarFieldEnum = {
+  id: 'id',
+  providerId: 'providerId',
+  name: 'name',
+  description: 'description',
+  scene: 'scene',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.MarketingGroupMemberScalarFieldEnum = {
+  id: 'id',
+  groupId: 'groupId',
+  memberType: 'memberType',
+  memberId: 'memberId',
+  label: 'label',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -752,7 +893,18 @@ exports.Prisma.ModelName = {
   ProviderClientReach: 'ProviderClientReach',
   AuditLog: 'AuditLog',
   ProviderLicense: 'ProviderLicense',
-  PlatformFeeConfig: 'PlatformFeeConfig'
+  PlatformFeeConfig: 'PlatformFeeConfig',
+  GuestList: 'GuestList',
+  GuestRecord: 'GuestRecord',
+  BatchRenderProject: 'BatchRenderProject',
+  RenderSnapshot: 'RenderSnapshot',
+  GuestListSelection: 'GuestListSelection',
+  RenderJob: 'RenderJob',
+  GuestListFieldDesign: 'GuestListFieldDesign',
+  GuestTemplate: 'GuestTemplate',
+  PlaceholderRegistry: 'PlaceholderRegistry',
+  MarketingGroup: 'MarketingGroup',
+  MarketingGroupMember: 'MarketingGroupMember'
 };
 
 /**

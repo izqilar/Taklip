@@ -111,7 +111,8 @@
     "loadFailed": "Failed to load, please try again",
     "submitReviewFailed": "Failed to submit qualification review, please retry",
     "tooManyRequests": "Too many attempts, please try again later",
-    "loginServerError": "Login failed, please try again later"
+    "loginServerError": "Login failed, please try again later",
+    "resetTokenInvalid": "Reset code invalid or expired"
   },
   "submitReviewFailed": "Failed to submit qualification review, please retry"
 }

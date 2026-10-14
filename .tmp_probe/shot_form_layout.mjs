@@ -1,0 +1,43 @@
+import { chromium } from 'playwright';
+const WEB='http://localhost:5173', ADMIN='http://localhost:5174', API='http://localhost:3000';
+const b = await chromium.launch({ headless: true });
+const shots = [];
+for (const w of [1440, 900]) {
+  const ctx = await b.newContext({ viewport: { width: w, height: 900 } });
+  const page = await ctx.newPage();
+  await page.goto(`${WEB}/`, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(async ([api]) => {
+    const r = await fetch(`${api}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone:'13900001001',password:'Test123456'})});
+    const d = await r.json();
+    localStorage.setItem('access_token', d.accessToken);
+    localStorage.setItem('refresh_token', d.refreshToken);
+    localStorage.setItem('user_info', JSON.stringify(d.user));
+  }, [API]);
+  await page.goto(`${WEB}/user/invitations/lists`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('[data-testid="new-list-form"]', { timeout: 15000 });
+  await page.waitForTimeout(1200);
+  const box = await page.locator('[data-testid="new-list-form"]').boundingBox();
+  const h2 = await page.locator('h2').first().boundingBox();
+  const clip = { x: 8, y: Math.max(0, (h2?.y ?? box.y) - 16), width: w - 16, height: (box.y + box.height) - Math.max(0, (h2?.y ?? box.y) - 16) + 16 };
+  const p = `outputs/guestlist-form-web-${w}.png`;
+  await page.screenshot({ path: p, clip });
+  shots.push(p);
+  await ctx.close();
+}
+const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } });
+const page = await ctx.newPage();
+await page.goto(`${ADMIN}/login`, { waitUntil: 'domcontentloaded' });
+await page.waitForSelector('input#phone', { timeout: 15000 });
+await page.fill('input#phone','13800000002'); await page.fill('input#password','dev123456');
+await page.click('button[type="submit"]'); await page.waitForTimeout(2500);
+await page.goto(`${ADMIN}/user/invitations/lists`, { waitUntil: 'networkidle' });
+await page.waitForSelector('[data-testid="new-list-form"]', { timeout: 15000 });
+await page.waitForTimeout(1200);
+const box = await page.locator('[data-testid="new-list-form"]').boundingBox();
+const h2 = await page.locator('h2').first().boundingBox();
+const clip = { x: 8, y: Math.max(0, (h2?.y ?? box.y) - 16), width: 1424, height: (box.y + box.height) - Math.max(0, (h2?.y ?? box.y) - 16) + 16 };
+await page.screenshot({ path: 'outputs/guestlist-form-admin-1440.png', clip });
+shots.push('outputs/guestlist-form-admin-1440.png');
+await ctx.close();
+await b.close();
+console.log(shots.join('\n'));

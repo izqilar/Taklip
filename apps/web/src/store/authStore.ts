@@ -36,8 +36,19 @@ interface AuthState {
     nickname?: string,
     extra?: { realName?: string; regionId?: string; intent?: 'user' | 'provider' | 'agent' },
   ) => Promise<boolean>;
-  login: (phone: string, password: string) => Promise<boolean>;
+  /** 多方式登录（D6 显式 type：phone | email | userId | username） */
+  login: (
+    type: 'phone' | 'email' | 'userId' | 'username',
+    account: string,
+    password: string,
+  ) => Promise<boolean>;
   logout: () => void;
+  /** 忘记密码：返回模拟送达的验证码（D1 模拟模式回带）或 null（失败） */
+  forgotPassword: (identifier: string) => Promise<{ devChannel?: string; devCode?: string } | null>;
+  /** 重置密码：成功返回 true */
+  resetPassword: (token: string, newPassword: string) => Promise<boolean>;
+  /** 轮询扫码登录状态；done 时落地登录态并返回 true */
+  pollQrLogin: (provider: 'wechat' | 'qq', state: string) => Promise<boolean>;
   clearError: () => void;
   /**
    * 从 localStorage 重新同步登录态到 store。
@@ -111,10 +122,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  login: async (phone, password) => {
+  login: async (type, account, password) => {
     set({ isLoading: true, error: null });
     try {
-      const res = await api.login(phone, password);
+      const res = await api.login(type, account, password);
       // 同上：把服务端下发的落点 home 并入 user（统一登录入口按 home.origin 分流）
       const user = res.home ? { ...res.user, home: res.home } : res.user;
       setTokens(res.accessToken, res.refreshToken);
@@ -125,7 +136,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (import.meta.env.DEV) console.error('[auth] login failed:', err);
       // 按状态码给出精确文案，避免把「限流 / 服务端异常 / 网络错误」误报成「账号密码错误」：
       //  - 429：登录接口限流（RateLimitGuard 10 次/分钟/IP），提示稍后再试；
-      //  - 401/400/422：账号或密码错误（含服务端「手机号或密码错误」等）；
+      //  - 401/400/422：账号或密码错误（含服务端「ACCOUNT_OR_PASSWORD_INVALID」等）；
       //  - 其它（5xx / 网络断开）：统一服务端异常文案。
       const status = (err as { statusCode?: number })?.statusCode;
       let key: string;
@@ -133,6 +144,53 @@ export const useAuthStore = create<AuthState>((set) => ({
       else if (status === 401 || status === 400 || status === 422) key = 'errors:error.loginFailed';
       else key = 'errors:error.loginServerError';
       set({ error: key, isLoading: false });
+      return false;
+    }
+  },
+
+  forgotPassword: async (identifier) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await api.forgotPassword(identifier);
+      set({ isLoading: false });
+      // D1 模拟送达：回带验证码与渠道，由找回页弹窗展示
+      return { devChannel: res.devChannel, devCode: res.devCode };
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('[auth] forgotPassword failed:', err);
+      const status = (err as { statusCode?: number })?.statusCode;
+      set({ error: status === 429 ? 'errors:error.tooManyRequests' : 'errors:error.loginFailed', isLoading: false });
+      return null;
+    }
+  },
+
+  resetPassword: async (token, newPassword) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.resetPassword(token, newPassword);
+      set({ isLoading: false });
+      return true;
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('[auth] resetPassword failed:', err);
+      const status = (err as { statusCode?: number })?.statusCode;
+      // 400 = 令牌无效/过期（RESET_TOKEN_INVALID）；其它 = 服务端异常
+      set({ error: status === 400 ? 'errors:error.resetTokenInvalid' : 'errors:error.loginServerError', isLoading: false });
+      return false;
+    }
+  },
+
+  pollQrLogin: async (provider, state) => {
+    try {
+      const res = await api.qrStatus(provider, state);
+      if (res.status === 'done' && res.token) {
+        const t = res.token;
+        const user = t.home ? { ...t.user, home: t.home } : t.user;
+        setTokens(t.accessToken, t.refreshToken);
+        setStoredUser(user);
+        set({ user, isAuthenticated: true, isLoading: false, ...roleFlags(user) });
+        return true;
+      }
+      return false;
+    } catch {
       return false;
     }
   },

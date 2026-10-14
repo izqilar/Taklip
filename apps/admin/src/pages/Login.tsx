@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Form, Input, Button, Alert } from 'antd';
+import { Form, Input, Button, Alert, Select } from 'antd';
 import { useLogin } from '@refinedev/core';
 import { T } from '../config/theme';
 import { BRAND } from '../config/theme';
@@ -111,13 +111,27 @@ export function Login() {
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          initialValues={{ phone: '13800000002', password: 'dev123456' }}
+          initialValues={{ type: 'phone', account: '13800000002', password: 'dev123456' }}
           requiredMark={false}
         >
           <Form.Item
-            label={t('pages.col.phone')}
-            name="phone"
-            rules={[{ required: true, message: '请输入手机号' }]}
+            label={t('pages.login.idType', '登录标识')}
+            name="type"
+            style={{ marginBottom: 16 }}
+          >
+            <Select
+              size="large"
+              options={[
+                { value: 'phone', label: t('pages.login.typePhone', '手机号') },
+                { value: 'email', label: t('pages.login.typeEmail', '邮箱') },
+                { value: 'username', label: t('pages.login.typeUsername', '用户名/昵称') },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item
+            label={t('pages.col.account', '账号')}
+            name="account"
+            rules={[{ required: true, message: '请输入账号' }]}
             style={{ marginBottom: 16 }}
           >
             <Input size="large" placeholder={t('pages.col.adminPhone')} />

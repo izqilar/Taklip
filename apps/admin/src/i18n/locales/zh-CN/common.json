@@ -959,4 +959,15 @@
     "defaultPhImage": "图库图片资源 key",
     "defaultPhText": "留空则按兜底值处理",
     "sub": "运营端独占配置真相源：新建占位符只在此完成，编辑器仅可绑定已注册项。key 为稳定 ASCII；标签/提示/默认值按当前语言录入单一内容，界面框架文案由系统 i18n 统一多语言。"
-  }}
+  },
+  "guest": {
+    "batch": {
+      "rerenderConsumeWarnTitle": "消耗次数警告",
+      "rerenderConsumeWarn": "该记录已达到生成上限，如果希望再生成一次，则会消耗生成次数。是否继续？",
+      "rerenderExhausted": "你的生成次数已用完，请购买次数",
+      "rerenderContinue": "继续",
+      "rerenderCancel": "取消",
+      "rerenderClose": "关闭"
+    }
+  }
+}

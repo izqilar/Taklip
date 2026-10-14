@@ -52,7 +52,7 @@ export default function UserGuestLists() {
       const d = await res.json();
       const tpls = Array.isArray(d.templates) ? d.templates : [];
       setTemplates(tpls);
-      setTemplateId((prev) => prev || (tpls[0]?.id ?? ''));
+      setTemplateId((prev) => prev || tpls.find((t: { id: string }) => t.id === 'sys_simple_guest')?.id || (tpls[0]?.id ?? ''));
     } catch {
       /* ignore */
     }

@@ -40,7 +40,7 @@ import { UserPersonPickerDialog, type PickedPersons } from './UserPersonPickerDi
  *      任务编号 / 状态徽章（DRAFT 草稿 / LOCKED 已锁定 / PAID 已付费）；
  *   3. 任务队列区头：实时配额标签 + 购买数量 + 预览 + 批量生成（项目级：先刷新配额再判缺口）；
  *      表体按**人员逐条**展示 任务编号 / 宾客信息 / 状态 / 操作(预览 · 生成) / 次数；
- *   4. 工具条：全选 / 删除选择 / 打包下载 + 每行复选框（仅超额锁定的 paywalled 行不可勾）；
+ *   4. 工具条：全选 / 清除生成内容 / 打包下载 + 每行复选框（仅超额锁定的 paywalled 行不可勾）；
  *      任务编号单元格可点击打开编辑弹窗。
  *
  * 轮询完成语义（★防回归）：**不能**仅凭逐人 status 停止（未渲染行恒 pending），
@@ -165,6 +165,13 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
   const [buyHeadcount, setBuyHeadcount] = useState('1');
   const [buyMsg, setBuyMsg] = useState('');
   const [buyError, setBuyError] = useState('');
+  // ── 请求二：购买后自动续跑 + 上锁记录解锁弹窗（与 web 端 InvitationJobs 同构）──
+  // 挂起的生成请求：「批量生成」因额度不足引导购买时记录，confirmBuy 购买成功后自动续跑，
+  // 服务端会为超限记录扣 1 币并重置计数，避免「购买后仍未解锁、重复弹购买框」。
+  const pendingGenerateRef = useRef<{ projectId: string; mode: 'PAID' | 'RERENDER'; targetRecordIds: string[] } | null>(null);
+  // 小锁 / 状态列「解锁」/ 单条「生成」（已达上限时）共用的「消耗 1 币解锁重置」确认弹窗
+  const [unlockOpen, setUnlockOpen] = useState(false);
+  const [unlockRow, setUnlockRow] = useState<PerResult | null>(null);
 
   // 配对记录：项目列表 + 当前选中项目（radio 单选，驱动下方任务队列与项目级生成操作）
   const [projects, setProjects] = useState<BatchProjectView[]>([]);
@@ -334,6 +341,19 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
   );
 
   /**
+   * 需求E：统计给定记录 id 集合中「需消耗请柬币的记录」数（购买数量填回口径，消息E 场景一）：
+   *   1) 待生成记录（status !== 'ok'：pending/failed/running 及无结果行——未出图即需消耗）；
+   *   2) 已达重渲上限的记录（rerenders ≥ rerenderLimit——需购买请柬币重置周期）。
+   * 已出图且未满 5 次的记录不计（可继续重渲）。
+   */
+  const countNeeding = (ids: string[]) =>
+    ids.reduce((n, id) => {
+      const r = results.find((x) => x.recordId === id);
+      if (!r) return n + 1;
+      return n + (r.status !== 'ok' || (r.rerenders ?? 0) >= rerenderLimit ? 1 : 0);
+    }, 0);
+
+  /**
    * 402 / QUOTA_EXCEEDED 缺量识别：读错误体 remaining 重算还需购买人次。
    * 返回 null 表示非配额错误（调用方走原错误提示）。
    */
@@ -354,6 +374,10 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
    * 若为每次渲染新建的普通函数，挂载时捕获的旧闭包仍带 !projectId 守卫 → 覆盖正确 402 提示
    * 且不弹购买窗（H-D2）。
    */
+  // 需求3 修复：需购买人次 = 任务总数 − 已购请柬币 + 已达重渲上限(5次)行各 +1（与 buy 按钮标签同源口径）
+  const totalNum = projects.find((p) => p.id === projectId)?.pairCount ?? quota?.totalRenderable ?? 0;
+  const unlockCount = Math.max(0, (typeof totalNum === 'number' ? totalNum : 0) - (quota?.purchasedHeadcount ?? 0)) + results.filter((r) => (r.rerenders ?? 0) >= rerenderLimit).length;
+
   const openBuy = useCallback(
     (defaultNeed?: number) => {
       if (!projectId) {
@@ -361,15 +385,24 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
         return;
       }
       void refreshQuota(projectId).then(() => {
-        const paywalled = results.filter((r) => r.paywalled).length;
-        setBuyHeadcount(defaultNeed && defaultNeed > 0 ? String(defaultNeed) : String(paywalled > 0 ? paywalled : 1));
+        // 需购买人次与 unlockCount 同源口径（任务总数 − 已购请柬币 + 重渲上限行）
+        setBuyHeadcount(defaultNeed && defaultNeed > 0 ? String(defaultNeed) : String(unlockCount > 0 ? unlockCount : 1));
         setBuyError('');
         setBuyMsg('');
         setBuyOpen(true);
       });
     },
-    [projectId, results, refreshQuota],
+    [projectId, results, refreshQuota, unlockCount],
   );
+
+  /**
+   * 关闭购买弹窗的统一出口（取消 / 遮罩 / ESC 均走此处，antd onCancel）：
+   * 同时清掉挂起的续跑请求，防止取消购买后 ref 残留被后续购买误触发自动续跑。
+   */
+  const closeBuy = useCallback(() => {
+    pendingGenerateRef.current = null;
+    setBuyOpen(false);
+  }, []);
 
   const startGenerate = useCallback(
     async (payload: { projectId: string; mode?: 'FREE_SAMPLE' | 'PAID' | 'RERENDER'; targetRecordIds?: string[] }) => {
@@ -455,12 +488,88 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
       });
       setAvailableCounts(v.remaining ?? 0);
       await loadResults(projectId);
-      setBuyMsg('购买成功，已增加渲染人次');
-      setBuyOpen(false);
       // 购买后项目 state → PAID：刷新「配对记录」徽章
       void loadProjects();
+      setBuyOpen(false);
+      // 请求二：若本次购买由「批量生成」额度不足引导而来 → 立即自动续跑挂起的生成请求
+      // （服务端为每条已达上限的记录扣 1 币并重置计数），用户无需再点一次「批量生成」。
+      const pending = pendingGenerateRef.current;
+      if (pending) {
+        pendingGenerateRef.current = null;
+        setBuyMsg('购买成功，正在继续渲染所勾选的记录…');
+        void startGenerate(pending);
+      } else {
+        setBuyMsg('购买成功，已增加渲染人次');
+      }
     } catch (e) {
       setBuyError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  /**
+   * 请求二：点击上锁记录旁的小锁 / 单条「生成」（已达重渲上限时）的统一入口
+   * （与 web 端 InvitationJobs.onUnlock 同构）：
+   *   1) 先刷新最新配额（防陈旧 state 误判）；
+   *   2) 有可用请柬币 → 弹「是否消耗 1 个请柬币解锁并重置渲染权限」确认框，
+   *      确认后走 RERENDER + targetRecordIds：服务端事务内一次性完成
+   *      「扣 1 币 + 计数重置为 1 + 重新渲染」（invitation.service.ts rc 循环）；
+   *   3) 无可用请柬币 → 弹「购买请柬币」对话框（默认 1 个）。
+   */
+  const onUnlock = async (r: PerResult) => {
+    if (!projectId) return;
+    const fresh = await refreshQuota(projectId);
+    const rem = fresh?.remaining ?? availableCounts;
+    if (rem > 0) {
+      setUnlockRow(r);
+      setUnlockOpen(true);
+      return;
+    }
+    void openBuy(1);
+  };
+
+  /**
+   * 请求二（用户 2026-10-14 修正，与 web 端 confirmUnlock 同构）：
+   * 确认解锁 = **仅消耗 1 个请柬币**把该记录渲染次数重置为满额 5 次，**不再执行渲染**
+   * （此前走 RERENDER + targetRecordIds 会顺带建 job 出图）。
+   * 服务端 `POST /projects/:id/unlock-record` 在事务内完成「扣 1 币 + rc 归零」。
+   *   - 402 QUOTA_EXCEEDED → quotaShortfall 引导购买；
+   *   - 409 NOT_AT_LIMIT → 记录本就可重渲，刷新结果即可。
+   */
+  const confirmUnlock = async () => {
+    const row = unlockRow;
+    if (!projectId || !row) return;
+    setUnlockOpen(false);
+    setError('');
+    try {
+      const v = await apiPost<BatchProjectView>(q(`/invitations/projects/${projectId}/unlock-record`), {
+        recordId: row.recordId,
+        ...body(),
+      });
+      setQuota({
+        id: v.id,
+        state: v.state,
+        freeSampleCap: v.freeSampleCap,
+        purchasedHeadcount: v.purchasedHeadcount,
+        totalRenderable: v.totalRenderable,
+        alreadyRendered: v.alreadyRendered,
+        purchasedRerender: v.purchasedRerender,
+        remaining: v.remaining,
+        locked: v.locked,
+      });
+      setAvailableCounts(v.remaining ?? 0);
+      // 刷新逐行结果：该行 rerenders 归零 → 小锁/「解锁」入口消失、次数列回到 0/5
+      await loadResults(projectId);
+      void loadProjects();
+      setBuyMsg(
+        `已解锁「${row.taskName ?? row.name ?? row.recordId}」：消耗 1 个请柬币，渲染次数已重置为满额 5 次（不会自动渲染，需要时点该行「生成」即可）。`,
+      );
+    } catch (e) {
+      const shortfall = quotaShortfall(e, 1);
+      if (shortfall != null) {
+        void openBuy(shortfall);
+        return;
+      }
+      setError(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -486,6 +595,22 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
   };
 
   /**
+   * 批量生成的渲染模式判定（用户复核修正，与 web 端 resolveGenMode 一致）：
+   * 服务端 `invitation.service.ts` 仅在 `mode !== 'RERENDER'` 时扣减全局请柬币；
+   * 已出图记录在「单条 5 次」预算内的重复生成只有走 RERENDER 才不扣币、不会 402。
+   * 因此：所选记录**全部已有渲染次数**（rerenders > 0，均为重渲）→ RERENDER；
+   * 含从未出图的记录（rerenders === 0，属首渲）→ PAID（需扣币，额度不足由 402 catch 引导购买）。
+   * 修复前：批量生成恒用默认 PAID，remaining=0 时必 402 误弹购币框，
+   * 而单条「生成」按钮走 RERENDER 却能成功 —— 同页前后矛盾。
+   */
+  const resolveGenMode = (): 'PAID' | 'RERENDER' => {
+    const rows = [...checked]
+      .map((id) => results.find((r) => r.recordId === id))
+      .filter((r): r is PerResult => Boolean(r));
+    return rows.length > 0 && rows.every((r) => (r.rerenders ?? 0) > 0) ? 'RERENDER' : 'PAID';
+  };
+
+  /**
    * 「批量生成」闸门（对齐 web 端 handleGenerate）：
    * 单选选中配对记录**即是**激活条件（不再代管向导 ①②③ 的 template/picked/fieldPaired，
    * 那是「新建配对」路径自有按钮的守卫）；先 await refreshQuota 拿**新配额**再判 need
@@ -498,46 +623,71 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
     }
     if (generating) return; // 防重复提交（按钮已不再置灰，此处幂等兜底）
     if (checked.size === 0) {
-      setError('你没有选择任何记录');
+      // 需求C一：空选点击「批量生成」改为消息弹窗（替代上方不显眼静态提示）
+      Modal.warning({
+        title: t('guest.batch.tipTitle', { defaultValue: '提示' }),
+        content: t('guest.batch.noRecordSelected', { defaultValue: '请勾选需要生成的记录' }),
+      });
       return;
     }
     // ── 渲染次数判断（单一收费模式，无免费赠样）──
-    // 逐行真值 = results（recordId 对齐）：
-    //   未渲染 / 失败 → 需 1 人次；已渲但重渲满 5 次 → 需 1 人次重置；已渲且重渲未满 → 不消耗。
-    const need = needForChecked();
-    const fresh = await refreshQuota(projectId);
-    const remaining = fresh?.remaining ?? quota?.remaining ?? 0;
-    if (remaining < need) {
-      // 次数不足 → 引导购买（不开工、不弹确认）
-      const shortfall = Math.max(1, need - remaining);
-      setError(`渲染次数不足，还需 ${shortfall} 人次，请先购买`);
-      void openBuy(shortfall);
+    // 需求C三：仅对【已勾选】记录逐条判断是否已达重渲上限，而非对全部记录判断。
+    // 先刷新最新配额（fresh view），保持可用额度状态最新；
+    // 其返回值同时作为「批量生成周期」state 的实时数据源（getBatchProject 即时视图，含 state/locked）：
+    const freshProject = await refreshQuota(projectId);
+    const checkedRows = [...checked]
+      .map((id) => results.find((r) => r.recordId === id))
+      .filter((r): r is PerResult => Boolean(r));
+    // 需求C三：仅对【已勾选】记录逐条判断是否已达重渲上限
+    const blocked = checkedRows.filter((r) => (r.rerenders ?? 0) >= rerenderLimit).length;
+    if (blocked > 0) {
+      // 勾选集合含「已达重渲上限」记录时的分流（请求二修复，对齐 web 端 handleGenerate）：
+      //  1) 可用请柬币不足 → 预填缺口引导购买，并记录挂起的生成请求；
+      //     购买成功后 confirmBuy 自动续跑（服务端为超限行扣 1 币并重置计数），
+      //     修复「购买后仍未解锁、再次点批量生成仍重复弹购买框」；
+      //  2) 可用请柬币充足 → 直接放行，不再弹购买框（原缺陷：只要有超限行就无条件弹框，
+      //     用户买了币再点仍重复弹，记录始终不解锁）。
+      // 所需币数按最终 mode 精确计算（与服务端扣费同口径）：
+      //   RERENDER：仅超限行各需 1 币（周期重置）；PAID：每行 1 币，超限行额外 +1。
+      const genMode = resolveGenMode();
+      const need =
+        genMode === 'RERENDER'
+          ? blocked
+          : checkedRows.reduce((n, r) => n + ((r.rerenders ?? 0) >= rerenderLimit ? 2 : 1), 0);
+      const availRemaining = freshProject?.remaining ?? availableCounts;
+      if (availRemaining < need) {
+        const shortfall = Math.max(1, need - availRemaining);
+        pendingGenerateRef.current = { projectId, mode: genMode, targetRecordIds: [...checked] };
+        void openBuy(shortfall);
+        return;
+      }
+      // 额度充足：落到下方既有流程（未绑定→永久绑定确认；已绑定→直接 startGenerate），
+      // 由服务端在事务内完成超限行的「扣 1 币 + 计数重置 + 重渲」。
+    }
+    // 需求C三：全部具备重复渲染权限 → 不弹购买弹窗，进入「永久绑定」确认（配额不足由 402 catch 引导）
+    // 「批量生成周期」= 项目 DRAFT（未锁定）→ 首次成功生成（state→LOCKED/PAID）之间；
+    // 确认弹窗仅在本周期首次弹出：项目已进入生成周期（state !== 'DRAFT'）→ 续渲/重渲不再弹，
+    // 直接走 startGenerate（冻结校验由服务端保证）。取消后项目仍为 DRAFT，再点「批量生成」仍弹。
+    // 数据源：freshProject 为 getBatchProject 实时视图（最可靠）；刷新失败（null）时回退 projects 列表。
+    const currentProject = freshProject ?? projects.find((p) => p.id === projectId);
+    const alreadyLocked = currentProject ? currentProject.bound === true : false;
+    if (alreadyLocked) {
+      void startGenerate({ projectId, mode: resolveGenMode(), targetRecordIds: [...checked] });
       return;
     }
-    // 次数足够 → 先弹「永久绑定」确认，用户确认后才真正开工
     setConfirmOpen(true);
   };
 
+  /**
+   * 单条「生成」：已达重渲上限的记录与小锁点击同走 onUnlock（请求二口径统一，对齐 web 端）——
+   * 有可用请柬币 → 弹「消耗 1 币解锁重置」确认框（确认即扣 1 币、重置次数并重渲）；
+   * 无可用请柬币 → 弹「购买请柬币」对话框。
+   */
   const onRegenerate = (r: PerResult) => {
     if (!projectId) return;
     const used = r.rerenders ?? 0;
     if (used >= rerenderLimit) {
-      if (availableCounts > 0) {
-        Modal.confirm({
-          title: t('guest.batch.rerenderConsumeWarnTitle', { defaultValue: '消耗次数警告' }),
-          content: t('guest.batch.rerenderConsumeWarn', { defaultValue: '该记录已达到生成上限，如果希望再生成一次，则会消耗生成次数。是否继续？' }),
-          okText: t('guest.batch.rerenderContinue', { defaultValue: '继续' }),
-          cancelText: t('guest.batch.rerenderCancel', { defaultValue: '取消' }),
-          onOk: () => {
-            void startGenerate({ projectId, mode: 'RERENDER', targetRecordIds: [r.recordId] });
-          },
-        });
-      } else {
-        Modal.info({
-          content: t('guest.batch.rerenderExhausted', { defaultValue: '你的生成次数已用完，请购买次数' }),
-          okText: t('guest.batch.rerenderClose', { defaultValue: '关闭' }),
-        });
-      }
+      void onUnlock(r);
       return;
     }
     void startGenerate({ projectId, mode: 'RERENDER', targetRecordIds: [r.recordId] });
@@ -711,7 +861,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
 
   const doDelete = async () => {
     if (!projectId || !checked.size) return;
-    if (!window.confirm('确定删除选中的生成记录？此操作不退配额')) return;
+    if (!window.confirm('确定清除选中的生成内容？此操作将一并删除已生成的请柬图片文件且不退配额')) return;
     try {
       await apiDelete(q(`/invitations/projects/${projectId}/results`), {
         recordIds: [...checked],
@@ -731,28 +881,52 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
       else next.add(id);
       return next;
     });
-  // 缺陷一修复：仅超额锁定（paywalled）不可勾选；全选覆盖所有非 paywalled 行
   // 「续跑失败项」按钮可见性：存在失败（failed）结果行时显示（对齐 web 端 failedCount 口径）
   const failedCount = results.filter((r) => r.status === 'failed').length;
-  const selectableIds = results.filter((r) => !r.paywalled).map((r) => r.recordId);
-  const allChecked = selectableIds.length > 0 && selectableIds.every((id) => checked.has(id));
-  const toggleAll = () => setChecked(allChecked ? new Set() : new Set(selectableIds));
 
-  const statusText = (r: { status: PerResult['status']; paywalled?: boolean }) => {    if (r.status === 'ok') return { label: '成功', color: C.ok };
+  /**
+   * 记录是否真正上锁（需求4/5 统一口径）：重渲次数已耗尽(atLimit) 且 全局无可用额度(availableCounts===0)。
+   * 与行内 checkbox / 生成按钮 / 状态文案同源，避免多处判定分叉；
+   * 修复「历史生成记录被清空后，仍具重渲余次的行被 paywalled 误锁置灰」。
+   */
+  const isLocked = (r: PerResult) => (r.rerenders ?? 0) >= rerenderLimit && availableCounts === 0;
+  // 可选行 = 未真正上锁的行（仍有可用重渲次数、或已购未消耗额度的行均可选）
+  const selectableCount = results.filter((r) => !isLocked(r)).length;
+  const allChecked = results.length > 0 && selectableCount > 0 && checked.size === selectableCount;
+  const toggleAll = () => setChecked(allChecked ? new Set() : new Set(results.filter((r) => !isLocked(r)).map((r) => r.recordId)));
+
+  /** 还需购买解锁的人数（唯一真值 = 后端逐行 paywalled；结果未加载时回落本地估算） */
+  // （unlockCount 已上移至 openBuy 声明之前，避免 TDZ）
+
+  // 当前选中的配对记录
+  const selectedProject = projects.find((p) => p.id === projectId) ?? null;
+  /**
+   * 逐记录上锁口径（用户复核修正，替代原项目级 projLocked）：
+   * 锁定只反映「该记录自身重渲次数是否耗尽」（atLimit = rerenders ≥ rerenderLimit），
+   * 与项目是否已进入生成期（bound）解耦 —— 已购币且单条 5 次机会未用满的记录不得上锁。
+   * 人员信息不可改的服务端硬闸门由 editGuestRecordForProject 的快照冻结保证（消息 F），
+   * 不依赖前端置灰。
+   */
+  /** 任务总数（需求3）= 当前选中配对记录的配对数（对齐附件「任务总数」＝记录数）；无选中时回落可渲染总量 */
+  const taskTotal: number | string = selectedProject?.pairCount ?? quota?.totalRenderable ?? '—';
+
+  const statusText = (r: PerResult, locked: boolean) => {
+    if (r.status === 'ok') return { label: '成功', color: C.ok };
+    // 需求4/5：仅「重渲次数已耗尽(atLimit) 且 全局无可用额度」(locked) 才显示「待解锁」并作为购买入口；
+    // 仍有可用重渲次数的行（即使 paywalled）不再被误判为锁定 —— 历史生成记录清空后仍可继续重渲。
+    if (locked) return { label: '🔒 待解锁', color: '#a13c6e' };
     if (r.status === 'failed') return { label: '失败', color: C.fail };
-    // B5：已勾选但剩余渲染额度耗尽、尚未渲染 —— 既非成功也非失败，用琥珀色区别于红色失败态
-    if (r.paywalled) return { label: '待解锁', color: C.warn };
     return runningJobId ? { label: '生成中', color: C.running } : { label: '待生成', color: C.ink4 };
   };
 
   /** 宾客信息按字段拆列：表头 schema 取首行 fields（各行列序一致），每格只渲染该字段的 value */
   const fieldCols = results[0]?.fields ?? [];
 
-  // 「购买数量」右侧实时配额标签
+  // 需求3：配额标签四项 = 任务总数 / 已购请柬币 / 已使用 / 剩余（对齐附件 @image#7 设计稿徽章文案）
   const used = quota ? Math.max(0, (quota.totalRenderable ?? 0) - (quota.remaining ?? 0)) : 0;
   const quotaText = quota
-    ? `生成总数：${quota.totalRenderable ?? '—'}，已使用：${used}，剩余：${quota.remaining ?? '—'}`
-    : '生成总数：—，已使用：—，剩余：—';
+    ? `任务总数：${taskTotal}，已购请柬币：${quota.purchasedHeadcount ?? '—'}，已使用：${used}，剩余：${quota.remaining ?? '—'}`
+    : `任务总数：${taskTotal}，已购请柬币：—，已使用：—，剩余：—`;
 
   /**
    * 逐人预览：仅对当前页索引做个性化（schema × mapping × 当前记录），翻页时按依赖重算。
@@ -804,7 +978,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
       >
         <button
           onClick={() => setPickerOpen(true)}
-          style={{ borderRadius: 4, border: 'none', background: C.brand, color: '#fff', padding: '6px 16px', fontSize: 14, cursor: 'pointer' }}
+          style={{ borderRadius: 4, border: 'none', background: '#0089e6', color: '#fff', padding: '6px 16px', fontSize: 14, cursor: 'pointer' }}
         >
           ① 请柬模板选择
         </button>
@@ -823,8 +997,9 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
           disabled={!template}
           style={{
             borderRadius: 4,
-            border: '1px solid #d1d5db',
-            background: '#fff',
+            border: 'none',
+            background: '#f97316',
+            color: '#fff',
             padding: '6px 16px',
             fontSize: 14,
             cursor: template ? 'pointer' : 'not-allowed',
@@ -848,8 +1023,9 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
           disabled={!template || !picked || !canWrite}
           style={{
             borderRadius: 4,
-            border: '1px solid #d1d5db',
-            background: '#fff',
+            border: 'none',
+            background: '#5cb85c',
+            color: '#fff',
             padding: '6px 16px',
             fontSize: 14,
             cursor: !template || !picked || !canWrite ? 'not-allowed' : 'pointer',
@@ -863,7 +1039,19 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
         {!canWrite && <span style={{ fontSize: 12, color: C.ink4 }}>监督态只读</span>}
       </div>
 
-      {/* 配对记录区：本项目域全部配对（radio 单选），选中项驱动下方任务队列与项目级生成操作 */}
+      {/* 需求1：六步向导提示标签（纯文本，直接置于 ①②③ 三按钮下方，去除红色虚线框） */}
+      <div
+        style={{
+          marginBottom: 16,
+          color: C.ink4,
+          fontSize: 14,
+          textAlign: 'center',
+        }}
+      >
+        六步向导：（1）选择模板，（2）选择宾客名单，（3）字段配对，（4）预览效果，（5）购买请柬币，（6）批量生成
+      </div>
+
+      {/* 配对记录区（需求2：表头化 —— 序号 / 作品编号 / 作品名称 / 名单名称 / 配对总数）；radio 单选驱动下方任务队列 */}
       <div style={{ marginBottom: 16, borderRadius: 8, border: `1px solid ${C.line}`, background: '#fff' }}>
         <div
           style={{
@@ -882,48 +1070,53 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
             暂无配对记录，请先完成 ① 请柬模板选择 → ② 宾客名单选择
           </div>
         ) : (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, padding: 16 }}>
-            {projects.map((p) => {
-              const active = p.id === projectId;
-              const st =
-                p.state === 'PAID'
-                  ? { label: '已付费', color: C.ok }
-                  : p.state === 'LOCKED'
-                    ? { label: '已锁定', color: C.warn }
-                    : { label: '草稿', color: C.ink3 };
-              return (
-                <label
-                  key={p.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 8,
-                    width: 280,
-                    borderRadius: 8,
-                    border: `1px solid ${active ? C.blue : C.line}`,
-                    background: active ? '#eff6ff' : '#fff',
-                    padding: 12,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name="pairing-project"
-                    checked={active}
-                    onChange={() => setSelectedProjectId(p.id)}
-                    style={{ marginTop: 3, width: 16, height: 16, accentColor: '#3b82f6' }}
-                  />
-                  <span style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, lineHeight: 1.5 }}>
-                    <span style={{ color: C.ink1, fontWeight: 500 }}>{p.templateTitle || '未命名模板'}</span>
-                    <span style={{ color: C.ink2 }}>{p.listName || '未命名名单'}</span>
-                    <span style={{ color: C.ink3 }}>{`配对 ${p.pairCount ?? 0} 条`}</span>
-                    <span style={{ color: C.ink3 }}>{`任务编号：${p.projectCode || '—'}`}</span>
-                    <span style={{ color: st.color }}>{st.label}</span>
-                  </span>
-                </label>
-              );
-            })}
-          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+            <thead>
+              <tr>
+                <th style={{ ...th, width: 40 }} />
+                <th style={th}>序号</th>
+                <th style={th}>作品编号</th>
+                <th style={th}>作品名称</th>
+                <th style={th}>名单名称</th>
+                <th style={th}>配对总数</th>
+                <th style={{ ...th, width: 96 }}>状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              {projects.map((p, idx) => {
+                const active = p.id === projectId;
+                const st =
+                  p.state === 'PAID'
+                    ? { label: '已付费', color: C.ok }
+                    : p.state === 'LOCKED'
+                      ? { label: '已锁定', color: C.warn }
+                      : { label: '草稿', color: C.ink3 };
+                return (
+                  <tr
+                    key={p.id}
+                    onClick={() => setSelectedProjectId(p.id)}
+                    style={{ background: active ? '#eff6ff' : '#fff', cursor: 'pointer' }}
+                  >
+                    <td style={td}>
+                      <input
+                        type="radio"
+                        name="pairing-project"
+                        checked={active}
+                        onChange={() => setSelectedProjectId(p.id)}
+                        style={{ width: 16, height: 16, accentColor: '#3b82f6' }}
+                      />
+                    </td>
+                    <td style={{ ...td, color: C.ink2 }}>{String(idx + 1).padStart(2, '0')}</td>
+                    <td style={{ ...td, color: C.ink2 }}>{p.projectCode || '—'}</td>
+                    <td style={{ ...td, color: C.ink1, fontWeight: 500 }}>{p.templateTitle || '未命名模板'}</td>
+                    <td style={{ ...td, color: C.ink2 }}>{p.listName || '未命名名单'}</td>
+                    <td style={{ ...td, color: C.ink2 }}>{p.pairCount ?? 0}</td>
+                    <td style={{ ...td, color: st.color }}>{st.label}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 
@@ -940,48 +1133,57 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
           }}
         >
           <span style={{ fontSize: 14, fontWeight: 500, color: '#374151' }}>任务队列</span>
-          {/* 项目级操作区：实时配额 + 购买数量 + 逐人预览 + 批量生成（「配对记录」选中项目后可用） */}
-          <span style={{ fontSize: 13, color: C.ink2 }}>{quotaText}</span>
+          {/* 项目级操作区（需求3）：实时配额标签（bg #fdf1f7 字 #c81e42）+ 购买请柬币 + 预览 + 批量生成 */}
+          <span style={{ background: '#fdf1f7', color: '#c81e42', borderRadius: 4, padding: '6px 10px', fontSize: 13 }}>
+            {quotaText}
+          </span>
           <button
-            onClick={() => void openBuy()}
+            onClick={() =>
+              void openBuy(
+                checked.size > 0
+                  ? countNeeding([...checked])
+                  : countNeeding(results.map((r) => r.recordId)),
+              )
+            }
             disabled={!projectId}
             style={{
               borderRadius: 4,
-              border: '1px solid #d1d5db',
-              background: '#fff',
+              border: 'none',
+              background: '#9d6ff1',
+              color: '#fff',
               padding: '6px 16px',
               fontSize: 14,
               cursor: !projectId ? 'not-allowed' : 'pointer',
               opacity: !projectId ? 0.5 : 1,
             }}
           >
-            {t('guest.batch.buyQuantity', { defaultValue: '购买数量' })}
+            ④ 购买请柬币{unlockCount > 0 ? `（需解锁 ${unlockCount} 人）` : ''}
           </button>
-          {/* 生成前逐人预览：模板 schema × 勾选名单记录实时个性化（对齐 web 端「预览」按钮；选中配对记录即激活） */}
+          {/* 生成前逐人预览（需求3 颜色 #8307fc）：模板 schema × 勾选名单记录实时个性化 */}
           <button
             onClick={() => void openPreviewDialog()}
             disabled={!selectedProjectId}
             style={{
               borderRadius: 4,
-              border: `1px solid ${C.blue}`,
-              background: '#fff',
-              color: C.blue,
+              border: 'none',
+              background: '#8307fc',
+              color: '#fff',
               padding: '6px 16px',
               fontSize: 14,
               cursor: !selectedProjectId ? 'not-allowed' : 'pointer',
               opacity: !selectedProjectId ? 0.5 : 1,
             }}
           >
-            预览
+            ⑤ 预览
           </button>
           <button
             onClick={() => void handleGenerate()}
-            // 单选选中配对记录即激活（保留监督只读闸门）；不再因「未勾选 / 生成中 / 队列状态」置灰
+            // 需求4/5：选中配对记录即可点（仅有可用重渲次数 / 已购未消耗即保持可点）；未勾选点击会先弹提示
             disabled={!selectedProjectId || !canWrite}
             style={{
               borderRadius: 4,
               border: 'none',
-              background: C.blue,
+              background: '#e62800',
               color: '#fff',
               padding: '6px 20px',
               fontSize: 14,
@@ -989,9 +1191,9 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
               opacity: !selectedProjectId || !canWrite ? 0.5 : 1,
             }}
           >
-            {generating ? '生成中…' : '批量生成'}
+            {generating ? '生成中…' : '⑥ 批量生成'}
           </button>
-          {/* 工具栏（全选/删除选择/打包下载） */}
+          {/* 工具栏（全选/清除生成内容/打包下载） */}
           {(
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
               {failedCount > 0 && (
@@ -1003,7 +1205,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
                 全选
               </SmallBtn>
               <SmallBtn onClick={doDelete} disabled={!checked.size || !canWrite}>
-                删除选择
+                清除生成内容
               </SmallBtn>
               <SmallBtn onClick={doPack} disabled={!results.length}>
                 打包下载
@@ -1028,7 +1230,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
                     <input
                       type="checkbox"
                       checked={allChecked}
-                      disabled={!selectableIds.length}
+                      disabled={selectableCount === 0}
                       onChange={toggleAll}
                       style={{ width: 16, height: 16, accentColor: '#3b82f6' }}
                     />
@@ -1050,47 +1252,70 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
               </thead>
               <tbody>
                 {results.map((r) => {
-                  const st = statusText(r);
                   const isPending = r.status === 'pending';
-                  // 「已达重渲上限 + 全局无额度」的行不被 paywalled 置灰：点击只弹「已用完」（仅「关闭」）。
-                  // ⚠️ 例外收窄到 availableCounts === 0：若 remaining > 0，点击会落在「消耗次数警告」的
-                  // 「继续」上，扣全局额度直接出图 —— 会绕过「待解锁」行需先购买人次的设计。
+                  // 需求4/5：统一上锁口径 = isLocked（重渲耗尽 且 全局无额度）。
+                  // 修复「历史生成记录被清空后，仍具重渲余次的行被 paywalled 误锁置灰」。
                   const atLimit = (r.rerenders ?? 0) >= rerenderLimit;
-                  const canRegenerate =
-                    (r.status === 'ok' || r.status === 'failed' || isPending) &&
-                    (!r.paywalled || (atLimit && availableCounts === 0));
+                  const st = statusText(r, false);
+                  const canRegenerate = r.status === 'ok' || r.status === 'failed' || isPending;
                   const taskLabel = r.taskName ?? r.name ?? r.recordId;
                   return (
                     <tr key={r.recordId}>
                       <td style={td}>
-                        {/* 缺陷一修复：仅超额锁定（paywalled）不可勾选 */}
+                        {/* 需求4/5：仅真正上锁的行不可勾选；有可用重渲次数的行始终可选（参与批量生成） */}
                         <input
                           type="checkbox"
                           checked={checked.has(r.recordId)}
-                          disabled={!!r.paywalled}
+                          disabled={false}
                           onChange={() => toggleCheck(r.recordId)}
-                          title={r.paywalled ? '超出可渲染额度，需购买人次解锁' : ''}
+                          title={atLimit ? '已达生成上限，点击购买请柬币' : ''}
                           style={{ width: 16, height: 16, accentColor: '#3b82f6' }}
                         />
                       </td>
                       <td style={{ ...td, color: C.ink1 }}>
                         {/* 优化2：任务队列可点击打开编辑弹窗（只读态退化为纯文本） */}
                         {canWrite ? (
-                          <button
-                            type="button"
-                            onClick={() => void openEdit(r)}
-                            style={{
-                              border: 'none',
-                              background: 'none',
-                              padding: 0,
-                              color: C.blue,
-                              cursor: 'pointer',
-                              fontSize: 14,
-                            }}
-                            title="点击编辑宾客信息"
-                          >
-                            {taskLabel}
-                          </button>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!editedRecordIds.includes(r.recordId) && !atLimit) void openEdit(r);
+                              }}
+                              disabled={editedRecordIds.includes(r.recordId) || atLimit}
+                              style={{
+                                border: 'none',
+                                background: 'none',
+                                padding: 0,
+                                color: editedRecordIds.includes(r.recordId) || atLimit ? C.ink4 : C.blue,
+                                cursor:
+                                  editedRecordIds.includes(r.recordId) || atLimit ? 'not-allowed' : 'pointer',
+                                fontSize: 14,
+                              }}
+                              title={
+                                atLimit
+                                  ? '已达生成上限，点击购买请柬币'
+                                  : editedRecordIds.includes(r.recordId)
+                                    ? '该记录已修改，已锁定，不可再次修改'
+                                    : '点击编辑宾客信息'
+                              }
+                            >
+                              {taskLabel}
+                            </button>
+                            {/* 请求二：小锁拆为独立可点元素（disabled 按钮的子元素不派发点击，必须外置）——
+                                仅「已达重渲上限」的小锁可点击解锁；已编辑记录的小锁为纯展示（编辑闸门）。 */}
+                            {editedRecordIds.includes(r.recordId) ? (
+                              <span title="该记录已修改，已锁定，不可再次修改">🔒</span>
+                            ) : atLimit ? (
+                              <button
+                                type="button"
+                                onClick={() => void onUnlock(r)}
+                                title="已达生成上限，点击消耗 1 个请柬币解锁并重置渲染次数"
+                                style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', fontSize: 14 }}
+                              >
+                                🔒
+                              </button>
+                            ) : null}
+                          </span>
                         ) : (
                           taskLabel
                         )}
@@ -1106,7 +1331,20 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
                         <td style={{ ...td, color: C.ink2 }}>—</td>
                       )}
                       <td style={{ ...td, color: st.color }}>
-                        {st.label}
+                        {atLimit ? (
+                          <button
+                            type="button"
+                            onClick={() => (availableCounts > 0 ? void onUnlock(r) : void openBuy(1))}
+                            title={availableCounts > 0 ? '已达生成上限，点击消耗 1 个请柬币解锁并重置渲染次数' : '已达生成上限，点击购买请柬币'}
+                            style={{ border: 'none', background: 'none', padding: 0, color: C.brand, cursor: 'pointer', fontSize: 14 }}
+                          >
+                            {availableCounts > 0
+                              ? t('guest.batch.unlock', { defaultValue: '解锁' })
+                              : t('guest.batch.buyRender', { defaultValue: '购买请柬币' })}
+                          </button>
+                        ) : (
+                          st.label
+                        )}
                         {r.error ? <div style={{ fontSize: 11, color: '#ef4444' }}>{r.error}</div> : null}
                       </td>
                       <td style={td}>
@@ -1239,8 +1477,8 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
       {/* 购买渲染人次弹窗（对齐 web 端「购买数量」） */}
       <Modal
         open={buyOpen}
-        title={t('guest.batch.buyTitle', { defaultValue: '购买渲染人次' })}
-        onCancel={() => setBuyOpen(false)}
+        title={t('guest.batch.buyTitle', { defaultValue: '购买请柬币' })}
+        onCancel={closeBuy}
         onOk={confirmBuy}
         okText={t('guest.batch.confirmBuy', { defaultValue: '确认购买' })}
         cancelText="取消"
@@ -1370,7 +1608,7 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
           <button
             onClick={() => {
               setConfirmOpen(false);
-              if (projectId) void startGenerate({ projectId, targetRecordIds: [...checked] });
+              if (projectId) void startGenerate({ projectId, mode: resolveGenMode(), targetRecordIds: [...checked] });
             }}
             style={{
               borderRadius: 4,
@@ -1383,6 +1621,54 @@ export default function UserInvitationCenter({ ownerType, clientId }: UserInvita
             }}
           >
             确认
+          </button>
+        </div>
+      </Modal>
+
+      {/* 请求二：上锁记录「消耗 1 币解锁重置」确认弹窗（小锁 / 状态列「解锁」/ 单条「生成」共用入口） */}
+      <Modal
+        open={unlockOpen}
+        title={null}
+        onCancel={() => setUnlockOpen(false)}
+        footer={null}
+        width={420}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+          <ExclamationCircleFilled style={{ color: C.warn, fontSize: 20, marginTop: 2 }} />
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: C.ink1 }}>
+            {t('guest.batch.unlockTitle', { defaultValue: '是否消耗 1 个请柬币解锁该记录的渲染权限？' })}
+          </h3>
+        </div>
+        <p style={{ margin: '0 0 16px', fontSize: 14, lineHeight: 1.6, color: C.ink2 }}>
+          {`「${unlockRow?.taskName ?? unlockRow?.name ?? unlockRow?.recordId ?? ''}」的渲染次数已用完。确认后消耗 1 个请柬币（剩余可用 ${availableCounts} 个），将其渲染次数重置为满额 5 次。`}
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button
+            onClick={() => setUnlockOpen(false)}
+            style={{
+              borderRadius: 4,
+              border: '1px solid #d1d5db',
+              background: '#fff',
+              padding: '6px 16px',
+              fontSize: 14,
+              cursor: 'pointer',
+            }}
+          >
+            取消
+          </button>
+          <button
+            onClick={() => void confirmUnlock()}
+            style={{
+              borderRadius: 4,
+              border: 'none',
+              background: C.brand,
+              color: '#fff',
+              padding: '6px 16px',
+              fontSize: 14,
+              cursor: 'pointer',
+            }}
+          >
+            {t('guest.batch.unlockConfirm', { defaultValue: '确认解锁' })}
           </button>
         </div>
       </Modal>

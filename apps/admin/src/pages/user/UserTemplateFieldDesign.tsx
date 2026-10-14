@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { TemplateFieldDesign, type GuestFieldDef } from '@h5design/ui';
 import { API_URL, authHeaders } from '../../utility';
 import { useLayer } from '../../providers/layerContext';
+import { t } from '../../i18n/t';
 
 /**
  * 运营端（用户视角）· 模板字段设计（§17.2 多模板管理）
@@ -74,7 +75,9 @@ const SystemTag = () => (
 );
 
 export default function UserTemplateFieldDesign() {
-  const { objectScope, isOwnView, readonly } = useLayer();
+  const { objectScope, isOwnView, readonly, role } = useLayer();
+  /* 平台超级管理员（与 web 端 useAuthStore.isAdmin 语义对齐：role === 'ADMIN'） */
+  const isAdmin = role === 'ADMIN';
   const subject = isOwnView ? undefined : objectScope?.id;
   const canWrite = isOwnView || !readonly;
   const q = subject ? `?subject=${encodeURIComponent(subject)}` : '';
@@ -126,7 +129,7 @@ export default function UserTemplateFieldDesign() {
 
   const remove = useCallback(
     async (tpl: TemplateView) => {
-      if (!window.confirm('确定删除该模板？')) return;
+      if (!window.confirm(t('common:guest.confirmDelete', { defaultValue: '确定删除该模板？' }))) return;
       try {
         const res = await fetch(url(`/guest-lists/templates/${tpl.id}`), {
           method: 'DELETE',
@@ -144,8 +147,8 @@ export default function UserTemplateFieldDesign() {
     [load, url],
   );
 
-  /* 系统默认模板在「用户视角」不可编辑 / 不可删除（对齐 web 端普通用户所见） */
-  const canEdit = (tpl: TemplateView) => !tpl.isSystem;
+  /* 系统默认模板：普通用户不可编辑，但平台超级管理员（isAdmin）仍可编辑（对齐 web 端 §17.2 1:1） */
+  const canEdit = (tpl: TemplateView) => !tpl.isSystem || isAdmin;
 
   /* ───── 编辑：复用 TemplateFieldDesign ───── */
   if (mode === 'edit' && current) {
@@ -330,7 +333,7 @@ export default function UserTemplateFieldDesign() {
                     </button>
                   ) : (
                     <span
-                      title="系统默认模板不可编辑"
+                      title={t('common:guest.cannotEditSystem', { defaultValue: '仅平台超级管理员可编辑系统模板字段' })}
                       style={{ marginRight: 12, color: C.ink4, cursor: 'not-allowed', background: 'none', border: 'none', padding: 0, fontSize: 14 }}
                     >
                       编辑

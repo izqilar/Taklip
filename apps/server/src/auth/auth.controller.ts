@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Post, Patch, UseGuards, Req } from '@nestjs/common';
+import { Body, Controller, Get, Post, Patch, UseGuards, Req, Res, Query, HttpCode } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import type { ServiceRole } from '../../prisma/prisma-client';
-import { RegisterDto, LoginDto, UpdateProfileDto, ChangePasswordDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, UpdateProfileDto, ChangePasswordDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 import { RateLimitGuard } from '../common/guards/rate-limit.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -12,12 +13,14 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @HttpCode(200)
   @UseGuards(new RateLimitGuard(5, 60_000, 'register'))
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Post('login')
+  @HttpCode(200)
   @UseGuards(new RateLimitGuard(20, 60_000, 'login'))
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
@@ -137,5 +140,97 @@ export class AuthController {
     @Body() dto: ChangePasswordDto,
   ) {
     return this.authService.changePassword(req.user.id, dto.oldPassword, dto.newPassword);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // 密码找回 / 重置（G-4）
+  // ─────────────────────────────────────────────────────────────
+
+  /** 忘记密码：提交任一登录标识，定位账户并发放重置凭证（D1 当前为模拟送达） */
+  @Post('forgot-password')
+  @HttpCode(200)
+  @UseGuards(new RateLimitGuard(5, 60_000, 'forgot-password'))
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  /** 重置密码：凭重置令牌设置新密码 */
+  @Post('reset-password')
+  @HttpCode(200)
+  @UseGuards(new RateLimitGuard(10, 60_000, 'reset-password'))
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // 微信扫码登录（G-2）
+  // ─────────────────────────────────────────────────────────────
+
+  /** 发起微信扫码：返回 state 与二维码 URL */
+  @Post('wechat/qr/start')
+  @HttpCode(200)
+  @UseGuards(new RateLimitGuard(10, 60_000, 'wechat-qr-start'))
+  wechatQrStart() {
+    return this.authService.qrStart('wechat');
+  }
+
+  /** 轮询微信扫码状态（done 时一次性返回令牌） */
+  @Get('wechat/qr/status')
+  wechatQrStatus(@Query('state') state: string) {
+    return this.authService.qrStatus(state);
+  }
+
+  /** 微信开放平台回调（用户扫码确认后由微信重定向至此） */
+  @Get('wechat/callback')
+  @UseGuards(new RateLimitGuard(10, 60_000, 'wechat-callback'))
+  async wechatCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Res() res: Response,
+  ) {
+    const { redirectUrl } = await this.authService.qrCallback('wechat', code, state);
+    return res.redirect(redirectUrl);
+  }
+
+  /** 开发态模拟微信扫码（仅非生产可用，无开放平台资质时演练全流程） */
+  @Post('wechat/qr/dev-scan')
+  @HttpCode(200)
+  @UseGuards(new RateLimitGuard(10, 60_000, 'wechat-dev-scan'))
+  wechatDevScan(@Body('state') state: string, @Body('openid') openid?: string) {
+    return this.authService.qrDevScan('wechat', state, openid);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // QQ 扫码登录（G-3）—— 与微信同构
+  // ─────────────────────────────────────────────────────────────
+
+  @Post('qq/qr/start')
+  @HttpCode(200)
+  @UseGuards(new RateLimitGuard(10, 60_000, 'qq-qr-start'))
+  qqQrStart() {
+    return this.authService.qrStart('qq');
+  }
+
+  @Get('qq/qr/status')
+  qqQrStatus(@Query('state') state: string) {
+    return this.authService.qrStatus(state);
+  }
+
+  @Get('qq/callback')
+  @UseGuards(new RateLimitGuard(10, 60_000, 'qq-callback'))
+  async qqCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Res() res: Response,
+  ) {
+    const { redirectUrl } = await this.authService.qrCallback('qq', code, state);
+    return res.redirect(redirectUrl);
+  }
+
+  @Post('qq/qr/dev-scan')
+  @HttpCode(200)
+  @UseGuards(new RateLimitGuard(10, 60_000, 'qq-dev-scan'))
+  qqDevScan(@Body('state') state: string, @Body('openid') openid?: string) {
+    return this.authService.qrDevScan('qq', state, openid);
   }
 }

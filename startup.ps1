@@ -77,14 +77,33 @@ function Run-Capture($Command, $TimeoutSec=300){
         Write-Host "    [dry-run] $Command" -ForegroundColor DarkGray
         return @{ ExitCode = 0; Output = '' }
     }
-    $tmp = Join-Path $env:TEMP ("migrate_$(Get-Date -Format yyyyMMddHHmmssffff).log")
-    try {
-        cmd /c "$Command > `"$tmp`" 2>&1"
-        $code = $LASTEXITCODE
-        $text = Get-Content $tmp -Raw -ErrorAction SilentlyContinue
+    # Same transient native-launch flake guard as Run(). cmd.exe owns the redirection
+    # ("> file 2>&1") so Prisma's stderr banner never becomes a fatal error; if the inner
+    # launch itself flakes, cmd.exe returns non-zero and the flake text lands in the
+    # captured output, so we detect + retry it. A genuine command failure (no flake text)
+    # is returned as-is after the first attempt.
+    $maxAttempts = 3
+    for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+        $tmp = Join-Path $env:TEMP ("migrate_$(Get-Date -Format yyyyMMddHHmmssffff).log")
+        $code = 0; $text = ''
+        try {
+            cmd /c "$Command > `"$tmp`" 2>&1"
+            $code = $LASTEXITCODE
+            $text = Get-Content $tmp -Raw -ErrorAction SilentlyContinue
+        } catch {
+            # cmd.exe launch itself failed (rare) - treat as a launch flake for retry
+            $code = -1
+            $text = $_.Exception.Message
+        } finally {
+            Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+        }
+        $isLaunchFlake = ($code -ne 0) -and ($text -match 'Index was outside the bounds|failed to run|NativeCommandFailed')
+        if ($isLaunchFlake -and $attempt -lt $maxAttempts) {
+            Warn "transient native-launch failure in captured command (attempt $attempt/$maxAttempts): $Command - retrying..."
+            Start-Sleep -Seconds 2
+            continue
+        }
         return @{ ExitCode = $code; Output = $text }
-    } finally {
-        Remove-Item $tmp -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -111,8 +130,31 @@ function Run($Command, $TimeoutSec=600){
         Write-Host "    [dry-run] $Command" -ForegroundColor DarkGray
         return
     }
-    Invoke-Expression $Command
-    if ($LASTEXITCODE -ne 0) { throw "command failed (exit $LASTEXITCODE): $Command" }
+    # Native commands can fail to *launch* intermittently in this environment. Concrete
+    # case: `pnpm install` resolves to the global pnpm.ps1 wrapper, which shells out to
+    # node.exe; that launch sometimes dies with a NativeCommandFailed error
+    # (localized: "node.exe failed to run / index outside the bounds of the array").
+    # That is a transient process-creation flake, NOT a real command failure - the exact
+    # same command succeeds on re-run (seen repeatedly in startup.log). So we retry the
+    # LAUNCH a few times. A command that actually runs and exits non-zero is NOT a launch
+    # flake and still throws immediately (no wasted retries on genuine build errors).
+    $maxAttempts = 3
+    for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+        try {
+            Invoke-Expression $Command
+            if ($LASTEXITCODE -ne 0) { throw "command failed (exit $LASTEXITCODE): $Command" }
+            return
+        } catch {
+            $isLaunchFlake = ($_.FullyQualifiedErrorId -eq 'NativeCommandFailed') -or
+                             ($_ -match 'Index was outside the bounds|failed to run')
+            if ($attempt -lt $maxAttempts -and $isLaunchFlake) {
+                Warn "transient native-launch failure (attempt $attempt/$maxAttempts): $Command - retrying..."
+                Start-Sleep -Seconds 2
+                continue
+            }
+            throw
+        }
+    }
 }
 
 # Test-EndpointAlive: returns $true if the server answers the HTTP request at all

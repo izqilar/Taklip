@@ -85,6 +85,8 @@ export interface BatchProjectView {
   purchasedRerender?: number;
   remaining?: number;
   locked?: boolean;
+  /** 是否已永久绑定（首渲快照存在）；弹窗一次性与任务编号置灰以此为准 */
+  bound?: boolean;
   /** 所属宾客名单 id（「配对记录」选中其他项目时，按它拉逐人预览的记录源） */
   listId?: string;
   /** 模板名（GET /invitations/projects 列表项，「配对记录」行卡展示） */

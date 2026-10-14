@@ -955,4 +955,15 @@
     "defaultPhImage": "Gallery image resource key",
     "defaultPhText": "Leave empty to use the fallback value",
     "sub": "Exclusive config source on the operations console: new placeholders are created only here; the editor may only bind registered items. key is a stable ASCII; label/hint/default are single-language content entered in the current locale; UI chrome is unified via system i18n."
-  }}
+  },
+  "guest": {
+    "batch": {
+      "rerenderConsumeWarnTitle": "Consume count warning",
+      "rerenderConsumeWarn": "This record has reached the generation limit. Generating again will consume a generation count. Continue?",
+      "rerenderExhausted": "Your generation counts are used up. Please purchase more.",
+      "rerenderContinue": "Continue",
+      "rerenderCancel": "Cancel",
+      "rerenderClose": "Close"
+    }
+  }
+}

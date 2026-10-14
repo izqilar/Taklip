@@ -128,8 +128,10 @@ const WorksList = lazy(() => import('./pages/providerPages').then((m) => ({ defa
 const GalleryPage = lazy(() => import('./pages/gallery/GalleryPage').then((m) => ({ default: m.GalleryPage })));
 // 批量请柬（§16.4 触发 B）：服务商侧栏「请柬营销」
 const SPInvitationLists = lazy(() => import('./pages/spInvitations').then((m) => ({ default: m.SPInvitationLists })));
-const SPInvitationJobs = lazy(() => import('./pages/spInvitations').then((m) => ({ default: m.SPInvitationJobs })));
+const SPGuestListEditor = lazy(() => import('./pages/user/UserGuestListEditor').then((m) => ({ default: m.default })));
 const SPInvitationBatch = lazy(() => import('./pages/spInvitationBatch').then((m) => ({ default: m.SPInvitationBatch })));
+const SPInvitationGroups = lazy(() => import('./pages/spInvitationGroups').then((m) => ({ default: m.SPInvitationGroups })));
+const SPInvitationGroupDetail = lazy(() => import('./pages/spInvitationGroups').then((m) => ({ default: m.SPInvitationGroupDetail })));
 const SPTemplateFieldDesign = lazy(() => import('./pages/TemplateFieldDesignPage'));
 const UpgradePage = lazy(() => import('./pages/upgrade/UpgradePage').then((m) => ({ default: m.UpgradePage })));
 const SPContract = lazy(() => import('./pages/providerPages').then((m) => ({ default: m.SPContract })));
@@ -420,9 +422,11 @@ export const App = () => (
                 <Route path="/sp/gallery" element={<GalleryPage layer="provider" />} />
                 {/* 批量请柬（§16.4 触发 B）：服务商侧栏「请柬营销」分组 */}
                 <Route path="/sp/invitations/lists" element={<SPInvitationLists />} />
-                <Route path="/sp/invitations/jobs" element={<SPInvitationJobs />} />
+                <Route path="/sp/invitations/lists/:id" element={<SPGuestListEditor />} />
                 <Route path="/sp/invitations/generate" element={<SPInvitationBatch />} />
                 <Route path="/sp/invitations/fields" element={<SPTemplateFieldDesign />} />
+                <Route path="/sp/invitations/groups" element={<SPInvitationGroups />} />
+                <Route path="/sp/invitations/groups/:id" element={<SPInvitationGroupDetail />} />
                 <Route path="/sp/upgrade" element={<UpgradePage kind="provider" />} />
                 <Route path="/sp/templates" element={<TemplatesList />} />
                 <Route path="/sp/templates/new" element={<SPTemplateDetail />} />

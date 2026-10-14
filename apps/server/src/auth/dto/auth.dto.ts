@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MinLength, MaxLength, Matches } from 'class-validator';
+import { IsString, IsOptional, IsEnum, MinLength, MaxLength, Matches } from 'class-validator';
 
 export class RegisterDto {
   @IsString()
@@ -31,14 +31,49 @@ export class RegisterDto {
   intent?: string;
 }
 
+/**
+ * 登录标识类型（D6 决策：显式 type 字段，前端用分段/下拉选择，避免歧义与枚举泄露）。
+ * - phone：手机号（原有唯一登录标识）
+ * - email：邮箱（schema 已加 @unique，G-1）
+ * - userId：用户 ID（cuid，天然唯一）
+ * - username：用户名/昵称（D2：强制唯一化的 nickname 字段承接该语义）
+ * 注意：realName 不纳入登录标识（D3：非唯一 + PII）。
+ */
+export type LoginIdentifierType = 'phone' | 'email' | 'userId' | 'username';
+
 export class LoginDto {
+  @IsEnum(['phone', 'email', 'userId', 'username'] as LoginIdentifierType[], {
+    message: '登录标识类型不合法',
+  })
+  type!: LoginIdentifierType;
+
   @IsString()
-  phone!: string;
+  @MinLength(1)
+  account!: string;
 
   @IsString()
   @MinLength(6, { message: '密码至少 6 位' })
   @MaxLength(64, { message: '密码过长' })
   password!: string;
+}
+
+/** 忘记密码：提交任一可用登录标识，定位账户并发放重置凭证（G-4） */
+export class ForgotPasswordDto {
+  @IsString()
+  @MinLength(1)
+  identifier!: string; // phone / email / userId / username 任一
+}
+
+/** 重置密码：凭重置令牌（邮件链接令牌 或 SMS 验证码）设置新密码（G-4） */
+export class ResetPasswordDto {
+  @IsString()
+  @MinLength(1)
+  token!: string; // 邮件链接令牌 或 SMS 验证码
+
+  @IsString()
+  @MinLength(6, { message: '密码至少 6 位' })
+  @MaxLength(64, { message: '密码过长' })
+  newPassword!: string;
 }
 
 export class UpdateProfileDto {

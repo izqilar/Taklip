@@ -46,6 +46,14 @@ export const RERENDER_LIMIT = 5;
 export const SELECTION_LOCK_CODE = 'RENDERED_RECORD_IMMUTABLE';
 
 /**
+ * 批量生成期冻结统一错误码（名单/人员/项目复用，409）：
+ * 项目 `state !== 'DRAFT'` 即视为进入批量生成期 —— 绑定名单不可拆解/替换、
+ * 人员信息不可改已出图部分、已锁定任务不可复用（人员信息变化须在初次生成前改，
+ * 或做新名单作为新周期）。
+ */
+export const PROJECT_FROZEN_CODE = 'PROJECT_FROZEN';
+
+/**
  * 渲染模式。
  * 注意：'FREE_SAMPLE' 仅为兼容读取历史 job 数据而保留的字面量 —— 收费-only 改造后
  * 不再产生新的 FREE_SAMPLE 任务（batchGenerate 默认 PAID），存量 FREE_SAMPLE job
@@ -272,6 +280,31 @@ export class InvitationService implements OnModuleInit {
   }
 
   /**
+   * 项目冻结闸门（名单/人员侧）：`state !== 'DRAFT'` 即进入批量生成期，
+   * 绑定名单不可拆解/替换、人员信息不可改已出图部分。
+   * 归属校验由调用方先经 `mustGetProject`（作用域隔离，越权 404）完成，
+   * 本助手只做「项目存在 + 状态」判定。
+   * @param action 可选动作描述（拼入提示语，如「更换名单」「复用」）
+   */
+  async assertProjectNotFrozen(projectId: string, action?: string) {
+    const p = await this.prisma.batchRenderProject.findUnique({
+      where: { id: projectId },
+      select: { id: true, state: true },
+    });
+    if (p && p.state !== 'DRAFT') {
+      throw new HttpException(
+        {
+          code: PROJECT_FROZEN_CODE,
+          message: action
+            ? `该作品/名单已进入批量生成期，不可${action}（如需调整请新建批量任务）`
+            : '该作品/名单已进入批量生成期，不可修改（如需调整请新建批量任务）',
+        },
+        409,
+      );
+    }
+  }
+
+  /**
    * 模板（作品）归属校验 —— §16.6 硬要求：
    * 两个宿主的编辑器都可能拿到任意 work id，若只按 id 取 schema，就能拿别人作品批量出图。
    * 这里按「作品创建者 = 作用域用户」断言（ORG/CLIENT 域的作品同样挂在 SP 的 userId 下），
@@ -298,7 +331,14 @@ export class InvitationService implements OnModuleInit {
   async createProject(scope: OwnerScope, templateId: string, listId: string, reuseProjectId?: string) {
     if (reuseProjectId) {
       const exist = await this.mustGetProject(scope, reuseProjectId);
-      if (exist.templateId === templateId) return this.projectView(exist);
+      // 冻结闸门：已进入批量生成期（state !== 'DRAFT'）的任务不再复用 ——
+      // 强制走「新建项目 = 新周期」，避免把已购人次/已出图名单洗回可编辑态。
+      // DRAFT 项目复用行为不变。
+      await this.assertProjectNotFrozen(exist.id, '复用');
+      if (exist.templateId === templateId) {
+        const snap = await this.prisma.renderSnapshot.findUnique({ where: { projectId: exist.id } });
+        return this.projectView(exist, snap);
+      }
     }
     // 名单必须在本作用域内可见（复用名单模块的隔离，避免重复实现）
     await this.guestLists.listRecords(scope, listId, 1, 1);
@@ -308,7 +348,10 @@ export class InvitationService implements OnModuleInit {
     const existing = await this.prisma.batchRenderProject.findFirst({
       where: { ...this.projectWhere(scope), templateId, listId },
     });
-    if (existing) return this.projectView(existing);
+    if (existing) {
+      const snap = await this.prisma.renderSnapshot.findUnique({ where: { projectId: existing.id } });
+      return this.projectView(existing, snap);
+    }
 
     const p = await this.prisma.batchRenderProject.create({
       data: {
@@ -325,18 +368,21 @@ export class InvitationService implements OnModuleInit {
   }
 
   /** 项目视图：状态 + 配额 + 锁定信息（§10 GET /api/invitations/projects/:id） */
-  private projectView(p: {
-    id: string;
-    listId: string;
-    templateId: string;
-    state: string;
-    freeRendered: number;
-    purchasedHeadcount: number;
-    paidRendered: number;
-    purchasedRerender: number;
-    lockedAt: Date | null;
-    clientId: string | null;
-  }) {
+  private projectView(
+    p: {
+      id: string;
+      listId: string;
+      templateId: string;
+      state: string;
+      freeRendered: number;
+      purchasedHeadcount: number;
+      paidRendered: number;
+      purchasedRerender: number;
+      lockedAt: Date | null;
+      clientId: string | null;
+    },
+    snap?: { recordIds: unknown } | null,
+  ) {
     // 收费-only：可渲染总数 = 已购人次（无免费赠样层）。
     // alreadyRendered 保留 freeRendered（历史「免费赠样」已用值）以保证存量项目
     // 已用计数不因本次改造凭空清零（用户不会因重构白赚渲染次数）。
@@ -358,11 +404,16 @@ export class InvitationService implements OnModuleInit {
       remaining: Math.max(0, totalRenderable - alreadyRendered),
       locked: p.state !== 'DRAFT',
       lockedAt: p.lockedAt,
+      // 绑定真相：RenderSnapshot 存在 = 首次生成已建快照（不可仅用 state 判定，
+      // 因为 purchase 会把 state 直接置 PAID 而未绑定；前端弹窗一次性与置灰以 bound 为准）。
+      bound: !!snap,
     };
   }
 
   async getProject(scope: OwnerScope, projectId: string) {
-    return this.projectView(await this.mustGetProject(scope, projectId));
+    const p = await this.mustGetProject(scope, projectId);
+    const snap = await this.prisma.renderSnapshot.findUnique({ where: { projectId: p.id } });
+    return this.projectView(p, snap);
   }
 
   async listProjects(scope: OwnerScope) {
@@ -399,7 +450,7 @@ export class InvitationService implements OnModuleInit {
       const snapIds = ((snapMap.get(r.id)?.recordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
       const selIds = ((selMap.get(r.id)?.selectedRecordIds as unknown as string[]) ?? []).filter(Boolean).map(String);
       return {
-        ...this.projectView(r),
+        ...this.projectView(r, snapMap.get(r.id)),
         templateTitle: tplMap.get(r.templateId) ?? '',
         listName: listMap.get(r.listId) ?? '',
         // 配对数口径与 GET /projects/:id/selection 一致：快照锁定 ids ∪ 勾选 ids
@@ -456,6 +507,14 @@ export class InvitationService implements OnModuleInit {
   async setSelection(scope: OwnerScope, projectId: string, listId: string, ids: string[]) {
     const p = await this.mustGetProject(scope, projectId);
     if (!Array.isArray(ids)) throw err400('INVALID_SELECTION', '勾选数据格式不正确');
+    // 名单锁定（消息 F）：已进入批量生成期（state !== 'DRAFT'）且传入 listId 与已绑定名单
+    // 不同 → 禁止换绑名单上下文（替换名单）。同一名单追加 / 移除未渲染记录不受影响。
+    if (p.state !== 'DRAFT' && listId !== p.listId) {
+      throw new HttpException(
+        { code: 'PROJECT_FROZEN', message: '该批量任务已进入生成期，不可替换名单（如需调整请新建批量任务）' },
+        409,
+      );
+    }
 
     // 传入名单必须在本作用域可见（复用名单模块隔离，越权 404）
     await this.guestLists.listRecords(scope, listId, 1, 1);
@@ -1487,6 +1546,15 @@ export class InvitationService implements OnModuleInit {
 
     if (!recordIds.includes(recordId)) throw new NotFoundException('宾客记录不属于该项目');
 
+    // 名单人员信息冻结闸门（消息 F）：已进入批量生成期（state !== 'DRAFT'）且本记录
+    // 已在首渲快照 recordIds 中（已出图）→ 不可改，防改后免费重渲出不同请柬规避付费。
+    if (p.state !== 'DRAFT' && snapIds.includes(recordId)) {
+      throw new HttpException(
+        { code: SELECTION_LOCK_CODE, message: '该人员已生成专属请柬，不可修改信息（如需调整请新建批量任务）' },
+        409,
+      );
+    }
+
     const editedIds = this.parseEditedRecordIds(p.editedRecordIds);
     const limit = Math.ceil(recordIds.length * 0.1);
     // 永久锁住：已修改过的记录不允许再次修改
@@ -1658,6 +1726,52 @@ export class InvitationService implements OnModuleInit {
       return tx.batchRenderProject.update({
         where: { id: p.id },
         data: { purchasedHeadcount: next, state: 'PAID' },
+      });
+    });
+    return this.projectView(updated);
+  }
+
+  /* ────────── 记录解锁（用户修正：仅扣币重置，不渲染） ────────── */
+
+  /**
+   * 解锁单条已达重渲上限（rc >= RERENDER_LIMIT）的记录：
+   * 消耗 1 个全局剩余额度（paidRendered += 1），把该记录的重渲计数**重置为 0**
+   * （恢复满额 RERENDER_LIMIT 次机会），**不创建渲染 job、不出图**。
+   *
+   * 与 batchGenerate 的 RERENDER 超限路径的区别：后者是「扣 1 币 + rc 重置为 1 +
+   * 顺带渲染一次」（rc=1 因为那次渲染本身占用新周期第 1 次）；本方法是纯购买重渲机会，
+   * 没有任何渲染发生，故 rc 归零 —— 用户在确认框确认后期望记录回到「可重渲」态，
+   * 而不是被强制立即出图（用户 2026-10-14 修正）。
+   *
+   * 事务 + 项目级咨询锁（与 purchase / batchGenerate 同口径）：校验与扣减原子完成，防超卖。
+   *   - 未达上限（used < RERENDER_LIMIT）→ 409 NOT_AT_LIMIT（无需解锁，防误扣币）
+   *   - 无剩余额度（room <= 0）→ 402 QUOTA_EXCEEDED（body 带 remaining，前端引导购买）
+   */
+  async unlockRecord(scope: OwnerScope, projectId: string, recordId: string) {
+    const p = await this.mustGetProject(scope, projectId);
+    const updated = await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${p.id}::text))`;
+      const fresh = await tx.batchRenderProject.findUnique({ where: { id: p.id } });
+      if (!fresh) throw err404();
+      const rc: Record<string, number> = {
+        ...((fresh.renderCounts as unknown as Record<string, number>) ?? {}),
+      };
+      const used = rc[recordId] ?? 0;
+      if (used < RERENDER_LIMIT) {
+        throw new ConflictException({ code: 'NOT_AT_LIMIT', message: '该记录未达重渲上限，无需解锁' });
+      }
+      // 收费-only：剩余额度 = 已购 −（历史 freeRendered + paidRendered），与 projectView.remaining 同口径
+      const room = fresh.purchasedHeadcount - (fresh.freeRendered + fresh.paidRendered);
+      if (room <= 0) {
+        throw new HttpException(
+          { code: 'QUOTA_EXCEEDED', message: '请柬币不足，请先购买', remaining: Math.max(0, room) },
+          402,
+        );
+      }
+      rc[recordId] = 0; // 恢复满额 5 次机会（该记录不再处于锁定态）
+      return tx.batchRenderProject.update({
+        where: { id: p.id },
+        data: { paidRendered: fresh.paidRendered + 1, renderCounts: rc as never },
       });
     });
     return this.projectView(updated);

@@ -6,6 +6,7 @@ import { Panel } from '../components/ui/Panel';
 import { PreviewCard } from '../components/provider/SettingPage';
 import { authHeaders, API_URL, downloadWithAuth } from '../utility';
 import { T } from '../config/theme';
+import { useSpScope, apiGet, apiPost, apiDelete } from './user/invitationShared';
 
 /**
  * 服务商端 · 批量请柬（§16.4 触发 B：侧栏「请柬营销」分组）
@@ -187,64 +188,210 @@ function ImportControl({
 /** 服务商 · 请柬名单（模板下载 / 导入 / 在线编辑入口） */
 export function SPInvitationLists() {
   const navigate = useNavigate();
+  const { subject, scopeQuery, scopeBody } = useSpScope();
+
+  /* SP 专属：自营样板（ORG）/ 代客（CLIENT）选择器（必须保留） */
   const [ownerType, setOwnerType] = useState<OwnerType>('ORG');
   const [clientId, setClientId] = useState('');
+
+  /* 对齐 web：模板选择 / 文件格式 / 名单名称（行内） */
+  const [templates, setTemplates] = useState<{ id: string; name: string }[]>([]);
+  const [templateId, setTemplateId] = useState('');
+  const [dlFormat, setDlFormat] = useState<'xlsx' | 'csv'>('xlsx');
+  const [newName, setNewName] = useState('');
+  const [importTarget, setImportTarget] = useState('');
+  const [importMode, setImportMode] = useState<'append' | 'overwrite'>('append');
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const [rows, setRows] = useState<ListRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
 
-  const scope = useCallback(
-    () => (ownerType === 'CLIENT' && clientId ? `ownerType=CLIENT&clientId=${encodeURIComponent(clientId)}` : `ownerType=${ownerType}`),
-    [ownerType, clientId],
-  );
+  const clientIdForScope = ownerType === 'CLIENT' ? clientId : undefined;
+
+  /* 模板列表：按 subject/effUser 维度，不挂 ownerType */
+  const loadTemplates = useCallback(async () => {
+    try {
+      const data = await apiGet<{ templates: { id: string; name: string }[] }>(
+        scopeQuery('/guest-lists/templates'),
+      );
+      const tpls = Array.isArray(data?.templates) ? data.templates : [];
+      setTemplates(tpls);
+      setTemplateId((prev) => prev || (tpls[0]?.id ?? ''));
+    } catch {
+      /* ignore */
+    }
+  }, [scopeQuery]);
+
+  useEffect(() => {
+    void loadTemplates();
+  }, [loadTemplates]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/guest-lists?${scope()}`, { headers: authHeaders() });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const d = await res.json();
-      setRows(Array.isArray(d) ? d : []);
+      const data = await apiGet<ListRow[]>(scopeQuery('/guest-lists', ownerType, clientIdForScope));
+      setRows(Array.isArray(data) ? data : []);
       setError('');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
-  }, [scope]);
+  }, [scopeQuery, ownerType, clientIdForScope]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const create = useCallback(async () => {
-    const name = window.prompt('名单名称');
-    if (!name?.trim()) return;
-    try {
-      const res = await fetch(`${API_URL}/guest-lists?${scope()}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ name: name.trim(), ownerType }),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d?.message || `HTTP ${res.status}`);
+  /* 模板下载：scopeQuery 携带 ownerType/clientId + subject；templateId 单独追加 */
+  const downloadTemplate = useCallback(
+    async (format: 'csv' | 'xlsx') => {
+      try {
+        const base = scopeQuery('/guest-lists/template', ownerType, clientIdForScope);
+        const sep = base.includes('?') ? '&' : '?';
+        const tail = [templateId ? `templateId=${encodeURIComponent(templateId)}` : ''].filter(Boolean).join('');
+        const qs = `${sep}format=${format}${tail ? `&${tail}` : ''}`;
+        const res = await fetch(`${API_URL}${base}${qs}`, { headers: authHeaders() });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = format === 'xlsx' ? 'guest-template.xlsx' : 'guest-template.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(objectUrl);
+      } catch (e) {
+        message.error(`模板下载失败：${e instanceof Error ? e.message : '未知错误'}`);
       }
-      void load();
+    },
+    [scopeQuery, ownerType, clientIdForScope, templateId],
+  );
+
+  const create = useCallback(async () => {
+    const name = newName.trim();
+    if (!name) return;
+    setCreating(true);
+    try {
+      const created = await apiPost<{ id: string }>(
+        scopeQuery('/guest-lists', ownerType, clientIdForScope),
+        { name, templateId: templateId || undefined, ...scopeBody },
+      );
+      setNewName('');
+      navigate(`/sp/invitations/lists/${created.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setCreating(false);
     }
-  }, [load, ownerType, scope]);
+  }, [scopeQuery, scopeBody, ownerType, clientIdForScope, templateId, newName, navigate]);
+
+  const upload = useCallback(async () => {
+    const file = fileRef.current?.files?.[0];
+    if (!file) {
+      setError('请先选择名单文件（CSV / XLSX / XLS / JSON）');
+      return;
+    }
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('mode', importMode);
+    if (importTarget) fd.append('listId', importTarget);
+    else if (templateId) fd.append('templateId', templateId);
+    if (subject) fd.append('subject', subject);
+    try {
+      const res = await fetch(`${API_URL}${scopeQuery('/guest-lists/import', ownerType, clientIdForScope)}`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: fd,
+      });
+      const data = await res.json().catch(() => ({} as any));
+      if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+      const skipped = Array.isArray(data?.failed) ? data.failed.length : 0;
+      setError(
+        skipped
+          ? `导入成功 ${data.created ?? 0} 条，跳过 ${skipped} 条（${data.failed?.[0]?.reason ?? ''}）`
+          : `导入成功 ${data.created ?? 0} 条`,
+      );
+      if (fileRef.current) fileRef.current.value = '';
+      void load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '导入失败');
+    }
+  }, [scopeQuery, ownerType, clientIdForScope, importMode, importTarget, templateId, subject, load]);
+
+  const remove = useCallback(
+    async (id: string) => {
+      if (!window.confirm('确定删除该名单？名单及其记录将一并删除，且不可恢复。')) return;
+      try {
+        await apiDelete(scopeQuery(`/guest-lists/${id}`, ownerType, clientIdForScope), scopeBody);
+        void load();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    },
+    [scopeQuery, scopeBody, ownerType, clientIdForScope, load],
+  );
+
+  const inputStyle: React.CSSProperties = {
+    borderRadius: T.rSm,
+    border: `1px solid ${T.border}`,
+    padding: '6px 10px',
+    fontSize: 14,
+    outline: 'none',
+    background: T.bg,
+    color: T.ink1,
+  };
+  const btnGhost: React.CSSProperties = {
+    borderRadius: T.rSm,
+    border: `1px solid ${T.border}`,
+    background: T.bg,
+    padding: '6px 14px',
+    fontSize: 14,
+    cursor: 'pointer',
+    color: T.ink1,
+  };
+  const btnPrimary: React.CSSProperties = {
+    borderRadius: T.rSm,
+    border: 'none',
+    background: T.accent,
+    color: T.onAccent,
+    padding: '6px 16px',
+    fontSize: 14,
+    cursor: 'pointer',
+  };
+  const greenBtn: React.CSSProperties = {
+    borderRadius: T.rSm,
+    border: 'none',
+    background: T.up,
+    color: '#fff',
+    padding: '6px 14px',
+    fontSize: 14,
+    cursor: 'pointer',
+  };
 
   return (
     <>
-      <PageHead title="请柬名单" chip="批量请柬" />
+      <PageHead title="宾客名单制作" />
       <Panel>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: 12, flexWrap: 'wrap' }}>
+        {/* 服务商专属：自营样板 / 代客 选择器（保留） */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+            padding: 12,
+            flexWrap: 'wrap',
+            borderBottom: `1px solid ${T.border}`,
+          }}
+        >
+          <span style={{ fontSize: 13, color: T.ink3 }}>归属</span>
           <select
             value={ownerType}
             onChange={(e) => setOwnerType(e.target.value as OwnerType)}
-            style={{ padding: '6px 8px', borderRadius: 6, border: `1px solid ${T.border}` }}
+            style={{ ...inputStyle, flexShrink: 0 }}
           >
             <option value="ORG">自营样板（ORG）</option>
             <option value="CLIENT">代客（CLIENT）</option>
@@ -254,69 +401,140 @@ export function SPInvitationLists() {
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
               placeholder="客户 id"
-              style={{ padding: '6px 8px', borderRadius: 6, border: `1px solid ${T.border}`, minWidth: 180 }}
+              style={{ ...inputStyle, minWidth: 180, flexShrink: 0 }}
             />
           )}
-          <button onClick={create} style={{ padding: '6px 12px', borderRadius: 6, background: T.accent, color: '#fff', border: 'none' }}>
-            新建名单
-          </button>
-          <button
-            onClick={() => void downloadTemplate('xlsx', clientId ? 'CLIENT' : 'ORG', clientId)}
-            style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${T.border}`, background: '#fff' }}
-          >
-            下载 Excel 模板
-          </button>
-          <button
-            onClick={() => void downloadTemplate('csv', clientId ? 'CLIENT' : 'ORG', clientId)}
-            style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${T.border}`, background: '#fff' }}
-          >
-            下载 CSV 模板
-          </button>
-          <ImportControl
-            rows={rows}
-            ownerType={ownerType}
-            clientId={ownerType === 'CLIENT' ? clientId : undefined}
-            onDone={load}
-          />
         </div>
 
-        {error && <div style={{ padding: '0 12px 12px', color: '#c81e42', fontSize: 12 }}>{error}</div>}
+        {/*
+          新建区：模板选择 → 文件格式 → 下载模板 → 名单名称 → 新建名单
+          同一行横向排列、垂直居中、等距（gap 8）；窄屏 flex-wrap 自然换行。
+        */}
+        <div
+          data-testid="new-list-form"
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: 8,
+            padding: 12,
+            borderBottom: `1px solid ${T.border}`,
+          }}
+        >
+          <select
+            value={templateId}
+            onChange={(e) => setTemplateId(e.target.value)}
+            data-testid="new-list-template"
+            style={{ ...inputStyle, flexShrink: 0 }}
+          >
+            <option value="">模板列表</option>
+            {templates.map((tp) => (
+              <option key={tp.id} value={tp.id}>
+                {tp.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={dlFormat}
+            onChange={(e) => setDlFormat(e.target.value as 'xlsx' | 'csv')}
+            style={{ ...inputStyle, flexShrink: 0 }}
+          >
+            <option value="xlsx">xlsx</option>
+            <option value="csv">csv</option>
+          </select>
+          <button style={{ ...btnGhost, flexShrink: 0 }} onClick={() => void downloadTemplate(dlFormat)}>
+            下载模板
+          </button>
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="名单名称，如：婚礼主桌"
+            style={{ ...inputStyle, flex: '1 1 200px', minWidth: 160 }}
+          />
+          <button
+            onClick={create}
+            disabled={creating || !newName.trim()}
+            style={{ ...btnPrimary, flexShrink: 0, opacity: creating || !newName.trim() ? 0.5 : 1 }}
+          >
+            新建名单
+          </button>
+        </div>
+
+        {/* 导入 */}
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: 8,
+            padding: 12,
+            borderBottom: `1px solid ${T.border}`,
+          }}
+        >
+          <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.json" style={{ fontSize: 14 }} />
+          <select value={importTarget} onChange={(e) => setImportTarget(e.target.value)} style={inputStyle}>
+            <option value="">导入为新名单</option>
+            {rows.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={importMode}
+            onChange={(e) => setImportMode(e.target.value as 'append' | 'overwrite')}
+            style={inputStyle}
+          >
+            <option value="append">追加</option>
+            <option value="overwrite">覆盖</option>
+          </select>
+          <button style={{ ...greenBtn }} onClick={upload}>
+            导入名单
+          </button>
+        </div>
+
+        {error && (
+          <div style={{ padding: '8px 12px', fontSize: 12, color: T.downInk, background: T.downBg }}>{error}</div>
+        )}
 
         {loading ? (
-          <div style={{ padding: 32, textAlign: 'center', color: T.ink3 }}>…</div>
+          <div style={{ padding: '40px 0', textAlign: 'center', fontSize: 14, color: T.ink3 }}>…</div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
-              <tr style={{ background: T.panel2, textAlign: 'left', color: T.ink2 }}>
+              <tr style={{ background: T.panel2, textAlign: 'left', color: T.ink3 }}>
                 <th style={cell}>名单名称</th>
-                <th style={cell}>归属</th>
-                <th style={cell}>人数</th>
-                <th style={cell}>更新时间</th>
-                <th style={cell}>操作</th>
+                <th style={{ ...cell, width: 96 }}>人数</th>
+                <th style={{ ...cell, width: 160 }}>更新时间</th>
+                <th style={{ ...cell, width: 160 }}>操作</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id}>
-                  <td style={cell}>{r.name}</td>
-                  <td style={cell}>{r.ownerType}{r.clientId ? ` · ${r.clientId.slice(0, 8)}…` : ''}</td>
-                  <td style={cell}>{r.recordCount}</td>
-                  <td style={cell}>{new Date(r.updatedAt).toLocaleString()}</td>
+                  <td style={{ ...cell, color: T.ink1 }}>{r.name}</td>
+                  <td style={{ ...cell, color: T.ink3 }}>{r.recordCount}</td>
+                  <td style={{ ...cell, color: T.ink3 }}>{new Date(r.updatedAt).toLocaleString()}</td>
                   <td style={cell}>
-                    {/* 名单编辑后进入作品编辑器，用编辑器内「批量生成」面板勾选人员（决策 D4） */}
                     <button
-                      onClick={() => navigate('/sp/works')}
-                      style={{ color: T.accent, background: 'none', border: 'none', cursor: 'pointer' }}
+                      onClick={() => navigate(`/sp/invitations/lists/${r.id}`)}
+                      style={{ marginRight: 12, border: 'none', background: 'none', padding: 0, fontSize: 14, color: T.accent, cursor: 'pointer' }}
                     >
-                      去生成
+                      编辑
+                    </button>
+                    <button
+                      onClick={() => void remove(r.id)}
+                      style={{ border: 'none', background: 'none', padding: 0, fontSize: 14, color: T.ink3, cursor: 'pointer' }}
+                    >
+                      删除
                     </button>
                   </td>
                 </tr>
               ))}
               {!rows.length && (
                 <tr>
-                  <td colSpan={5} style={{ ...cell, textAlign: 'center', color: T.ink3, padding: 32 }}>
-                    暂无名单，可下载模板填写后导入或新建
+                  <td colSpan={4} style={{ ...cell, textAlign: 'center', color: T.ink3, padding: 40 }}>
+                    暂无名单，可下载模板填写后导入，或直接新建
                   </td>
                 </tr>
               )}

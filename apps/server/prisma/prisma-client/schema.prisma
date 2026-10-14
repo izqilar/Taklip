@@ -85,9 +85,10 @@ enum TemplateStatus {
 model User {
   id                     String         @id @default(cuid())
   phone                  String?        @unique
-  wxOpenid               String?        @unique
+  wxOpenid               String?        @unique @map("wx_openid")
+  qqOpenid               String?        @unique @map("qq_openid") // QQ 扫码登录 openid（G-3）
   password               String? // 密码登录时使用（bcrypt 哈希）
-  nickname               String?
+  nickname               String?        @unique // 登录标识之一（D2：强制唯一化昵称，承接「用户名/昵称」登录语义）
   avatar                 String?
   // 扩展资料字段（C2 账户绑定增强；PATCH /api/auth/me 可写）
   realName               String?        @map("real_name")
@@ -99,7 +100,7 @@ model User {
   realNameStatus         RealNameStatus @default(UNVERIFIED) // 实名认证状态
   realNameVerifiedAt     DateTime?      @map("real_name_verified_at") // 认证通过时间
   bio                    String?
-  email                  String?
+  email                  String?        @unique // 登录标识之一（G-1 邮箱登录；D5 同表）
   vipLevel               Int            @default(0) // 0=免费用户 1=会员
   locale                 String         @default("zh-CN")
   role                   Role           @default(USER)
@@ -127,17 +128,22 @@ model User {
   appeals        TemplateAppeal[]
 
   // —— 角色管理管线（P0）：区域与代理 ——
-  regionId   String?    @map("region_id") // 本人所属区/县
-  region     Region?    @relation(fields: [regionId], references: [id])
-  agentId    String?    @map("agent_id") // 受管于某代理商 User.id（role=AGENT）
-  agent      User?      @relation("UserAgent", fields: [agentId], references: [id])
-  agentOf    User[]     @relation("UserAgent") // 该代理商管辖的用户（反向）
-  regionPath String?    @map("region_path") // "省ID/市ID/区ID" 前缀匹配做辖区作用域
-  status     UserStatus @default(ACTIVE) // 账户启停闸门
+  regionId String? @map("region_id") // 本人所属区/县
+
+  // —— 登录入口改造（2026-10-12）：密码找回 / 重置令牌（G-4，方案 A 列内存储，D5 决策）——
+  resetTokenHash   String?    @map("reset_token_hash") // sha256(token)，明文不落库
+  resetTokenExpiry DateTime?  @map("reset_token_expiry") // TTL 30 分钟
+  resetTokenUsed   Boolean    @default(false) @map("reset_token_used") // 单次作废
+  region           Region?    @relation(fields: [regionId], references: [id])
+  agentId          String?    @map("agent_id") // 受管于某代理商 User.id（role=AGENT）
+  agent            User?      @relation("UserAgent", fields: [agentId], references: [id])
+  agentOf          User[]     @relation("UserAgent") // 该代理商管辖的用户（反向）
+  regionPath       String?    @map("region_path") // "省ID/市ID/区ID" 前缀匹配做辖区作用域
+  status           UserStatus @default(ACTIVE) // 账户启停闸门
   // —— 回收站（僵尸用户）：软删除标记。从用户管理删除的用户先置 isZombie=true 进入回收站，
   // 可激活恢复原数据；从回收站再次删除则彻底物理删除。不进 UserStatus 枚举，避免迁移影响既有状态。
-  isZombie   Boolean    @default(false) @map("is_zombie")
-  zombieAt   DateTime?  @map("zombie_at") // 进入回收站的时间
+  isZombie         Boolean    @default(false) @map("is_zombie")
+  zombieAt         DateTime?  @map("zombie_at") // 进入回收站的时间
 
   // —— 贡献等级（代理商/服务商经营分级，P-tier）——
   agentTier     Int       @default(0) @map("agent_tier") // 代理商等级 0..4（L0 见习 → L4 钻石）
@@ -896,4 +902,214 @@ model PlatformFeeConfig {
   updatedBy        String?  @map("updated_by")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
+}
+
+// ============================================================================
+// 批量请柬 · 名单导入与个性化专属渲染（2026-10）
+// 规范：docs/批量请柬-名单导入与个性化渲染开发规范.md §6
+//
+// 归属模型（决策 D1）：
+//   ownerType = SELF   终端用户自营   —— 行级隔离 WHERE owner_id = 当前 userId
+//   ownerType = CLIENT 服务商代客     —— 组织域隔离 org_id + client_id（付费额度挂 clientId，D2）
+//   ownerType = ORG    服务商自营样板 —— 组织域隔离 org_id
+// 隔离纪律：查不到一律 404（不暴露存在/归属）；名单含姓名/手机号属 PII，从严。
+// ============================================================================
+
+// 人员名单：一次导入/在线编辑产生的一份数据集，可含多条 GuestRecord。
+model GuestList {
+  id         String    @id @default(cuid())
+  ownerId    String    @map("owner_id") // 创建者/操作者（USER=userId；SP=SP 用户），审计用
+  ownerType  String    @default("SELF") @map("owner_type") // SELF | CLIENT | ORG（D1）
+  orgId      String?   @map("org_id") // SP 场景所属组织；SELF 为 null
+  clientId   String?   @map("client_id") // 代客(CLIENT)绑定的客户；否则 null
+  name       String
+  columnDefs Json      @default("{}") @map("column_defs") // 列定义/变量映射配置
+  deletedAt  DateTime? @map("deleted_at") // 软删；被锁定引用时返回 IN_USE
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  records GuestRecord[]
+
+  @@index([ownerId, deletedAt])
+  @@index([orgId, clientId])
+}
+
+// 名单行：单条受邀者记录。data 为字段 key → 值的映射（字段定义见 core/guest-fields.ts）。
+model GuestRecord {
+  id        String    @id @default(cuid())
+  listId    String    @map("list_id")
+  seq       Int // 列表顺序（从 1 递增），子集顺序依据
+  data      Json // { guest_name, guest_title, gender, unit, table_no, phone, address, remark }
+  deletedAt DateTime? @map("deleted_at") // 软删，重排后续 seq
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  list GuestList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@index([listId, seq])
+  @@index([listId, deletedAt])
+}
+
+// 批量渲染项目：绑定「一个归属 + 一份锁定名单」的渲染上下文，承载状态机与配额。
+model BatchRenderProject {
+  id                 String    @id @default(cuid())
+  ownerId            String    @map("owner_id") // 项目归属者（USER=userId；代客=客户维度，见 D2）
+  ownerType          String    @default("SELF") @map("owner_type") // SELF | CLIENT | ORG
+  orgId              String?   @map("org_id")
+  clientId           String?   @map("client_id") // 代客场景客户（付费额度挂此维度，D2）
+  listId             String    @map("list_id") // 锁定的名单引用
+  templateId         String    @map("template_id") // 所用模板（work id）
+  state              String    @default("DRAFT") @map("state") // DRAFT | LOCKED | PAID
+  freeRendered       Int       @default(0) @map("free_rendered") // 已用赠样额度 (≤3)
+  purchasedHeadcount Int       @default(0) @map("purchased_headcount") // 已购 N
+  paidRendered       Int       @default(0) @map("paid_rendered") // 已用付费额度 (≤N)
+  lockedAt           DateTime? @map("locked_at")
+  variableMapping    Json      @default("{}") @map("variable_mapping") // 模板变量 key → 名单字段 key 的显式映射（D4 反转，空对象=全恒等）
+  elementBindings    Json      @default("{}") @map("element_bindings") // 生成期画布点选的元素级绑定（项目级，不回写模板）：{elementId:{key,name,listField}}
+  editedRecordIds    Json      @default("[]") @map("edited_record_ids") // 已单独编辑过的宾客记录 id（去重），用于「修改上限=总记录数×10%」闸门
+  renderCounts       Json      @default("{}") @map("render_counts") // 每条记录重渲染次数（持久，不随历史清理归零）
+  purchasedRerender  Int       @default(0) @map("purchased_rerender") // 免费 5 次之外的额外重渲染额度（购买获得）
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@index([ownerId, state])
+  @@index([orgId, clientId])
+}
+
+// 首次生成快照（不可变）：首渲成功瞬间原子落库，后续输出唯一数据源（FR-3/FR-4）。
+model RenderSnapshot {
+  projectId       String   @id @map("project_id") // 1:1 项目
+  listId          String   @map("list_id")
+  recordIds       Json     @map("record_ids") // 首次生成人员 id 有序集合（不可变）
+  renderedData    Json     @map("rendered_data") // 首渲时各人字段值快照（不可变）
+  templateId      String   @map("template_id")
+  templateVersion String   @default("1") @map("template_version")
+  lockedAt        DateTime @map("locked_at")
+  variableMapping Json     @default("{}") @map("variable_mapping") // 渲染时快照，保证重渲取值稳定
+
+  @@index([listId])
+}
+
+// 渲染前勾选子集：用户在名单中勾选、用于渲染的有序人员集合。
+model GuestListSelection {
+  projectId         String   @id @map("project_id") // 1:1 项目
+  listId            String   @map("list_id")
+  selectedRecordIds Json     @map("selected_record_ids") // 有序 recordId 数组
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+}
+
+// 渲染任务：单批次异步渲染，归属某 Project，含进度与结果图（私有资产路径）。
+model RenderJob {
+  id              String   @id @default(cuid())
+  projectId       String   @map("project_id")
+  status          String   @default("PENDING") @map("status") // PENDING | RUNNING | SUCCESS | PARTIAL | FAILED | CLEARED
+  mode            String   @map("mode") // FREE_SAMPLE | PAID | RERENDER
+  targetRecordIds Json     @map("target_record_ids") // 本批渲染人员（有序）
+  progress        Int      @default(0)
+  total           Int      @default(0)
+  resultUrls      Json     @default("[]") @map("result_urls") // 生成图私有资产路径
+  error           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([projectId, status])
+}
+
+// 模板字段设计：用户/服务商自定义「下载模板」中出现的可填写字段（增删改 + 保存）。
+// 按归属作用域唯一一份：SELF(userId) / ORG(orgId，代客与自营共用组织级设计)。
+model GuestListFieldDesign {
+  id        String   @id @default(cuid())
+  ownerType String   @map("owner_type") // SELF | ORG
+  ownerId   String   @map("owner_id") // userId(SELF) | orgId(ORG)
+  fields    Json     @default("[]") @map("fields") // GuestFieldDef[]
+  version   String   @default("1.0") @map("version")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([ownerType, ownerId])
+  @@index([ownerId])
+}
+
+// 多模板管理（v1.3 新增）：用户/系统预制「诚邀名单模板」。
+// 系统模板 ownerType=SYSTEM、ownerId=null、isSystem=true，全局可读、不可删除、仅 ADMIN 可编辑字段；
+// 用户自建 ownerType=SELF、ownerId=userId、isSystem=false，行级隔离。
+model GuestTemplate {
+  id        String   @id @default(cuid())
+  ownerType String   @map("owner_type") // SYSTEM | SELF | CLIENT | ORG
+  ownerId   String?  @map("owner_id") // SYSTEM 为 null；用户自建 = userId；SP 自营 = orgId
+  name      String
+  fields    Json     @default("[]") @map("fields") // GuestFieldDef[]
+  isSystem  Boolean  @default(false) @map("is_system")
+  seq       Int      @default(0) @map("seq") // 用户自建模板展示序号（从 1 递增）
+  version   String   @default("1.0") @map("version")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([ownerType, ownerId])
+  @@index([ownerId])
+}
+
+// 占位符注册表（v2 占位符管理 · 2026-10-10）：
+// 运营端「系统设置 → 占位符管理」独占配置唯一真相源，叠加在现有变量（binding.key）之上。
+// 语义层：用户用「占位符」组织字段；底层仍映射 binding.key，渲染内核（personalizeSchema）零改动。
+//   - 编辑器只绑定、不创建：新建占位符仅在此完成。
+//   - 定义/实例分离：注册表存定义（含默认必填/可见），模板或批次可覆盖。
+//   - key 永远稳定（ASCII），标签/提示/默认值按**单语言内容**存储（由管理员在当前语言环境下录入）。
+//     多语言界面框架文案（字段名/按钮/标题）统一由系统 i18n 机制实现，不在对话框内维护多语言文本。
+//   - scope 区分 'record'（名单字段型，从 record.data 取数）与 'batch'（批次常量型，生成期一次性填写）。
+model PlaceholderRegistry {
+  id           String   @id @default(cuid())
+  key          String   @unique // ASCII 稳定 key：groom / bride / weddingImg1 / weddingDate / weddingAddr
+  type         String // 'text' | 'image' | 'datetime' | 'address'
+  label        String   @default("") @map("label") // 单语言标签（管理员按当前语言录入）
+  hint         String   @default("") @map("hint") // 单语言编辑提示
+  defaultValue String   @default("") @map("default_value") // 单语言默认值（datetime/address 存格式化串或原始值）
+  scope        String   @default("batch") @map("scope") // 'record' | 'batch'
+  requiredDef  Boolean  @default(false) @map("required_def") // 注册表级默认必填；可被绑定实例覆盖
+  status       String   @default("visible") @map("status") // 'visible' | 'hidden'
+  legacy       Boolean  @default(false) @map("legacy") // 老 GUEST_FIELD_DEFS / ext_ 迁移标记
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([scope])
+}
+
+// ============================================================================
+// 服务商营销分组（2026-10-12）
+// 营销分组：服务商对其客户 / 名单 / 批量请柬项目进行「圈层运营」的维度载体。
+//   - MarketingGroup     分组（provider 维度，providerId 即当前登录 SP 的 User.id）
+//   - MarketingGroupMember 分组成员（CLIENT 客户 / GUEST_LIST 名单 / BATCH_PROJECT 请柬项目）
+// 隔离纪律：查不到一律 404（不暴露存在/归属）。
+// ============================================================================
+
+model MarketingGroup {
+  id          String                 @id @default(cuid())
+  providerId  String                 @map("provider_id")
+  name        String
+  description String?
+  scene       String?                @map("scene")
+  sortOrder   Int                    @default(0) @map("sort_order")
+  createdAt   DateTime               @default(now()) @map("created_at")
+  updatedAt   DateTime               @updatedAt @map("updated_at")
+  members     MarketingGroupMember[]
+
+  @@index([providerId])
+}
+
+model MarketingGroupMember {
+  id         String   @id @default(cuid())
+  groupId    String   @map("group_id")
+  memberType String   @map("member_type") // CLIENT | GUEST_LIST | BATCH_PROJECT
+  memberId   String   @map("member_id")
+  label      String?
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  group MarketingGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, memberType, memberId])
+  @@index([groupId])
+  @@index([memberType, memberId])
 }

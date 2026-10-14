@@ -41,6 +41,7 @@ const Editor = lazy(() => import('./pages/Editor'));
  */
 const Home = lazy(() => import('./pages/Home'));
 const Register = lazy(() => import('./pages/Register'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const TemplateList = lazy(() => import('./pages/TemplateList'));
 const ProjectList = lazy(() => import('./pages/ProjectList'));
 const FindServices = lazy(() => import('./pages/FindServices'));
@@ -160,6 +161,15 @@ export default function App() {
           element={
             <Suspense fallback={<RouteFallback />}>
               <Register />
+            </Suspense>
+          }
+        />
+        {/* 忘记密码 / 重置密码（G-4）：独立路由，无顶部导航 */}
+        <Route
+          path="/forgot-password"
+          element={
+            <Suspense fallback={<RouteFallback />}>
+              <ForgotPassword />
             </Suspense>
           }
         />

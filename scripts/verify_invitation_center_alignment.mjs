@@ -164,9 +164,13 @@ const CHECKS = [
   },
   {
     id: 'C2',
-    title: '任务进度表：复选框 / 任务(姓名) / 状态 / 进度 / 操作(预览·重新生成)',
-    web: { file: WEB.jobs, need: ['预览', '重新生成', 'deleteSelected', 'packDownload'] },
-    admin: { file: ADMIN.jobs, need: ['预览', '重新生成', '删除选择', '打包下载'] },
+    title: '任务进度表：复选框 / 任务(姓名) / 状态 / 进度 / 操作(预览·生成·重渲)',
+    // web 已将重渲动作统一为单个「生成」按钮（点击 → onRegenerate → startGenerate({ mode: 'RERENDER' })），
+    // 代码中**没有**字面「重新生成」（见 InvitationJobs.tsx L816 注释「去掉『重新生成』分支」）。
+    // admin UserInvitationCenter.tsx 同样用 onRegenerate + 「生成」按钮 + mode:'RERENDER'，与 web 一致。
+    // 故不再查找「重新生成」，改为检测重渲能力（onRegenerate / RERENDER）。
+    web: { file: WEB.jobs, need: ['预览', 'onRegenerate', 'RERENDER', 'deleteSelected', 'packDownload'] },
+    admin: { file: ADMIN.jobs, need: ['预览', 'onRegenerate', 'RERENDER', '删除选择', '打包下载'] },
   },
   {
     id: 'C3',
@@ -212,15 +216,23 @@ const CHECKS = [
   },
   {
     id: 'C10',
-    title: '宾客名单对话框：人员表列取 GUEST_FIELD_DEFS.slice(0,5)',
-    web: { file: WEB.personPicker, need: ['GUEST_FIELD_DEFS.slice(0, 5)'] },
-    admin: { file: ADMIN.personPicker, need: ['GUEST_FIELD_DEFS.slice(0, 5)'] },
+    title: '宾客名单对话框：人员表列取 columnDefs（API 返回）+ deriveColumnsFromRecords 回退',
+    // 真实 web 行为（PersonPickerDialog.tsx）：人员表列来自 listGuestRecords 响应的 columnDefs，
+    // 缺失时按记录实际字段键 deriveColumnsFromRecords 推导，再回退 toColumnDefs([])。
+    // 两个文件都**不**使用 GUEST_FIELD_DEFS（更无 slice(0,5)）——旧锚点基于错误假设。
+    // admin UserPersonPickerDialog.tsx 与 web 一致（同用 columnDefs / deriveColumnsFromRecords）。
+    web: { file: WEB.personPicker, need: ['columnDefs', 'deriveColumnsFromRecords'] },
+    admin: { file: ADMIN.personPicker, need: ['columnDefs', 'deriveColumnsFromRecords'] },
   },
   {
     id: 'C11',
     title: '宾客名单对话框：已锁定名单提示 + 禁用改动（locked）',
-    web: { file: WEB.personPicker, need: ['locked', '已锁定名单'] },
-    admin: { file: ADMIN.personPicker, need: ['locked', '已锁定名单'] },
+    // 真实 web 行为（PersonPickerDialog.tsx）：web 与 admin 都用 `locked` 状态，并在锁定名单时
+    // 显示琥珀色提示「名单已锁定，…」（web L266 defaultValue、admin L356/L357 模板串）。
+    // 旧锚点写的「已锁定名单」顺序反了，web 端根本不存在该字面量（仅 admin 一段陈旧注释含此措辞）。
+    // 改为两端真实共有的「名单已锁定」+ `locked`。
+    web: { file: WEB.personPicker, need: ['locked', '名单已锁定'] },
+    admin: { file: ADMIN.personPicker, need: ['locked', '名单已锁定'] },
   },
   {
     id: 'C12',

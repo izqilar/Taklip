@@ -43,11 +43,15 @@ function isPermissionProbe(error: any): boolean {
 }
 
 export const authProvider: AuthProvider = {
-  login: async ({ phone, password }) => {
+  login: async ({ type, account, phone, password }) => {
+    // D7：运营端同步支持邮箱/用户名登录。前端提交 { type, account, password }；
+    // 向后兼容：若仍是旧的 { phone, password } 形态，归并为 phone 标识。
+    const loginType = type ?? (account ? 'phone' : 'phone');
+    const loginAccount = account ?? phone ?? '';
     const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, password }),
+      body: JSON.stringify({ type: loginType, account: loginAccount, password }),
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok || !body.accessToken) {

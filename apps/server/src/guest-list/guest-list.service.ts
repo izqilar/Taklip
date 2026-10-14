@@ -68,6 +68,8 @@ const err403 = (code: string, message: string) => new ForbiddenException({ code,
 const MAX_LIST_NAME = 60;
 /** 单次批量写入上限（防超大 payload 打爆事务） */
 const MAX_BATCH_ROWS = 5000;
+/** 创建名单时的默认系统模板 id（简易宾客模板） */
+const DEFAULT_TEMPLATE_ID = 'sys_simple_guest';
 
 /**
  * 人员名单服务（规范 §9）
@@ -485,11 +487,16 @@ export class GuestListService {
       throw err422({ code: 'INVALID_FIELD', field: 'clientId', message: '代客名单必须指定客户' });
     }
 
-    // 模板联动：选中模板则把其字段快照进 columnDefs，使新建名单按模板预设字段生成列
+    // 模板联动：选中模板则把其字段快照进 columnDefs，使新建名单按模板预设字段生成列。
+    // 未显式选择时，自动套用系统默认模板「简易宾客模板」。
     let columnDefs: unknown = {};
-    if (templateId) {
-      const tpl = await this.prisma.guestTemplate.findUnique({ where: { id: templateId } });
-      if (!tpl) throw err404();
+    const effectiveTemplateId = templateId?.trim() || DEFAULT_TEMPLATE_ID;
+    const tpl = await this.prisma.guestTemplate.findUnique({ where: { id: effectiveTemplateId } });
+    if (!tpl) {
+      // 默认模板不存在（seed 未执行）时才允许空模板兜底；否则未找到即 404
+      if (!templateId?.trim()) columnDefs = {};
+      else throw err404();
+    } else {
       if (tpl.ownerType === 'SELF' && tpl.ownerId !== scope.userId) throw err404();
       const fields = (tpl.fields as unknown as GuestFieldDef[] | undefined) ?? [];
       columnDefs = Array.isArray(fields) && fields.length ? fields : {};
@@ -615,6 +622,10 @@ export class GuestListService {
     const list = await this.mustGetList(scope, listId);
     const rec = await this.prisma.guestRecord.findFirst({ where: { id: rid, listId, deletedAt: null } });
     if (!rec) throw err404();
+    // 名单人员信息冻结闸门（消息 F）：该记录已被任一非 DRAFT 批量项目首渲快照锁定 → 不可改
+    if (await this.isRecordLocked(listId, rid)) {
+      throw err409('IN_USE', '该人员已生成专属请柬，不可修改');
+    }
     if (expectedUpdatedAt) {
       const expected = new Date(expectedUpdatedAt).getTime();
       if (Number.isFinite(expected) && Math.abs(rec.updatedAt.getTime() - expected) > 1000) {
@@ -672,6 +683,16 @@ export class GuestListService {
     defs?: readonly GuestFieldDef[],
   ) {
     const list = await this.mustGetList(scope, listId);
+    // 名单锁定闸门（消息 F）：绑定态名单不允许整体覆盖（overwrite 会软删未锁定人员 = 拆解名单）。
+    // append 不受影响（B17 追加是硬需求）。
+    if (mode === 'overwrite') {
+      const frozen = await this.prisma.batchRenderProject.findFirst({
+        where: { listId, state: { not: 'DRAFT' } },
+      });
+      if (frozen) {
+        throw err409('PROJECT_FROZEN', '名单已进入批量生成期，不可整体覆盖（如需调整请新建名单与批量任务）');
+      }
+    }
     if (!Array.isArray(input) || input.length === 0) {
       throw err422({ code: 'EMPTY_RECORDS', message: '请至少提供 1 条人员数据' });
     }

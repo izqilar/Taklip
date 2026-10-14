@@ -1,15 +1,20 @@
-import { Injectable, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomInt, createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import type { ServiceRole } from '../../prisma/prisma-client';
 import { Prisma } from '../../prisma/prisma-client';
 import { loadStaffContext } from '../console/staff-context';
-import { RegisterDto, LoginDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto, LoginIdentifierType } from './dto/auth.dto';
 import type { JwtUser } from '../common/types/jwt-user';
 import { JWT_REFRESH_SECRET } from './jwt-secrets';
 import { homeForRole } from '../common/identity/role-home';
+
+/** 密码重置令牌有效期（分钟），文档 §3.2 / §5.5 */
+const RESET_TOKEN_TTL_MIN = 30;
+/** 二维码登录 pending 态有效期（分钟），文档 §5.3 */
+const QR_PENDING_TTL_MIN = 5;
 
 function vipTierName(level: number) {
   if (level >= 3) return '黑金会员';
@@ -55,6 +60,13 @@ export class AuthService {
   private readonly TICKET_TTL_MS = 45_000; // 30~60s 区间：45s 单次有效
   private readonly ticketSweeper = setInterval(() => this.sweepExpiredTickets(), 60_000);
 
+  /**
+   * 扫码登录 pending 态（单实例内存方案；多实例应迁 Redis，与 tickets 同一约定）。
+   * 记录 state → { status, userId?, token?, exp }，供前端轮询 / 回调写入最终令牌。
+   */
+  private readonly qrStates = new Map<string, { status: 'pending' | 'scanned' | 'done'; userId?: string; token?: { accessToken: string; refreshToken: string; expiresIn: number; user: unknown; home: { origin: 'web' | 'admin'; path: string } }; exp: number }>();
+  private readonly qrSweeper = setInterval(() => this.sweepExpiredQr(), 60_000);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -87,7 +99,11 @@ export class AuthService {
     } catch (e) {
       // 并发同号注册（check-then-create 无事务）：DB 唯一约束兜底防重，
       // 败者不应收到 500，转为 409  ConflictException 让前端友好提示。
+      // nickname / email 现已加唯一约束（D2 / G-1），重名/重邮箱同样走此分支。
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        const target = (e.meta as { target?: string[] })?.target?.[0] ?? '';
+        if (target.includes('nickname')) throw new ConflictException('该昵称已被占用');
+        if (target.includes('email')) throw new ConflictException('该邮箱已被注册');
         throw new ConflictException('该手机号已注册');
       }
       throw e;
@@ -97,20 +113,139 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { phone: dto.phone },
+    const user = await this.prisma.user.findFirst({
+      where: this.identifierWhere(dto.type, dto.account),
     });
+    // 防枚举（§10 高）：账户不存在 / 纯第三方账号（无密码）统一返回同一文案，不泄露是否存在
     if (!user || !user.password) {
-      throw new UnauthorizedException('手机号或密码错误');
+      throw new UnauthorizedException('ACCOUNT_OR_PASSWORD_INVALID');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('手机号或密码错误');
+      throw new UnauthorizedException('ACCOUNT_OR_PASSWORD_INVALID');
     }
 
     await this.prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
     return this.generateTokens(user.id, user.phone ?? '');
+  }
+
+  /**
+   * 把「登录标识类型 + 账号值」翻译为 Prisma where 条件（D6 显式 type）。
+   * - username 类型映射到 nickname（D2：强制唯一化的昵称承接登录语义）；
+   * - realName 不纳入（D3）。
+   */
+  private identifierWhere(type: LoginIdentifierType, account: string): Prisma.UserWhereInput {
+    switch (type) {
+      case 'phone':
+        return { phone: account };
+      case 'email':
+        return { email: account };
+      case 'userId':
+        return { id: account };
+      case 'username':
+        return { nickname: account };
+    }
+  }
+
+  /**
+   * 忘记密码的账户定位：宽松匹配任一唯一标识（phone / email / nickname / id）。
+   * 与登录解析不同，这里不要求前端显式传 type（用户输入的是「任一标识」）。
+   */
+  private async resolveByIdentifier(identifier: string) {
+    return this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { phone: identifier },
+          { email: identifier },
+          { nickname: identifier },
+          { id: identifier },
+        ],
+      },
+    });
+  }
+
+  /**
+   * 忘记密码（G-4）：定位账户 → 生成哈希重置令牌（sha256，明文不落库）→ 渠道送达。
+   * 防枚举（§10 高）：无论账户是否存在都返回同一成功文案「若账户存在，重置凭证已发送」。
+   *
+   * D1 决策：当前服务端无邮件 / SMS 发送能力，先**模拟送达**——把重置验证码随响应一并返回
+   * （devChannel + devCode），由前端以弹窗形式展示，便于开发 / 测试。生产环境接入真实 SMTP/SMS
+   * 后，应仅在渠道实际发送、不再回带 devCode。
+   */
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.resolveByIdentifier(dto.identifier);
+    if (user) {
+      const code = this.issueResetCode();
+      const hash = createHash('sha256').update(code).digest('hex');
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          resetTokenHash: hash,
+          resetTokenExpiry: new Date(Date.now() + RESET_TOKEN_TTL_MIN * 60_000),
+          resetTokenUsed: false,
+        },
+      });
+      const delivery = this.notifyReset(user, code);
+      // 模拟送达：回带验证码与渠道，前端弹窗展示（D1）。生产接入真实渠道后移除此回带。
+      return {
+        message: '若账户存在，重置凭证已发送',
+        ...(delivery.dev ? { devChannel: delivery.channel, devCode: code } : {}),
+      };
+    }
+    // 防枚举：不泄露账户是否存在
+    return { message: '若账户存在，重置凭证已发送' };
+  }
+
+  /** 生成 6 位重置验证码（同时作为邮件链接令牌与 SMS 验证码，reset-password 接受其一） */
+  private issueResetCode(): string {
+    return String(randomInt(0, 1_000_000)).padStart(6, '0');
+  }
+
+  /**
+   * 重置凭证送达（D1 模拟）：按账户可用联系方式选择渠道（有 email 优先邮件，否则短信）。
+   * 返回 dev=true 表示当前为「模拟送达」，前端应弹窗展示 devCode。
+   */
+  private notifyReset(
+    user: { email?: string | null; phone?: string | null },
+    code: string,
+  ): { channel: 'email' | 'sms' | 'none'; dev: boolean } {
+    let channel: 'email' | 'sms' | 'none' = 'none';
+    if (user.email) channel = 'email';
+    else if (user.phone) channel = 'sms';
+    // D1：当前无真实发送通道，统一模拟（dev=true）。接入真实 SMTP/SMS 后改为实际发送并 dev=false。
+    if (process.env.RESET_DELIVERY_MODE === 'real') {
+      // TODO(D1)：真实发送（邮件含 ?token=code 链接 / 短信下发 code）。当前未实现，降级为模拟。
+      return { channel, dev: true };
+    }
+    return { channel, dev: true };
+  }
+
+  /**
+   * 重置密码（G-4）：校验哈希令牌 + 未过期 + 未使用 → 写新密码（bcrypt）→ 作废令牌。
+   * D4：纯第三方账号（password=null）首次重置即「绑定密码」，属预期行为（引导设置密码）。
+   */
+  async resetPassword(dto: ResetPasswordDto) {
+    const hash = createHash('sha256').update(dto.token).digest('hex');
+    const user = await this.prisma.user.findFirst({ where: { resetTokenHash: hash } });
+    if (
+      !user ||
+      user.resetTokenUsed ||
+      !user.resetTokenExpiry ||
+      user.resetTokenExpiry < new Date()
+    ) {
+      throw new BadRequestException('RESET_TOKEN_INVALID');
+    }
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: await bcrypt.hash(dto.newPassword, SALT_ROUNDS),
+        resetTokenUsed: true,
+        resetTokenHash: null,
+        resetTokenExpiry: null,
+      },
+    });
+    return { message: '密码已重置' };
   }
 
   async refresh(refreshToken: string) {
@@ -459,6 +594,15 @@ export class AuthService {
       const dup = await this.prisma.user.findUnique({ where: { phone: dto.phone } });
       if (dup && dup.id !== userId) throw new ConflictException('手机号已被占用');
     }
+    // 邮箱 / 昵称：已加唯一约束（G-1 / D2），先自查避免 P2002 直接 500
+    if (dto.email !== undefined && dto.email !== user.email) {
+      const dup = await this.prisma.user.findUnique({ where: { email: dto.email } });
+      if (dup && dup.id !== userId) throw new ConflictException('该邮箱已被注册');
+    }
+    if (dto.nickname !== undefined && dto.nickname !== user.nickname) {
+      const dup = await this.prisma.user.findUnique({ where: { nickname: dto.nickname } });
+      if (dup && dup.id !== userId) throw new ConflictException('该昵称已被占用');
+    }
     // 身份证号：验真（格式 + 校验位），非法直接拒绝，避免脏数据进入实名认证管线
     if (dto.idCard !== undefined && dto.idCard !== '' && dto.idCard !== user.idCard) {
       if (!isValidIdCard(dto.idCard)) throw new BadRequestException('身份证号校验失败，请核对后重填');
@@ -588,4 +732,164 @@ export class AuthService {
       if (now > v.exp) this.tickets.delete(k);
     }
   }
+
+  /** 定时清理过期的扫码 pending 态 */
+  private sweepExpiredQr(): void {
+    const now = Date.now();
+    for (const [k, v] of this.qrStates) {
+      if (now > v.exp) this.qrStates.delete(k);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // 微信 / QQ 扫码登录（G-2 / G-3）
+  // 流程：qr/start 生成 state + qrcodeUrl → 前端轮询 qr/status →
+  //        用户扫码确认 → 平台回调 callback?code&state → 换 openid →
+  //        静默注册/登录 → 写 done + token；前端轮询拿到 token 落地。
+  // ⚠️ state 必须校验回放（§10 严重，防 CSRF 账号绑定劫持），且一次性。
+  // 配置（严禁硬编码）：WX_APPID/WX_APPSECRET/WX_REDIRECT_URI、QQ_APPID/QQ_APPKEY/QQ_REDIRECT_URI。
+  // ─────────────────────────────────────────────────────────────
+
+  private getOAuthConfig(provider: 'wechat' | 'qq') {
+    if (provider === 'wechat') {
+      return {
+        appid: process.env.WX_APPID,
+        secret: process.env.WX_APPSECRET,
+        redirectUri: process.env.WX_REDIRECT_URI,
+      };
+    }
+    return {
+      appid: process.env.QQ_APPID,
+      secret: process.env.QQ_APPKEY,
+      redirectUri: process.env.QQ_REDIRECT_URI,
+    };
+  }
+
+  /** 构造平台扫码 URL（state 防 CSRF） */
+  private buildQrUrl(provider: 'wechat' | 'qq', cfg: { appid?: string; redirectUri?: string }, state: string): string {
+    const ru = encodeURIComponent(cfg.redirectUri ?? '');
+    if (provider === 'wechat') {
+      return `https://open.weixin.qq.com/connect/qrconnect?appid=${cfg.appid}&redirect_uri=${ru}&response_type=code&scope=snsapi_login&state=${state}`;
+    }
+    return `https://graph.qq.com/oauth2.0/authorize?response_type=code&client_id=${cfg.appid}&redirect_uri=${ru}&state=${state}&scope=get_user_info`;
+  }
+
+  /** 发起扫码：生成 state 并落 pending 态（TTL 5min），返回二维码 URL 与是否已完成配置 */
+  async qrStart(provider: 'wechat' | 'qq') {
+    const cfg = this.getOAuthConfig(provider);
+    const state = randomBytes(16).toString('hex');
+    this.qrStates.set(state, { status: 'pending', exp: Date.now() + QR_PENDING_TTL_MIN * 60_000 });
+    const configured = !!cfg.appid && !!cfg.redirectUri;
+    return {
+      state,
+      qrcodeUrl: configured ? this.buildQrUrl(provider, cfg, state) : '',
+      configured,
+    };
+  }
+
+  /** 轮询扫码状态；done 时一次性返回令牌（取出即作废） */
+  async qrStatus(state: string): Promise<{ status: 'pending' | 'scanned' | 'done' | 'expired'; token?: { accessToken: string; refreshToken: string; expiresIn: number; user: unknown; home: { origin: 'web' | 'admin'; path: string } } }> {
+    const rec = this.qrStates.get(state);
+    if (!rec || Date.now() > rec.exp) {
+      this.qrStates.delete(state);
+      return { status: 'expired' };
+    }
+    if (rec.status === 'done' && rec.token) {
+      this.qrStates.delete(state);
+      return { status: 'done', token: rec.token };
+    }
+    return { status: rec.status };
+  }
+
+  /** 平台回调：校验 state → 换 openid → 静默注册/登录 → 写 done + token */
+  async qrCallback(provider: 'wechat' | 'qq', code: string, state: string) {
+    const rec = this.qrStates.get(state);
+    if (!rec || rec.status === 'done' || Date.now() > rec.exp) {
+      throw new BadRequestException('QR_STATE_INVALID');
+    }
+    const cfg = this.getOAuthConfig(provider);
+    const openid = await this.exchangeCodeForOpenid(provider, cfg, code);
+    const field: 'wxOpenid' | 'qqOpenid' = provider === 'wechat' ? 'wxOpenid' : 'qqOpenid';
+    const user = await this.findOrCreateByOpenid(field, openid);
+    const token = await this.generateTokens(user.id, user.phone ?? '');
+    rec.status = 'done';
+    rec.token = token;
+    rec.userId = user.id;
+    this.qrStates.set(state, rec);
+    // 回调由平台重定向到 redirect_uri；处理完成后引导回前端（前端轮询 qr/status 已可拿到 token，
+    // 此处重定向仅用于关闭扫码窗口 / 给出可视反馈）。
+    const frontend = (cfg.redirectUri ?? '').split('?')[0] || '';
+    return { redirectUrl: `${frontend}?login=success&state=${state}` };
+  }
+
+  /** code 换 openid（平台差异封装） */
+  private async exchangeCodeForOpenid(provider: 'wechat' | 'qq', cfg: { appid?: string; secret?: string; redirectUri?: string }, code: string): Promise<string> {
+    if (provider === 'wechat') {
+      const url = `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${cfg.appid}&secret=${cfg.secret}&code=${code}&grant_type=authorization_code`;
+      const res = await fetch(url);
+      const json = (await res.json()) as { openid?: string; errcode?: number; errmsg?: string };
+      if (!json.openid) throw new BadRequestException(`WECHAT_OAUTH_FAILED:${json.errmsg ?? json.errcode}`);
+      return json.openid;
+    }
+    // QQ：先换 access_token（返回 key=value 串），再换 openid（返回 callback({...})）
+    const tokenUrl = `https://graph.qq.com/oauth2.0/token?grant_type=authorization_code&client_id=${cfg.appid}&client_secret=${cfg.secret}&code=${code}&redirect_uri=${encodeURIComponent(cfg.redirectUri ?? '')}`;
+    const tokenRes = await fetch(tokenUrl);
+    const tokenText = await tokenRes.text();
+    const accessToken = new URLSearchParams(tokenText).get('access_token');
+    if (!accessToken) throw new BadRequestException('QQ_OAUTH_TOKEN_FAILED');
+    const meRes = await fetch(`https://graph.qq.com/oauth2.0/me?access_token=${accessToken}`);
+    const meText = await meRes.text();
+    const m = meText.match(/\{[^{}]*\}/);
+    if (!m) throw new BadRequestException('QQ_OAUTH_OPENID_FAILED');
+    const me = JSON.parse(m[0]) as { openid?: string };
+    if (!me.openid) throw new BadRequestException('QQ_OAUTH_OPENID_FAILED');
+    return me.openid;
+  }
+
+  /** 按 openid 查找或静默注册（纯第三方账号：password=null, role=USER） */
+  private async findOrCreateByOpenid(field: 'wxOpenid' | 'qqOpenid', openid: string) {
+    const where: Prisma.UserWhereUniqueInput =
+      field === 'wxOpenid' ? { wxOpenid: openid } : { qqOpenid: openid };
+    let user = await this.prisma.user.findUnique({ where });
+    if (user) return user;
+    const nickname = `${field === 'wxOpenid' ? '微信用户' : 'QQ用户'}${randomBytes(3).toString('hex')}`;
+    const data: Prisma.UserCreateInput =
+      field === 'wxOpenid'
+        ? { wxOpenid: openid, password: null, nickname, role: 'USER' }
+        : { qqOpenid: openid, password: null, nickname, role: 'USER' };
+    try {
+      user = await this.prisma.user.create({ data });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        user = await this.prisma.user.findUnique({ where });
+        if (user) return user;
+      }
+      throw e;
+    }
+    return user;
+  }
+
+  /**
+   * 开发态模拟扫码（仅非生产可用）：在没有真实微信/QQ 开放平台资质时，
+   * 让扫码登录全流程可被端到端演练。生产环境拒绝（Forbidden）。
+   */
+  async qrDevScan(provider: 'wechat' | 'qq', state: string, openid?: string) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new ForbiddenException('DEV_ONLY');
+    }
+    const rec = this.qrStates.get(state);
+    if (!rec) throw new BadRequestException('QR_STATE_INVALID');
+    rec.status = 'scanned';
+    this.qrStates.set(state, rec);
+    const oid = openid || `dev_${provider}_${randomBytes(6).toString('hex')}`;
+    const field: 'wxOpenid' | 'qqOpenid' = provider === 'wechat' ? 'wxOpenid' : 'qqOpenid';
+    const user = await this.findOrCreateByOpenid(field, oid);
+    const token = await this.generateTokens(user.id, user.phone ?? '');
+    rec.status = 'done';
+    rec.token = token;
+    rec.userId = user.id;
+    this.qrStates.set(state, rec);
+    return { ok: true as const };
+  }
 }
+

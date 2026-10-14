@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException, HttpException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '../../prisma/prisma-client';
 import { createProject, safeMedia, buildPublishedSchema, shouldRegeneratePublishCode } from '@h5design/core';
@@ -24,6 +24,16 @@ export class PublishService {
       include: { user: { select: { role: true, regionPath: true } } },
     });
     if (!project) throw new NotFoundException('作品不存在');
+    // 模板样式冻结闸门（批量生成绑定）：发布会原子替换线上 schema，生成期内禁止
+    const frozenRef = await this.prisma.batchRenderProject.findFirst({
+      where: { templateId: projectId, state: { not: 'DRAFT' } },
+    });
+    if (frozenRef) {
+      throw new HttpException(
+        { code: 'PROJECT_FROZEN', message: '该作品已进入批量生成期，不可修改（如需调整请新建批量任务）' },
+        409,
+      );
+    }
     // 字体授权闸口（作品用付费字体须来自已购付费模板，业务码 6002）
     await assertWorkFontLicense(this.prisma, project, userId);
 
@@ -138,6 +148,17 @@ export class PublishService {
       where: { id: projectId, userId },
     });
     if (!project) throw new NotFoundException('作品不存在');
+    // 冻结闸门：下线会清 publishCode / 改变作品可用态（/p/ 链接失效），
+    // 批量生成期内保守拦截（与 publish 同口径）
+    const frozenRef = await this.prisma.batchRenderProject.findFirst({
+      where: { templateId: projectId, state: { not: 'DRAFT' } },
+    });
+    if (frozenRef) {
+      throw new HttpException(
+        { code: 'PROJECT_FROZEN', message: '该作品已进入批量生成期，不可修改（如需调整请新建批量任务）' },
+        409,
+      );
+    }
 
     return this.prisma.project.update({
       where: { id: projectId },
